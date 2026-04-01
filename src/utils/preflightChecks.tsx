@@ -16,6 +16,10 @@ export interface PreflightCheckResult {
 }
 async function checkEndpoints(): Promise<PreflightCheckResult> {
   try {
+    // 如果配置了第三方 API 地址，跳过 Anthropic 连通性检查
+    if (process.env.ANTHROPIC_BASE_URL && !process.env.ANTHROPIC_BASE_URL.includes('anthropic.com')) {
+      return { success: true };
+    }
     const oauthConfig = getOauthConfig();
     const tokenUrl = new URL(oauthConfig.TOKEN_URL);
     const endpoints = [`${oauthConfig.BASE_API_URL}/api/hello`, `${tokenUrl.origin}/v1/oauth/hello`];
