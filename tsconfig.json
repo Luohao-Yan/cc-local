@@ -17,7 +17,8 @@
     "paths": {
       "src/*": ["./src/*"],
       "bun:bundle": ["./src/_external/bun-bundle.d.ts"],
-      "bun:ffi": ["./src/_external/bun-ffi.d.ts"]
+      "bun:ffi": ["./src/_external/bun-ffi.d.ts"],
+      "react/compiler-runtime": ["./src/types/react-compiler-runtime.d.ts"]
     },
     "types": ["bun-types"]
   },

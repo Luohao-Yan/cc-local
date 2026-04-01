@@ -107,6 +107,12 @@ const version = process.env.CLI_VERSION || "99.0.0-external";
 
 import { plugin } from "bun";
 
+const reactCompilerRuntimeCode = `
+export function c(size) {
+  return new Array(size).fill(Symbol.for("react.memo_cache_sentinel"));
+}
+`;
+
 const bunBundlePlugin = {
   name: "bun-bundle-shim",
   setup(build: any) {
@@ -116,6 +122,15 @@ const bunBundlePlugin = {
     }));
     build.onLoad({ filter: /.*/, namespace: "bun-bundle-shim" }, () => ({
       contents: featureModuleCode,
+      loader: "js",
+    }));
+
+    build.onResolve({ filter: /^react\/compiler-runtime$/ }, () => ({
+      path: "react/compiler-runtime",
+      namespace: "react-compiler-runtime-shim",
+    }));
+    build.onLoad({ filter: /.*/, namespace: "react-compiler-runtime-shim" }, () => ({
+      contents: reactCompilerRuntimeCode,
       loader: "js",
     }));
   },
