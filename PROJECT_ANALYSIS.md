@@ -185,7 +185,121 @@ claude-code-rebuilt/
 
 ## 核心架构
 
+### 总体架构图
+
+```mermaid
+graph TB
+    User((用户)) --> Terminal[终端]
+    
+    Terminal --> REPL
+    
+    subgraph "UI 层"
+        REPL[REPL.tsx<br/>主界面]
+        Doctor[Doctor.tsx<br/>诊断]
+        Resume[ResumeConversation<br/>恢复对话]
+        
+        REPL --> Components[React 组件<br/>146+]
+        Components --> Messages[消息渲染<br/>Markdown/diffs/tools]
+        Components --> PromptInput[PromptInput<br/>Vim/自动补全]
+        Components --> Dialogs[对话框<br/>40+]
+    end
+    
+    subgraph "渲染层"
+        Ink[自定义 Ink 渲染器<br/>52 文件]
+        Ink --> Reconciler[React 协调器]
+        Ink --> Yoga[Yoga 布局引擎]
+        Ink --> Buffer[双缓冲渲染]
+    end
+    
+    subgraph "状态管理层"
+        AppState((AppState<br/>450+ 字段))
+        AppState --> UIState[UI 状态]
+        AppState --> Permissions[权限与安全]
+        AppState --> Tasks[任务与 Agents]
+        AppState --> MCPState[MCP 服务器与插件]
+    end
+    
+    subgraph "核心系统"
+        QueryEngine[查询引擎<br/>query.ts]
+        ToolSystem[工具系统<br/>tools.ts<br/>50+ 工具]
+        CommandSystem[命令系统<br/>commands.ts<br/>100+ 命令]
+        SkillsSystem[Skills 系统]
+        PluginSystem[插件系统]
+    end
+    
+    subgraph "服务层"
+        APIClient[API 客户端<br/>多提供商]
+        Analytics[分析服务]
+        Compaction[上下文压缩]
+        MCPService[MCP 服务]
+        OAuth[OAuth 服务]
+    end
+    
+    Components --> Ink
+    REPL --> AppState
+    AppState --> QueryEngine
+    QueryEngine --> ToolSystem
+    QueryEngine --> CommandSystem
+    ToolSystem --> SkillsSystem
+    ToolSystem --> PluginSystem
+    CommandSystem --> SkillsSystem
+    ToolSystem --> APIClient
+    ToolSystem --> MCPService
+    QueryEngine --> Compaction
+    QueryEngine --> Analytics
+    CommandSystem --> OAuth
+```
+
 ### 1. 启动流程
+
+#### 启动流程时序图
+
+```mermaid
+sequenceDiagram
+    participant User as 用户
+    participant Bun as Bun 运行时
+    participant CLI as cli.tsx<br/>入口点
+    participant Preload as preload.ts<br/>preload
+    participant Main as main.tsx
+    participant MDM as MDM 设置
+    participant Keychain as 钥匙串
+    participant Migration as 迁移系统
+    participant Commander as Commander.js
+    participant GrowthBook as GrowthBook
+    participant AppState as AppState 初始化
+    participant REPL as REPL.tsx<br/>主界面
+    
+    User->>Bun: bun run start
+    Bun->>Preload: 预加载 preload.ts
+    Preload->>Preload: 定义 MACRO 全局变量
+    Preload->>Preload: 注册 bun:bundle 插件
+    Preload->>Preload: 注册 react/compiler-runtime shim
+    Preload->>CLI: 启动 cli.tsx
+    
+    CLI->>CLI: 检查快路径参数
+    alt --version
+        CLI->>User: 输出版本号
+    else --daemon-worker
+        CLI->>CLI: 启动 daemon worker
+    else --bridge
+        CLI->>CLI: 启动桥接模式
+    else 正常启动
+        CLI->>Main: 调用 main.tsx
+    end
+    
+    Main->>MDM: 并行预取 MDM 设置
+    Main->>Keychain: 并行预取钥匙串项目
+    Main->>Migration: 运行迁移系统<br/>CURRENT_MIGRATION_VERSION = 11
+    Main->>Commander: 初始化 Commander.js<br/>CLI 解析
+    Main->>GrowthBook: 初始化 GrowthBook<br/>功能标志
+    Main->>AppState: getDefaultAppState()<br/>初始化状态存储
+    Main->>REPL: launchRepl()<br/>启动 REPL
+    
+    REPL->>User: 显示终端 UI
+    User->>REPL: 开始交互
+```
+
+#### 启动流程图
 
 ```
 src/entrypoints/cli.tsx (入口点)
@@ -513,6 +627,365 @@ src/main.tsx
 ---
 
 ## 关键系统详解
+
+### 查询引擎架构图
+
+```mermaid
+sequenceDiagram
+    participant User as 用户
+    participant REPL as REPL.tsx
+    participant Query as query.ts<br/>查询引擎
+    participant Context as 上下文准备
+    participant Model as 模型流式调用
+    participant ToolExec as 工具执行
+    participant PostProc as 后处理
+    participant Service as 服务层
+
+    User->>REPL: 输入提示
+    REPL->>Query: 启动 queryLoop()
+    loop 无限循环
+        Query->>Context: 1. 上下文准备
+        Context->>Context: 微压缩
+        Context->>Context: Snips
+        Context->>Context: 上下文折叠
+        Context->>Context: 自动压缩
+        
+        Query->>Model: 2. 模型流式调用
+        Model->>Model: callModel()
+        Model->>Model: 流式传输
+        alt 失败
+            Model->>Model: 回退模型
+            Model->>Model: 错误恢复
+        end
+        
+        Query->>ToolExec: 3. 工具执行
+        alt 并行执行
+            ToolExec->>ToolExec: StreamingToolExecutor
+        else 串行执行
+            ToolExec->>ToolExec: runTools()
+        end
+        
+        Query->>PostProc: 4. 后处理
+        PostProc->>PostProc: Stop hooks
+        PostProc->>PostProc: Token budget
+        PostProc->>PostProc: 排队命令
+        PostProc->>PostProc: 摘要
+    end
+    Query->>REPL: 返回结果
+    REPL->>User: 显示响应
+```
+
+### 工具系统架构图
+
+```mermaid
+graph TB
+    subgraph "工具注册表"
+        ToolsTS[tools.ts]
+        getAllBaseTools[getAllBaseTools()<br/>50+ 工具]
+        getTools[getTools()<br/>权限过滤]
+        assembleToolPool[assembleToolPool()<br/>内置+MCP]
+    end
+    
+    subgraph "工具定义"
+        ToolTS[Tool.ts]
+        ToolInterface[Tool 接口<br/>30+ 属性]
+        ToolDef[ToolDef<br/>部分定义]
+        BuildTool[buildTool()<br/>填充默认值]
+    end
+    
+    subgraph "具体工具"
+        FileRead[FileReadTool]
+        FileWrite[FileWriteTool]
+        FileEdit[FileEditTool]
+        BashTool[BashTool]
+        AgentTool[AgentTool]
+        WebSearch[WebSearchTool]
+        TaskTools[任务工具<br/>TaskCreate/TaskGet/...]
+        PlanTools[计划工具<br/>EnterPlanMode/ExitPlanMode]
+        MCPTools[MCP 工具<br/>ListMcpResources/...]
+    end
+    
+    subgraph "工具过滤"
+        SimpleMode{简单模式?}
+        REPLMode{REPL 模式?}
+        Permissions{权限检查?}
+        FeatureFlags{功能标志?}
+    end
+    
+    ToolsTS --> getAllBaseTools
+    ToolsTS --> getTools
+    ToolsTS --> assembleToolPool
+    
+    ToolTS --> ToolInterface
+    ToolTS --> ToolDef
+    ToolTS --> BuildTool
+    
+    getAllBaseTools --> SimpleMode
+    getAllBaseTools --> FeatureFlags
+    
+    getTools --> SimpleMode
+    getTools --> REPLMode
+    getTools --> Permissions
+    
+    assembleToolPool -->|去重+排序| FinalPool[最终工具池]
+    
+    FileRead --> BuildTool
+    FileWrite --> BuildTool
+    FileEdit --> BuildTool
+    BashTool --> BuildTool
+    AgentTool --> BuildTool
+    WebSearch --> BuildTool
+    TaskTools --> BuildTool
+    PlanTools --> BuildTool
+    MCPTools --> BuildTool
+```
+
+### 命令系统架构图
+
+```mermaid
+graph TB
+    subgraph "命令加载源"
+        BundledSkills[内置 Skills<br/>bundledSkills.ts]
+        BuiltinPluginSkills[内置插件 Skills]
+        SkillsDir[Skills 目录<br/>loadSkillsDir.ts]
+        Workflows[工作流]
+        PluginCommands[插件命令]
+        PluginSkills[插件 Skills]
+        BuiltinCommands[内置命令<br/>100+]
+    end
+    
+    subgraph "命令注册表"
+        CommandsTS[commands.ts]
+        COMMANDS[COMMANDS<br/>记忆数组]
+        getCommands[getCommands(cwd)]
+        loadAllCommands[loadAllCommands()<br/>异步并行加载]
+    end
+    
+    subgraph "命令工具函数"
+        findCommand[findCommand()]
+        hasCommand[hasCommand()]
+        getCommandFn[getCommand()]
+        formatDesc[formatDescriptionWithSource()]
+    end
+    
+    subgraph "命令类型"
+        LocalCmd["local 命令"]
+        LocalJsxCmd["local-jsx 命令"]
+        PromptCmd["prompt 命令<br/>Skills"]
+    end
+    
+    BundledSkills -->|1| loadAllCommands
+    BuiltinPluginSkills -->|2| loadAllCommands
+    SkillsDir -->|3| loadAllCommands
+    Workflows -->|4| loadAllCommands
+    PluginCommands -->|5| loadAllCommands
+    PluginSkills -->|6| loadAllCommands
+    BuiltinCommands -->|7| loadAllCommands
+    
+    loadAllCommands --> COMMANDS
+    COMMANDS --> getCommands
+    getCommands -->|加载完成| findCommand
+    getCommands --> hasCommand
+    getCommands --> getCommandFn
+    getCommands --> formatDesc
+    
+    LocalCmd --> CommandsTS
+    LocalJsxCmd --> CommandsTS
+    PromptCmd --> CommandsTS
+```
+
+### Ink 渲染器架构图
+
+```mermaid
+graph TB
+    subgraph "React 组件层"
+        REPLComp[REPL.tsx]
+        Comp[其他组件]
+        Box[Box 组件]
+        Text[Text 组件]
+        Button[Button 组件]
+        ScrollBox[ScrollBox 组件]
+    end
+    
+    subgraph "React 协调层"
+        React[React]
+        Reconciler[自定义 Reconciler<br/>reconciler/]
+    end
+    
+    subgraph "布局层"
+        Yoga[Yoga 布局引擎]
+        Layout[布局计算]
+    end
+    
+    subgraph "渲染层"
+        Buffer[屏幕缓冲区<br/>双缓冲]
+        Diff[差异计算]
+        Terminal[终端输出]
+    end
+    
+    subgraph "交互层"
+        Mouse[鼠标跟踪]
+        Selection[文本选择]
+        Search[搜索高亮]
+        AltScreen[备用屏幕模式]
+    end
+    
+    REPLComp --> React
+    Comp --> React
+    Box --> React
+    Text --> React
+    Button --> React
+    ScrollBox --> React
+    
+    React --> Reconciler
+    Reconciler --> Yoga
+    Yoga --> Layout
+    Layout --> Buffer
+    Buffer --> Diff
+    Diff --> Terminal
+    
+    Mouse --> Buffer
+    Selection --> Buffer
+    Search --> Buffer
+    AltScreen --> Buffer
+```
+
+### AppState 状态管理架构图
+
+```mermaid
+graph TB
+    subgraph "AppState 450+ 字段"
+        UIState[UI 状态<br/>设置, 模型, 展开视图]
+        Permissions[权限与安全]
+        Tasks[任务与 Agents<br/>swarm 模式]
+        MCPState[MCP 服务器与插件]
+        Bridge[远程控制桥接]
+        Notifications[通知]
+        SpecExec[推测执行]
+        Features[功能标志状态]
+        Voice[语音模式]
+        Web[Web 浏览]
+        Tmux[Tmux 集成]
+    end
+    
+    subgraph "状态 API"
+        getState[getState()]
+        setState[setState()]
+        subscribe[subscribe()]
+    end
+    
+    subgraph "React 集成"
+        useAppState[useAppState(selector)<br/>高效重渲染]
+        Selectors[选择器函数]
+    end
+    
+    subgraph "副作用处理"
+        onChangeAppState[onChangeAppState()<br/>集中式]
+        Persistence[持久化]
+        SideEffects[其他副作用]
+    end
+    
+    UIState --> AppState((AppState))
+    Permissions --> AppState
+    Tasks --> AppState
+    MCPState --> AppState
+    Bridge --> AppState
+    Notifications --> AppState
+    SpecExec --> AppState
+    Features --> AppState
+    Voice --> AppState
+    Web --> AppState
+    Tmux --> AppState
+    
+    AppState --> getState
+    AppState --> setState
+    AppState --> subscribe
+    
+    subscribe --> useAppState
+    getState --> Selectors
+    useAppState --> Selectors
+    
+    setState --> onChangeAppState
+    onChangeAppState --> Persistence
+    onChangeAppState --> SideEffects
+```
+
+### 服务层架构图
+
+```mermaid
+graph TB
+    subgraph "API 客户端"
+        APIClient[api/client.ts]
+        Anthropic[Anthropic API]
+        Bedrock[AWS Bedrock]
+        Vertex[Google Vertex]
+        Foundry[Azure Foundry]
+        Headers[自定义 Headers]
+        Proxy[代理支持]
+        Auth[认证 Token 管理]
+    end
+    
+    subgraph "分析服务"
+        Analytics[analytics/index.ts]
+        EventQueue[事件队列]
+        Datadog[Datadog]
+        OneP[1P 事件]
+        GrowthBook[GrowthBook<br/>功能标志]
+    end
+    
+    subgraph "上下文压缩"
+        Compact[compact/compact.ts]
+        Full[完整压缩]
+        Partial[部分压缩]
+        Micro[微压缩]
+        Restore[压缩后恢复]
+    end
+    
+    subgraph "MCP 服务"
+        MCPService[mcp/]
+        Stdio[stdio 传输]
+        SSE[SSE 传输]
+        WebSocket[WebSocket 传输]
+        SDK[SDK 传输]
+        MCPOAuth[OAuth 认证]
+        XAA[XAA 认证]
+        Zod[Zod 配置 Schemas]
+    end
+    
+    subgraph "其他服务"
+        OAuthService[OAuth 服务]
+        PluginService[插件管理]
+        PolicyLimits[策略限制]
+        SessionMemory[会话记忆]
+        SkillSearch[Skill 搜索]
+    end
+    
+    APIClient --> Anthropic
+    APIClient --> Bedrock
+    APIClient --> Vertex
+    APIClient --> Foundry
+    APIClient --> Headers
+    APIClient --> Proxy
+    APIClient --> Auth
+    
+    Analytics --> EventQueue
+    Analytics --> Datadog
+    Analytics --> OneP
+    Analytics --> GrowthBook
+    
+    Compact --> Full
+    Compact --> Partial
+    Compact --> Micro
+    Compact --> Restore
+    
+    MCPService --> Stdio
+    MCPService --> SSE
+    MCPService --> WebSocket
+    MCPService --> SDK
+    MCPService --> MCPOAuth
+    MCPService --> XAA
+    MCPService --> Zod
+```
 
 ### 1. 查询引擎 (query.ts) - 系统的核心
 

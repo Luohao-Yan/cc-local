@@ -23,6 +23,7 @@
 - [Project Structure](#project-structure)
 - [How It Works](#how-it-works)
 - [Notes](#notes)
+- [Acknowledgments](#acknowledgments)
 - [Disclaimer](#disclaimer)
 
 ---
@@ -171,6 +172,14 @@ The original Claude Code source depends on Bun's `bun:bundle` module for compile
 - Features gated behind disabled flags (voice, bridge, daemon, coordinator, assistant/Kairos, etc.) are not functional.
 - The interactive REPL, `--print` mode, `--help`, and the full Commander option surface all work.
 - Authentication (API key and OAuth), Anthropic API calls, tool execution, MCP server integration, and the Ink-based terminal UI are preserved from the original source.
+
+---
+
+## Acknowledgments
+
+This project is based on the excellent work by [@weikma](https://github.com/weikma). Special thanks for the original reconstruction effort:
+
+- **Original Repository**: [weikma/claude-code-rebuilt](https://github.com/weikma/claude-code-rebuilt)
 
 ---
 
