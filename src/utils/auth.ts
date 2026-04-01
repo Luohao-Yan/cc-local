@@ -98,6 +98,14 @@ function isManagedOAuthContext(): boolean {
 /** Whether we are supporting direct 1P auth. */
 // this code is closely related to getAuthTokenSource
 export function isAnthropicAuthEnabled(): boolean {
+  // 使用第三方兼容 API 时，直接跳过所有 Anthropic 认证
+  if (
+    process.env.ANTHROPIC_BASE_URL &&
+    !process.env.ANTHROPIC_BASE_URL.includes('anthropic.com')
+  ) {
+    return false
+  }
+
   // --bare: API-key-only, never OAuth.
   if (isBareMode()) return false
 
@@ -229,6 +237,15 @@ export function getAnthropicApiKeyWithSource(
   key: null | string
   source: ApiKeySource
 } {
+  // 第三方兼容 API：直接使用 ANTHROPIC_API_KEY，跳过 approved 检查
+  if (
+    process.env.ANTHROPIC_BASE_URL &&
+    !process.env.ANTHROPIC_BASE_URL.includes('anthropic.com') &&
+    process.env.ANTHROPIC_API_KEY
+  ) {
+    return { key: process.env.ANTHROPIC_API_KEY, source: 'ANTHROPIC_API_KEY' }
+  }
+
   // --bare: hermetic auth. Only ANTHROPIC_API_KEY env or apiKeyHelper from
   // the --settings flag. Never touches keychain, config file, or approval
   // lists. 3P (Bedrock/Vertex/Foundry) uses provider creds, not this path.
