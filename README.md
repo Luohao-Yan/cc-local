@@ -144,25 +144,44 @@ cc
 
 ### Windows
 
+Windows 下有两种方式实现全局使用：
+
+**方式一：打包后使用（推荐）**
+
 ```powershell
 # 1. 打包成单文件
 bun run build
 
-# 2. 永久写入环境变量（只需执行一次，重启终端生效）
+# 2. 创建全局命令（将路径替换为你的实际项目路径）
+# 例如项目在 D:\develop\cc-local
+echo '@bun "D:\develop\cc-local\dist\cli.js" %*' > "$env:LOCALAPPDATA\bun\bin\cc.cmd"
+```
+
+**方式二：不打包，直接指向源码**
+
+```powershell
+# 创建全局命令（将路径替换为你的实际项目路径）
+echo '@cd /d "D:\develop\cc-local" && bun run start -- %*' > "$env:LOCALAPPDATA\bun\bin\cc.cmd"
+```
+
+两种方式都需要配置环境变量（只需执行一次，重启终端生效）：
+
+```powershell
 [Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "your-api-key", "User")
 [Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", "https://your-api-endpoint.com/api", "User")
 [Environment]::SetEnvironmentVariable("ANTHROPIC_MODEL", "your-model-name", "User")
 [Environment]::SetEnvironmentVariable("DISABLE_INSTALLATION_CHECKS", "1", "User")
-
-# 3. 创建全局命令（将路径替换为你的实际项目路径）
-echo '@bun "%USERPROFILE%\cc-local\dist\cli.js" %*' > "$env:LOCALAPPDATA\bun\bin\cc.cmd"
 ```
 
-之后在任意目录的 PowerShell 或 cmd 中直接运行：
+> 💡 如果使用方式二（不打包），项目目录下有 `.env` 文件的话会自动加载，无需手动设置环境变量。
+
+验证安装：打开新的 PowerShell 或 cmd 窗口，在任意目录运行：
 
 ```powershell
 cc
 ```
+
+> 如果提示 `cc` 不是可识别的命令，确认 `%LOCALAPPDATA%\bun\bin` 在系统 PATH 中。可以运行 `bun --version` 验证 Bun 是否正确安装，Bun 安装时会自动将该目录加入 PATH。
 
 ---
 
@@ -239,14 +258,14 @@ MODEL_MINIMAX_API_KEY=your-minimax-key
 切换模型的方式：
 
 ```bash
-# 启动时指定（使用别名或模型名）
+# 方式一：在 REPL 中输入 /model，从菜单中直接选择（推荐）
+/model
+
+# 方式二：启动时指定（使用别名或模型名）
 bun run start -- --model glm
 bun run start -- --model minimax
 
-# 全局安装后
-cc --model glm
-
-# 在 REPL 中实时切换
+# 方式三：在 REPL 中直接指定别名
 /model glm
 /model minimax
 ```
