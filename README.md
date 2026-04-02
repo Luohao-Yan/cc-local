@@ -135,25 +135,27 @@ Windows 下有两种方式实现全局使用：
 
 **方式一：打包后使用（推荐）**
 
-```powershell
-# 1. 打包成单文件
+```cmd
+:: 1. 打包成单文件
 bun run build
 
-# 2. 查看 bun 安装路径（cc.cmd 需要放到同一目录）
+:: 2. 查看 bun 安装路径（cc.cmd 需要放到同一目录）
 where bun
-# 记下输出的目录路径，例如 C:\Users\你的用户名\AppData\Roaming\npm\
+:: 记下输出的目录路径，例如 C:\Users\KC\AppData\Roaming\npm\
 
-# 3. 创建全局命令（将两个路径都替换为你的实际路径）
-# cmd 中执行：
-echo @bun --env-file="D:\develop\cc-local\.env" "D:\develop\cc-local\dist\cli.js" %* > "C:\Users\你的用户名\AppData\Roaming\npm\cc.cmd"
+:: 3. 创建全局命令（将项目路径替换为你的实际路径）
+echo @bun --env-file="D:\develop\cc-local\.env" "D:\develop\cc-local\dist\cli.js" %%* > "%APPDATA%\npm\cc.cmd"
 ```
 
 **方式二：不打包，直接指向源码**
 
-```powershell
-# cmd 中执行（将路径替换为你的实际路径）：
-echo @cd /d "D:\develop\cc-local" ^&^& bun run start -- %* > "C:\Users\你的用户名\AppData\Roaming\npm\cc.cmd"
+手动在 `where bun` 输出的同一目录下创建 `cc.cmd` 文件，内容为：
+
+```cmd
+@cd /d "D:\develop\cc-local" && bun run start -- %*
 ```
+
+> 💡 用记事本创建：新建文本文件，粘贴上面内容，另存为 `cc.cmd`（保存类型选"所有文件"，不要存成 `.cmd.txt`），保存到 `where bun` 输出的目录中。
 
 > 💡 方式一通过 `--env-file` 指定 `.env` 路径，在任意目录都能正确加载配置。方式二会切换到项目目录运行。
 
@@ -174,6 +176,8 @@ setx ANTHROPIC_BASE_URL "https://your-api-endpoint.com/api"
 setx ANTHROPIC_MODEL "your-model-name"
 setx DISABLE_INSTALLATION_CHECKS "1"
 ```
+
+> 💡 如果使用方式一（打包 + `--env-file`）或方式二（不打包），`.env` 文件会自动加载，无需手动设置环境变量。
 
 > 💡 如果使用方式二（不打包），项目目录下有 `.env` 文件的话会自动加载，无需手动设置环境变量。
 
