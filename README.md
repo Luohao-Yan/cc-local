@@ -116,24 +116,11 @@ bun run build
 # 2. 添加执行权限
 chmod +x dist/cli.js
 
-# 3. 创建全局软链接（需要 sudo 密码）
-sudo ln -sf $(pwd)/dist/cli.js /usr/local/bin/cc
-```
-
-然后把环境变量写入 shell 配置文件（永久生效）：
-
-```bash
-# zsh 用户（macOS 默认）
-cat >> ~/.zshrc << 'EOF'
-export ANTHROPIC_API_KEY="your-api-key"
-export ANTHROPIC_BASE_URL="https://your-api-endpoint.com/api"
-export ANTHROPIC_MODEL="your-model-name"
-export DISABLE_INSTALLATION_CHECKS=1
-EOF
-source ~/.zshrc
-
-# bash 用户
-# 将上面的 ~/.zshrc 替换为 ~/.bashrc
+# 3. 创建启动脚本（通过 --env-file 加载项目目录下的 .env）
+echo '#!/bin/bash
+exec bun --env-file="'$(pwd)'/.env" "'$(pwd)'/dist/cli.js" "$@"' > /usr/local/bin/cc
+chmod +x /usr/local/bin/cc
+# 如果提示权限不足，在 echo 和 chmod 前加 sudo
 ```
 
 之后在任意目录直接运行：
@@ -158,7 +145,7 @@ where bun
 
 # 3. 创建全局命令（将两个路径都替换为你的实际路径）
 # cmd 中执行：
-echo @bun "D:\develop\cc-local\dist\cli.js" %* > "C:\Users\你的用户名\AppData\Roaming\npm\cc.cmd"
+echo @bun --env-file="D:\develop\cc-local\.env" "D:\develop\cc-local\dist\cli.js" %* > "C:\Users\你的用户名\AppData\Roaming\npm\cc.cmd"
 ```
 
 **方式二：不打包，直接指向源码**
@@ -168,7 +155,7 @@ echo @bun "D:\develop\cc-local\dist\cli.js" %* > "C:\Users\你的用户名\AppDa
 echo @cd /d "D:\develop\cc-local" ^&^& bun run start -- %* > "C:\Users\你的用户名\AppData\Roaming\npm\cc.cmd"
 ```
 
-> 💡 `where bun` 输出的目录已经在系统 PATH 中，把 `cc.cmd` 放进去就能全局使用。
+> 💡 方式一通过 `--env-file` 指定 `.env` 路径，在任意目录都能正确加载配置。方式二会切换到项目目录运行。
 
 两种方式都需要配置环境变量（只需执行一次，重启终端生效）：
 
