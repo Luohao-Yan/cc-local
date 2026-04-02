@@ -47,11 +47,14 @@
 # macOS 推荐使用 Homebrew
 brew install bun
 
-# 或通过 npm 安装
+# 或通过 npm 安装（macOS / Windows / Linux 通用）
 npm install -g bun
 
-# 或使用官方脚本（国内可能较慢）
+# 或使用官方脚本
+# macOS / Linux
 curl -fsSL https://bun.sh/install | bash
+# Windows (PowerShell)
+powershell -c "irm bun.sh/install.ps1 | iex"
 ```
 
 ### 2. 克隆项目并安装依赖
@@ -69,7 +72,11 @@ bun install --registry https://registry.npmmirror.com
 复制配置模板并填入你的 API 信息：
 
 ```bash
+# macOS / Linux
 cp .env.example .env
+
+# Windows (PowerShell)
+copy .env.example .env
 ```
 
 编辑 `.env` 文件：
@@ -99,6 +106,8 @@ bun run start
 ## 全局安装（在任意目录使用）
 
 不想每次都进项目目录？可以打包后注册为全局命令 `cc`：
+
+### macOS / Linux
 
 ```bash
 # 1. 打包成单文件
@@ -130,6 +139,28 @@ source ~/.zshrc
 之后在任意目录直接运行：
 
 ```bash
+cc
+```
+
+### Windows
+
+```powershell
+# 1. 打包成单文件
+bun run build
+
+# 2. 永久写入环境变量（只需执行一次，重启终端生效）
+[Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "your-api-key", "User")
+[Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", "https://your-api-endpoint.com/api", "User")
+[Environment]::SetEnvironmentVariable("ANTHROPIC_MODEL", "your-model-name", "User")
+[Environment]::SetEnvironmentVariable("DISABLE_INSTALLATION_CHECKS", "1", "User")
+
+# 3. 创建全局命令（将路径替换为你的实际项目路径）
+echo '@bun "%USERPROFILE%\cc-local\dist\cli.js" %*' > "$env:LOCALAPPDATA\bun\bin\cc.cmd"
+```
+
+之后在任意目录的 PowerShell 或 cmd 中直接运行：
+
+```powershell
 cc
 ```
 
@@ -304,6 +335,16 @@ ls -la /usr/local/bin/cc
 
 ```bash
 sudo ln -sf $(pwd)/dist/cli.js /opt/homebrew/bin/cc
+```
+
+Windows 用户确认 `%LOCALAPPDATA%\bun\bin` 在系统 PATH 中。
+
+### Windows 下 `bun run start` 报错
+
+确保使用 PowerShell（非 cmd）运行，且 Bun 版本 >= 1.1。如果遇到权限问题：
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
 
 ---
