@@ -28,6 +28,7 @@ import { LIGHTNING_BOLT } from '../../constants/figures.js'
 import { isModelAllowed } from './modelAllowlist.js'
 import { type ModelAlias, isModelAlias } from './aliases.js'
 import { capitalize } from '../stringUtils.js'
+import { resolveMultiModelConfig } from './multiModel.js'
 
 export type ModelShortName = string
 export type ModelName = string
@@ -445,6 +446,12 @@ export function getPublicModelName(model: ModelName): string {
 export function parseUserSpecifiedModel(
   modelInput: ModelName | ModelAlias,
 ): ModelName {
+  // 多模型配置：根据别名或模型名切换 API 端点和 Key
+  const multiModelName = resolveMultiModelConfig(modelInput)
+  if (multiModelName) {
+    return multiModelName
+  }
+
   const modelInputTrimmed = modelInput.trim()
   const normalizedModel = modelInputTrimmed.toLowerCase()
 

@@ -213,6 +213,48 @@ bun run start -- --model sonnet
 
 ---
 
+## 多模型配置
+
+如果你需要在多个第三方 LLM 之间切换（例如同时使用 GLM 和 MiniMax），可以在 `.env` 中配置多个模型：
+
+```env
+# 默认模型（启动时使用）
+ANTHROPIC_API_KEY=your-default-key
+ANTHROPIC_BASE_URL=https://your-default-endpoint.com/api
+ANTHROPIC_MODEL=your-default-model
+
+# 智谱 GLM（别名：glm）
+MODEL_GLM_NAME=glm-5
+MODEL_GLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+MODEL_GLM_API_KEY=your-glm-key
+
+# MiniMax（别名：minimax）
+MODEL_MINIMAX_NAME=minimax-text-01
+MODEL_MINIMAX_BASE_URL=https://api.minimax.chat/v1
+MODEL_MINIMAX_API_KEY=your-minimax-key
+```
+
+配置格式为 `MODEL_<别名>_NAME`、`MODEL_<别名>_BASE_URL`、`MODEL_<别名>_API_KEY`，三个一组。
+
+切换模型的方式：
+
+```bash
+# 启动时指定（使用别名或模型名）
+bun run start -- --model glm
+bun run start -- --model minimax
+
+# 全局安装后
+cc --model glm
+
+# 在 REPL 中实时切换
+/model glm
+/model minimax
+```
+
+切换时会自动切换对应的 API 端点和 API Key，无需手动修改环境变量。
+
+---
+
 ## 构建打包
 
 将项目打包为单个 JS 文件：
