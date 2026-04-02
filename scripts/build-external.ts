@@ -197,3 +197,30 @@ console.log(`Build succeeded: ${result.outputs.length} output(s)`);
 for (const output of result.outputs) {
   console.log(`  ${output.path} (${output.kind})`);
 }
+
+// 给 cli.js 添加 shebang 头，使其可作为命令行工具直接执行
+const cliPath = "./dist/cli.js";
+const content = await Bun.file(cliPath).text();
+if (!content.startsWith("#!/")) {
+  await Bun.write(cliPath, `#!/usr/bin/env bun\n${content}`);
+  console.log("  Added shebang to cli.js");
+}
+
+// 生成发布用的 package.json
+const publishPkg = {
+  name: "cc-local",
+  version: version,
+  description: "Claude Code Local - 支持第三方兼容 Anthropic API 的 LLM 服务",
+  type: "module",
+  bin: {
+    "cc-local": "./cli.js",
+  },
+  files: ["cli.js"],
+  engines: {
+    bun: ">=1.1.0",
+  },
+  keywords: ["claude", "code", "cli", "llm", "anthropic"],
+  license: "UNLICENSED",
+};
+await Bun.write("./dist/package.json", JSON.stringify(publishPkg, null, 2) + "\n");
+console.log("  Generated dist/package.json");

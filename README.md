@@ -1,192 +1,325 @@
 <div align="center">
 
-# Claude Code Rebuilt
+# Claude Code Local
 
-**A rebuilt, fully functional version of Anthropic's Claude Code CLI**
+**基于 Claude Code 重构的本地 CLI 工具，支持第三方兼容 Anthropic API 的 LLM 服务**
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-512K%2B_lines-3178C6?logo=typescript&logoColor=white)](#tech-stack)
-[![Bun](https://img.shields.io/badge/Runtime-Bun-f472b6?logo=bun&logoColor=white)](#tech-stack)
-[![React + Ink](https://img.shields.io/badge/UI-React_%2B_Ink-61DAFB?logo=react&logoColor=black)](#tech-stack)
-[![Files](https://img.shields.io/badge/~1,900_files-source_only-grey)](#project-structure)
+[![TypeScript](https://img.shields.io/badge/TypeScript-512K%2B_lines-3178C6?logo=typescript&logoColor=white)](#技术栈)
+[![Bun](https://img.shields.io/badge/Runtime-Bun-f472b6?logo=bun&logoColor=white)](#技术栈)
+[![React + Ink](https://img.shields.io/badge/UI-React_%2B_Ink-61DAFB?logo=react&logoColor=black)](#技术栈)
 
 </div>
 
 ---
 
-## Table of Contents
+## 特性
 
-- [Background](#background)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-- [Usage](#usage)
-- [Building](#building)
-- [Project Structure](#project-structure)
-- [How It Works](#how-it-works)
-- [Notes](#notes)
-- [Acknowledgments](#acknowledgments)
-- [Disclaimer](#disclaimer)
+- 🔌 支持任何兼容 Anthropic API 格式的第三方 LLM（豆包、DeepSeek、通义千问等），无需 Anthropic 账号
+- 🚀 完整的 Claude Code 终端交互体验：REPL、工具调用、MCP 集成
+- 📦 可打包为单文件，全局安装后在任意目录使用
+- 🇨🇳 国内网络友好，内置镜像源配置
 
 ---
 
-## Background
+## 目录
 
-On March 31, 2026, the full source code of Anthropic's Claude Code was leaked via a source map file exposed in their npm registry. [The leaked source code](https://github.com/instructkr/claw-code) contained only the `src/` directory -- no build configuration, no dependency manifests, no type definitions for core modules, and no way to compile or run it.
-
-This project reconstructs everything that was missing: `package.json`, `tsconfig.json`, build scripts, 185+ stub/type files, compatibility shims for internal-only packages, and a `bun:bundle` feature-flag runtime. The result is a complete, buildable, and runnable Claude Code terminal application. Internal-only Anthropic features (daemon workers, voice mode, computer-use, etc.) are disabled at build time via feature flags; the core interactive REPL, tool system, and Anthropic API integration remain fully functional.
-
----
-
-## Tech Stack
-
-| Category | Technology |
-|---|---|
-| Language | [TypeScript](https://www.typescriptlang.org/) (strict) |
-| Runtime | [Bun](https://bun.sh) |
-| Terminal UI | [React](https://react.dev) + [Ink](https://github.com/vadimdemedes/ink) |
-| CLI Parsing | [Commander.js](https://github.com/tj/commander.js) (extra-typings) |
-| Schema Validation | [Zod](https://zod.dev) |
-| Protocols | [MCP SDK](https://modelcontextprotocol.io) · LSP |
-| API | [Anthropic SDK](https://docs.anthropic.com) |
-| Auth | OAuth 2.0 · API Key · macOS Keychain |
+- [快速开始](#快速开始)
+- [全局安装](#全局安装在任意目录使用)
+- [使用方法](#使用方法)
+- [环境变量说明](#环境变量说明)
+- [构建打包](#构建打包)
+- [项目结构](#项目结构)
+- [工作原理](#工作原理)
+- [技术栈](#技术栈)
+- [常见问题](#常见问题)
+- [致谢](#致谢)
+- [免责声明](#免责声明)
 
 ---
 
-## Getting Started
+## 快速开始
 
-### 1. Install Bun
+### 1. 安装 Bun
 
-Claude Code runs on [Bun](https://bun.sh/) (v1.1+). If you don't have it:
+项目运行在 [Bun](https://bun.sh/) (v1.1+) 上：
 
 ```bash
+# macOS 推荐使用 Homebrew
+brew install bun
+
+# 或通过 npm 安装
+npm install -g bun
+
+# 或使用官方脚本（国内可能较慢）
 curl -fsSL https://bun.sh/install | bash
 ```
 
-### 2. Install dependencies
+### 2. 克隆项目并安装依赖
 
 ```bash
-bun install
+git clone https://github.com/Luohao-Yan/cc-local.git
+cd cc-local
+
+# 国内用户推荐使用镜像源加速
+bun install --registry https://registry.npmmirror.com
 ```
 
-### 3. Set your API key
+### 3. 配置 LLM API
 
-You need an [Anthropic API key](https://console.anthropic.com/), or you can use OAuth login (`/login` in the REPL):
+复制配置模板并填入你的 API 信息：
 
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-..."
+cp .env.example .env
 ```
 
-### 4. Start the application
+编辑 `.env` 文件：
+
+```env
+# 第三方 LLM API 配置（以豆包为例）
+ANTHROPIC_API_KEY=your-api-key-here
+ANTHROPIC_BASE_URL=https://ark.cn-beijing.volces.com/api/coding
+ANTHROPIC_MODEL=doubao-seed-2.0-code
+
+# 跳过安装方式检查
+DISABLE_INSTALLATION_CHECKS=1
+```
+
+> 💡 也支持原版 Anthropic API：只需设置 `ANTHROPIC_API_KEY=sk-ant-...`，无需设置 `ANTHROPIC_BASE_URL`。
+
+### 4. 启动
 
 ```bash
-# Launch the interactive REPL
 bun run start
 ```
 
-That's it -- you should see the Claude Code terminal UI.
+你应该能看到 Claude Code 的终端界面，可以直接开始对话。
 
 ---
 
-## Usage
+## 全局安装（在任意目录使用）
+
+不想每次都进项目目录？可以打包后注册为全局命令 `cc`：
 
 ```bash
-# Print version
+# 1. 打包成单文件
+bun run build
+
+# 2. 添加执行权限
+chmod +x dist/cli.js
+
+# 3. 创建全局软链接（需要 sudo 密码）
+sudo ln -sf $(pwd)/dist/cli.js /usr/local/bin/cc
+```
+
+然后把环境变量写入 shell 配置文件（永久生效）：
+
+```bash
+# zsh 用户（macOS 默认）
+cat >> ~/.zshrc << 'EOF'
+export ANTHROPIC_API_KEY="your-api-key"
+export ANTHROPIC_BASE_URL="https://your-api-endpoint.com/api"
+export ANTHROPIC_MODEL="your-model-name"
+export DISABLE_INSTALLATION_CHECKS=1
+EOF
+source ~/.zshrc
+
+# bash 用户
+# 将上面的 ~/.zshrc 替换为 ~/.bashrc
+```
+
+之后在任意目录直接运行：
+
+```bash
+cc
+```
+
+---
+
+## 使用方法
+
+```bash
+# 启动交互式 REPL
+bun run start
+# 全局安装后等价于：cc
+
+# 查看版本
 bun run start -- --version
 
-# Show all CLI flags and subcommands
+# 查看帮助
 bun run start -- --help
 
-# One-shot prompt (pipe-friendly, prints response and exits)
-bun run start -- --print "explain this codebase"
+# 单次提问（适合脚本/CI，输出结果后退出）
+bun run start -- --print "解释这个项目的架构"
 
-# Minimal startup (skips hooks, plugins, auto-memory)
+# 最小化启动（跳过 hooks、plugins、auto-memory）
 bun run start -- --bare
 
-# Pass a system prompt
-bun run start -- --system-prompt "You are a Go expert"
+# 指定系统提示词
+bun run start -- --system-prompt "你是一个 Go 语言专家"
 
-# Use a specific model
+# 指定模型
 bun run start -- --model sonnet
 ```
 
 ---
 
-## Building
+## 环境变量说明
 
-Produce a single-file bundle:
+| 变量 | 必填 | 说明 |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | ✅ | LLM 服务的 API Key |
+| `ANTHROPIC_BASE_URL` | 第三方 API 必填 | API 端点地址，使用原版 Anthropic 时无需设置 |
+| `ANTHROPIC_MODEL` | 否 | 模型名称，不设置则使用默认模型 |
+| `DISABLE_INSTALLATION_CHECKS` | 否 | 设为 `1` 跳过安装方式检查警告 |
+
+### 已验证的第三方 LLM 服务
+
+| 服务商 | `ANTHROPIC_BASE_URL` | `ANTHROPIC_MODEL` 示例 |
+|---|---|---|
+| 豆包（火山引擎） | `https://ark.cn-beijing.volces.com/api/coding` | `doubao-seed-2.0-code` |
+
+> 欢迎提交 PR 补充更多已验证的服务商。
+
+---
+
+## 构建打包
+
+将项目打包为单个 JS 文件：
 
 ```bash
-# Build to dist/cli.js
+# 打包到 dist/cli.js（约 22MB）
 bun run build
 
-# Run the built artifact
+# 运行打包产物
 bun dist/cli.js
+
+# 查看帮助
 bun dist/cli.js --help
 ```
 
 ---
 
-## Project Structure
+## 项目结构
 
 ```
 .
 ├── src/
-│   ├── entrypoints/cli.tsx   # Process entrypoint
-│   ├── main.tsx              # Commander CLI setup, REPL launch
-│   ├── commands.ts           # Slash-command registry
-│   ├── tools.ts              # Tool registry (Bash, Edit, Read, etc.)
-│   ├── Tool.ts               # Base tool type definitions
-│   ├── query.ts              # LLM query engine
-│   ├── ink/                  # Vendored Ink terminal renderer
-│   ├── components/           # React terminal UI components
-│   ├── screens/              # Full-screen UIs (REPL, Doctor, Resume)
-│   ├── services/             # API client, MCP, analytics, compaction
-│   ├── hooks/                # React hooks
-│   ├── utils/                # Utility functions
-│   ├── types/                # Reconstructed type definitions
-│   └── _external/            # Build compatibility layer
-│       ├── preload.ts        # Runtime MACRO + bun:bundle shim
-│       ├── globals.d.ts      # MACRO type declarations
-│       └── shims/            # Stub packages for private deps
+│   ├── entrypoints/cli.tsx   # 进程入口
+│   ├── main.tsx              # Commander CLI 配置，REPL 启动
+│   ├── commands.ts           # 斜杠命令注册
+│   ├── tools.ts              # 工具注册（Bash, Edit, Read 等）
+│   ├── Tool.ts               # 工具基础类型定义
+│   ├── query.ts              # LLM 查询引擎
+│   ├── ink/                  # 内置 Ink 终端渲染器
+│   ├── components/           # React 终端 UI 组件
+│   ├── screens/              # 全屏 UI（REPL, Doctor, Resume）
+│   ├── services/             # API 客户端, MCP, 分析, 压缩
+│   ├── hooks/                # React Hooks
+│   ├── utils/                # 工具函数
+│   ├── types/                # 重构的类型定义
+│   └── _external/            # 构建兼容层
+│       ├── preload.ts        # 运行时 MACRO + bun:bundle shim
+│       ├── globals.d.ts      # MACRO 类型声明
+│       └── shims/            # 内部私有包的 stub 模块
 ├── scripts/
-│   └── build-external.ts     # Bun.build() with feature flags + defines
+│   └── build-external.ts     # Bun.build() 构建脚本（feature flags + defines）
+├── .env.example              # 环境变量配置模板
 ├── package.json
 ├── tsconfig.json
-└── bunfig.toml               # Preload config + .md text loader
+└── bunfig.toml               # Bun 预加载配置 + .md text loader
 ```
 
 ---
 
-## How It Works
+## 工作原理
 
-The original Claude Code source depends on Bun's `bun:bundle` module for compile-time feature flags and `MACRO.*` globals for build-time constants. This project provides:
+原版 Claude Code 依赖 Bun 的 `bun:bundle` 模块实现编译时 feature flags，以及 `MACRO.*` 全局变量实现构建时常量。本项目提供了：
 
-1. **`bunfig.toml` + `preload.ts`** -- registers a Bun plugin that resolves `import { feature } from 'bun:bundle'` at runtime, and defines `MACRO.VERSION` and friends as globals.
-2. **`scripts/build-external.ts`** -- a `Bun.build()` script that replaces `bun:bundle` via a plugin, injects `MACRO.*` via `define`, and marks private packages as external. All 90+ internal feature flags are disabled; only a handful of safe flags are enabled.
-3. **Stub packages under `src/_external/shims/`** -- lightweight no-op modules for `@ant/*` internal packages and native NAPI addons that aren't publicly available.
-4. **Reconstructed type files** -- `src/types/message.ts`, `src/types/tools.ts`, and other high-fanout modules that were missing from the leaked source.
+1. **`bunfig.toml` + `preload.ts`** — 注册 Bun 插件，在运行时解析 `import { feature } from 'bun:bundle'`，并定义 `MACRO.VERSION` 等全局变量。
+2. **`scripts/build-external.ts`** — `Bun.build()` 构建脚本，通过插件替换 `bun:bundle`，通过 `define` 注入 `MACRO.*`，将私有包标记为 external。90+ 个内部 feature flags 全部禁用，仅启用少量安全 flags。
+3. **`src/_external/shims/`** — 为 `@ant/*` 内部包和原生 NAPI 插件提供的轻量 no-op 模块。
+4. **重构的类型文件** — `src/types/message.ts`、`src/types/tools.ts` 等泄露源码中缺失的高引用模块。
 
----
+### 第三方 API 适配
 
-## Notes
+本项目在原版基础上增加了第三方 API 支持：
 
-- Features gated behind disabled flags (voice, bridge, daemon, coordinator, assistant/Kairos, etc.) are not functional.
-- The interactive REPL, `--print` mode, `--help`, and the full Commander option surface all work.
-- Authentication (API key and OAuth), Anthropic API calls, tool execution, MCP server integration, and the Ink-based terminal UI are preserved from the original source.
-
----
-
-## Acknowledgments
-
-This project is based on the excellent work by [@weikma](https://github.com/weikma). Special thanks for the original reconstruction effort:
-
-- **Original Repository**: [weikma/claude-code-rebuilt](https://github.com/weikma/claude-code-rebuilt)
+- 检测到 `ANTHROPIC_BASE_URL` 指向非 Anthropic 地址时，自动跳过 OAuth 认证、preflight 连通性检查和 API Key 审批流程
+- API Key 通过 Anthropic SDK 的标准 `x-api-key` header 传递，兼容所有实现了 Anthropic Messages API 的服务
 
 ---
 
-## Disclaimer
+## 技术栈
 
-**All original Claude Code source code is the intellectual property of [Anthropic, PBC](https://www.anthropic.com/).** This repository is based on source code that was unintentionally exposed and is provided here **strictly for research, educational, and archival purposes only**.
+| 分类 | 技术 |
+|---|---|
+| 语言 | [TypeScript](https://www.typescriptlang.org/) (strict) |
+| 运行时 | [Bun](https://bun.sh) |
+| 终端 UI | [React](https://react.dev) + [Ink](https://github.com/vadimdemedes/ink) |
+| CLI 解析 | [Commander.js](https://github.com/tj/commander.js) (extra-typings) |
+| Schema 校验 | [Zod](https://zod.dev) |
+| 协议 | [MCP SDK](https://modelcontextprotocol.io) · LSP |
+| API | [Anthropic SDK](https://docs.anthropic.com) |
 
-- This project carries **no license**. No permission is granted to use, modify, distribute, or create derivative works for any commercial purpose.
-- This is an independent reconstruction effort and is **not affiliated with, endorsed by, or sponsored by Anthropic** in any way.
-- If you are a representative of Anthropic and would like this repository removed, please open an issue or contact the maintainer ([@weikma](https://github.com/weikma)) directly.
+---
+
+## 常见问题
+
+### `bun install` 卡住或很慢
+
+国内网络访问 npm 源较慢，使用镜像源：
+
+```bash
+bun install --registry https://registry.npmmirror.com
+```
+
+或在 `bunfig.toml` 中永久配置：
+
+```toml
+[install]
+registry = "https://registry.npmmirror.com"
+```
+
+### 启动时提示 "Unable to connect to Anthropic services"
+
+使用第三方 API 时，确保 `.env` 中正确设置了 `ANTHROPIC_BASE_URL`。项目会自动跳过对 `api.anthropic.com` 的连通性检查。
+
+### 启动时提示 "Not logged in · Please run /login"
+
+确保 `.env` 中同时设置了 `ANTHROPIC_API_KEY` 和 `ANTHROPIC_BASE_URL`。使用第三方 API 时不需要登录 Anthropic 账号。
+
+### 提示 "Claude Code has switched from npm to native installer"
+
+在 `.env` 中添加 `DISABLE_INSTALLATION_CHECKS=1` 即可消除。
+
+### 全局安装后 `cc` 命令找不到
+
+确认软链接创建成功：
+
+```bash
+ls -la /usr/local/bin/cc
+```
+
+如果使用的是 Apple Silicon Mac，也可以链接到：
+
+```bash
+sudo ln -sf $(pwd)/dist/cli.js /opt/homebrew/bin/cc
+```
+
+---
+
+## 致谢
+
+本项目基于 [@weikma](https://github.com/weikma) 的出色工作。感谢原始重构项目：
+
+- **原始仓库**: [weikma/claude-code-rebuilt](https://github.com/weikma/claude-code-rebuilt)
+
+---
+
+## 免责声明
+
+**Claude Code 的所有原始源代码均为 [Anthropic, PBC](https://www.anthropic.com/) 的知识产权。** 本仓库基于意外泄露的源代码，**仅供研究、教育和存档目的使用**。
+
+- 本项目不附带任何许可证。不授予任何商业用途的使用、修改、分发或创建衍生作品的权限。
+- 本项目为独立重构工作，**与 Anthropic 无任何关联、认可或赞助关系**。
+- 如果您是 Anthropic 的代表并希望移除此仓库，请提交 issue 或直接联系维护者。
