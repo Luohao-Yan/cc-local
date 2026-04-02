@@ -32,6 +32,7 @@ import {
 } from './model.js'
 import { has1mContext } from '../context.js'
 import { getGlobalConfig } from '../config.js'
+import { getModelConfigs } from './multiModel.js'
 
 // @[MODEL LAUNCH]: Update all the available and default model option strings below.
 
@@ -480,6 +481,18 @@ export function getModelOptions(fastMode = false): ModelOption[] {
   for (const opt of getGlobalConfig().additionalModelOptionsCache ?? []) {
     if (!options.some(existing => existing.value === opt.value)) {
       options.push(opt)
+    }
+  }
+
+  // 添加多模型配置中的所有模型到选择列表
+  for (const config of getModelConfigs()) {
+    const aliasLower = config.alias.toLowerCase()
+    if (!options.some(existing => existing.value === config.name || existing.value === aliasLower)) {
+      options.push({
+        value: aliasLower,
+        label: `${config.name}`,
+        description: `${config.alias} · ${new URL(config.baseUrl).hostname}`,
+      })
     }
   }
 
