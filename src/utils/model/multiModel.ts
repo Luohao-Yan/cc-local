@@ -46,9 +46,10 @@ export function getModelConfigs(): ModelConfig[] {
   }
 
   for (const alias of aliasSet) {
-    const name = process.env[`MODEL_${alias}_NAME`]
-    const baseUrl = process.env[`MODEL_${alias}_BASE_URL`]
-    const apiKey = process.env[`MODEL_${alias}_API_KEY`]
+    // .trim() 防止 Windows \r\n 换行符导致值末尾带 \r
+    const name = process.env[`MODEL_${alias}_NAME`]?.trim()
+    const baseUrl = process.env[`MODEL_${alias}_BASE_URL`]?.trim()
+    const apiKey = process.env[`MODEL_${alias}_API_KEY`]?.trim()
 
     if (name && baseUrl && apiKey) {
       configs.push({ alias, name, baseUrl, apiKey })

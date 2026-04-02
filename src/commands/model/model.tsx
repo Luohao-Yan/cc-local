@@ -15,6 +15,7 @@ import { checkOpus1mAccess, checkSonnet1mAccess } from '../../utils/model/check1
 import { getDefaultMainLoopModelSetting, isOpus1mMergeEnabled, renderDefaultModelSetting } from '../../utils/model/model.js';
 import { isModelAllowed } from '../../utils/model/modelAllowlist.js';
 import { validateModel } from '../../utils/model/validateModel.js';
+import { resolveMultiModelConfig } from '../../utils/model/multiModel.js';
 function ModelPickerWrapper(t0) {
   const $ = _c(17);
   const {
@@ -183,7 +184,9 @@ function SetModelAndClose({
           error: error_0
         } = await validateModel(model);
         if (valid) {
-          setModel(model);
+          // 多模型配置：使用解析后的实际模型名
+          const resolvedName = resolveMultiModelConfig(model)
+          setModel(resolvedName || model);
         } else {
           onDone(error_0 || `Model '${model}' not found`, {
             display: 'system'

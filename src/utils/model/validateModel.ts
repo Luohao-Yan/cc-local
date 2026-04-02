@@ -3,6 +3,7 @@ import { MODEL_ALIASES } from './aliases.js'
 import { isModelAllowed } from './modelAllowlist.js'
 import { getAPIProvider } from './providers.js'
 import { sideQuery } from '../sideQuery.js'
+import { resolveMultiModelConfig } from './multiModel.js'
 import {
   NotFoundError,
   APIError,
@@ -38,6 +39,13 @@ export async function validateModel(
   // Check if it's a known alias (these are always valid)
   const lowerModel = normalizedModel.toLowerCase()
   if ((MODEL_ALIASES as readonly string[]).includes(lowerModel)) {
+    return { valid: true }
+  }
+
+  // 多模型配置：如果匹配到别名或模型名，切换 API 端点并直接返回有效
+  const multiModelName = resolveMultiModelConfig(normalizedModel)
+  if (multiModelName) {
+    validModelCache.set(multiModelName, true)
     return { valid: true }
   }
 
