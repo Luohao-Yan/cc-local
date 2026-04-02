@@ -152,25 +152,23 @@ Windows 下有两种方式实现全局使用：
 # 1. 打包成单文件
 bun run build
 
-# 2. 创建全局命令（将路径替换为你的实际项目路径）
-# 例如项目在 D:\develop\cc-local
+# 2. 查看 bun 安装路径（cc.cmd 需要放到同一目录）
+where bun
+# 记下输出的目录路径，例如 C:\Users\你的用户名\AppData\Roaming\npm\
 
+# 3. 创建全局命令（将两个路径都替换为你的实际路径）
 # cmd 中执行：
-echo @bun "D:\develop\cc-local\dist\cli.js" %* > "%LOCALAPPDATA%\bun\bin\cc.cmd"
-
-# 或 PowerShell 中执行：
-Set-Content "$env:LOCALAPPDATA\bun\bin\cc.cmd" '@bun "D:\develop\cc-local\dist\cli.js" %*'
+echo @bun "D:\develop\cc-local\dist\cli.js" %* > "C:\Users\你的用户名\AppData\Roaming\npm\cc.cmd"
 ```
 
 **方式二：不打包，直接指向源码**
 
 ```powershell
-# cmd 中执行：
-echo @cd /d "D:\develop\cc-local" ^&^& bun run start -- %* > "%LOCALAPPDATA%\bun\bin\cc.cmd"
-
-# 或 PowerShell 中执行：
-Set-Content "$env:LOCALAPPDATA\bun\bin\cc.cmd" '@cd /d "D:\develop\cc-local" && bun run start -- %*'
+# cmd 中执行（将路径替换为你的实际路径）：
+echo @cd /d "D:\develop\cc-local" ^&^& bun run start -- %* > "C:\Users\你的用户名\AppData\Roaming\npm\cc.cmd"
 ```
+
+> 💡 `where bun` 输出的目录已经在系统 PATH 中，把 `cc.cmd` 放进去就能全局使用。
 
 两种方式都需要配置环境变量（只需执行一次，重启终端生效）：
 
