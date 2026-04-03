@@ -8,6 +8,7 @@
     "start": "bun run src/entrypoints/cli.tsx",
     "build": "bun run scripts/build-external.ts",
     "start:built": "bun dist/cli.js",
+    "install-global": "bash scripts/install-global.sh || scripts\\install-global.cmd",
     "publish:npm": "bun run build && cd dist && npm publish",
     "typecheck": "tsc --noEmit"
   },

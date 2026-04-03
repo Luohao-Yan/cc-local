@@ -105,89 +105,27 @@ bun run start
 
 ## 全局安装（在任意目录使用）
 
-不想每次都进项目目录？可以打包后注册为全局命令 `cc`：
+不想每次都进项目目录？运行安装脚本，自动打包并注册全局命令 `cc`：
 
 ### macOS / Linux
 
 ```bash
-# 1. 打包成单文件
-bun run build
-
-# 2. 添加执行权限
-chmod +x dist/cli.js
-
-# 3. 创建启动脚本（通过 --env-file 加载项目目录下的 .env）
-echo '#!/bin/bash
-exec bun --env-file="'$(pwd)'/.env" "'$(pwd)'/dist/cli.js" "$@"' > /usr/local/bin/cc
-chmod +x /usr/local/bin/cc
-# 如果提示权限不足，在 echo 和 chmod 前加 sudo
+bash scripts/install-global.sh
 ```
 
-之后在任意目录直接运行：
+### Windows
+
+```cmd
+scripts\install-global.cmd
+```
+
+安装完成后，打开新的终端窗口，在任意目录直接运行：
 
 ```bash
 cc
 ```
 
-### Windows
-
-Windows 下有两种方式实现全局使用：
-
-**方式一：打包后使用（推荐）**
-
-```cmd
-:: 1. 打包成单文件
-bun run build
-
-:: 2. 查看 bun 安装路径（cc.cmd 需要放到同一目录）
-where bun
-:: 记下输出的目录路径，例如 C:\Users\KC\AppData\Roaming\npm\
-
-:: 3. 创建全局命令（将项目路径替换为你的实际路径）
-echo @bun --env-file="D:\develop\cc-local\.env" "D:\develop\cc-local\dist\cli.js" %%* > "%APPDATA%\npm\cc.cmd"
-```
-
-**方式二：不打包，直接指向源码**
-
-手动在 `where bun` 输出的同一目录下创建 `cc.cmd` 文件，内容为：
-
-```cmd
-@cd /d "D:\develop\cc-local" && bun run start -- %*
-```
-
-> 💡 用记事本创建：新建文本文件，粘贴上面内容，另存为 `cc.cmd`（保存类型选"所有文件"，不要存成 `.cmd.txt`），保存到 `where bun` 输出的目录中。
-
-> 💡 方式一通过 `--env-file` 指定 `.env` 路径，在任意目录都能正确加载配置。方式二会切换到项目目录运行。
-
-两种方式都需要配置环境变量（只需执行一次，重启终端生效）：
-
-```powershell
-# PowerShell 中执行：
-[Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "your-api-key", "User")
-[Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", "https://your-api-endpoint.com/api", "User")
-[Environment]::SetEnvironmentVariable("ANTHROPIC_MODEL", "your-model-name", "User")
-[Environment]::SetEnvironmentVariable("DISABLE_INSTALLATION_CHECKS", "1", "User")
-```
-
-```cmd
-:: 或在 cmd 中执行（永久写入用户环境变量）：
-setx ANTHROPIC_API_KEY "your-api-key"
-setx ANTHROPIC_BASE_URL "https://your-api-endpoint.com/api"
-setx ANTHROPIC_MODEL "your-model-name"
-setx DISABLE_INSTALLATION_CHECKS "1"
-```
-
-> 💡 如果使用方式一（打包 + `--env-file`）或方式二（不打包），`.env` 文件会自动加载，无需手动设置环境变量。
-
-> 💡 如果使用方式二（不打包），项目目录下有 `.env` 文件的话会自动加载，无需手动设置环境变量。
-
-验证安装：打开新的 PowerShell 或 cmd 窗口，在任意目录运行：
-
-```powershell
-cc
-```
-
-> 如果提示 `cc` 不是可识别的命令，确认 `%LOCALAPPDATA%\bun\bin` 在系统 PATH 中。可以运行 `bun --version` 验证 Bun 是否正确安装，Bun 安装时会自动将该目录加入 PATH。
+> 💡 脚本会自动检测 bun 路径、打包项目、创建全局命令，并通过 `--env-file` 加载项目目录下的 `.env` 配置。修改 `.env` 后无需重新安装，直接生效。
 
 ---
 
