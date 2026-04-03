@@ -44,18 +44,17 @@
 项目运行在 [Bun](https://bun.sh/) (v1.1+) 上：
 
 ```bash
-# macOS 推荐使用 Homebrew
-brew install bun
+# macOS / Linux（推荐，官方安装脚本）
+curl -fsSL https://bun.sh/install | bash
 
 # 或通过 npm 安装（macOS / Windows / Linux 通用）
 npm install -g bun
 
-# 或使用官方脚本
-# macOS / Linux
-curl -fsSL https://bun.sh/install | bash
 # Windows (PowerShell)
 powershell -c "irm bun.sh/install.ps1 | iex"
 ```
+
+> ⚠️ **注意**：Bun 已从 Homebrew core 移除，`brew install bun` 会报错。请使用上述官方脚本或 npm 方式安装。
 
 ### 2. 克隆项目并安装依赖
 
