@@ -54,19 +54,19 @@ if not exist "%PROJECT_DIR%\dist\cli.js" (
 )
 echo [✓] 打包文件: %PROJECT_DIR%\dist\cli.js
 
-:: 创建 cc.cmd
-set "CC_CMD=%BUN_DIR%cc.cmd"
-echo @bun --env-file="%PROJECT_DIR%\.env" "%PROJECT_DIR%\dist\cli.js" %%* > "%CC_CMD%"
+:: 创建 ccl.cmd（避免与系统命令冲突）
+set "CCL_CMD=%BUN_DIR%ccl.cmd"
+echo @bun --env-file="%PROJECT_DIR%\.env" "%PROJECT_DIR%\dist\cli.js" %%* > "%CCL_CMD%"
 
-if exist "%CC_CMD%" (
-    echo [✓] 全局命令已创建: %CC_CMD%
+if exist "%CCL_CMD%" (
+    echo [✓] 全局命令已创建: %CCL_CMD%
     echo.
     echo =========================================
     echo   安装完成！
-    echo   打开新的命令行窗口，在任意目录输入 cc 即可启动
+    echo   打开新的命令行窗口，在任意目录输入 ccl 即可启动
     echo =========================================
 ) else (
-    echo [错误] 创建 cc.cmd 失败，请检查目录权限
+    echo [错误] 创建 ccl.cmd 失败，请检查目录权限
     exit /b 1
 )
 

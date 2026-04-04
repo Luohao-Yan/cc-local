@@ -121,6 +121,7 @@ const buddy = feature('BUDDY')
     ).default
   : null
 /* eslint-enable @typescript-eslint/no-require-imports */
+import buddyModule from './commands/buddy/index.js'
 import thinkback from './commands/thinkback/index.js'
 import thinkbackPlay from './commands/thinkback-play/index.js'
 import permissions from './commands/permissions/index.js'
@@ -319,7 +320,7 @@ const COMMANDS = memoize((): Command[] => [
   vim,
   ...(webCmd ? [webCmd] : []),
   ...(forkCmd ? [forkCmd] : []),
-  ...(buddy ? [buddy] : []),
+  ...(buddy ? [buddy] : [buddyModule]),
   ...(proactive ? [proactive] : []),
   ...(briefCommand ? [briefCommand] : []),
   ...(assistantCommand ? [assistantCommand] : []),

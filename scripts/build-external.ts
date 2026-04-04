@@ -9,7 +9,6 @@ const EXTERNAL_DISABLED_FEATURES = [
   "BASH_CLASSIFIER",
   "BG_SESSIONS",
   "BRIDGE_MODE",
-  "BUDDY",
   "BUILDING_CLAUDE_APPS",
   "BYOC_ENVIRONMENT_RUNNER",
   "CACHED_MICROCOMPACT",
@@ -91,6 +90,7 @@ const EXTERNAL_DISABLED_FEATURES = [
 const ENABLED_FEATURES = [
   "AUTO_THEME",
   "BREAK_CACHE_COMMAND",
+  "BUDDY",
   "BUILTIN_EXPLORE_PLAN_AGENTS",
 ] as const;
 
@@ -103,7 +103,7 @@ export function feature(name) {
 }
 `;
 
-const version = process.env.CLI_VERSION || "99.0.0-external";
+const version = process.env.CLI_VERSION || "99.99-local";
 
 import { plugin } from "bun";
 
@@ -144,6 +144,8 @@ const result = await Bun.build({
   sourcemap: "linked",
   minify: false,
   plugins: [bunBundlePlugin],
+  // 启用 BUDDY feature flag，让 feature('BUDDY') 在编译时返回 true
+  features: ["BUDDY"],
   define: {
     "MACRO.VERSION": JSON.stringify(version),
     "MACRO.BUILD_TIME": JSON.stringify(new Date().toISOString()),

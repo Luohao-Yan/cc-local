@@ -1,6 +1,6 @@
 import { plugin } from "bun";
 
-const version = process.env.CLI_VERSION || "99.0.0-external";
+const version = process.env.CLI_VERSION || "99.99-local";
 
 (globalThis as any).MACRO = {
   VERSION: version,

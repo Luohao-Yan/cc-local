@@ -50,7 +50,7 @@
 5. **验证安装**
    ```bash
    bun run start -- --version
-   # 应该输出: 99.0.0-external (Claude Code)
+   # 应该输出: 99.99-local (Claude Code)
    ```
 
 ---
