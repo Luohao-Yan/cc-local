@@ -26,6 +26,7 @@
 
 - [快速开始](#快速开始)
 - [全局安装](#全局安装在任意目录使用)
+- [更新到最新版本](#更新到最新版本)
 - [使用方法](#使用方法)
 - [环境变量说明](#环境变量说明)
 - [多模型配置](#多模型配置)
@@ -135,6 +136,36 @@ cclocal
 > ⚠️ **注意**：旧版脚本使用 `cc` 作为命令名，但 `cc` 是 macOS/Linux 系统自带的 C 编译器（clang），会导致命令冲突。现已改为 `cclocal`。
 >
 > 💡 脚本会自动检测 bun 路径、打包项目、创建全局命令，并通过 `--env-file` 加载项目目录下的 `.env` 配置。修改 `.env` 后无需重新安装，直接生效。
+
+---
+
+## 更新到最新版本
+
+当项目有新功能或修复时，需要拉取最新代码并重新构建。
+
+### macOS / Linux
+
+```bash
+cd cc-local
+git pull origin main
+bun install
+bun run build
+```
+
+### Windows (PowerShell)
+
+```powershell
+cd cc-local
+git pull origin main
+bun install
+bun run build
+```
+
+更新完成后：
+- 如果使用 `bun run start` 启动，会自动构建并运行最新代码
+- 如果使用全局命令 `cclocal`，`bun run build` 后全局命令会自动使用更新后的 `dist/cli.js`，无需重新安装
+
+> 💡 `.env` 配置文件不会被 `git pull` 覆盖，你的 API 配置会保留。
 
 ---
 
