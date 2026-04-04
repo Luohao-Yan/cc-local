@@ -104,13 +104,18 @@ bun run start
 
 ## 全局安装（在任意目录使用）
 
-不想每次都进项目目录？运行安装脚本，自动打包并注册全局命令 `cc`：
+不想每次都进项目目录？运行安装脚本，自动打包并注册全局命令 `cclocal`：
 
 ### macOS / Linux
 
 ```bash
 bash scripts/install-global.sh
 ```
+
+> 💡 默认命令名为 `cclocal`（Claude Code Local）。如需自定义命令名，可传参指定：
+> ```bash
+> bash scripts/install-global.sh mycc
+> ```
 
 ### Windows
 
@@ -121,9 +126,11 @@ scripts\install-global.cmd
 安装完成后，打开新的终端窗口，在任意目录直接运行：
 
 ```bash
-cc
+cclocal
 ```
 
+> ⚠️ **注意**：旧版脚本使用 `cc` 作为命令名，但 `cc` 是 macOS/Linux 系统自带的 C 编译器（clang），会导致命令冲突。现已改为 `cclocal`。
+>
 > 💡 脚本会自动检测 bun 路径、打包项目、创建全局命令，并通过 `--env-file` 加载项目目录下的 `.env` 配置。修改 `.env` 后无需重新安装，直接生效。
 
 ---
@@ -133,7 +140,7 @@ cc
 ```bash
 # 启动交互式 REPL
 bun run start
-# 全局安装后等价于：cc
+# 全局安装后等价于：cclocal
 
 # 查看版本
 bun run start -- --version
@@ -327,18 +334,18 @@ registry = "https://registry.npmmirror.com"
 
 在 `.env` 中添加 `DISABLE_INSTALLATION_CHECKS=1` 即可消除。
 
-### 全局安装后 `cc` 命令找不到
+### 全局安装后 `cclocal` 命令找不到
 
 确认软链接创建成功：
 
 ```bash
-ls -la /usr/local/bin/cc
+ls -la /usr/local/bin/cclocal
 ```
 
 如果使用的是 Apple Silicon Mac，也可以链接到：
 
 ```bash
-sudo ln -sf $(pwd)/dist/cli.js /opt/homebrew/bin/cc
+sudo ln -sf $(pwd)/dist/cli.js /opt/homebrew/bin/cclocal
 ```
 
 Windows 用户确认 `%LOCALAPPDATA%\bun\bin` 在系统 PATH 中。
