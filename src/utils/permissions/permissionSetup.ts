@@ -1310,7 +1310,9 @@ export function getAutoModeUnavailableReason(): AutoModeUnavailableReason | null
  */
 export type AutoModeEnabledState = 'enabled' | 'disabled' | 'opt-in'
 
-const AUTO_MODE_ENABLED_DEFAULT: AutoModeEnabledState = 'disabled'
+// 第三方 API 场景下默认启用 auto mode（无 GrowthBook 服务）
+const AUTO_MODE_ENABLED_DEFAULT: AutoModeEnabledState =
+  process.env.ANTHROPIC_BASE_URL ? 'enabled' : 'disabled'
 
 function parseAutoModeEnabledState(value: unknown): AutoModeEnabledState {
   if (value === 'enabled' || value === 'disabled' || value === 'opt-in') {

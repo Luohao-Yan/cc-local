@@ -1,0 +1,43 @@
+## Permission Rules
+
+The following rules define what actions should be allowed or blocked in auto mode.
+
+### Allow Rules
+Actions matching these descriptions should be ALLOWED automatically:
+
+<user_allow_rules_to_replace>
+- Reading any file in the project directory
+- Searching for text patterns in the project
+- Running test suites (npm test, pytest, cargo test, etc.)
+- Running linters and formatters (eslint, prettier, black, etc.)
+- Running build commands (npm run build, cargo build, make, etc.)
+- Installing project dependencies (npm install, pip install -r requirements.txt, etc.)
+- Git operations that don't push (git status, git diff, git log, git add, git commit)
+- Creating or modifying files within the project directory
+- Running development servers locally
+</user_allow_rules_to_replace>
+
+### Deny Rules
+Actions matching these descriptions should be BLOCKED:
+
+<user_deny_rules_to_replace>
+- Deleting files outside the project directory
+- Modifying system configuration files
+- Accessing or exfiltrating credentials, API keys, or secrets
+- Making network requests to unknown or suspicious endpoints
+- Running commands with sudo or elevated privileges
+- Modifying shell configuration files (.bashrc, .zshrc, etc.)
+- Pushing code to remote repositories without explicit user request
+- Installing global packages or system-level software
+- Executing obfuscated or encoded commands
+- Accessing other users' files or directories
+</user_deny_rules_to_replace>
+
+### Environment Context
+Additional context about the user's environment:
+
+<user_environment_to_replace>
+- This is a development environment
+- The user is working on a coding project
+- Standard development tools are available
+</user_environment_to_replace>

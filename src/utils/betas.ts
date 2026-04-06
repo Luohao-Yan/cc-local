@@ -160,6 +160,13 @@ export function modelSupportsStructuredOutputs(model: string): boolean {
 export function modelSupportsAutoMode(model: string): boolean {
   if (feature('TRANSCRIPT_CLASSIFIER')) {
     const m = getCanonicalName(model)
+
+    // 第三方兼容 API：当使用自定义 BASE_URL 时，信任用户的模型选择，
+    // 允许所有模型使用 auto mode（分类器会独立评估每个操作的安全性）
+    if (process.env.ANTHROPIC_BASE_URL) {
+      return true
+    }
+
     // External: firstParty-only at launch (PI probes not wired for
     // Bedrock/Vertex/Foundry yet). Checked before allowModels so the GB
     // override can't enable auto mode on unsupported providers.

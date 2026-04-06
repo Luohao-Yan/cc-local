@@ -17,6 +17,7 @@
 - 🔌 支持任何兼容 Anthropic API 格式的第三方 LLM（豆包、DeepSeek、通义千问等），无需 Anthropic 账号
 - 🚀 完整的 Claude Code 终端交互体验：REPL、工具调用、MCP 集成
 - 🐣 终端宠物伴侣（/buddy）：18 种物种、5 个稀有度、AI 生成性格、对话反应
+- 🤖 Auto Mode 自动模式：AI 安全分类器自动评估操作安全性，安全操作自动执行
 - 📦 可打包为单文件，全局安装后在任意目录使用
 - 🇨🇳 国内网络友好，内置镜像源配置
 
@@ -31,6 +32,7 @@
 - [环境变量说明](#环境变量说明)
 - [多模型配置](#多模型配置)
 - [终端宠物伴侣](#终端宠物伴侣buddy)
+- [Auto Mode 自动模式](#auto-mode-自动模式)
 - [构建打包](#构建打包)
 - [项目结构](#项目结构)
 - [工作原理](#工作原理)
@@ -296,6 +298,72 @@ ANTHROPIC_SMALL_FAST_MODEL=doubao-seed-2.0-code
 
 ---
 
+## Auto Mode 自动模式
+
+本项目启用了 Claude Code 的 Auto Mode（自动模式），通过 AI 安全分类器自动评估每个操作的安全性，安全操作自动执行，危险操作仍会拦截提示。
+
+### 启动方式
+
+```bash
+# 方式一：启动时通过参数进入 auto mode
+bun run start -- --permission-mode auto
+
+# 方式二：启动时通过 --enable-auto-mode 参数
+bun run start -- --enable-auto-mode
+
+# 方式三：在 REPL 中按 Shift+Tab 循环切换权限模式
+# 顺序：default → acceptEdits → plan → auto → default
+```
+
+### 通过 settings.json 设为默认
+
+在 `~/.claude/settings.json` 中添加：
+
+```json
+{
+  "permissions": {
+    "defaultMode": "auto"
+  }
+}
+```
+
+### Auto Mode 行为
+
+- ✅ 读文件、搜索代码等只读操作直接通过，不走分类器
+- ✅ 安全的写操作（项目目录内的文件修改）自动放行
+- ✅ 常规 bash 命令（npm test、git status 等）自动执行
+- ⛔ 删除文件、修改系统配置等高风险操作会被拦截
+- ⛔ 访问凭证、数据外泄等安全敏感操作会被阻止
+
+### 配置分类器规则
+
+Auto Mode 的分类器支持通过 `autoMode` 配置自定义规则。在 `~/.claude/settings.json` 或 `.claude/settings.local.json` 中配置：
+
+```json
+{
+  "autoMode": {
+    "environment": [
+      "Source control: github.com/your-org and all repos under it",
+      "Trusted internal domains: *.internal.example.com"
+    ],
+    "allow": [
+      "Deploying to staging is allowed"
+    ],
+    "soft_deny": [
+      "Never run database migrations outside the migrations CLI"
+    ]
+  }
+}
+```
+
+### 注意事项
+
+- 分类器本身是一次额外的 API 调用，每个需要评估的操作都会消耗额外 token
+- 第三方模型需要能正确理解分类器 prompt 并输出结构化响应，如果模型不支持可能导致误判
+- 可通过 `/permissions` 查看被拒绝的操作记录
+
+---
+
 ## 构建打包
 
 将项目打包为单个 JS 文件：
@@ -350,7 +418,7 @@ bun dist/cli.js --help
 原版 Claude Code 依赖 Bun 的 `bun:bundle` 模块实现编译时 feature flags，以及 `MACRO.*` 全局变量实现构建时常量。本项目提供了：
 
 1. **`bunfig.toml` + `preload.ts`** — 注册 Bun 插件，在运行时解析 `import { feature } from 'bun:bundle'`，并定义 `MACRO.VERSION` 等全局变量。
-2. **`scripts/build-external.ts`** — `Bun.build()` 构建脚本，通过插件替换 `bun:bundle`，通过 `define` 注入 `MACRO.*`，将私有包标记为 external。90+ 个内部 feature flags 全部禁用，仅启用少量安全 flags。
+2. **`scripts/build-external.ts`** — `Bun.build()` 构建脚本，通过插件替换 `bun:bundle`，通过 `define` 注入 `MACRO.*`，将私有包标记为 external。90+ 个内部 feature flags 全部禁用，仅启用少量安全 flags（BUDDY、TRANSCRIPT_CLASSIFIER、BASH_CLASSIFIER）。
 3. **`src/_external/shims/`** — 为 `@ant/*` 内部包和原生 NAPI 插件提供的轻量 no-op 模块。
 4. **重构的类型文件** — `src/types/message.ts`、`src/types/tools.ts` 等泄露源码中缺失的高引用模块。
 
