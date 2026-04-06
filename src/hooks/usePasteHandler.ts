@@ -212,6 +212,10 @@ export function usePasteHandler({
   // the 'readable' listener in App.tsx, causing dropped characters.
 
   const wrappedOnInput = (input: string, key: Key, event: InputEvent): void => {
+    // 调试日志：记录所有输入事件
+    if (input === '\x16' || event.keypress.isPasted) {
+      process.stderr.write(`[DEBUG] wrappedOnInput: input=${JSON.stringify(input)}, isPasted=${event.keypress.isPasted}, inputLen=${input.length}, keyName=${event.keypress.name || 'none'}\n`)
+    }
     // Detect paste from the parsed keypress event.
     // The keypress parser sets isPasted=true for content within bracketed paste.
     const isFromPaste = event.keypress.isPasted
@@ -243,6 +247,7 @@ export function usePasteHandler({
     // bracketed paste sequence. The keypress parser emits this as isPasted=true
     // with empty input.
     if (isFromPaste && input.length === 0 && isMacOS && onImagePaste) {
+      process.stderr.write('[DEBUG] Empty bracketed paste detected, checking clipboard for image\n')
       checkClipboardForImage()
       // Reset isPasting since there's no text content to process
       setIsPasting(false)

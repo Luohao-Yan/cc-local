@@ -236,7 +236,9 @@ export async function getImageFromClipboard(): Promise<ImageWithDimensions | nul
       mediaType,
       dimensions: resized.dimensions,
     }
-  } catch {
+  } catch (e) {
+    console.error('[imagePaste] ERROR in getImageFromClipboard:', e)
+    logError(e as Error)
     return null
   }
 }

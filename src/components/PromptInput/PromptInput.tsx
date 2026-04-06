@@ -1618,10 +1618,14 @@ function PromptInput({
 
   // Handler for chat:imagePaste - paste image from clipboard
   const handleImagePaste = useCallback(() => {
+    // 调试日志：确认 handleImagePaste 是否被调用
+    process.stderr.write('[DEBUG] handleImagePaste called\n');
     void getImageFromClipboard().then(imageData => {
       if (imageData) {
+        process.stderr.write(`[DEBUG] getImageFromClipboard returned image: ${imageData.mediaType}, base64 length: ${imageData.base64.length}\n`);
         onImagePaste(imageData.base64, imageData.mediaType);
       } else {
+        process.stderr.write('[DEBUG] getImageFromClipboard returned null\n');
         const shortcutDisplay = getShortcutDisplay('chat:imagePaste', 'Chat', 'ctrl+v');
         const message = env.isSSH() ? "No image found in clipboard. You're SSH'd; try scp?" : `No image found in clipboard. Use ${shortcutDisplay} to paste images.`;
         addNotification({
@@ -1631,6 +1635,8 @@ function PromptInput({
           timeoutMs: 1000
         });
       }
+    }).catch(err => {
+      process.stderr.write(`[DEBUG] getImageFromClipboard error: ${err}\n`);
     });
   }, [addNotification, onImagePaste]);
 
