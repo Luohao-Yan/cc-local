@@ -41,32 +41,30 @@ if not exist "%PROJECT_DIR%\.env" (
     )
 )
 
-:: 检查是否已打包
+:: 每次都重新构建，确保代码更新后全局命令也更新
+echo [*] 正在构建项目...
+pushd "%PROJECT_DIR%"
+call bun run build
+popd
 if not exist "%PROJECT_DIR%\dist\cli.js" (
-    echo [!] 未找到打包文件，正在打包...
-    pushd "%PROJECT_DIR%"
-    call bun run build
-    popd
-    if not exist "%PROJECT_DIR%\dist\cli.js" (
-        echo [错误] 打包失败
-        exit /b 1
-    )
+    echo [错误] 打包失败
+    exit /b 1
 )
 echo [✓] 打包文件: %PROJECT_DIR%\dist\cli.js
 
-:: 创建 ccl.cmd（避免与系统命令冲突）
-set "CCL_CMD=%BUN_DIR%ccl.cmd"
-echo @bun --env-file="%PROJECT_DIR%\.env" "%PROJECT_DIR%\dist\cli.js" %%* > "%CCL_CMD%"
+:: 创建 cclocal.cmd（与 macOS/Linux 命令名一致）
+set "CMD_FILE=%BUN_DIR%cclocal.cmd"
+echo @bun --env-file="%PROJECT_DIR%\.env" "%PROJECT_DIR%\dist\cli.js" %%* > "%CMD_FILE%"
 
-if exist "%CCL_CMD%" (
-    echo [✓] 全局命令已创建: %CCL_CMD%
+if exist "%CMD_FILE%" (
+    echo [✓] 全局命令已创建: %CMD_FILE%
     echo.
     echo =========================================
     echo   安装完成！
-    echo   打开新的命令行窗口，在任意目录输入 ccl 即可启动
+    echo   打开新的命令行窗口，在任意目录输入 cclocal 即可启动
     echo =========================================
 ) else (
-    echo [错误] 创建 ccl.cmd 失败，请检查目录权限
+    echo [错误] 创建 cclocal.cmd 失败，请检查目录权限
     exit /b 1
 )
 
