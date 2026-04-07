@@ -41,16 +41,57 @@ if [ ! -f "$PROJECT_DIR/.env" ]; then
         cp "$PROJECT_DIR/.env.example" "$PROJECT_DIR/.env"
         warn "已从 .env.example 创建 .env，请编辑填入你的 API 信息："
         warn "  $PROJECT_DIR/.env"
+        warn ""
+        warn "  必填项："
+        warn "    ANTHROPIC_API_KEY=你的API密钥"
+        warn "    ANTHROPIC_BASE_URL=https://你的API地址"
+        warn "    ANTHROPIC_MODEL=你的模型名"
     else
         error "未找到 .env 和 .env.example"
     fi
+else
+    # 检查 .env 是否还是占位符
+    if grep -q "your-api-key-here" "$PROJECT_DIR/.env" 2>/dev/null; then
+        warn ".env 中仍包含占位符，请编辑: $PROJECT_DIR/.env"
+    fi
 fi
 
-# 打包
-if [ ! -f "$PROJECT_DIR/dist/cli.js" ]; then
-    warn "未找到打包文件，正在打包..."
-    (cd "$PROJECT_DIR" && bun run build)
+# 清理旧版命令（cc, ccl）
+for old_cmd in cc ccl; do
+    for dir in /opt/homebrew/bin /usr/local/bin; do
+        if [ -f "$dir/$old_cmd" ] && grep -q "cc-local\|cclocal\|cli.js" "$dir/$old_cmd" 2>/dev/null; then
+            rm -f "$dir/$old_cmd" 2>/dev/null || sudo rm -f "$dir/$old_cmd" 2>/dev/null
+            info "清理旧版命令: $dir/$old_cmd"
+        fi
+    done
+done
+
+# 清理可能干扰的文件
+[ -f "$PROJECT_DIR/package-lock.json" ] && rm -f "$PROJECT_DIR/package-lock.json" && info "清理: package-lock.json"
+[ -f "$PROJECT_DIR/debug.log" ] && rm -f "$PROJECT_DIR/debug.log" && info "清理: debug.log"
+
+# 清理官方 Claude Code 残留配置（避免 model/auth 冲突）
+CLAUDE_DIR="$HOME/.claude"
+if [ -f "$CLAUDE_DIR/settings.json" ]; then
+    rm -f "$CLAUDE_DIR/settings.json"
+    info "清理: ~/.claude/settings.json（官方 Claude Code 残留配置）"
 fi
+if [ -f "$CLAUDE_DIR/settings.local.json" ]; then
+    rm -f "$CLAUDE_DIR/settings.local.json"
+    info "清理: ~/.claude/settings.local.json"
+fi
+if [ -f "$HOME/.claude.json" ]; then
+    rm -f "$HOME/.claude.json"
+    info "清理: ~/.claude.json（官方 Claude Code 全局配置）"
+fi
+
+# 安装依赖
+info "安装依赖..."
+(cd "$PROJECT_DIR" && bun install)
+
+# 打包（每次重新构建确保更新生效）
+info "正在构建..."
+(cd "$PROJECT_DIR" && bun run build)
 # 打包后再次检查产物是否存在
 if [ ! -f "$PROJECT_DIR/dist/cli.js" ]; then
     error "打包失败，未生成 dist/cli.js"
