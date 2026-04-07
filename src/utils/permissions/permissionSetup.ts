@@ -1092,7 +1092,14 @@ export async function verifyAutoModeGateAccess(
     enabled?: AutoModeEnabledState
     disableFastMode?: boolean
   }>('tengu_auto_mode_config', {})
-  const enabledState = parseAutoModeEnabledState(autoModeConfig?.enabled)
+  // 第三方兼容 API：无 GrowthBook 服务，强制启用 auto mode，
+  // 忽略 GrowthBook 缓存或默认值可能导致的 'disabled' 状态
+  const isThirdPartyApi =
+    process.env.ANTHROPIC_BASE_URL &&
+    !process.env.ANTHROPIC_BASE_URL.includes('anthropic.com')
+  const enabledState = isThirdPartyApi
+    ? 'enabled' as AutoModeEnabledState
+    : parseAutoModeEnabledState(autoModeConfig?.enabled)
   const disabledBySettings = isAutoModeDisabledBySettings()
   // Treat settings-disable the same as GrowthBook 'disabled' for circuit-breaker
   // semantics — blocks SDK/explicit re-entry via isAutoModeGateEnabled().
