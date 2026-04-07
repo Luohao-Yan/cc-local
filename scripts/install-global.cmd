@@ -75,6 +75,24 @@ if exist "%PROJECT_DIR%\debug.log" (
     echo [*] Cleaned: debug.log
 )
 
+:: Clean up official Claude Code residual configs that override .env settings
+:: ~/.claude/settings.json may contain model/auth from official Claude Code
+:: ~/.claude.json may contain cached GrowthBook features and OAuth tokens
+:: These take precedence over .env and cause model/auth conflicts
+set "CLAUDE_DIR=%USERPROFILE%\.claude"
+if exist "%CLAUDE_DIR%\settings.json" (
+    del "%CLAUDE_DIR%\settings.json" >nul 2>nul
+    echo [*] Cleaned: ~/.claude/settings.json (official Claude Code residual config)
+)
+if exist "%CLAUDE_DIR%\settings.local.json" (
+    del "%CLAUDE_DIR%\settings.local.json" >nul 2>nul
+    echo [*] Cleaned: ~/.claude/settings.local.json
+)
+if exist "%USERPROFILE%\.claude.json" (
+    del "%USERPROFILE%\.claude.json" >nul 2>nul
+    echo [*] Cleaned: ~/.claude.json (official Claude Code global config)
+)
+
 :: Install dependencies with bun
 echo [*] Installing dependencies...
 pushd "%PROJECT_DIR%"
