@@ -42,6 +42,31 @@ if not exist "%PROJECT_DIR%\.env" (
     )
 )
 
+:: Clean up legacy command files from previous versions (cc.cmd, ccl.cmd)
+:: These old versions lack --env-file and cause .env loading issues
+for %%F in (cc.cmd ccl.cmd) do (
+    if exist "%BUN_DIR%%%F" (
+        del "%BUN_DIR%%%F" >nul 2>nul
+        echo [*] Cleaned legacy command: %BUN_DIR%%%F
+    )
+)
+
+:: Clean up files that interfere with bun build (e.g. from npm install)
+if exist "%PROJECT_DIR%\package-lock.json" (
+    del "%PROJECT_DIR%\package-lock.json" >nul 2>nul
+    echo [*] Cleaned: package-lock.json (npm artifact, conflicts with bun.lock)
+)
+if exist "%PROJECT_DIR%\debug.log" (
+    del "%PROJECT_DIR%\debug.log" >nul 2>nul
+    echo [*] Cleaned: debug.log
+)
+
+:: Install dependencies with bun
+echo [*] Installing dependencies...
+pushd "%PROJECT_DIR%"
+call bun install
+popd
+
 :: Build every time to ensure updates take effect
 echo [*] Building project...
 pushd "%PROJECT_DIR%"

@@ -8,3 +8,4 @@ dist/
 # IDE 配置和本地 Claude 状态
 .vscode/
 .claude/
+.kiro/
