@@ -35,7 +35,19 @@ export type ModelName = string
 export type ModelSetting = ModelName | ModelAlias | null
 
 export function getSmallFastModel(): ModelName {
-  return process.env.ANTHROPIC_SMALL_FAST_MODEL || getDefaultHaikuModel()
+  // 优先使用用户显式指定的小模型
+  if (process.env.ANTHROPIC_SMALL_FAST_MODEL) {
+    return process.env.ANTHROPIC_SMALL_FAST_MODEL
+  }
+  // 第三方兼容 API：网关不认识 Anthropic 官方模型名（如 claude-haiku-4-5），
+  // 回退到用户配置的主模型，避免因模型名不匹配导致 403
+  if (
+    process.env.ANTHROPIC_BASE_URL &&
+    !process.env.ANTHROPIC_BASE_URL.includes('anthropic.com')
+  ) {
+    return process.env.ANTHROPIC_MODEL || getMainLoopModel()
+  }
+  return getDefaultHaikuModel()
 }
 
 export function isNonCustomOpusModel(model: ModelName): boolean {
