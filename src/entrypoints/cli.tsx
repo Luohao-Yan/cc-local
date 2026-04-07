@@ -4,6 +4,21 @@ import { feature } from 'bun:bundle';
 // eslint-disable-next-line custom-rules/no-top-level-side-effects
 process.env.COREPACK_ENABLE_AUTO_PIN = '0';
 
+// 第三方兼容 API 环境隔离：当使用非 Anthropic 官方 API 时，
+// 清除可能来自官方 Claude Code 残留的认证信息（~/.claude.json 中的
+// OAuth token、/login 保存的凭证等），避免 Auth conflict 和模型配置冲突。
+// Windows 用户同时安装官方 Claude Code 和 cc-local 时尤其需要。
+// eslint-disable-next-line custom-rules/no-top-level-side-effects, custom-rules/no-process-env-top-level, custom-rules/safe-env-boolean-check
+if (
+  process.env.ANTHROPIC_BASE_URL &&
+  !process.env.ANTHROPIC_BASE_URL.includes('anthropic.com')
+) {
+  // eslint-disable-next-line custom-rules/no-top-level-side-effects, custom-rules/no-process-env-top-level
+  delete process.env.ANTHROPIC_AUTH_TOKEN;
+  // eslint-disable-next-line custom-rules/no-top-level-side-effects, custom-rules/no-process-env-top-level
+  delete process.env.CLAUDE_CODE_OAUTH_TOKEN;
+}
+
 // Set max heap size for child processes in CCR environments (containers have 16GB)
 // eslint-disable-next-line custom-rules/no-top-level-side-effects, custom-rules/no-process-env-top-level, custom-rules/safe-env-boolean-check
 if (process.env.CLAUDE_CODE_REMOTE === 'true') {
