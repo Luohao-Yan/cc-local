@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul 2>nul
-setlocal
+setlocal enabledelayedexpansion
 
 echo.
 echo =========================================
@@ -34,11 +34,25 @@ if not exist "%PROJECT_DIR%\.env" (
     echo [!] .env not found
     if exist "%PROJECT_DIR%\.env.example" (
         copy "%PROJECT_DIR%\.env.example" "%PROJECT_DIR%\.env" >nul
-        echo [!] Created .env from .env.example, please edit:
+        echo [!] Created .env from .env.example
+        echo [!] IMPORTANT: Please edit .env before using cclocal:
         echo     %PROJECT_DIR%\.env
+        echo.
+        echo     Required settings:
+        echo       ANTHROPIC_API_KEY=your-actual-api-key
+        echo       ANTHROPIC_BASE_URL=https://your-api-endpoint.com/api
+        echo       ANTHROPIC_MODEL=your-model-name
+        echo.
     ) else (
         echo [ERROR] .env and .env.example not found
         exit /b 1
+    )
+) else (
+    :: Warn if .env still contains placeholder values
+    findstr /C:"your-api-key-here" "%PROJECT_DIR%\.env" >nul 2>nul
+    if !errorlevel! equ 0 (
+        echo [!] WARNING: .env contains placeholder values, please edit:
+        echo     %PROJECT_DIR%\.env
     )
 )
 
