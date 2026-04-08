@@ -8,14 +8,14 @@ echo   Claude Code Local - Windows Install
 echo =========================================
 echo.
 
-:: Check bun
+:: 检查 bun
 where bun >nul 2>nul
 if %errorlevel% neq 0 (
     echo [ERROR] bun not found. Install: npm install -g bun
     exit /b 1
 )
 
-:: Get bun directory
+:: 获取 bun 目录
 for /f "delims=" %%i in ('where bun') do (
     set "BUN_DIR=%%~dpi"
     goto :found_bun
@@ -23,41 +23,13 @@ for /f "delims=" %%i in ('where bun') do (
 :found_bun
 echo [OK] bun path: %BUN_DIR%
 
-:: Get project directory
+:: 获取项目目录
 set "PROJECT_DIR=%~dp0.."
 pushd "%PROJECT_DIR%"
 set "PROJECT_DIR=%CD%"
 popd
 
-:: Check .env
-if not exist "%PROJECT_DIR%\.env" (
-    echo [!] .env not found
-    if exist "%PROJECT_DIR%\.env.example" (
-        copy "%PROJECT_DIR%\.env.example" "%PROJECT_DIR%\.env" >nul
-        echo [!] Created .env from .env.example
-        echo [!] IMPORTANT: Please edit .env before using cclocal:
-        echo     %PROJECT_DIR%\.env
-        echo.
-        echo     Required settings:
-        echo       ANTHROPIC_API_KEY=your-actual-api-key
-        echo       ANTHROPIC_BASE_URL=https://your-api-endpoint.com/api
-        echo       ANTHROPIC_MODEL=your-model-name
-        echo.
-    ) else (
-        echo [ERROR] .env and .env.example not found
-        exit /b 1
-    )
-) else (
-    :: Warn if .env still contains placeholder values
-    findstr /C:"your-api-key-here" "%PROJECT_DIR%\.env" >nul 2>nul
-    if !errorlevel! equ 0 (
-        echo [!] WARNING: .env contains placeholder values, please edit:
-        echo     %PROJECT_DIR%\.env
-    )
-)
-
-:: Clean up legacy command files from previous versions (cc.cmd, ccl.cmd)
-:: These old versions lack --env-file and cause .env loading issues
+:: Clean up legacy command files (cc.cmd, ccl.cmd)
 for %%F in (cc.cmd ccl.cmd) do (
     if exist "%BUN_DIR%%%F" (
         del "%BUN_DIR%%%F" >nul 2>nul
@@ -65,42 +37,36 @@ for %%F in (cc.cmd ccl.cmd) do (
     )
 )
 
-:: Clean up files that interfere with bun build (e.g. from npm install)
+:: Clean up files that interfere with bun build
 if exist "%PROJECT_DIR%\package-lock.json" (
     del "%PROJECT_DIR%\package-lock.json" >nul 2>nul
-    echo [*] Cleaned: package-lock.json (npm artifact, conflicts with bun.lock)
+    echo [*] Cleaned: package-lock.json
 )
 if exist "%PROJECT_DIR%\debug.log" (
     del "%PROJECT_DIR%\debug.log" >nul 2>nul
     echo [*] Cleaned: debug.log
 )
 
-:: Clean up official Claude Code residual configs that override .env settings
-:: ~/.claude/settings.json may contain model/auth from official Claude Code
-:: ~/.claude.json may contain cached GrowthBook features and OAuth tokens
-:: These take precedence over .env and cause model/auth conflicts
+:: Clean up official Claude Code residual configs
+:: Note: no longer deleting ~/.claude.json (contains GrowthBook cache and auth state)
 set "CLAUDE_DIR=%USERPROFILE%\.claude"
 if exist "%CLAUDE_DIR%\settings.json" (
     del "%CLAUDE_DIR%\settings.json" >nul 2>nul
-    echo [*] Cleaned: ~/.claude/settings.json (official Claude Code residual config)
+    echo [*] Cleaned: ~/.claude/settings.json
 )
 if exist "%CLAUDE_DIR%\settings.local.json" (
     del "%CLAUDE_DIR%\settings.local.json" >nul 2>nul
     echo [*] Cleaned: ~/.claude/settings.local.json
 )
-if exist "%USERPROFILE%\.claude.json" (
-    del "%USERPROFILE%\.claude.json" >nul 2>nul
-    echo [*] Cleaned: ~/.claude.json (official Claude Code global config)
-)
 
-:: Install dependencies with bun
+:: Install dependencies
 echo [*] Installing dependencies...
 pushd "%PROJECT_DIR%"
 call bun install
 popd
 
-:: Build every time to ensure updates take effect
-echo [*] Building project...
+:: Build (rebuild every time to ensure updates take effect)
+echo [*] Building...
 pushd "%PROJECT_DIR%"
 call bun run scripts/build-external.ts
 popd
@@ -110,18 +76,56 @@ if not exist "%PROJECT_DIR%\dist\cli.js" (
 )
 echo [OK] Built: %PROJECT_DIR%\dist\cli.js
 
-:: Create cclocal.cmd
+:: 创建 cclocal.cmd 全局启动脚本
 set "CMD_FILE=%BUN_DIR%cclocal.cmd"
-echo @bun --env-file="%PROJECT_DIR%\.env" "%PROJECT_DIR%\dist\cli.js" %%* > "%CMD_FILE%"
+echo @bun "%PROJECT_DIR%\dist\cli.js" %%* > "%CMD_FILE%"
+
+:: ===== .env 自动迁移到 ~/.claude/models.json =====
+set "MODELS_JSON=%CLAUDE_DIR%\models.json"
+set "MIGRATED=0"
+
+if exist "%PROJECT_DIR%\.env" (
+    if not exist "%MODELS_JSON%" (
+        :: 使用 bun 执行迁移脚本（解析 .env 并生成 JSON）
+        if not exist "%CLAUDE_DIR%" mkdir "%CLAUDE_DIR%"
+        bun "%PROJECT_DIR%\scripts\migrate-env-to-json.js" "%PROJECT_DIR%" > "%MODELS_JSON%" 2>"%TEMP%\migrate_status.txt"
+
+        :: Check migration result
+        findstr /C:"MIGRATED=1" "%TEMP%\migrate_status.txt" >nul 2>nul
+        if !errorlevel! equ 0 (
+            set "MIGRATED=1"
+            echo [OK] Detected legacy .env config, migrated to %MODELS_JSON%
+
+            :: Extract multi-model count
+            for /f "tokens=2 delims==" %%A in ('findstr /C:"MULTI_COUNT" "%TEMP%\migrate_status.txt"') do (
+                if %%A gtr 0 echo [OK]   Migrated %%A multi-model configs
+            )
+            echo [!] Legacy .env file preserved. You can delete it after verifying the new config.
+        ) else (
+            :: Migration script determined no migration needed, delete empty file
+            del "%MODELS_JSON%" >nul 2>nul
+        )
+        del "%TEMP%\migrate_status.txt" >nul 2>nul
+    )
+)
 
 if exist "%CMD_FILE%" (
-    echo [OK] Global command created: %CMD_FILE%
+    echo [OK] 全局命令已创建: %CMD_FILE%
     echo.
     echo =========================================
-    echo   Done! Open a new terminal and run: cclocal
+    if "!MIGRATED!"=="1" (
+        echo   Done! Open a new terminal and run: cclocal
+        echo   Model config migrated from .env to models.json
+    ) else if exist "%MODELS_JSON%" (
+        echo   Done! Open a new terminal and run: cclocal
+        echo   Model config ready: %MODELS_JSON%
+    ) else (
+        echo   Done! Open a new terminal and run: cclocal
+        echo   First run will guide you through model setup
+    )
     echo =========================================
 ) else (
-    echo [ERROR] Failed to create cclocal.cmd
+    echo [ERROR] 创建 cclocal.cmd 失败
     exit /b 1
 )
 

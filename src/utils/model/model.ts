@@ -29,24 +29,37 @@ import { isModelAllowed } from './modelAllowlist.js'
 import { type ModelAlias, isModelAlias } from './aliases.js'
 import { capitalize } from '../stringUtils.js'
 import { resolveMultiModelConfig } from './multiModel.js'
+import { getModelConfig } from './modelConfig.js'
 
 export type ModelShortName = string
 export type ModelName = string
 export type ModelSetting = ModelName | ModelAlias | null
 
 export function getSmallFastModel(): ModelName {
-  // 优先使用用户显式指定的小模型
+  // 1. 从 JSON 配置读取 smallFastModel
+  const config = getModelConfig()
+  if (config.smallFastModel) {
+    const resolved = resolveMultiModelConfig(config.smallFastModel)
+    if (resolved) {
+      return resolved
+    }
+  }
+
+  // 2. 回退到环境变量
   if (process.env.ANTHROPIC_SMALL_FAST_MODEL) {
     return process.env.ANTHROPIC_SMALL_FAST_MODEL
   }
-  // 第三方兼容 API：网关不认识 Anthropic 官方模型名（如 claude-haiku-4-5），
-  // 回退到用户配置的主模型，避免因模型名不匹配导致 403
+
+  // 3. 第三方兼容 API：网关不认识 Anthropic 官方模型名（如 claude-haiku-4-5），
+  //    回退到用户配置的主模型，避免因模型名不匹配导致 403
   if (
     process.env.ANTHROPIC_BASE_URL &&
     !process.env.ANTHROPIC_BASE_URL.includes('anthropic.com')
   ) {
     return process.env.ANTHROPIC_MODEL || getMainLoopModel()
   }
+
+  // 4. 默认 Haiku 模型
   return getDefaultHaikuModel()
 }
 
@@ -91,22 +104,35 @@ export function getUserSpecifiedModelSetting(): ModelSetting | undefined {
 }
 
 /**
- * Get the main loop model to use for the current session.
+ * 获取当前会话使用的主循环模型。
  *
- * Model Selection Priority Order:
- * 1. Model override during session (from /model command) - highest priority
- * 2. Model override at startup (from --model flag)
- * 3. ANTHROPIC_MODEL environment variable
- * 4. Settings (from user's saved settings)
- * 5. Built-in default
+ * 模型选择优先级（从高到低）：
+ * 1. 会话内模型覆盖（/model 命令）
+ * 2. 启动时模型覆盖（--model 参数）
+ * 3. ANTHROPIC_MODEL 环境变量
+ * 4. 用户保存的 settings
+ * 5. JSON 配置中的 defaultModel
+ * 6. 内置默认模型
  *
- * @returns The resolved model name to use
+ * @returns 解析后的模型名称
  */
 export function getMainLoopModel(): ModelName {
+  // 优先级 1-4：用户显式指定的模型（/model、--model、ANTHROPIC_MODEL、settings）
   const model = getUserSpecifiedModelSetting()
   if (model !== undefined && model !== null) {
     return parseUserSpecifiedModel(model)
   }
+
+  // 优先级 5：JSON 配置中的 defaultModel 字段
+  const config = getModelConfig()
+  if (config.defaultModel) {
+    const resolved = resolveMultiModelConfig(config.defaultModel)
+    if (resolved) {
+      return resolved
+    }
+  }
+
+  // 优先级 6：内置默认模型
   return getDefaultMainLoopModel()
 }
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Claude Code Local - macOS/Linux 全局安装脚本
+# Claude Code Local - macOS/Linux global install script
 
 set -e
 
@@ -12,115 +12,90 @@ info()  { echo -e "${GREEN}[✓]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 error() { echo -e "${RED}[✗]${NC} $1"; exit 1; }
 
-# 默认命令名为 cclocal，避免与系统 /usr/bin/cc (C 编译器) 冲突
-# 用户可通过参数自定义，例如: bash scripts/install-global.sh mycc
+# Default command name is cclocal (avoids conflict with /usr/bin/cc C compiler)
+# Custom name: bash scripts/install-global.sh mycc
 CMD_NAME="${1:-cclocal}"
 
-# 校验命令名合法性：只允许字母、数字、短横线、下划线
+# Validate command name: only letters, digits, hyphens, underscores
 if [[ ! "$CMD_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-    error "命令名 '$CMD_NAME' 不合法，只允许字母、数字、短横线和下划线"
+    error "Invalid command name '$CMD_NAME'. Only letters, digits, hyphens and underscores allowed."
 fi
 
 echo ""
 echo "========================================="
-echo "  Claude Code Local - 全局安装"
+echo "  Claude Code Local - Global Install"
 echo "========================================="
 echo ""
 
-# 检查 bun
-command -v bun &> /dev/null || error "未检测到 bun，请先安装：curl -fsSL https://bun.sh/install | bash 或 npm install -g bun"
-info "检测到 bun: $(which bun)"
+# Check bun
+command -v bun &> /dev/null || error "bun not found. Install: curl -fsSL https://bun.sh/install | bash or npm install -g bun"
+info "Found bun: $(which bun)"
 
-# 获取项目目录
+# Get project directory
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-info "项目目录: $PROJECT_DIR"
+info "Project dir: $PROJECT_DIR"
 
-# 检查 .env
-if [ ! -f "$PROJECT_DIR/.env" ]; then
-    if [ -f "$PROJECT_DIR/.env.example" ]; then
-        cp "$PROJECT_DIR/.env.example" "$PROJECT_DIR/.env"
-        warn "已从 .env.example 创建 .env，请编辑填入你的 API 信息："
-        warn "  $PROJECT_DIR/.env"
-        warn ""
-        warn "  必填项："
-        warn "    ANTHROPIC_API_KEY=你的API密钥"
-        warn "    ANTHROPIC_BASE_URL=https://你的API地址"
-        warn "    ANTHROPIC_MODEL=你的模型名"
-    else
-        error "未找到 .env 和 .env.example"
-    fi
-else
-    # 检查 .env 是否还是占位符
-    if grep -q "your-api-key-here" "$PROJECT_DIR/.env" 2>/dev/null; then
-        warn ".env 中仍包含占位符，请编辑: $PROJECT_DIR/.env"
-    fi
-fi
-
-# 清理旧版命令（cc, ccl）
+# Clean up legacy commands (cc, ccl)
 for old_cmd in cc ccl; do
     for dir in /opt/homebrew/bin /usr/local/bin; do
         if [ -f "$dir/$old_cmd" ] && grep -q "cc-local\|cclocal\|cli.js" "$dir/$old_cmd" 2>/dev/null; then
             rm -f "$dir/$old_cmd" 2>/dev/null || sudo rm -f "$dir/$old_cmd" 2>/dev/null
-            info "清理旧版命令: $dir/$old_cmd"
+            info "Cleaned legacy command: $dir/$old_cmd"
         fi
     done
 done
 
-# 清理可能干扰的文件
-[ -f "$PROJECT_DIR/package-lock.json" ] && rm -f "$PROJECT_DIR/package-lock.json" && info "清理: package-lock.json"
-[ -f "$PROJECT_DIR/debug.log" ] && rm -f "$PROJECT_DIR/debug.log" && info "清理: debug.log"
+# Clean up interfering files
+[ -f "$PROJECT_DIR/package-lock.json" ] && rm -f "$PROJECT_DIR/package-lock.json" && info "Cleaned: package-lock.json"
+[ -f "$PROJECT_DIR/debug.log" ] && rm -f "$PROJECT_DIR/debug.log" && info "Cleaned: debug.log"
 
-# 清理官方 Claude Code 残留配置（避免 model/auth 冲突）
+# Clean up official Claude Code residual configs
+# Note: no longer deleting ~/.claude.json (contains GrowthBook cache and auth state)
 CLAUDE_DIR="$HOME/.claude"
 if [ -f "$CLAUDE_DIR/settings.json" ]; then
     rm -f "$CLAUDE_DIR/settings.json"
-    info "清理: ~/.claude/settings.json（官方 Claude Code 残留配置）"
+    info "Cleaned: ~/.claude/settings.json"
 fi
 if [ -f "$CLAUDE_DIR/settings.local.json" ]; then
     rm -f "$CLAUDE_DIR/settings.local.json"
-    info "清理: ~/.claude/settings.local.json"
-fi
-if [ -f "$HOME/.claude.json" ]; then
-    rm -f "$HOME/.claude.json"
-    info "清理: ~/.claude.json（官方 Claude Code 全局配置）"
+    info "Cleaned: ~/.claude/settings.local.json"
 fi
 
-# 安装依赖
-info "安装依赖..."
+# Install dependencies
+info "Installing dependencies..."
 (cd "$PROJECT_DIR" && bun install)
 
-# 打包（每次重新构建确保更新生效）
-info "正在构建..."
+# Build (rebuild every time to ensure updates take effect)
+info "Building..."
 (cd "$PROJECT_DIR" && bun run build)
-# 打包后再次检查产物是否存在
 if [ ! -f "$PROJECT_DIR/dist/cli.js" ]; then
-    error "打包失败，未生成 dist/cli.js"
+    error "Build failed, dist/cli.js not found"
 fi
-info "打包文件: $PROJECT_DIR/dist/cli.js"
+info "Built: $PROJECT_DIR/dist/cli.js"
 
-# 确定安装目录：Apple Silicon Mac 优先使用 /opt/homebrew/bin
+# Determine install directory: prefer /opt/homebrew/bin on Apple Silicon
 if [ -d "/opt/homebrew/bin" ] && echo "$PATH" | grep -q "/opt/homebrew/bin"; then
     INSTALL_DIR="/opt/homebrew/bin"
 elif echo "$PATH" | grep -q "/usr/local/bin"; then
     INSTALL_DIR="/usr/local/bin"
 else
     INSTALL_DIR="/usr/local/bin"
-    warn "/usr/local/bin 可能不在你的 PATH 中，安装后请确认 PATH 配置"
+    warn "/usr/local/bin may not be in your PATH"
 fi
 
 CMD_PATH="$INSTALL_DIR/$CMD_NAME"
 
-# 检查命令名是否与系统命令冲突
+# Check for command name conflicts
 EXISTING_CMD="$(which "$CMD_NAME" 2>/dev/null || true)"
 if [ -n "$EXISTING_CMD" ] && [ "$EXISTING_CMD" != "$CMD_PATH" ]; then
-    error "命令名 '$CMD_NAME' 与已有命令冲突: $EXISTING_CMD\n  请使用其他名称，例如: bash scripts/install-global.sh cclocal"
+    error "Command '$CMD_NAME' conflicts with: $EXISTING_CMD\n  Try: bash scripts/install-global.sh cclocal"
 fi
 
-# 创建全局启动脚本
+# Create global launcher script
 TMPFILE="$(mktemp)"
 cat > "$TMPFILE" << EOF
 #!/bin/bash
-exec bun --env-file="$PROJECT_DIR/.env" "$PROJECT_DIR/dist/cli.js" "\$@"
+exec bun "$PROJECT_DIR/dist/cli.js" "\$@"
 EOF
 chmod +x "$TMPFILE"
 
@@ -131,8 +106,35 @@ else
     sudo chmod +x "$CMD_PATH"
 fi
 
-info "全局命令已创建: $CMD_PATH"
+info "Global command created: $CMD_PATH"
+
+# ===== Migrate .env to ~/.claude/models.json =====
+MODELS_JSON="$CLAUDE_DIR/models.json"
+
+if [ -f "$PROJECT_DIR/.env" ] && [ ! -f "$MODELS_JSON" ]; then
+    MIGRATE_OUTPUT="$(bun "$PROJECT_DIR/scripts/migrate-env-to-json.js" "$PROJECT_DIR" 2>/tmp/migrate_status)"
+    MIGRATE_STATUS="$(cat /tmp/migrate_status 2>/dev/null)"
+    rm -f /tmp/migrate_status
+
+    if echo "$MIGRATE_STATUS" | grep -q "MIGRATED=1"; then
+        mkdir -p "$CLAUDE_DIR"
+        echo "$MIGRATE_OUTPUT" > "$MODELS_JSON"
+        info "Detected legacy .env config, migrated to $MODELS_JSON"
+
+        MULTI_COUNT="$(echo "$MIGRATE_STATUS" | grep -oE 'MULTI_COUNT=[0-9]+' | cut -d= -f2)"
+        if [ -n "$MULTI_COUNT" ] && [ "$MULTI_COUNT" -gt 0 ]; then
+            info "  Migrated $MULTI_COUNT multi-model configs"
+        fi
+        warn "Legacy .env file preserved. You can delete it after verifying the new config."
+    fi
+fi
+
 echo ""
 echo "========================================="
-echo "  安装完成！在任意目录输入 $CMD_NAME 即可启动"
+echo "  Done! Run '$CMD_NAME' in any directory to start"
+if [ -f "$MODELS_JSON" ]; then
+echo "  Model config ready: $MODELS_JSON"
+else
+echo "  First run will guide you through model setup"
+fi
 echo "========================================="

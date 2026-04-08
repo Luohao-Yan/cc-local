@@ -9,3 +9,6 @@ dist/
 .vscode/
 .claude/
 .kiro/
+
+# 项目级模型配置（可能含敏感信息）
+.claude/models.json

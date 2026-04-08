@@ -35,6 +35,7 @@ import {
   logEvent,
 } from 'src/services/analytics/index.js'
 import { getMaxVersion, shouldSkipVersion } from '../autoUpdater.js'
+import { getModelConfig } from '../model/modelConfig.js'
 import { registerCleanup } from '../cleanupRegistry.js'
 import { getGlobalConfig, saveGlobalConfig } from '../config.js'
 import { logForDebugging } from '../debug.js'
@@ -800,8 +801,9 @@ async function updateSymlink(
 export async function checkInstall(
   force: boolean = false,
 ): Promise<SetupMessage[]> {
-  // Skip all installation checks if disabled via environment variable
-  if (isEnvTruthy(process.env.DISABLE_INSTALLATION_CHECKS)) {
+  // 优先从 JSON 配置读取 disableInstallationChecks，回退到环境变量
+  const modelConfig = getModelConfig()
+  if (modelConfig.settings?.disableInstallationChecks || isEnvTruthy(process.env.DISABLE_INSTALLATION_CHECKS)) {
     return []
   }
 

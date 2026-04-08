@@ -32,7 +32,7 @@ import {
 } from './model.js'
 import { has1mContext } from '../context.js'
 import { getGlobalConfig } from '../config.js'
-import { getModelConfigs } from './multiModel.js'
+import { getConfiguredModels } from './multiModel.js'
 
 // @[MODEL LAUNCH]: Update all the available and default model option strings below.
 
@@ -484,14 +484,17 @@ export function getModelOptions(fastMode = false): ModelOption[] {
     }
   }
 
-  // 添加多模型配置中的所有模型到选择列表
-  for (const config of getModelConfigs()) {
-    const aliasLower = config.alias.toLowerCase()
-    if (!options.some(existing => existing.value === config.name || existing.value === aliasLower)) {
+  // 添加 JSON 多模型配置中的所有模型到选择列表
+  for (const model of getConfiguredModels()) {
+    // 优先使用第一个别名（小写），无别名时使用模型 key（小写）
+    const valueLower = (model.aliases[0] || model.modelKey).toLowerCase()
+    if (!options.some(existing => existing.value === model.modelKey || existing.value === valueLower)) {
+      // 构建别名显示文本
+      const aliasDisplay = model.aliases.length > 0 ? model.aliases.join(', ') : model.modelKey
       options.push({
-        value: aliasLower,
-        label: `${config.name}`,
-        description: `${config.alias} · ${new URL(config.baseUrl).hostname}`,
+        value: valueLower,
+        label: model.modelName,
+        description: `${aliasDisplay} · ${model.providerName}`,
       })
     }
   }

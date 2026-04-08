@@ -12,6 +12,7 @@ import {
 } from './config.js'
 import { getCwd } from './cwd.js'
 import { isEnvTruthy } from './envUtils.js'
+import { getModelConfig } from './model/modelConfig.js'
 import { execFileNoThrow } from './execFileNoThrow.js'
 import { getFsImplementation } from './fsOperations.js'
 import {
@@ -429,9 +430,10 @@ async function detectConfigurationIssues(
     }
   }
 
-  // Check for configuration mismatches
-  // Skip these checks if DISABLE_INSTALLATION_CHECKS is set (e.g., in HFI)
-  if (!isEnvTruthy(process.env.DISABLE_INSTALLATION_CHECKS)) {
+  // 检查配置不匹配
+  // 优先从 JSON 配置读取 disableInstallationChecks，回退到环境变量
+  const modelConfig = getModelConfig()
+  if (!modelConfig.settings?.disableInstallationChecks && !isEnvTruthy(process.env.DISABLE_INSTALLATION_CHECKS)) {
     if (type === 'npm-local' && config.installMethod !== 'local') {
       warnings.push({
         issue: `Running from local installation but config install method is '${config.installMethod}'`,

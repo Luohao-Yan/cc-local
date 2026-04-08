@@ -16,6 +16,11 @@ import { getDefaultMainLoopModelSetting, isOpus1mMergeEnabled, renderDefaultMode
 import { isModelAllowed } from '../../utils/model/modelAllowlist.js';
 import { validateModel } from '../../utils/model/validateModel.js';
 import { resolveMultiModelConfig } from '../../utils/model/multiModel.js';
+// 子命令模块导入
+import { call as modelAddCall } from './modelAdd.js';
+import { call as modelListCall } from './modelList.js';
+import { call as modelRemoveCall } from './modelRemove.js';
+import { call as modelCheckCall } from './modelCheck.js';
 function ModelPickerWrapper(t0) {
   const $ = _c(17);
   const {
@@ -280,11 +285,38 @@ export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
     return <ShowModelAndClose onDone={onDone} />;
   }
   if (COMMON_HELP_ARGS.includes(args)) {
-    onDone('Run /model to open the model selection menu, or /model [modelName] to set the model.', {
-      display: 'system'
-    });
+    onDone(
+      [
+        '/model              Open model selection menu',
+        '/model <name>       Switch to a model (alias or model name)',
+        '/model add          Add a new provider and model interactively',
+        '/model list         List all configured models',
+        '/model remove <name> Remove a model configuration',
+        '/model check        Health check all configured models',
+      ].join('\n'),
+      { display: 'system' },
+    );
     return;
   }
+
+  // 子命令路由：解析第一个单词作为子命令，剩余部分作为子命令参数
+  if (args) {
+    const subcommand = args.split(/\s+/)[0]?.toLowerCase()
+    const subArgs = args.slice(subcommand?.length || 0).trim()
+
+    switch (subcommand) {
+      case 'add':
+        return modelAddCall(onDone, _context, subArgs)
+      case 'list':
+        return modelListCall(onDone, _context, subArgs)
+      case 'remove':
+        return modelRemoveCall(onDone, _context, subArgs)
+      case 'check':
+        return modelCheckCall(onDone, _context, subArgs)
+      // TODO: /migrate-models 命令可通过 Migration_Helper 的 convertLegacyEnvToConfig() 实现
+    }
+  }
+
   if (args) {
     logEvent('tengu_model_command_inline', {
       args: args as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS

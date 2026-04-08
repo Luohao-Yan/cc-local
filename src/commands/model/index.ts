@@ -6,9 +6,9 @@ export default {
   type: 'local-jsx',
   name: 'model',
   get description() {
-    return `Set the AI model for Claude Code (currently ${renderModelName(getMainLoopModel())})`
+    return `Switch model or manage: add|list|remove|check (now ${renderModelName(getMainLoopModel())})`
   },
-  argumentHint: '[model]',
+  argumentHint: '[add | list | remove | check | model]',
   get immediate() {
     return shouldInferenceConfigCommandBeImmediate()
   },

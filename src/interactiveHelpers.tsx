@@ -18,6 +18,7 @@ import { handleMcpjsonServerApprovals } from './services/mcpServerApproval.js';
 import { AppStateProvider } from './state/AppState.js';
 import { onChangeAppState } from './state/onChangeAppState.js';
 import { normalizeApiKeyForConfig } from './utils/authPortable.js';
+import { getModelConfig } from './utils/model/modelConfig.js';
 import { getExternalClaudeMdIncludes, getMemoryFiles, shouldShowClaudeMdExternalIncludesWarning } from './utils/claudemd.js';
 import { checkHasTrustDialogAccepted, getCustomApiKeyStatus, getGlobalConfig, saveGlobalConfig } from './utils/config.js';
 import { updateDeepLinkTerminalPreference } from './utils/deepLink/terminalPreference.js';
@@ -106,6 +107,36 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
   ) {
     return false;
   }
+
+  // 早期激活 JSON 模型配置：在认证检查之前设置 ANTHROPIC_BASE_URL 和 ANTHROPIC_API_KEY，
+  // 确保第三方 API 用户不会被原版 Anthropic 认证流程拦截
+  {
+    const mc = getModelConfig();
+    const hasProviders = Object.keys(mc.providers).length > 0;
+    if (hasProviders && mc.defaultModel) {
+      // 动态导入避免循环依赖
+      const { resolveMultiModelConfig } = await import('./utils/model/multiModel.js');
+      resolveMultiModelConfig(mc.defaultModel);
+    } else if (hasProviders && !process.env.ANTHROPIC_API_KEY) {
+      // 有 Provider 但没有 defaultModel，激活第一个 Provider 的第一个模型
+      const firstProviderKey = Object.keys(mc.providers)[0];
+      const firstProvider = mc.providers[firstProviderKey!];
+      if (firstProvider) {
+        const firstModelKey = Object.keys(firstProvider.models)[0];
+        if (firstModelKey) {
+          const { resolveMultiModelConfig } = await import('./utils/model/multiModel.js');
+          resolveMultiModelConfig(firstModelKey);
+        }
+      }
+    }
+
+    // 检测旧版 .env MODEL_* 环境变量，输出一次性迁移提示
+    if (!hasProviders) {
+      const { showMigrationHintIfNeeded } = await import('./utils/model/migrationHelper.js');
+      showMigrationHintIfNeeded();
+    }
+  }
+
   const config = getGlobalConfig();
   let onboardingShown = false;
   if (!config.theme || !config.hasCompletedOnboarding // always show onboarding at least once
@@ -203,7 +234,10 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
   // Check for custom API key
   // On homespace, ANTHROPIC_API_KEY is preserved in process.env for child
   // processes but ignored by Claude Code itself (see auth.ts).
-  if (process.env.ANTHROPIC_API_KEY && !isRunningOnHomespace()) {
+  // 当 models.json 中已有 Provider 配置时，跳过 API Key 审批（第三方 API 用户无需审批）
+  const modelsConfig = getModelConfig();
+  const hasJsonProviders = Object.keys(modelsConfig.providers).length > 0;
+  if (process.env.ANTHROPIC_API_KEY && !isRunningOnHomespace() && !hasJsonProviders) {
     const customApiKeyTruncated = normalizeApiKeyForConfig(process.env.ANTHROPIC_API_KEY);
     const keyStatus = getCustomApiKeyStatus(customApiKeyTruncated);
     if (keyStatus === 'new') {

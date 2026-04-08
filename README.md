@@ -74,29 +74,43 @@ bun install --registry https://registry.npmmirror.com
 
 ### 3. 配置 LLM API
 
-复制配置模板并填入你的 API 信息：
+创建模型配置文件 `~/.claude/models.json`：
 
 ```bash
 # macOS / Linux
-cp .env.example .env
+mkdir -p ~/.claude
 
 # Windows (PowerShell)
-copy .env.example .env
+mkdir -Force "$env:USERPROFILE\.claude"
 ```
 
-编辑 `.env` 文件：
+编辑 `~/.claude/models.json`（Windows 为 `%USERPROFILE%\.claude\models.json`）：
 
-```env
-# 第三方 LLM API 配置（以豆包为例）
-ANTHROPIC_API_KEY=your-api-key-here
-ANTHROPIC_BASE_URL=https://ark.cn-beijing.volces.com/api/coding
-ANTHROPIC_MODEL=doubao-seed-2.0-code
-
-# 跳过安装方式检查
-DISABLE_INSTALLATION_CHECKS=1
+```json
+{
+  "providers": {
+    "doubao": {
+      "name": "豆包",
+      "baseUrl": "https://ark.cn-beijing.volces.com/api/coding",
+      "apiKey": "你的API密钥",
+      "models": {
+        "doubao-seed-2.0-code": {
+          "name": "豆包 Seed 2.0 Code",
+          "alias": ["doubao"]
+        }
+      }
+    }
+  },
+  "defaultModel": "doubao",
+  "settings": {
+    "disableInstallationChecks": true
+  }
+}
 ```
 
-> 💡 也支持原版 Anthropic API：只需设置 `ANTHROPIC_API_KEY=sk-ant-...`，无需设置 `ANTHROPIC_BASE_URL`。
+> 💡 也支持原版 Anthropic API：只需设置环境变量 `ANTHROPIC_API_KEY=sk-ant-...`，无需创建 `models.json`。
+>
+> 💡 也可以跳过手动配置，直接启动程序后通过 `/model add` 命令交互式添加。
 
 ### 4. 启动
 
@@ -137,7 +151,7 @@ cclocal
 
 > ⚠️ **注意**：旧版脚本使用 `cc` 作为命令名，但 `cc` 是 macOS/Linux 系统自带的 C 编译器（clang），会导致命令冲突。现已改为 `cclocal`。
 >
-> 💡 脚本会自动检测 bun 路径、打包项目、创建全局命令，并通过 `--env-file` 加载项目目录下的 `.env` 配置。修改 `.env` 后无需重新安装，直接生效。
+> 💡 脚本会自动检测 bun 路径、打包项目、创建全局命令。如果检测到旧版 `.env` 配置，会自动迁移到 `~/.claude/models.json`。
 
 ---
 
@@ -167,7 +181,7 @@ bun run build
 - 如果使用 `bun run start` 启动，会自动构建并运行最新代码
 - 如果使用全局命令 `cclocal`，`bun run build` 后全局命令会自动使用更新后的 `dist/cli.js`，无需重新安装
 
-> 💡 `.env` 配置文件不会被 `git pull` 覆盖，你的 API 配置会保留。
+> 💡 `~/.claude/models.json` 配置文件不会被 `git pull` 覆盖，你的模型配置会保留。
 
 ---
 
@@ -201,12 +215,16 @@ bun run start -- --model sonnet
 
 ## 环境变量说明
 
+> 💡 推荐使用 `~/.claude/models.json` 配置模型，以下环境变量作为备选方案仍然支持。
+
 | 变量 | 必填 | 说明 |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | ✅ | LLM 服务的 API Key |
-| `ANTHROPIC_BASE_URL` | 第三方 API 必填 | API 端点地址，使用原版 Anthropic 时无需设置 |
-| `ANTHROPIC_MODEL` | 否 | 模型名称，不设置则使用默认模型 |
-| `DISABLE_INSTALLATION_CHECKS` | 否 | 设为 `1` 跳过安装方式检查警告 |
+| `ANTHROPIC_API_KEY` | 否* | LLM 服务的 API Key（使用 `models.json` 配置时无需设置） |
+| `ANTHROPIC_BASE_URL` | 否* | API 端点地址（使用 `models.json` 配置时无需设置） |
+| `ANTHROPIC_MODEL` | 否 | 模型名称，不设置则使用 `models.json` 中的 `defaultModel` |
+| `DISABLE_INSTALLATION_CHECKS` | 否 | 设为 `1` 跳过安装方式检查警告（也可在 `models.json` 的 `settings` 中配置） |
+
+\* 如果未配置 `models.json`，则 `ANTHROPIC_API_KEY` 为必填。
 
 ### 已验证的第三方 LLM 服务
 
@@ -220,43 +238,145 @@ bun run start -- --model sonnet
 
 ## 多模型配置
 
-如果你需要在多个第三方 LLM 之间切换（例如同时使用 GLM 和 MiniMax），可以在 `.env` 中配置多个模型：
+通过 JSON 配置文件 `~/.claude/models.json` 管理多个第三方 LLM Provider 和模型。
 
-```env
-# 默认模型（启动时使用）
-ANTHROPIC_API_KEY=your-default-key
-ANTHROPIC_BASE_URL=https://your-default-endpoint.com/api
-ANTHROPIC_MODEL=your-default-model
+### 新用户快速配置
 
-# 智谱 GLM（别名：glm）
-MODEL_GLM_NAME=glm-5
-MODEL_GLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4
-MODEL_GLM_API_KEY=your-glm-key
+**方式一：交互式添加（推荐）**
 
-# MiniMax（别名：minimax）
-MODEL_MINIMAX_NAME=minimax-text-01
-MODEL_MINIMAX_BASE_URL=https://api.minimax.chat/v1
-MODEL_MINIMAX_API_KEY=your-minimax-key
+启动程序后，在 REPL 中输入：
+
+```
+/model add
 ```
 
-配置格式为 `MODEL_<别名>_NAME`、`MODEL_<别名>_BASE_URL`、`MODEL_<别名>_API_KEY`，三个一组。
+按提示依次输入 API 端点、API Key、模型名称和别名即可。
 
-切换模型的方式：
+**方式二：手动编辑配置文件**
+
+创建或编辑 `~/.claude/models.json`（Windows 为 `%USERPROFILE%\.claude\models.json`）：
+
+```json
+{
+  "providers": {
+    "doubao": {
+      "name": "豆包",
+      "baseUrl": "https://ark.cn-beijing.volces.com/api/coding",
+      "apiKey": "你的API密钥",
+      "models": {
+        "doubao-seed-2.0-code": {
+          "name": "豆包 Seed 2.0 Code",
+          "alias": ["doubao"]
+        }
+      }
+    }
+  },
+  "defaultModel": "doubao",
+  "settings": {
+    "disableInstallationChecks": true
+  }
+}
+```
+
+### 配置文件位置
+
+| 级别 | 路径 | 说明 |
+|------|------|------|
+| 全局 | `~/.claude/models.json` | 对所有项目生效 |
+| 项目级 | `.claude/models.json` | 仅对当前项目生效，同名 Provider 覆盖全局配置 |
+
+### 多 Provider 多模型示例
+
+一个 Provider 下可以配置多个模型，也可以配置多个 Provider：
+
+```json
+{
+  "providers": {
+    "doubao": {
+      "name": "豆包",
+      "baseUrl": "https://ark.cn-beijing.volces.com/api/coding",
+      "apiKey": "你的豆包密钥",
+      "models": {
+        "doubao-seed-2.0-code": {
+          "name": "豆包 Seed 2.0 Code",
+          "alias": ["doubao", "seed"]
+        },
+        "DeepSeek-V3.2": {
+          "name": "DeepSeek V3.2",
+          "alias": ["deepseek"]
+        },
+        "kimi-k2.5": {
+          "name": "Kimi K2.5",
+          "alias": ["kimi"]
+        }
+      }
+    },
+    "ollama": {
+      "name": "Ollama 本地",
+      "baseUrl": "http://localhost:11434/v1",
+      "models": {
+        "qwen3:32b": {
+          "name": "Qwen3 32B",
+          "alias": ["qwen"]
+        }
+      }
+    }
+  },
+  "defaultModel": "doubao",
+  "smallFastModel": "qwen"
+}
+```
+
+### 字段说明
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `providers` | ✅ | Provider 列表，key 为 Provider ID |
+| `providers.*.name` | ✅ | Provider 显示名称 |
+| `providers.*.baseUrl` | ✅ | API 端点，必须以 `http://` 或 `https://` 开头 |
+| `providers.*.apiKey` | 否 | API 密钥，本地模型（Ollama 等）无需填写 |
+| `providers.*.models` | ✅ | 该 Provider 下的模型列表 |
+| `providers.*.models.*.name` | ✅ | 模型显示名称 |
+| `providers.*.models.*.alias` | 否 | 别名数组，用于快速切换（如 `/model doubao`） |
+| `defaultModel` | 否 | 启动时默认使用的模型（别名或模型 ID） |
+| `smallFastModel` | 否 | buddy/observer 等场景使用的快速小模型 |
+| `settings.disableInstallationChecks` | 否 | 设为 `true` 跳过安装方式检查警告 |
+
+> 💡 **安全建议**：API Key 可以使用 `{env:VARIABLE_NAME}` 语法引用环境变量，例如 `"apiKey": "{env:DOUBAO_API_KEY}"`，避免在配置文件中硬编码敏感凭证。
+
+> ⚠️ 如果使用项目级配置 `.claude/models.json`，建议将其加入 `.gitignore`，防止意外提交敏感信息。
+
+### 模型管理命令
+
+| 命令 | 说明 |
+|------|------|
+| `/model add` | 交互式添加新的 Provider 和模型，完成后自动验证连通性 |
+| `/model list` | 以表格形式展示所有已配置的模型（别名、端点、来源） |
+| `/model remove <别名>` | 移除指定模型配置 |
+| `/model check` | 对所有已配置模型进行健康检查，展示可用状态 |
+
+### 切换模型
 
 ```bash
-# 方式一：在 REPL 中输入 /model，从菜单中直接选择（推荐）
+# 在 REPL 中从菜单选择（推荐）
 /model
 
-# 方式二：启动时指定（使用别名或模型名）
-bun run start -- --model glm
-bun run start -- --model minimax
+# 启动时指定（使用别名或模型名）
+cclocal --model doubao
+cclocal --model qwen
 
-# 方式三：在 REPL 中直接指定别名
-/model glm
-/model minimax
+# 在 REPL 中直接指定别名
+/model doubao
+/model qwen
 ```
 
-切换时会自动切换对应的 API 端点和 API Key，无需手动修改环境变量。
+切换时会自动设置对应 Provider 的 API 端点和 API Key，无需手动修改环境变量。
+
+### 从旧版 .env 迁移
+
+如果你之前使用 `.env` 文件配置模型：
+- **全局安装用户**：重新运行 `bash scripts/install-global.sh`，安装脚本会自动检测 `.env` 并迁移到 `~/.claude/models.json`
+- **手动启动用户**：启动时会收到迁移提示，也可以在 REPL 中运行 `/migrate-models` 命令自动迁移
 
 ---
 
@@ -287,11 +407,12 @@ bun run start -- --model minimax
 
 ### 配置
 
-`/buddy` 的孵化和对话反应功能需要调用小模型（`queryHaiku`）。确保在 `.env` 中配置了小模型：
+`/buddy` 的孵化和对话反应功能需要调用小模型（`queryHaiku`）。在 `~/.claude/models.json` 中配置 `smallFastModel` 字段：
 
-```env
-# buddy 孵化和 observer 使用的小模型
-ANTHROPIC_SMALL_FAST_MODEL=doubao-seed-2.0-code
+```json
+{
+  "smallFastModel": "doubao-seed-2.0-code"
+}
 ```
 
 如果不设置，默认会使用 Anthropic 的 haiku 模型名，第三方 API 可能不支持。
@@ -464,15 +585,15 @@ registry = "https://registry.npmmirror.com"
 
 ### 启动时提示 "Unable to connect to Anthropic services"
 
-使用第三方 API 时，确保 `.env` 中正确设置了 `ANTHROPIC_BASE_URL`。项目会自动跳过对 `api.anthropic.com` 的连通性检查。
+使用第三方 API 时，确保 `~/.claude/models.json` 中正确配置了 `baseUrl`。项目会自动跳过对 `api.anthropic.com` 的连通性检查。
 
 ### 启动时提示 "Not logged in · Please run /login"
 
-确保 `.env` 中同时设置了 `ANTHROPIC_API_KEY` 和 `ANTHROPIC_BASE_URL`。使用第三方 API 时不需要登录 Anthropic 账号。
+确保 `~/.claude/models.json` 中配置了 Provider 和 `defaultModel`。使用第三方 API 时不需要登录 Anthropic 账号。
 
 ### 提示 "Claude Code has switched from npm to native installer"
 
-在 `.env` 中添加 `DISABLE_INSTALLATION_CHECKS=1` 即可消除。
+在 `~/.claude/models.json` 中添加 `"settings": { "disableInstallationChecks": true }` 即可消除。
 
 ### 全局安装后 `cclocal` 命令找不到
 
