@@ -2,16 +2,17 @@
  * /buddy 命令实现 — 1:1 复刻官方 Claude Code 的 buddy 功能
  *
  * 子命令：
- *   (无参数) — 已有 companion 时显示属性卡片，否则启动孵化
- *   pet     — 触发爱心动画 + 生成反应
- *   off     — 静音 companion
- *   on      — 取消静音
+ *   (无参数)        — 已有 companion 时显示属性卡片，否则启动孵化
+ *   pet             — 触发爱心动画 + 生成反应
+ *   off             — 静音 companion
+ *   on              — 取消静音
+ *   rehatch [种类]  — 重新孵化，可选指定物种（如 cat、dragon 等）
  */
 import * as React from 'react'
 import { useEffect, useState } from 'react'
 import { getCompanion, roll, companionUserId } from '../../buddy/companion.js'
-import { RARITY_COLORS, RARITY_STARS, STAT_NAMES } from '../../buddy/types.js'
-import type { Companion, CompanionBones } from '../../buddy/types.js'
+import { RARITY_COLORS, RARITY_STARS, STAT_NAMES, SPECIES } from '../../buddy/types.js'
+import type { Companion, CompanionBones, Species } from '../../buddy/types.js'
 import { renderSprite } from '../../buddy/sprites.js'
 import { queryHaiku } from '../../services/api/claude.js'
 import { saveGlobalConfig, getGlobalConfig } from '../../utils/config.js'
@@ -442,6 +443,37 @@ export const call: LocalJSXCommandCall = async (
     return null
   }
 
+  // /buddy rehatch [species] → 重新孵化，可选指定物种
+  if (subcommand?.startsWith('rehatch')) {
+    const speciesArg = subcommand.replace('rehatch', '').trim().toLowerCase()
+    // 清除当前 companion，触发重新孵化
+    if (speciesArg && !SPECIES.includes(speciesArg as Species)) {
+      onDone(
+        `unknown species "${speciesArg}" · available: ${SPECIES.join(', ')}`,
+        { display: 'system' },
+      )
+      return null
+    }
+    // 清除旧 companion 数据
+    saveGlobalConfig((c) => ({ ...c, companion: undefined }))
+    // 重新孵化
+    const hatching = (async () => {
+      const { bones } = roll(companionUserId())
+      const finalBones = speciesArg
+        ? { ...bones, species: speciesArg as Species }
+        : bones
+      const controller = new AbortController()
+      const soul = await generateSoul(finalBones, controller.signal)
+      const hatchedAt = Date.now()
+      const stored = speciesArg
+        ? { ...soul, hatchedAt, speciesOverride: speciesArg as Species }
+        : { ...soul, hatchedAt }
+      saveGlobalConfig((cfg) => ({ ...cfg, companion: stored }))
+      return { ...finalBones, ...soul, hatchedAt } as Companion
+    })()
+    return <HatchFlow hatching={hatching} onDone={onDone} />
+  }
+
   // 取消静音（如果当前是静音状态）
   if (config.companionMuted === true) {
     saveGlobalConfig((c) => ({ ...c, companionMuted: false }))
@@ -459,7 +491,9 @@ export const call: LocalJSXCommandCall = async (
 }
 
 // 导出供属性测试使用
-const KNOWN_SUBCOMMANDS = new Set(['pet', 'off', 'on'])
+const KNOWN_SUBCOMMANDS = new Set(['pet', 'off', 'on', 'rehatch'])
 export function isKnownSubcommand(cmd: string): boolean {
-  return KNOWN_SUBCOMMANDS.has(cmd.trim().toLowerCase())
+  // rehatch 可能带参数，如 "rehatch cat"
+  const first = cmd.trim().toLowerCase().split(/\s+/)[0] ?? ''
+  return KNOWN_SUBCOMMANDS.has(first)
 }

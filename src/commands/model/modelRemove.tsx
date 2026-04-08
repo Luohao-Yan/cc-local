@@ -126,10 +126,49 @@ export function ModelRemove({
 export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
   const modelInput = (args || '').trim()
   if (!modelInput) {
-    onDone('Usage: /model remove <alias or model name>\n\nRun /model list to see configured models.', {
-      display: 'system',
-    })
-    return
+    // No argument — show model picker
+    return <RemovePicker onDone={onDone} />
   }
   return <ModelRemove onDone={onDone} modelInput={modelInput} />
+}
+
+/** When no model name given, show a list to pick from */
+function RemovePicker({
+  onDone,
+}: {
+  onDone: (message: string, options?: { display: string }) => void
+}): React.ReactElement {
+  const models = React.useMemo(() => getConfiguredModels(), [])
+  const [selected, setSelected] = React.useState<string | null>(null)
+
+  const handleCancel = React.useCallback(() => {
+    onDone('Remove cancelled.', { display: 'system' })
+  }, [onDone])
+
+  React.useEffect(() => {
+    if (models.length === 0) {
+      onDone('No models configured. Run /model add first.', { display: 'system' })
+    }
+  }, [models.length, onDone])
+
+  if (models.length === 0) return <Text> </Text>
+
+  if (selected) {
+    return <ModelRemove onDone={onDone} modelInput={selected} />
+  }
+
+  return (
+    <Box flexDirection="column">
+      <Text>Select model to remove:</Text>
+      <Select
+        options={models.map(m => ({
+          label: `${m.modelKey} (${m.providerName})`,
+          value: m.modelKey,
+          description: m.aliases.length > 0 ? `alias: ${m.aliases.join(', ')}` : undefined,
+        }))}
+        onChange={setSelected}
+        onCancel={handleCancel}
+      />
+    </Box>
+  )
 }

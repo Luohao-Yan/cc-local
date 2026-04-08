@@ -124,10 +124,14 @@ export function companionUserId(): string {
 // Regenerate bones from userId, merge with stored soul. Bones never persist
 // so species renames and SPECIES-array edits can't break stored companions,
 // and editing config.companion can't fake a rarity.
+// 如果配置中存在 speciesOverride，则用它覆盖随机分配的物种
 export function getCompanion(): Companion | undefined {
   const stored = getGlobalConfig().companion
   if (!stored) return undefined
   const { bones } = roll(companionUserId())
+  const finalBones = stored.speciesOverride
+    ? { ...bones, species: stored.speciesOverride }
+    : bones
   // bones last so stale bones fields in old-format configs get overridden
-  return { ...stored, ...bones }
+  return { ...stored, ...bones, ...finalBones }
 }

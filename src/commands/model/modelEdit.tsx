@@ -163,8 +163,9 @@ export function ModelEdit({
       }
     })
 
-    onDone(`Updated ${editField} for "${matched.modelKey}".`, { display: 'system' })
-  }, [matched, editField, onDone])
+    // Return to field selection so user can edit more fields
+    setStep('select-field')
+  }, [matched, editField])
 
   if (!matched) {
     return <Text> </Text>
@@ -180,12 +181,7 @@ export function ModelEdit({
       <Box flexDirection="column">
         <Text>Editing: {matched.modelKey} ({matched.providerName})</Text>
         <Text> </Text>
-        <Text>  1. Provider name: {provider?.name || '?'}</Text>
-        <Text>  2. baseUrl:       {provider?.baseUrl || '?'}</Text>
-        <Text>  3. apiKey:        {mask(provider?.apiKey)}</Text>
-        <Text>  4. Model name:    {model?.name || '?'}</Text>
-        <Text>  5. Alias:         {aliasStr}</Text>
-        <Text> </Text>
+        <Text>Select field to edit:</Text>
         <Select
           options={[
             { label: `Provider name (${provider?.name || '?'})`, value: 'providerName' },
@@ -203,13 +199,27 @@ export function ModelEdit({
   }
 
   if (step === 'input-value') {
-    const hint = editField === 'alias' ? 'comma-separated, ' : ''
+    const config = getGlobalModelConfig()
+    const provider = config.providers[matched.providerKey]
+    const model = provider?.models[matched.modelKey]
+    let currentValue = ''
+    switch (editField) {
+      case 'baseUrl': currentValue = provider?.baseUrl || ''; break
+      case 'apiKey': currentValue = provider?.apiKey || ''; break
+      case 'providerName': currentValue = provider?.name || ''; break
+      case 'modelName': currentValue = model?.name || ''; break
+      case 'alias': currentValue = model?.alias?.join(', ') || ''; break
+    }
+    const hint = editField === 'alias' ? ' (comma-separated)' : ''
     return (
-      <InputStep
-        label={`New ${editField} (${hint}Enter to keep current):`}
-        onSubmit={handleValueSubmit}
-        onCancel={handleCancel}
-      />
+      <Box flexDirection="column">
+        <Text>Current {editField}: {editField === 'apiKey' ? mask(currentValue) : currentValue}</Text>
+        <InputStep
+          label={`New value${hint} (Enter to keep current):`}
+          onSubmit={handleValueSubmit}
+          onCancel={handleCancel}
+        />
+      </Box>
     )
   }
 
