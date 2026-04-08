@@ -894,20 +894,19 @@ export function hasSkipDangerousModePermissionPrompt(): boolean {
  * a malicious project could otherwise auto-bypass the dialog (RCE risk).
  */
 export function hasAutoModeOptIn(): boolean {
-  if (feature('TRANSCRIPT_CLASSIFIER')) {
-    const user = getSettingsForSource('userSettings')?.skipAutoPermissionPrompt
-    const local =
-      getSettingsForSource('localSettings')?.skipAutoPermissionPrompt
-    const flag = getSettingsForSource('flagSettings')?.skipAutoPermissionPrompt
-    const policy =
-      getSettingsForSource('policySettings')?.skipAutoPermissionPrompt
-    const result = !!(user || local || flag || policy)
-    logForDebugging(
-      `[auto-mode] hasAutoModeOptIn=${result} skipAutoPermissionPrompt: user=${user} local=${local} flag=${flag} policy=${policy}`,
-    )
-    return result
-  }
-  return false
+  // 始终检查设置，不依赖 feature flag — 确保即使用户禁用了某些功能，
+  // 已接受的 opt-in 也能被正确识别
+  const user = getSettingsForSource('userSettings')?.skipAutoPermissionPrompt
+  const local =
+    getSettingsForSource('localSettings')?.skipAutoPermissionPrompt
+  const flag = getSettingsForSource('flagSettings')?.skipAutoPermissionPrompt
+  const policy =
+    getSettingsForSource('policySettings')?.skipAutoPermissionPrompt
+  const result = !!(user || local || flag || policy)
+  logForDebugging(
+    `[auto-mode] hasAutoModeOptIn=${result} skipAutoPermissionPrompt: user=${user} local=${local} flag=${flag} policy=${policy}`,
+  )
+  return result
 }
 
 /**
