@@ -31,7 +31,7 @@ interface CheckResult {
   /** Provider 显示名称 */
   providerName: string
   /** 状态：可用 / 不可用 / 超时 */
-  status: '可用' | '不可用' | '超时'
+  status: 'OK' | 'Failed' | 'Timeout'
   /** 错误详情（仅不可用时） */
   error?: string
 }
@@ -65,17 +65,17 @@ async function checkSingleModel(model: ResolvedModel): Promise<CheckResult> {
       signal: controller.signal,
       messages: [{ role: 'user', content: 'Hi' }],
     })
-    return { ...base, status: '可用' }
+    return { ...base, status: 'OK' }
   } catch (err: unknown) {
     // 判断是否为超时（AbortError）
     if (
       err instanceof Error &&
       (err.name === 'AbortError' || controller.signal.aborted)
     ) {
-      return { ...base, status: '超时' }
+      return { ...base, status: 'Timeout' }
     }
     const errMsg = err instanceof Error ? err.message : String(err)
-    return { ...base, status: '不可用', error: errMsg }
+    return { ...base, status: 'Failed', error: errMsg }
   } finally {
     clearTimeout(timer)
   }
@@ -93,9 +93,9 @@ function padRight(str: string, width: number): string {
  */
 function buildCheckTable(results: CheckResult[]): string {
   const headers = {
-    model: '模型',
+    model: 'Model',
     provider: 'Provider',
-    status: '状态',
+    status: 'Status',
   }
 
   // 计算各列宽度
@@ -141,7 +141,7 @@ export const call: LocalJSXCommandCall = async (onDone, _context, _args) => {
 
   // 无模型配置时提示
   if (models.length === 0) {
-    onDone('当前没有配置任何模型。请先通过 /model add 添加模型。', {
+    onDone('No models configured. Run /model add first.', {
       display: 'system',
     })
     return
@@ -173,11 +173,11 @@ export const call: LocalJSXCommandCall = async (onDone, _context, _args) => {
   // 构建输出
   const table = buildCheckTable(results)
   const hasUnavailable = results.some(
-    (r) => r.status === '不可用' || r.status === '超时',
+    (r) => r.status === 'Failed' || r.status === 'Timeout',
   )
 
   const output = hasUnavailable
-    ? `${table}\n\n提示: 不可用的模型可通过 /model remove <别名> 清理。`
+    ? `${table}\n\nTip: Remove unavailable models with /model remove <alias>.`
     : table
 
   onDone(output, { display: 'system' })

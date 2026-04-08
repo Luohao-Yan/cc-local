@@ -70,9 +70,11 @@ function getClipboardCommands() {
       deleteFile: `rm -f "${screenshotPath}"`,
     },
     win32: {
+      // Windows: 将检查和保存合并为一条 PowerShell 命令，避免两次冷启动
+      // 单独的 checkImage 仅在 hasImageInClipboard 中使用
       checkImage:
         'powershell -NoProfile -Command "(Get-Clipboard -Format Image) -ne $null"',
-      saveImage: `powershell -NoProfile -Command "$img = Get-Clipboard -Format Image; if ($img) { $img.Save('${screenshotPath.replace(/\\/g, '\\\\')}', [System.Drawing.Imaging.ImageFormat]::Png) }"`,
+      saveImage: `powershell -NoProfile -Command "$img = Get-Clipboard -Format Image; if ($img) { $img.Save('${screenshotPath.replace(/\\/g, '\\\\')}', [System.Drawing.Imaging.ImageFormat]::Png); Write-Output 'OK' } else { exit 1 }"`,
       getPath: 'powershell -NoProfile -Command "Get-Clipboard"',
       deleteFile: `del /f "${screenshotPath}"`,
     },
@@ -92,33 +94,47 @@ export type ImageWithDimensions = {
 
 /**
  * Check if clipboard contains an image without retrieving it.
+ * 支持 macOS（native / osascript）和 Windows（PowerShell）。
+ * Linux 暂不支持（缺少统一的快速检测方式）。
  */
 export async function hasImageInClipboard(): Promise<boolean> {
-  if (process.platform !== 'darwin') {
-    return false
-  }
-  if (
-    feature('NATIVE_CLIPBOARD_IMAGE') &&
-    getFeatureValue_CACHED_MAY_BE_STALE('tengu_collage_kaleidoscope', true)
-  ) {
-    // Native NSPasteboard check (~0.03ms warm). Fall through to osascript
-    // when the module/export is missing. Catch a throw too: it would surface
-    // as an unhandled rejection in useClipboardImageHint's setTimeout.
-    try {
-      const { getNativeModule } = await import('image-processor-napi')
-      const hasImage = getNativeModule()?.hasClipboardImage
-      if (hasImage) {
-        return hasImage()
+  if (process.platform === 'darwin') {
+    if (
+      feature('NATIVE_CLIPBOARD_IMAGE') &&
+      getFeatureValue_CACHED_MAY_BE_STALE('tengu_collage_kaleidoscope', true)
+    ) {
+      // Native NSPasteboard check (~0.03ms warm). Fall through to osascript
+      // when the module/export is missing. Catch a throw too: it would surface
+      // as an unhandled rejection in useClipboardImageHint's setTimeout.
+      try {
+        const { getNativeModule } = await import('image-processor-napi')
+        const hasImage = getNativeModule()?.hasClipboardImage
+        if (hasImage) {
+          return hasImage()
+        }
+      } catch (e) {
+        logError(e as Error)
       }
-    } catch (e) {
-      logError(e as Error)
     }
+    const result = await execFileNoThrowWithCwd('osascript', [
+      '-e',
+      'the clipboard as «class PNGf»',
+    ])
+    return result.code === 0
   }
-  const result = await execFileNoThrowWithCwd('osascript', [
-    '-e',
-    'the clipboard as «class PNGf»',
-  ])
-  return result.code === 0
+
+  if (process.platform === 'win32') {
+    // Windows: 使用 PowerShell 检查剪贴板是否包含图片
+    // 使用 -NoProfile 减少启动时间
+    const result = await execFileNoThrowWithCwd(
+      'powershell',
+      ['-NoProfile', '-Command', '(Get-Clipboard -Format Image) -ne $null'],
+      { timeout: 5000 },
+    )
+    return result.code === 0 && result.stdout.trim() === 'True'
+  }
+
+  return false
 }
 
 export async function getImageFromClipboard(): Promise<ImageWithDimensions | null> {
@@ -185,13 +201,20 @@ export async function getImageFromClipboard(): Promise<ImageWithDimensions | nul
 
   const { commands, screenshotPath } = getClipboardCommands()
   try {
-    // Check if clipboard has image
-    const checkResult = await execa(commands.checkImage, {
-      shell: true,
-      reject: false,
-    })
-    if (checkResult.exitCode !== 0) {
-      return null
+    // Windows 优化：saveImage 命令已包含图片检查逻辑（无图片时 exit 1），
+    // 跳过单独的 checkImage 步骤，避免两次 PowerShell 冷启动。
+    // macOS/Linux 仍保留两步检查，因为 osascript/xclip 启动很快。
+    const isWin32 = process.platform === 'win32'
+
+    if (!isWin32) {
+      // Check if clipboard has image (macOS/Linux only)
+      const checkResult = await execa(commands.checkImage, {
+        shell: true,
+        reject: false,
+      })
+      if (checkResult.exitCode !== 0) {
+        return null
+      }
     }
 
     // Save the image

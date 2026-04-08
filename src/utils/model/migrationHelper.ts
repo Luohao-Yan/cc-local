@@ -121,9 +121,9 @@ export function showMigrationHintIfNeeded(): void {
 
   // 输出迁移提示到 stderr
   writeToStderr(
-    '\n⚠️  检测到旧格式 MODEL_* 环境变量。该配置方式已废弃，请迁移到 JSON 配置。\n' +
-      '   运行 /migrate-models 命令可自动完成迁移。\n' +
-      '   详情请参阅项目文档。\n\n',
+    '\n⚠️  Legacy MODEL_* env vars detected. This format is deprecated.\n' +
+      '   Run /migrate-models to auto-migrate to JSON config.\n' +
+      '   See project README for details.\n\n',
   )
 }
 

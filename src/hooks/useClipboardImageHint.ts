@@ -50,7 +50,7 @@ export function useClipboardImageHint(
           return
         }
 
-        // Check if clipboard has an image (async osascript call)
+        // Check if clipboard has an image (macOS / Windows)
         if (await hasImageInClipboard()) {
           lastHintTimeRef.current = now
           addNotification({

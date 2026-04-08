@@ -52,7 +52,12 @@ export function usePasteHandler({
   // that key is Enter, it submits the old input and the paste is lost.
   const pastePendingRef = React.useRef(false)
 
+  // macOS 和 Windows 都支持从剪贴板粘贴图片
   const isMacOS = React.useMemo(() => getPlatform() === 'macos', [])
+  const supportsClipboardImage = React.useMemo(() => {
+    const platform = getPlatform()
+    return platform === 'macos' || platform === 'windows'
+  }, [])
 
   React.useEffect(() => {
     return () => {
@@ -103,7 +108,7 @@ export function usePasteHandler({
           onPaste,
           setIsPasting,
           checkClipboardForImage,
-          isMacOS,
+          supportsClipboardImage,
           pastePendingRef,
         ) => {
           pastePendingRef.current = false
@@ -176,9 +181,9 @@ export function usePasteHandler({
               return { chunks: [], timeoutId: null }
             }
 
-            // If paste is empty (common when trying to paste images with Cmd+V),
-            // check if clipboard has an image (macOS only)
-            if (isMacOS && onImagePaste && pastedText.length === 0) {
+            // If paste is empty (common when trying to paste images with Cmd+V / Ctrl+V),
+            // check if clipboard has an image (macOS and Windows)
+            if (supportsClipboardImage && onImagePaste && pastedText.length === 0) {
               checkClipboardForImage()
               return { chunks: [], timeoutId: null }
             }
@@ -198,11 +203,11 @@ export function usePasteHandler({
         onPaste,
         setIsPasting,
         checkClipboardForImage,
-        isMacOS,
+        supportsClipboardImage,
         pastePendingRef,
       )
     },
-    [checkClipboardForImage, isMacOS, onImagePaste, onPaste],
+    [checkClipboardForImage, supportsClipboardImage, onImagePaste, onPaste],
   )
 
   // Paste detection is now done via the InputEvent's keypress.isPasted flag,
@@ -212,10 +217,6 @@ export function usePasteHandler({
   // the 'readable' listener in App.tsx, causing dropped characters.
 
   const wrappedOnInput = (input: string, key: Key, event: InputEvent): void => {
-    // 调试日志：记录所有输入事件
-    if (input === '\x16' || event.keypress.isPasted) {
-      process.stderr.write(`[DEBUG] wrappedOnInput: input=${JSON.stringify(input)}, isPasted=${event.keypress.isPasted}, inputLen=${input.length}, keyName=${event.keypress.name || 'none'}\n`)
-    }
     // Detect paste from the parsed keypress event.
     // The keypress parser sets isPasted=true for content within bracketed paste.
     const isFromPaste = event.keypress.isPasted
@@ -242,12 +243,11 @@ export function usePasteHandler({
       .flatMap(part => part.split('\n'))
       .some(line => isImageFilePath(line.trim()))
 
-    // Handle empty paste (clipboard image on macOS)
-    // When the user pastes an image with Cmd+V, the terminal sends an empty
+    // Handle empty paste (clipboard image on macOS / Windows)
+    // When the user pastes an image with Cmd+V / Ctrl+V, the terminal sends an empty
     // bracketed paste sequence. The keypress parser emits this as isPasted=true
     // with empty input.
-    if (isFromPaste && input.length === 0 && isMacOS && onImagePaste) {
-      process.stderr.write('[DEBUG] Empty bracketed paste detected, checking clipboard for image\n')
+    if (isFromPaste && input.length === 0 && supportsClipboardImage && onImagePaste) {
       checkClipboardForImage()
       // Reset isPasting since there's no text content to process
       setIsPasting(false)

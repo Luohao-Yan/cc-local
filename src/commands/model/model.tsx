@@ -21,6 +21,7 @@ import { call as modelAddCall } from './modelAdd.js';
 import { call as modelListCall } from './modelList.js';
 import { call as modelRemoveCall } from './modelRemove.js';
 import { call as modelCheckCall } from './modelCheck.js';
+import { call as modelEditCall } from './modelEdit.js';
 function ModelPickerWrapper(t0) {
   const $ = _c(17);
   const {
@@ -278,28 +279,9 @@ function _temp7(s) {
 }
 export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
   args = args?.trim() || '';
-  if (COMMON_INFO_ARGS.includes(args)) {
-    logEvent('tengu_model_command_inline_help', {
-      args: args as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
-    });
-    return <ShowModelAndClose onDone={onDone} />;
-  }
-  if (COMMON_HELP_ARGS.includes(args)) {
-    onDone(
-      [
-        '/model              Open model selection menu',
-        '/model <name>       Switch to a model (alias or model name)',
-        '/model add          Add a new provider and model interactively',
-        '/model list         List all configured models',
-        '/model remove <name> Remove a model configuration',
-        '/model check        Health check all configured models',
-      ].join('\n'),
-      { display: 'system' },
-    );
-    return;
-  }
 
-  // 子命令路由：解析第一个单词作为子命令，剩余部分作为子命令参数
+  // Subcommand routing — must be before COMMON_INFO_ARGS check
+  // because 'list' and 'check' are in COMMON_INFO_ARGS
   if (args) {
     const subcommand = args.split(/\s+/)[0]?.toLowerCase()
     const subArgs = args.slice(subcommand?.length || 0).trim()
@@ -313,8 +295,31 @@ export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
         return modelRemoveCall(onDone, _context, subArgs)
       case 'check':
         return modelCheckCall(onDone, _context, subArgs)
-      // TODO: /migrate-models 命令可通过 Migration_Helper 的 convertLegacyEnvToConfig() 实现
+      case 'edit':
+        return modelEditCall(onDone, _context, subArgs)
     }
+  }
+
+  if (COMMON_INFO_ARGS.includes(args)) {
+    logEvent('tengu_model_command_inline_help', {
+      args: args as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
+    });
+    return <ShowModelAndClose onDone={onDone} />;
+  }
+  if (COMMON_HELP_ARGS.includes(args)) {
+    onDone(
+      [
+        '/model              Open model selection menu',
+        '/model <name>       Switch to a model (alias or model name)',
+        '/model add          Add a new provider and model interactively',
+        '/model list         List all configured models',
+        '/model edit <name>  Edit a model config (baseUrl, apiKey)',
+        '/model remove <name> Remove a model configuration',
+        '/model check        Health check all configured models',
+      ].join('\n'),
+      { display: 'system' },
+    );
+    return;
   }
 
   if (args) {
