@@ -98,31 +98,25 @@ set "CMD_FILE=%BUN_DIR%cclocal.cmd"
 echo @bun "%PROJECT_DIR%\dist\cli.js" %%* > "%CMD_FILE%"
 
 :: ===== .env 自动迁移到 ~/.claude/models.json =====
+:: 使用独立 .ps1 脚本执行，解决 bun 读取 GBK 编码 .env 文件乱码问题
 set "MODELS_JSON=%CLAUDE_DIR%\models.json"
 set "MIGRATED=0"
 
 if exist "%PROJECT_DIR%\.env" (
     if not exist "%MODELS_JSON%" (
-        :: 使用 bun 执行迁移脚本（解析 .env 并生成 JSON）
         if not exist "%CLAUDE_DIR%" mkdir "%CLAUDE_DIR%"
-        bun "%PROJECT_DIR%\scripts\migrate-env-to-json.js" "%PROJECT_DIR%" > "%MODELS_JSON%" 2>"%TEMP%\migrate_status.txt"
+        powershell -NoProfile -ExecutionPolicy Bypass -File "%PROJECT_DIR%\scripts\migrate-env-to-json.ps1" -ProjectDir "%PROJECT_DIR%" -OutFile "%MODELS_JSON%" > "%TEMP%\migrate_result.txt" 2>&1
 
-        :: Check migration result
-        findstr /C:"MIGRATED=1" "%TEMP%\migrate_status.txt" >nul 2>nul
+        findstr /C:"MIGRATED=1" "%TEMP%\migrate_result.txt" >nul 2>nul
         if !errorlevel! equ 0 (
             set "MIGRATED=1"
             echo [OK] Detected legacy .env config, migrated to %MODELS_JSON%
-
-            :: Extract multi-model count
-            for /f "tokens=2 delims==" %%A in ('findstr /C:"MULTI_COUNT" "%TEMP%\migrate_status.txt"') do (
-                if %%A gtr 0 echo [OK]   Migrated %%A multi-model configs
-            )
             echo [!] Legacy .env file preserved. You can delete it after verifying the new config.
         ) else (
-            :: Migration script determined no migration needed, delete empty file
-            del "%MODELS_JSON%" >nul 2>nul
+            if exist "%MODELS_JSON%" del "%MODELS_JSON%" >nul 2>nul
+            echo [!] Migration skipped (no valid API key in .env or already configured)
         )
-        del "%TEMP%\migrate_status.txt" >nul 2>nul
+        del "%TEMP%\migrate_result.txt" >nul 2>nul
     )
 )
 
