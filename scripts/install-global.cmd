@@ -29,11 +29,28 @@ pushd "%PROJECT_DIR%"
 set "PROJECT_DIR=%CD%"
 popd
 
-:: Clean up legacy command files (cc.cmd, ccl.cmd)
+:: Clean up legacy command files (cc.cmd, ccl.cmd) from bun bin dir
 for %%F in (cc.cmd ccl.cmd) do (
     if exist "%BUN_DIR%%%F" (
         del "%BUN_DIR%%%F" >nul 2>nul
         echo [*] Cleaned legacy command: %BUN_DIR%%%F
+    )
+)
+
+:: Clean up stale cclocal.cmd from all common global install dirs
+:: (npm, yarn, pnpm may have an old version that takes priority in PATH)
+for %%D in (
+    "%APPDATA%\npm"
+    "%LOCALAPPDATA%\Yarn\bin"
+    "%LOCALAPPDATA%\pnpm"
+) do (
+    if exist "%%~D\cclocal.cmd" (
+        del "%%~D\cclocal.cmd" >nul 2>nul
+        echo [*] Cleaned stale cclocal.cmd from: %%~D
+    )
+    if exist "%%~D\cclocal" (
+        del "%%~D\cclocal" >nul 2>nul
+        echo [*] Cleaned stale cclocal from: %%~D
     )
 )
 

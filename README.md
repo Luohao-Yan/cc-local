@@ -133,6 +133,7 @@ bash scripts/install-global.sh
 ```
 
 > 💡 默认命令名为 `cclocal`（Claude Code Local）。如需自定义命令名，可传参指定：
+>
 > ```bash
 > bash scripts/install-global.sh mycc
 > ```
@@ -178,6 +179,7 @@ bun run build
 ```
 
 更新完成后：
+
 - 如果使用 `bun run start` 启动，会自动构建并运行最新代码
 - 如果使用全局命令 `cclocal`，`bun run build` 后全局命令会自动使用更新后的 `dist/cli.js`，无需重新安装
 
@@ -375,6 +377,7 @@ cclocal --model qwen
 ### 从旧版 .env 迁移
 
 如果你之前使用 `.env` 文件配置模型：
+
 - **全局安装用户**：重新运行 `bash scripts/install-global.sh`，安装脚本会自动检测 `.env` 并迁移到 `~/.claude/models.json`
 - **手动启动用户**：启动时会收到迁移提示，也可以在 REPL 中运行 `/migrate-models` 命令自动迁移
 
