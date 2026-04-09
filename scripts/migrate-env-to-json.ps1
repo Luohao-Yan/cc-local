@@ -80,10 +80,15 @@ foreach ($key in $vars.Keys) {
 
         if ($mUrl -eq $baseUrl -and $mKey -eq $apiKey) {
             # 与基础 Provider 相同 → 追加模型到基础 Provider
-            $baseModels[$mName] = @{ name = $mName; alias = @($aliasLower) }
+            # 只有别名与模型名不同时才设置别名，避免冗余
+            $entry = @{ name = $mName }
+            if ($aliasLower -ne $mName.ToLower()) { $entry['alias'] = @($aliasLower) }
+            $baseModels[$mName] = $entry
         } else {
             # 独立 Provider
-            $p = @{ name = $aliasLower; baseUrl = $mUrl; models = @{ $mName = @{ name = $mName; alias = @($aliasLower) } } }
+            $entry = @{ name = $mName }
+            if ($aliasLower -ne $mName.ToLower()) { $entry['alias'] = @($aliasLower) }
+            $p = @{ name = $aliasLower; baseUrl = $mUrl; models = @{ $mName = $entry } }
             if ($mKey) { $p['apiKey'] = $mKey }
             $extraProviders[$aliasLower] = $p
         }

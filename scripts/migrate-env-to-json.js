@@ -70,7 +70,7 @@ if (baseUrl) {
       const parts = hostname.split('.')
       const main = parts.find(p => !['api', 'www', 'v1', 'v2'].includes(p))
       if (main && main.length > 2) providerName = main
-    } catch {}
+    } catch { }
   }
 }
 
@@ -110,14 +110,18 @@ for (const [key, val] of Object.entries(vars)) {
 
   if (!mName || !mUrl) continue
 
+  // 只有别名与模型名不同时才设置 alias，避免冗余
+  const entry = { name: mName }
+  if (aliasLower !== mName.toLowerCase()) entry.alias = [aliasLower]
+
   // 与基础 Provider 相同 baseUrl+apiKey → 追加模型到基础 Provider
   if (mUrl === baseUrl && mKey === apiKey) {
-    baseProvider.models[mName] = { name: mName, alias: [aliasLower] }
+    baseProvider.models[mName] = entry
   } else {
     // 创建独立 Provider
     const p = { name: aliasLower, baseUrl: mUrl, models: {} }
     if (mKey) p.apiKey = mKey
-    p.models[mName] = { name: mName, alias: [aliasLower] }
+    p.models[mName] = entry
     config.providers[aliasLower] = p
   }
   multiCount++
