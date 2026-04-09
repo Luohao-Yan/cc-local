@@ -93,6 +93,12 @@ if not exist "%PROJECT_DIR%\dist\cli.js" (
 )
 echo [OK] Built: %PROJECT_DIR%\dist\cli.js
 
+:: 强制删除其他包管理器目录里的旧版 cclocal.cmd（兜底清理，防止 PATH 顺序问题）
+if exist "%APPDATA%\npm\cclocal.cmd"        del "%APPDATA%\npm\cclocal.cmd" >nul 2>nul
+if exist "%APPDATA%\npm\cclocal"            del "%APPDATA%\npm\cclocal" >nul 2>nul
+if exist "%LOCALAPPDATA%\Yarn\bin\cclocal.cmd" del "%LOCALAPPDATA%\Yarn\bin\cclocal.cmd" >nul 2>nul
+if exist "%LOCALAPPDATA%\pnpm\cclocal.cmd"  del "%LOCALAPPDATA%\pnpm\cclocal.cmd" >nul 2>nul
+
 :: 创建 cclocal.cmd 全局启动脚本
 set "CMD_FILE=%BUN_DIR%cclocal.cmd"
 echo @bun "%PROJECT_DIR%\dist\cli.js" %%* > "%CMD_FILE%"
