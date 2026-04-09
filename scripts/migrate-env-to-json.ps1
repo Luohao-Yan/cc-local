@@ -114,7 +114,9 @@ $outDir = Split-Path $OutFile -Parent
 if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir -Force | Out-Null }
 
 # 写入 UTF-8（无 BOM）JSON 文件
+# 注意：System.Text.Encoding::UTF8 在 .NET 里默认带 BOM，必须用 UTF8NoBOM
 $json = $cfg | ConvertTo-Json -Depth 10
-[System.IO.File]::WriteAllText($OutFile, $json, [System.Text.Encoding]::UTF8)
+$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+[System.IO.File]::WriteAllText($OutFile, $json, $utf8NoBom)
 
 Write-Host "MIGRATED=1 MULTI_COUNT=$multiCount"
