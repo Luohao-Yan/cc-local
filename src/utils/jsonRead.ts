@@ -12,5 +12,14 @@
 const UTF8_BOM = '\uFEFF'
 
 export function stripBOM(content: string): string {
-  return content.startsWith(UTF8_BOM) ? content.slice(1) : content
+  // 处理字符串开头的 BOM（readFileSync encoding:'utf-8' 会把 EF BB BF 转成 \uFEFF）
+  if (content.startsWith(UTF8_BOM)) {
+    return content.slice(1)
+  }
+  // 处理极少数情况：BOM 后跟换行（\uFEFF\r\n{...}），直接 trim 开头的不可见字符
+  const trimmed = content.trimStart()
+  if (trimmed.startsWith(UTF8_BOM)) {
+    return trimmed.slice(1)
+  }
+  return content
 }

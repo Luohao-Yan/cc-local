@@ -116,6 +116,8 @@ if exist "%PROJECT_DIR%\.env" (
         findstr /C:"MIGRATED=1" "%TEMP%\migrate_result.txt" >nul 2>nul
         if !errorlevel! equ 0 (
             set "MIGRATED=1"
+            :: 迁移成功后，用 PowerShell 重写文件确保无 BOM（ConvertTo-Json 默认带 BOM）
+            powershell -NoProfile -ExecutionPolicy Bypass -Command "$p='%MODELS_JSON%'; $c=[System.IO.File]::ReadAllText($p); $e=[System.Text.UTF8Encoding]::new($false); [System.IO.File]::WriteAllText($p,$c,$e)" >nul 2>nul
             echo [OK] Detected legacy .env config, migrated to %MODELS_JSON%
             echo [!] Legacy .env file preserved. You can delete it after verifying the new config.
         ) else (
