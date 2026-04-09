@@ -92,7 +92,12 @@ export function getUserSpecifiedModelSetting(): ModelSetting | undefined {
     specifiedModel = modelOverride
   } else {
     const settings = getSettings_DEPRECATED() || {}
-    specifiedModel = process.env.ANTHROPIC_MODEL || settings.model || undefined
+    // 当 models.json 里已有 providers 配置时，忽略 ANTHROPIC_MODEL 环境变量。
+    // ANTHROPIC_MODEL 是旧版 .env 或系统级遗留变量，优先级不应高于 models.json 的 defaultModel。
+    const hasJsonProviders =
+      Object.keys(getModelConfig().providers ?? {}).length > 0
+    const envModel = hasJsonProviders ? undefined : process.env.ANTHROPIC_MODEL
+    specifiedModel = envModel || settings.model || undefined
   }
 
   // Ignore the user-specified model if it's not in the availableModels allowlist.
