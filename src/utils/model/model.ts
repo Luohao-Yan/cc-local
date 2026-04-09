@@ -52,11 +52,16 @@ export function getSmallFastModel(): ModelName {
 
   // 3. 第三方兼容 API：网关不认识 Anthropic 官方模型名（如 claude-haiku-4-5），
   //    回退到用户配置的主模型，避免因模型名不匹配导致 403
+  //    注意：当 models.json 有 providers 配置时，忽略 ANTHROPIC_MODEL 环境变量，
+  //    与 getUserSpecifiedModelSetting 保持一致，避免旧版系统变量干扰。
   if (
     process.env.ANTHROPIC_BASE_URL &&
     !process.env.ANTHROPIC_BASE_URL.includes('anthropic.com')
   ) {
-    return process.env.ANTHROPIC_MODEL || getMainLoopModel()
+    const hasJsonProviders =
+      Object.keys(getModelConfig().providers ?? {}).length > 0
+    const envModel = hasJsonProviders ? undefined : process.env.ANTHROPIC_MODEL
+    return envModel || getMainLoopModel()
   }
 
   // 4. 默认 Haiku 模型
