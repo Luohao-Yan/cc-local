@@ -128,7 +128,11 @@ function createDefaultModelsConfig(): ModelsConfig {
  */
 function readModelsConfigFromFile(filePath: string): ModelsConfig {
   try {
-    const content = readFileSync(filePath, { encoding: 'utf-8' })
+    // 用 Buffer 读取再手动转 UTF-8，彻底绕过 BOM 问题。
+    // readFileSync encoding:'utf-8' 在某些 bun/Node 版本下可能不剥离 BOM 字节，
+    // 而 Buffer 读取后 toString('utf-8') 会把 EF BB BF 转成 \uFEFF，stripBOM 能稳定处理。
+    const buf = readFileSync(filePath)
+    const content = buf.toString('utf-8')
     const parsed = JSON.parse(stripBOM(content))
     // 合并默认值，确保 providers 字段存在
     return {
