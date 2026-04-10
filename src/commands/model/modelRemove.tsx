@@ -15,7 +15,7 @@ import {
   saveGlobalModelConfig,
 } from '../../utils/model/modelConfig.js'
 import { getConfiguredModels, type ResolvedModel } from '../../utils/model/multiModel.js'
-import type { LocalJSXCommandCall } from '../../types/command.js'
+import type { LocalJSXCommandCall, LocalJSXCommandOnDone } from '../../types/command.js'
 
 function findModel(input: string): ResolvedModel | null {
   const models = getConfiguredModels()
@@ -53,7 +53,7 @@ export function ModelRemove({
   onDone,
   modelInput,
 }: {
-  onDone: (message: string, options?: { display: string }) => void
+  onDone: LocalJSXCommandOnDone
   modelInput: string
 }): React.ReactElement {
   const matched = React.useMemo(() => findModel(modelInput), [modelInput])
@@ -136,7 +136,7 @@ export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
 function RemovePicker({
   onDone,
 }: {
-  onDone: (message: string, options?: { display: string }) => void
+  onDone: LocalJSXCommandOnDone
 }): React.ReactElement {
   const models = React.useMemo(() => getConfiguredModels(), [])
   const [selected, setSelected] = React.useState<string | null>(null)

@@ -10,6 +10,7 @@ import type { OptionWithDescription } from '../../components/CustomSelect/select
 import { getGlobalConfig } from '../../utils/config.js'
 import { getModelConfig, saveGlobalModelConfig } from '../../utils/model/modelConfig.js'
 import { activateModel, type ResolvedModel } from '../../utils/model/multiModel.js'
+import type { LocalJSXCommandOnDone } from '../../types/command.js'
 
 type WizardStep =
   | 'select-type'
@@ -31,7 +32,7 @@ export function shouldRunSetupWizard(): boolean {
 export function SetupWizard({
   onDone,
 }: {
-  onDone: (message: string, options?: { display: string }) => void
+  onDone: LocalJSXCommandOnDone
 }): React.ReactElement {
   const [step, setStep] = React.useState<WizardStep>('select-type')
   const [baseUrl, setBaseUrl] = React.useState('')
