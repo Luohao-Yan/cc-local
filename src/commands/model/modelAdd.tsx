@@ -267,11 +267,12 @@ function InputStep({ title, hint, prompt, placeholder, onSubmit, onCancel }: {
 }): React.ReactElement {
   // 用 useState 替代 useRef，确保 Windows 下 onChange 触发后 state 同步，Enter 时读到最新值
   const [inputValue, setInputValue] = React.useState('')
+  // option.value 使用 title 作为唯一 key，避免 Select 内部 inputValues Map 复用上一步的缓存值
   const options: OptionWithDescription[] = React.useMemo(() => [{
-    label: prompt, value: 'input', type: 'input' as const, placeholder,
+    label: prompt, value: title, type: 'input' as const, placeholder,
     onChange: (v: string) => { setInputValue(v) },
     allowEmptySubmitToCancel: true,
-  }], [prompt, placeholder])
+  }], [prompt, placeholder, title])
   const handleChange = React.useCallback(() => { onSubmit(inputValue) }, [onSubmit, inputValue])
   return (
     <Box flexDirection="column">
@@ -279,7 +280,8 @@ function InputStep({ title, hint, prompt, placeholder, onSubmit, onCancel }: {
       <Text> </Text>
       {hint.map((line, i) => <Text key={i} dimColor>{line}</Text>)}
       <Text> </Text>
-      <Select options={options} onChange={handleChange} onCancel={onCancel} />
+      {/* hideIndexes 隐藏 "1." 序号，input 类型只有一项不需要序号 */}
+      <Select options={options} onChange={handleChange} onCancel={onCancel} hideIndexes />
     </Box>
   )
 }
