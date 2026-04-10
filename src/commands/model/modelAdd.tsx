@@ -17,7 +17,7 @@ import {
 } from '../../utils/model/modelConfig.js'
 import { activateModel, type ResolvedModel } from '../../utils/model/multiModel.js'
 import { sideQuery } from '../../utils/sideQuery.js'
-import type { LocalJSXCommandCall } from '../../types/command.js'
+import type { CommandResultDisplay, LocalJSXCommandCall, LocalJSXCommandOnDone } from '../../types/command.js'
 
 type AddStep =
   | 'input-url'
@@ -32,7 +32,7 @@ type AddStep =
 export function ModelAdd({
   onDone,
 }: {
-  onDone: (message: string, options?: { display: string }) => void
+  onDone: LocalJSXCommandOnDone
 }): React.ReactElement {
   const [step, setStep] = React.useState<AddStep>('input-url')
   const [baseUrl, setBaseUrl] = React.useState('')
@@ -235,7 +235,7 @@ function saveConfig(baseUrl: string, apiKey: string, modelName: string, alias: s
   }
 }
 
-function finishAdd(baseUrl: string, modelName: string, alias: string, onDone: (msg: string, opts?: { display: string }) => void): void {
+function finishAdd(baseUrl: string, modelName: string, alias: string, onDone: LocalJSXCommandOnDone): void {
   const lines = [
     'Model added successfully!',
     `  Model: ${modelName}`,
@@ -244,7 +244,7 @@ function finishAdd(baseUrl: string, modelName: string, alias: string, onDone: (m
     '',
     'Next: /model list · /model <alias> to switch',
   ].filter(Boolean).join('\n')
-  onDone(lines, { display: 'system' })
+  onDone(lines, { display: 'system' as CommandResultDisplay })
 }
 
 export const call: LocalJSXCommandCall = async (onDone, _context, _args) => {

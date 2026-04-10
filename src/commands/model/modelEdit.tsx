@@ -14,7 +14,7 @@ import {
   saveGlobalModelConfig,
 } from '../../utils/model/modelConfig.js'
 import { getConfiguredModels, type ResolvedModel } from '../../utils/model/multiModel.js'
-import type { LocalJSXCommandCall } from '../../types/command.js'
+import type { LocalJSXCommandCall, LocalJSXCommandOnDone } from '../../types/command.js'
 
 type EditStep = 'select-field' | 'input-value' | 'done'
 
@@ -81,7 +81,7 @@ export function ModelEdit({
   onDone,
   modelInput,
 }: {
-  onDone: (message: string, options?: { display: string }) => void
+  onDone: LocalJSXCommandOnDone
   modelInput: string
 }): React.ReactElement {
   const matched = React.useMemo(() => findModel(modelInput), [modelInput])
@@ -243,7 +243,7 @@ export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
 function ModelPicker({
   onDone,
 }: {
-  onDone: (message: string, options?: { display: string }) => void
+  onDone: LocalJSXCommandOnDone
 }): React.ReactElement {
   const models = React.useMemo(() => getConfiguredModels(), [])
 
