@@ -125,7 +125,13 @@ export function ModelEdit({
       if (!provider) return current
 
       const updatedProvider = { ...provider }
-      const model = updatedProvider.models[matched.modelKey]
+
+      // 每次从最新 config 重新查找 modelKey，避免连续编辑时 matched 快照过期
+      // 例如：先改了 modelName，再改 alias 时 matched.modelKey 还是旧名字
+      const currentModelKey = Object.keys(updatedProvider.models).find(
+        k => k === matched.modelKey || updatedProvider.models[k]?.name === matched.modelName
+      ) || matched.modelKey
+      const model = updatedProvider.models[currentModelKey]
 
       switch (editField) {
         case 'baseUrl':
@@ -141,7 +147,7 @@ export function ModelEdit({
           if (model) {
             // 同时更新 modelKey（JSON key）和 name（显示名）
             // 只改 name 不改 key 导致 API 调用时使用旧 key 作为模型名报错
-            const { [matched.modelKey]: _old, ...restModels } = updatedProvider.models
+            const { [currentModelKey]: _old, ...restModels } = updatedProvider.models
             updatedProvider.models = {
               ...restModels,
               [newValue]: { ...model, name: newValue },
@@ -154,7 +160,7 @@ export function ModelEdit({
             const aliases = newValue.split(',').map(a => a.trim()).filter(Boolean)
             updatedProvider.models = {
               ...updatedProvider.models,
-              [matched.modelKey]: { ...model, alias: aliases },
+              [currentModelKey]: { ...model, alias: aliases },
             }
           }
           break

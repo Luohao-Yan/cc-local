@@ -58,6 +58,19 @@ export function ModelRemove({
 }): React.ReactElement {
   const matched = React.useMemo(() => findModel(modelInput), [modelInput])
 
+  const handleCancel = React.useCallback(() => {
+    onDone('Remove cancelled.', { display: 'system' })
+  }, [onDone])
+
+  // useEffect 必须在顶层调用，不能放在条件分支里（React Hooks 规则）
+  React.useEffect(() => {
+    if (!matched) {
+      onDone(`Model "${modelInput}" not found. Run /model list to see configured models.`, {
+        display: 'system',
+      })
+    }
+  }, [matched, modelInput, onDone])
+
   const handleConfirm = React.useCallback(
     (value: string) => {
       if (value === 'yes' && matched) {
@@ -76,17 +89,8 @@ export function ModelRemove({
     [matched, onDone],
   )
 
-  const handleCancel = React.useCallback(() => {
-    onDone('Remove cancelled.', { display: 'system' })
-  }, [onDone])
-
   // Not found
   if (!matched) {
-    React.useEffect(() => {
-      onDone(`Model "${modelInput}" not found. Run /model list to see configured models.`, {
-        display: 'system',
-      })
-    }, [modelInput, onDone])
     return <Text> </Text>
   }
 
