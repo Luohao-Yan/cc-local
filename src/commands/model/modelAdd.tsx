@@ -163,14 +163,25 @@ export function ModelAdd({
   if (step === 'confirm-append') {
     const config = getGlobalModelConfig()
     const providerName = existingProviderKey ? config.providers[existingProviderKey]?.name || existingProviderKey : ''
+    const existingKey = existingProviderKey ? config.providers[existingProviderKey]?.apiKey : null
     return (
       <Box flexDirection="column">
-        <Text>This baseUrl belongs to provider "{providerName}". Append new model to it?</Text>
+        <Text bold>Provider already exists: "{providerName}"</Text>
+        <Text> </Text>
+        <Text dimColor>Same baseUrl found. Choose an option:</Text>
         <Text> </Text>
         <Select
           options={[
-            { label: 'Yes, append to existing provider', value: 'yes' },
-            { label: 'No, create new provider', value: 'no' },
+            {
+              label: 'Yes — add model to existing provider',
+              value: 'yes',
+              description: existingKey ? `Reuses existing API key (...${existingKey.slice(-4)})` : 'No API key set',
+            },
+            {
+              label: 'No — create new provider with different API key',
+              value: 'no',
+              description: 'Use this if you have a different key for the same endpoint',
+            },
           ]}
           onChange={handleAppendConfirm} onCancel={handleCancel}
         />
@@ -273,11 +284,23 @@ function InputStep({ title, hint, prompt, placeholder, onSubmit, onCancel }: {
   )
 }
 
-function deriveProviderKey(baseUrl: string): string {
+/**
+ * 从 baseUrl 推断 provider key。
+ * 如果 key 已存在，自动加 -2/-3 后缀，避免覆盖已有 provider。
+ */
+function deriveProviderKey(baseUrl: string, existingKeys?: string[]): string {
+  let base: string
   try {
     const parts = new URL(baseUrl).hostname.split('.')
-    return (parts.length >= 2 ? parts.find(p => !['api', 'www', 'v1', 'v2'].includes(p)) : parts[0]) || 'custom'
-  } catch { return 'custom' }
+    base = (parts.length >= 2 ? parts.find(p => !['api', 'www', 'v1', 'v2'].includes(p)) : parts[0]) || 'custom'
+  } catch { base = 'custom' }
+
+  if (!existingKeys || !existingKeys.includes(base)) return base
+
+  // 冲突时加数字后缀
+  let i = 2
+  while (existingKeys.includes(`${base}-${i}`)) i++
+  return `${base}-${i}`
 }
 
 function saveConfig(baseUrl: string, apiKey: string, modelName: string, alias: string, existingProviderKey: string | null): void {
@@ -292,12 +315,14 @@ function saveConfig(baseUrl: string, apiKey: string, modelName: string, alias: s
       }}}
     })
   } else {
-    const providerKey = deriveProviderKey(baseUrl)
-    saveGlobalModelConfig((current) => ({ ...current, providers: { ...current.providers, [providerKey]: {
-      name: providerKey.charAt(0).toUpperCase() + providerKey.slice(1),
-      baseUrl, ...(apiKey ? { apiKey } : {}),
-      models: { [modelName]: { name: modelName, ...(alias ? { alias: [alias] } : {}) } },
-    }}}))
+    saveGlobalModelConfig((current) => {
+      const providerKey = deriveProviderKey(baseUrl, Object.keys(current.providers))
+      return { ...current, providers: { ...current.providers, [providerKey]: {
+        name: providerKey.charAt(0).toUpperCase() + providerKey.slice(1),
+        baseUrl, ...(apiKey ? { apiKey } : {}),
+        models: { [modelName]: { name: modelName, ...(alias ? { alias: [alias] } : {}) } },
+      }}}
+    })
   }
 }
 
