@@ -253,12 +253,12 @@ function ModelPicker({
     onDone('Edit cancelled.', { display: 'system' })
   }, [onDone])
 
-  if (models.length === 0) {
-    React.useEffect(() => {
+  // useEffect 必须在顶层调用，不能放在条件分支里（React Hooks 规则）
+  React.useEffect(() => {
+    if (models.length === 0) {
       onDone('No models configured. Run /model add first.', { display: 'system' })
-    }, [onDone])
-    return <Text> </Text>
-  }
+    }
+  }, [models.length, onDone])
 
   const options = models.map(m => ({
     label: `${m.modelKey} (${m.providerName})`,

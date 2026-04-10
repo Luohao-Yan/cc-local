@@ -40,7 +40,7 @@ export function ModelAdd({
   const [modelName, setModelName] = React.useState('')
   const [existingProviderKey, setExistingProviderKey] = React.useState<string | null>(null)
   const [verifyError, setVerifyError] = React.useState('')
-  const aliasRef = React.useRef('')
+  const [alias, setAlias] = React.useState('')
 
   const handleCancel = React.useCallback(() => {
     onDone('Add model cancelled.', { display: 'system' })
@@ -94,13 +94,13 @@ export function ModelAdd({
   // Alias input → verify
   const handleAliasSubmit = React.useCallback(
     (value: string) => {
-      const alias = value.trim()
-      aliasRef.current = alias
+      const resolvedAlias = value.trim()
+      setAlias(resolvedAlias)
       setStep('verifying')
 
       const tempResolved: ResolvedModel = {
         providerKey: 'custom', providerName: 'Custom', modelKey: modelName,
-        modelName, baseUrl, apiKey: apiKey || null, aliases: alias ? [alias] : [],
+        modelName, baseUrl, apiKey: apiKey || null, aliases: resolvedAlias ? [resolvedAlias] : [],
       }
       activateModel(tempResolved)
 
@@ -109,8 +109,8 @@ export function ModelAdd({
         messages: [{ role: 'user', content: 'Hi' }],
       })
         .then(() => {
-          saveConfig(baseUrl, apiKey, modelName, alias, existingProviderKey)
-          finishAdd(baseUrl, modelName, alias, onDone)
+          saveConfig(baseUrl, apiKey, modelName, resolvedAlias, existingProviderKey)
+          finishAdd(baseUrl, modelName, resolvedAlias, onDone)
           setStep('done')
         })
         .catch((err: unknown) => {
@@ -124,20 +124,28 @@ export function ModelAdd({
   // Verify failed options
   const handleVerifyFailChoice = React.useCallback(
     (value: string) => {
-      const alias = aliasRef.current
       if (value === 'save') {
         saveConfig(baseUrl, apiKey, modelName, alias, existingProviderKey)
         finishAdd(baseUrl, modelName, alias, onDone)
         setStep('done')
-      } else if (value === 'retry') {
+      } else if (value === 'retry-url') {
+        // 从头重试：清空所有状态
         setStep('input-url')
         setBaseUrl(''); setApiKey(''); setModelName('')
-        setExistingProviderKey(null); setVerifyError(''); aliasRef.current = ''
+        setExistingProviderKey(null); setVerifyError(''); setAlias('')
+      } else if (value === 'retry-key') {
+        // 只重新输入 apiKey
+        setStep('input-key')
+        setVerifyError('')
+      } else if (value === 'retry-model') {
+        // 只重新输入 model name
+        setStep('input-model')
+        setVerifyError('')
       } else {
         onDone('Add model cancelled.', { display: 'system' })
       }
     },
-    [baseUrl, apiKey, modelName, existingProviderKey, onDone],
+    [baseUrl, apiKey, modelName, alias, existingProviderKey, onDone],
   )
 
   // Render steps
@@ -166,7 +174,9 @@ export function ModelAdd({
     const existingKey = existingProviderKey ? config.providers[existingProviderKey]?.apiKey : null
     return (
       <Box flexDirection="column">
-        <Text bold>Provider already exists: "{providerName}"</Text>
+        <Text bold>Step 2/4 · Provider Already Exists</Text>
+        <Text> </Text>
+        <Text bold>Provider: "{providerName}"</Text>
         <Text> </Text>
         <Text dimColor>Same baseUrl found. Choose an option:</Text>
         <Text> </Text>
@@ -247,10 +257,13 @@ export function ModelAdd({
       <Box flexDirection="column">
         <Text color="red">Verification failed: {verifyError}</Text>
         <Text> </Text>
+        <Text dimColor>What would you like to do?</Text>
         <Select
           options={[
             { label: 'Save anyway', value: 'save', description: 'May be a temporary network issue' },
-            { label: 'Re-enter', value: 'retry', description: 'Start over with new values' },
+            { label: 'Fix API Key', value: 'retry-key', description: 'Re-enter API key only' },
+            { label: 'Fix Model Name', value: 'retry-model', description: 'Re-enter model name only' },
+            { label: 'Start over', value: 'retry-url', description: 'Re-enter all fields from beginning' },
             { label: 'Cancel', value: 'cancel' },
           ]}
           onChange={handleVerifyFailChoice} onCancel={handleCancel}
@@ -329,13 +342,14 @@ function saveConfig(baseUrl: string, apiKey: string, modelName: string, alias: s
 }
 
 function finishAdd(baseUrl: string, modelName: string, alias: string, onDone: LocalJSXCommandOnDone): void {
+  const switchCmd = alias ? `/model ${alias}` : `/model ${modelName}`
   const lines = [
     'Model added successfully!',
-    `  Model: ${modelName}`,
-    alias ? `  Alias: ${alias}` : '',
+    `  Model   : ${modelName}`,
+    alias ? `  Alias   : ${alias}` : '',
     `  Endpoint: ${baseUrl}`,
     '',
-    'Next: /model list · /model <alias> to switch',
+    `Next: /model list to view all  ·  ${switchCmd} to switch`,
   ].filter(Boolean).join('\n')
   onDone(lines, { display: 'system' as CommandResultDisplay })
 }
