@@ -142,7 +142,23 @@ export function ModelAdd({
 
   // Render steps
   if (step === 'input-url') {
-    return <InputStep prompt="API endpoint (baseUrl):" placeholder="https://api.openai.com/v1" onSubmit={handleUrlSubmit} onCancel={handleCancel} />
+    return (
+      <InputStep
+        title="Step 1/4 · API Endpoint"
+        hint={[
+          'The base URL of the OpenAI-compatible API.',
+          'Examples:',
+          '  Doubao  : https://ark.cn-beijing.volces.com/api/v3',
+          '  DeepSeek: https://api.deepseek.com/v1',
+          '  OpenAI  : https://api.openai.com/v1',
+          '  Local   : http://localhost:11434/v1',
+        ]}
+        prompt="Enter baseUrl:"
+        placeholder="https://api.openai.com/v1"
+        onSubmit={handleUrlSubmit}
+        onCancel={handleCancel}
+      />
+    )
   }
   if (step === 'confirm-append') {
     const config = getGlobalModelConfig()
@@ -162,13 +178,55 @@ export function ModelAdd({
     )
   }
   if (step === 'input-key') {
-    return <InputStep prompt="API Key (Enter to skip for local models):" placeholder="" onSubmit={handleKeySubmit} onCancel={handleCancel} />
+    return (
+      <InputStep
+        title="Step 2/4 · API Key"
+        hint={[
+          'The secret key used to authenticate with the provider.',
+          'Find it in your provider\'s console / dashboard.',
+          'Press Enter to skip for local models (e.g. Ollama).',
+        ]}
+        prompt="Enter API Key:"
+        placeholder="sk-..."
+        onSubmit={handleKeySubmit}
+        onCancel={handleCancel}
+      />
+    )
   }
   if (step === 'input-model') {
-    return <InputStep prompt="Model name:" placeholder="gpt-4o" onSubmit={handleModelSubmit} onCancel={handleCancel} />
+    return (
+      <InputStep
+        title="Step 3/4 · Model Name"
+        hint={[
+          'The exact model ID as required by the API.',
+          'Examples:',
+          '  Doubao  : doubao-seed-2.0-code',
+          '  DeepSeek: deepseek-chat',
+          '  OpenAI  : gpt-4o',
+          '  Local   : qwen3:32b',
+        ]}
+        prompt="Enter model name:"
+        placeholder="gpt-4o"
+        onSubmit={handleModelSubmit}
+        onCancel={handleCancel}
+      />
+    )
   }
   if (step === 'input-alias') {
-    return <InputStep prompt="Alias (optional, Enter to skip):" placeholder="" onSubmit={handleAliasSubmit} onCancel={handleCancel} />
+    return (
+      <InputStep
+        title="Step 4/4 · Alias (optional)"
+        hint={[
+          'A short name to quickly switch to this model.',
+          'Example: type "doubao" to use instead of the full model ID.',
+          'Press Enter to skip.',
+        ]}
+        prompt="Enter alias:"
+        placeholder=""
+        onSubmit={handleAliasSubmit}
+        onCancel={handleCancel}
+      />
+    )
   }
   if (step === 'verifying') {
     return <Box flexDirection="column"><Text>Verifying model config...</Text></Box>
@@ -192,8 +250,8 @@ export function ModelAdd({
   return <Text> </Text>
 }
 
-function InputStep({ prompt, placeholder, onSubmit, onCancel }: {
-  prompt: string; placeholder: string
+function InputStep({ title, hint, prompt, placeholder, onSubmit, onCancel }: {
+  title: string; hint: string[]; prompt: string; placeholder: string
   onSubmit: (value: string) => void; onCancel: () => void
 }): React.ReactElement {
   // 用 useState 替代 useRef，确保 Windows 下 onChange 触发后 state 同步，Enter 时读到最新值
@@ -204,7 +262,15 @@ function InputStep({ prompt, placeholder, onSubmit, onCancel }: {
     allowEmptySubmitToCancel: true,
   }], [prompt, placeholder])
   const handleChange = React.useCallback(() => { onSubmit(inputValue) }, [onSubmit, inputValue])
-  return <Box flexDirection="column"><Select options={options} onChange={handleChange} onCancel={onCancel} /></Box>
+  return (
+    <Box flexDirection="column">
+      <Text bold>{title}</Text>
+      <Text> </Text>
+      {hint.map((line, i) => <Text key={i} dimColor>{line}</Text>)}
+      <Text> </Text>
+      <Select options={options} onChange={handleChange} onCancel={onCancel} />
+    </Box>
+  )
 }
 
 function deriveProviderKey(baseUrl: string): string {
