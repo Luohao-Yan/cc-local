@@ -49,7 +49,8 @@ function InputStep({
   onSubmit: (value: string) => void
   onCancel: () => void
 }): React.ReactElement {
-  const inputRef = React.useRef('')
+  // 用 useState 替代 useRef，确保 Windows 下 onChange 触发后 state 同步，Enter 时读到最新值
+  const [inputValue, setInputValue] = React.useState('')
 
   const options: OptionWithDescription[] = React.useMemo(
     () => [
@@ -58,7 +59,7 @@ function InputStep({
         value: 'input',
         type: 'input' as const,
         placeholder: '',
-        onChange: (v: string) => { inputRef.current = v },
+        onChange: (v: string) => { setInputValue(v) },
         allowEmptySubmitToCancel: true,
       },
     ],
@@ -66,8 +67,8 @@ function InputStep({
   )
 
   const handleChange = React.useCallback(() => {
-    onSubmit(inputRef.current)
-  }, [onSubmit])
+    onSubmit(inputValue)
+  }, [onSubmit, inputValue])
 
   return (
     <Box flexDirection="column">
@@ -136,9 +137,12 @@ export function ModelEdit({
           break
         case 'modelName':
           if (model) {
+            // 同时更新 modelKey（JSON key）和 name（显示名）
+            // 只改 name 不改 key 导致 API 调用时使用旧 key 作为模型名报错
+            const { [matched.modelKey]: _old, ...restModels } = updatedProvider.models
             updatedProvider.models = {
-              ...updatedProvider.models,
-              [matched.modelKey]: { ...model, name: newValue },
+              ...restModels,
+              [newValue]: { ...model, name: newValue },
             }
           }
           break
