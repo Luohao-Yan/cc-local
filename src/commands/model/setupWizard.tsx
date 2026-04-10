@@ -132,12 +132,14 @@ export function SetupWizard({
 function InputStep({ prompt, placeholder, onSubmit, onCancel }: {
   prompt: string; placeholder: string; onSubmit: (v: string) => void; onCancel: () => void
 }): React.ReactElement {
-  const ref = React.useRef('')
+  // 用 useState 替代 useRef，确保 Windows 下 onChange 触发后 state 同步，Enter 时读到最新值
+  const [inputValue, setInputValue] = React.useState('')
   const opts: OptionWithDescription[] = React.useMemo(() => [{
     label: prompt, value: 'input', type: 'input' as const, placeholder,
-    onChange: (v: string) => { ref.current = v }, allowEmptySubmitToCancel: true,
+    onChange: (v: string) => { setInputValue(v) }, allowEmptySubmitToCancel: true,
   }], [prompt, placeholder])
-  return <Box flexDirection="column"><Select options={opts} onChange={() => onSubmit(ref.current)} onCancel={onCancel} /></Box>
+  const handleChange = React.useCallback(() => onSubmit(inputValue), [onSubmit, inputValue])
+  return <Box flexDirection="column"><Select options={opts} onChange={handleChange} onCancel={onCancel} /></Box>
 }
 
 function deriveProviderKey(baseUrl: string): string {
