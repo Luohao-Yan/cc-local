@@ -358,7 +358,8 @@ export function SelectInputOption(t0) {
   const t29 = `${index}.`;
   let t30;
   if ($[54] !== maxIndexWidth || $[55] !== t29) {
-    t30 = t29.padEnd(maxIndexWidth + 2);
+    // maxIndexWidth < 0 时表示隐藏序号（hideIndexes=true 由 select.tsx 传入 -2）
+    t30 = maxIndexWidth < 0 ? '' : t29.padEnd(maxIndexWidth + 2);
     $[54] = maxIndexWidth;
     $[55] = t29;
     $[56] = t30;

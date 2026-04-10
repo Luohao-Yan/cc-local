@@ -8,9 +8,9 @@
  */
 
 import * as React from 'react'
-import { Box, Text, useInput } from '../../ink.js'
+import { Box, Text } from '../../ink.js'
 import { Select } from '../../components/CustomSelect/select.js'
-import TextInput from '../../components/TextInput.js'
+import type { OptionWithDescription } from '../../components/CustomSelect/select.js'
 import {
   getGlobalModelConfig,
   saveGlobalModelConfig,
@@ -162,7 +162,7 @@ export function ModelAdd({
           '  Local   : http://localhost:11434/v1',
         ]}
         prompt="Enter baseUrl:"
-        placeholder="https://api.openai.com/v1"
+        placeholder="e.g. https://api.openai.com/v1"
         onSubmit={handleUrlSubmit}
         onCancel={handleCancel}
       />
@@ -208,7 +208,7 @@ export function ModelAdd({
           'Press Enter to skip for local models (e.g. Ollama).',
         ]}
         prompt="Enter API Key:"
-        placeholder="sk-..."
+        placeholder="e.g. sk-xxxxxxxx"
         onSubmit={handleKeySubmit}
         onCancel={handleCancel}
       />
@@ -279,35 +279,21 @@ function InputStep({ title, hint, prompt, placeholder, onSubmit, onCancel }: {
   onSubmit: (value: string) => void; onCancel: () => void
 }): React.ReactElement {
   const [inputValue, setInputValue] = React.useState('')
-  const [cursorOffset, setCursorOffset] = React.useState(0)
-
-  // Enter 提交，Esc 取消
-  useInput((_, key) => {
-    if (key.return) {
-      onSubmit(inputValue)
-    } else if (key.escape) {
-      onCancel()
-    }
-  })
-
+  // option.value 使用 title 作为唯一 key，避免 Select 内部 inputValues Map 跨步复用缓存
+  const options: OptionWithDescription[] = React.useMemo(() => [{
+    label: prompt, value: title, type: 'input' as const, placeholder,
+    onChange: (v: string) => { setInputValue(v) },
+    allowEmptySubmitToCancel: true,
+  }], [prompt, placeholder, title])
+  const handleChange = React.useCallback(() => { onSubmit(inputValue) }, [onSubmit, inputValue])
   return (
     <Box flexDirection="column">
       <Text bold>{title}</Text>
       <Text> </Text>
       {hint.map((line, i) => <Text key={i} dimColor>{line}</Text>)}
       <Text> </Text>
-      <Box>
-        <Text>{prompt} </Text>
-        <TextInput
-          value={inputValue}
-          onChange={setInputValue}
-          placeholder={placeholder}
-          focus={true}
-          columns={80}
-          cursorOffset={cursorOffset}
-          onChangeCursorOffset={setCursorOffset}
-        />
-      </Box>
+      {/* hideIndexes: select.tsx 将 maxIndexWidth 传 -2，让 padEnd(0) 输出空字符串隐藏序号 */}
+      <Select options={options} onChange={handleChange} onCancel={onCancel} hideIndexes />
     </Box>
   )
 }
