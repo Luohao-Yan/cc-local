@@ -377,7 +377,7 @@ export function Select(t0) {
             const isSelected = state.value === option_1.value;
             if (option_1.type === "input") {
               const inputValue = inputValues.has(option_1.value) ? inputValues.get(option_1.value) : option_1.initialValue || "";
-              return <SelectInputOption key={String(option_1.value)} option={option_1} isFocused={isFocused} isSelected={isSelected} shouldShowDownArrow={areMoreOptionsBelow && isLastVisibleOption} shouldShowUpArrow={areMoreOptionsAbove && isFirstVisibleOption} maxIndexWidth={maxIndexWidth} index={i} inputValue={inputValue} onInputChange={value => {
+              return <SelectInputOption key={String(option_1.value)} option={option_1} isFocused={isFocused} isSelected={isSelected} shouldShowDownArrow={areMoreOptionsBelow && isLastVisibleOption} shouldShowUpArrow={areMoreOptionsAbove && isFirstVisibleOption} maxIndexWidth={hideIndexes ? -2 : maxIndexWidth} index={i} inputValue={inputValue} onInputChange={value => {
                 setInputValues(prev_0 => {
                   const next_0 = new Map(prev_0);
                   next_0.set(option_1.value, value);
@@ -425,7 +425,7 @@ export function Select(t0) {
             const isSelected_0 = state.value === option_2.value;
             if (option_2.type === "input") {
               const inputValue_0 = inputValues.has(option_2.value) ? inputValues.get(option_2.value) : option_2.initialValue || "";
-              return <SelectInputOption key={String(option_2.value)} option={option_2} isFocused={isFocused_0} isSelected={isSelected_0} shouldShowDownArrow={areMoreOptionsBelow_0 && isLastVisibleOption_0} shouldShowUpArrow={areMoreOptionsAbove_0 && isFirstVisibleOption_0} maxIndexWidth={maxIndexWidth_0} index={i_0} inputValue={inputValue_0} onInputChange={value_1 => {
+              return <SelectInputOption key={String(option_2.value)} option={option_2} isFocused={isFocused_0} isSelected={isSelected_0} shouldShowDownArrow={areMoreOptionsBelow_0 && isLastVisibleOption_0} shouldShowUpArrow={areMoreOptionsAbove_0 && isFirstVisibleOption_0} maxIndexWidth={hideIndexes ? -2 : maxIndexWidth_0} index={i_0} inputValue={inputValue_0} onInputChange={value_1 => {
                 setInputValues(prev_1 => {
                   const next_1 = new Map(prev_1);
                   next_1.set(option_2.value, value_1);
@@ -543,7 +543,7 @@ export function Select(t0) {
           const i_2 = state.visibleFromIndex + index_4 + 1;
           const isFocused_2 = !isDisabled && state.focusedValue === option_4.value;
           const isSelected_2 = state.value === option_4.value;
-          return <SelectInputOption key={String(option_4.value)} option={option_4} isFocused={isFocused_2} isSelected={isSelected_2} shouldShowDownArrow={areMoreOptionsBelow_2 && isLastVisibleOption_2} shouldShowUpArrow={areMoreOptionsAbove_2 && isFirstVisibleOption_2} maxIndexWidth={maxIndexWidth_1} index={i_2} inputValue={inputValue_1} onInputChange={value_3 => {
+          return <SelectInputOption key={String(option_4.value)} option={option_4} isFocused={isFocused_2} isSelected={isSelected_2} shouldShowDownArrow={areMoreOptionsBelow_2 && isLastVisibleOption_2} shouldShowUpArrow={areMoreOptionsAbove_2 && isFirstVisibleOption_2} maxIndexWidth={hideIndexes ? -2 : maxIndexWidth_1} index={i_2} inputValue={inputValue_1} onInputChange={value_3 => {
             setInputValues(prev_2 => {
               const next_2 = new Map(prev_2);
               next_2.set(option_4.value, value_3);
