@@ -1,0 +1,25 @@
+{
+  "name": "@cclocal/server",
+  "version": "1.0.0",
+  "description": "CCLocal 服务端 - HTTP + WebSocket API",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "cclocal-server": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc --noEmit && bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run src/index.ts",
+    "dev": "bun --watch run src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cclocal/core": "workspace:*",
+    "@cclocal/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.11",
+    "@types/ws": "^8.5.0",
+    "typescript": "^5.8.0"
+  }
+}

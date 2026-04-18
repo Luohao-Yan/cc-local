@@ -1,0 +1,25 @@
+{
+  "name": "@cclocal/vscode-ext",
+  "version": "1.0.0",
+  "description": "CCLocal VS Code 扩展客户端",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "dependencies": {
+    "@cclocal/shared": "workspace:*",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@types/ws": "^8.5.0",
+    "@vscode/vsce": "^2.24.0",
+    "typescript": "^5.3.0"
+  }
+}
