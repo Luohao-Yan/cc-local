@@ -8,7 +8,7 @@
     "cclocal": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc --noEmit && bun build src/index.ts --outdir dist --target bun",
+    "build": "bun build src/index.ts --outdir dist --target bun",
     "start": "bun run src/index.ts",
     "dev": "bun --watch run src/index.ts",
     "typecheck": "tsc --noEmit"

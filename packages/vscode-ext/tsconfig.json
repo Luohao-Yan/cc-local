@@ -13,8 +13,5 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*"],
-  "exclude": ["out", "node_modules"],
-  "references": [
-    { "path": "../shared" }
-  ]
+  "exclude": ["out", "node_modules"]
 }

@@ -3,3 +3,5 @@
  */
 
 export * from './state/sessionState.js'
+export * from './engine/queryEngine.js'
+export * from './tools/registry.js'

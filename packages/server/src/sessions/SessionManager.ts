@@ -3,7 +3,8 @@
  */
 
 import { randomUUID } from 'crypto'
-import type { Session, Message, MessageOptions } from '@cclocal/shared'
+import { QueryEngine } from '@cclocal/core'
+import type { Session, Message, MessageOptions, StreamEvent } from '@cclocal/shared'
 
 interface SessionInternal extends Session {
   abortController?: AbortController
@@ -69,14 +70,42 @@ export class SessionManager {
       }
       session.messages.push(userMessage)
 
+      // 使用 QueryEngine 处理消息
+      const queryEngine = new QueryEngine({
+        model: options.model || session.model || 'default',
+        systemPrompt: options.systemPrompt,
+        temperature: options.temperature,
+        maxTokens: options.maxTokens,
+      })
+
       // 发送流开始事件
+      const messageId = randomUUID()
       controller.enqueue(
-        new TextEncoder().encode(`event: stream_start\ndata: ${JSON.stringify({ messageId: randomUUID() })}\n\n`)
+        new TextEncoder().encode(`event: stream_start\ndata: ${JSON.stringify({ messageId })}\n\n`)
       )
 
-      // TODO: 调用 AI 模型生成回复
-      // 这里是占位实现，实际应该调用 QueryEngine
-      await this.mockStreamResponse(controller, session.abortController.signal)
+      // 调用 QueryEngine 获取流式响应
+      const result = await queryEngine.query(session.messages, {
+        onStream: (event: StreamEvent) => {
+          if (session.abortController?.signal.aborted) {
+            queryEngine.cancel()
+            return
+          }
+
+          if (event.type === 'stream_delta' && event.delta?.type === 'text') {
+            const data = JSON.stringify({
+              type: 'text_delta',
+              text: event.delta.text,
+            })
+            controller.enqueue(
+              new TextEncoder().encode(`event: delta\ndata: ${data}\n\n`)
+            )
+          }
+        },
+      })
+
+      // 添加助手消息到会话
+      session.messages.push(result.message)
 
       // 发送流结束事件
       controller.enqueue(
@@ -107,45 +136,5 @@ export class SessionManager {
     }
   }
 
-  private async mockStreamResponse(
-    controller: ReadableStreamDefaultController,
-    signal: AbortSignal
-  ): Promise<void> {
-    // 模拟流式响应
-    const words = ['Hello', 'from', 'CCLocal', 'Server!', 'This', 'is', 'a', 'mock', 'response.']
-
-    for (const word of words) {
-      if (signal.aborted) {
-        throw new Error('AbortError')
-      }
-
-      const data = JSON.stringify({
-        type: 'text_delta',
-        text: word + ' ',
-      })
-
-      controller.enqueue(
-        new TextEncoder().encode(`event: delta\ndata: ${data}\n\n`)
-      )
-
-      // 模拟延迟
-      await new Promise((resolve) => setTimeout(resolve, 100))
-    }
-
-    // 添加助手消息到会话
-    const assistantMessage: Message = {
-      id: randomUUID(),
-      role: 'assistant',
-      content: [{ type: 'text', text: words.join(' ') }],
-      timestamp: Date.now(),
-    }
-
-    // 找到当前会话并添加消息
-    for (const session of this.sessions.values()) {
-      if (session.abortController) {
-        session.messages.push(assistantMessage)
-        break
-      }
-    }
-  }
+  // 保留的空方法，后续可添加其他辅助功能
 }
