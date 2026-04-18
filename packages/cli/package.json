@@ -7,6 +7,7 @@
   "bin": {
     "cclocal": "dist/index.js"
   },
+  "jsx": "react-jsx",
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target bun",
     "start": "bun run src/index.ts",

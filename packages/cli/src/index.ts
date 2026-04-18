@@ -5,7 +5,7 @@
 
 import { Command } from 'commander'
 import { CCLocalClient } from './client/CCLocalClient.js'
-import { launchRepl } from './repl/repl.js'
+import { launchRepl } from './repl/simpleRepl.js'
 
 const program = new Command()
 
