@@ -148,7 +148,8 @@ const result = await Bun.build({
   // BUDDY: 伙伴功能
   // TRANSCRIPT_CLASSIFIER: Auto Mode 自动模式（安全分类器）
   // BASH_CLASSIFIER: Bash 命令分类器（Auto Mode 依赖）
-  features: ["BUDDY", "TRANSCRIPT_CLASSIFIER", "BASH_CLASSIFIER"],
+  // AUTO_THEME: 主题自动切换和完整主题列表
+  features: ["BUDDY", "TRANSCRIPT_CLASSIFIER", "BASH_CLASSIFIER", "AUTO_THEME"],
   define: {
     "MACRO.VERSION": JSON.stringify(version),
     "MACRO.BUILD_TIME": JSON.stringify(new Date().toISOString()),

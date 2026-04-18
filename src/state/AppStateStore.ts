@@ -43,11 +43,11 @@ export type CompletionBoundary =
   | { type: 'bash'; command: string; completedAt: number }
   | { type: 'edit'; toolName: string; filePath: string; completedAt: number }
   | {
-      type: 'denied_tool'
-      toolName: string
-      detail: string
-      completedAt: number
-    }
+    type: 'denied_tool'
+    toolName: string
+    detail: string
+    completedAt: number
+  }
 
 export type SpeculationResult = {
   messages: Message[]
@@ -58,23 +58,23 @@ export type SpeculationResult = {
 export type SpeculationState =
   | { status: 'idle' }
   | {
-      status: 'active'
-      id: string
-      abort: () => void
-      startTime: number
-      messagesRef: { current: Message[] } // Mutable ref - avoids array spreading per message
-      writtenPathsRef: { current: Set<string> } // Mutable ref - relative paths written to overlay
-      boundary: CompletionBoundary | null
-      suggestionLength: number
-      toolUseCount: number
-      isPipelined: boolean
-      contextRef: { current: REPLHookContext }
-      pipelinedSuggestion?: {
-        text: string
-        promptId: 'user_intent' | 'stated_intent'
-        generationRequestId: string | null
-      } | null
-    }
+    status: 'active'
+    id: string
+    abort: () => void
+    startTime: number
+    messagesRef: { current: Message[] } // Mutable ref - avoids array spreading per message
+    writtenPathsRef: { current: Set<string> } // Mutable ref - relative paths written to overlay
+    boundary: CompletionBoundary | null
+    suggestionLength: number
+    toolUseCount: number
+    isPipelined: boolean
+    contextRef: { current: REPLHookContext }
+    pipelinedSuggestion?: {
+      text: string
+      promptId: 'user_intent' | 'stated_intent'
+      generationRequestId: string | null
+    } | null
+  }
 
 export const IDLE_SPECULATION_STATE: SpeculationState = { status: 'idle' }
 
@@ -106,7 +106,6 @@ export type AppState = DeepImmutable<{
   // Lives in AppState so pill components rendered outside PromptInput
   // (CompanionSprite in REPL.tsx) can read their own focused state.
   footerSelection: FooterItem | null
-  toolPermissionContext: ToolPermissionContext
   spinnerTip?: string
   // Agent name from --agent CLI flag or settings (for logo display)
   agent: string | undefined
@@ -120,10 +119,10 @@ export type AppState = DeepImmutable<{
   // live event stream is open; 'reconnecting' = transient WS drop, backoff
   // in progress; 'disconnected' = permanent close or reconnects exhausted.
   remoteConnectionStatus:
-    | 'connecting'
-    | 'connected'
-    | 'reconnecting'
-    | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
+  | 'disconnected'
   // `claude assistant`: count of background tasks (Agent calls, teammates,
   // workflows) running inside the REMOTE daemon child. Event-sourced from
   // system/task_started and system/task_notification on the WS. The local
@@ -156,6 +155,9 @@ export type AppState = DeepImmutable<{
   // Always-on bridge: first-time remote dialog pending (set by /remote-control command)
   showRemoteCallout: boolean
 }> & {
+  // Excluded from DeepImmutable: ToolPermissionContext is already DeepImmutable;
+  // double-wrapping breaks ReadonlyMap method signatures (forEach etc. become {}).
+  toolPermissionContext: ToolPermissionContext
   // Unified task state - excluded from DeepImmutable because TaskState contains function types
   tasks: { [taskId: string]: TaskState }
   // Name → AgentId registry populated by Agent tool when `name` is provided.

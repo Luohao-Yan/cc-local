@@ -1,7 +1,7 @@
 import { c as _c } from "react/compiler-runtime";
 // biome-ignore-all assist/source/organizeImports: ANT-ONLY import markers must not be reordered
 import { feature } from 'bun:bundle';
-import { Box, Text, useTheme, useThemeSetting, useTerminalFocus } from '../../ink.js';
+import { Box, Text, useTheme, useThemeSetting, usePreviewTheme, useTerminalFocus } from '../../ink.js';
 import type { KeyboardEvent } from '../../ink/events/keyboard-event.js';
 import * as React from 'react';
 import { useState, useCallback } from 'react';
@@ -17,6 +17,8 @@ import { logError } from '../../utils/log.js';
 import { logEvent, type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from 'src/services/analytics/index.js';
 import { isBridgeEnabled } from '../../bridge/bridgeEnabled.js';
 import { ThemePicker } from '../ThemePicker.js';
+import type { ThemeSetting } from '../../utils/theme.js';
+import type { EffortLevel } from '../../utils/effort.js';
 import { useAppState, useSetAppState, useAppStateStore } from '../../state/AppState.js';
 import { ModelPicker } from '../ModelPicker.js';
 import { modelDisplayString, isOpus1mMergeEnabled } from '../../utils/model/model.js';
@@ -96,6 +98,7 @@ export function Config({
   const insideModal = useIsInsideModal();
   const [, setTheme] = useTheme();
   const themeSetting = useThemeSetting();
+  const { cancelPreview } = usePreviewTheme();
   const [globalConfig, setGlobalConfig] = useState(getGlobalConfig());
   const initialConfig = React.useRef(getGlobalConfig());
   const [settingsData, setSettingsData] = useState(getInitialSettings());
@@ -392,7 +395,7 @@ export function Config({
     }
   }] : []),
   // Speculation toggle (ant-only)
-  ...("external" === 'ant' ? [{
+  ...(("external" as unknown as string) === 'ant' ? [{
     id: 'speculationEnabled',
     label: 'Speculative execution',
     value: globalConfig.speculationEnabled ?? true,
@@ -1112,8 +1115,8 @@ export function Config({
         value: currentUsingCustomKey as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
       });
     }
-    if (globalConfig.theme !== initialConfig.current.theme) {
-      formattedChanges.push(`Set theme to ${chalk.bold(globalConfig.theme)}`);
+    if (themeSetting !== initialThemeSetting.current) {
+      formattedChanges.push(`Set theme to ${chalk.bold(themeSetting)}`);
     }
     if (globalConfig.preferredNotifChannel !== initialConfig.current.preferredNotifChannel) {
       formattedChanges.push(`Set notifications to ${chalk.bold(globalConfig.preferredNotifChannel)}`);
@@ -1448,12 +1451,13 @@ export function Config({
   }, [showSubmenu, headerFocused, isSearchMode, searchQuery, setSearchQuery, toggleSetting]);
   return <Box flexDirection="column" width="100%" tabIndex={0} autoFocus onKeyDown={handleKeyDown}>
       {showSubmenu === 'Theme' ? <>
-          <ThemePicker onThemeSelect={setting_1 => {
+          <ThemePicker onThemeSelect={(setting_1: ThemeSetting) => {
         isDirty.current = true;
         setTheme(setting_1);
         setShowSubmenu(null);
         setTabsHidden(false);
       }} onCancel={() => {
+        cancelPreview();
         setShowSubmenu(null);
         setTabsHidden(false);
       }} hideEscToCancel skipExitHandling={true} // Skip exit handling as Config already handles it
@@ -1467,7 +1471,7 @@ export function Config({
             </Text>
           </Box>
         </> : showSubmenu === 'Model' ? <>
-          <ModelPicker initial={mainLoopModel} onSelect={(model_0, _effort) => {
+          <ModelPicker initial={mainLoopModel} onSelect={(model_0: string | null, _effort: EffortLevel | undefined) => {
         isDirty.current = true;
         onChangeMainModelConfig(model_0);
         setShowSubmenu(null);
@@ -1483,7 +1487,7 @@ export function Config({
             </Byline>
           </Text>
         </> : showSubmenu === 'TeammateModel' ? <>
-          <ModelPicker initial={globalConfig.teammateDefaultModel ?? null} skipSettingsWrite headerText="Default model for newly spawned teammates. The leader can override via the tool call's model parameter." onSelect={(model_1, _effort_0) => {
+          <ModelPicker initial={globalConfig.teammateDefaultModel ?? null} skipSettingsWrite headerText="Default model for newly spawned teammates. The leader can override via the tool call's model parameter." onSelect={(model_1: string | null, _effort_0: EffortLevel | undefined) => {
         setShowSubmenu(null);
         setTabsHidden(false);
         // First-open-then-Enter from unset: picker highlights "Default"
@@ -1530,7 +1534,7 @@ export function Config({
             </Byline>
           </Text>
         </> : showSubmenu === 'OutputStyle' ? <>
-          <OutputStylePicker initialStyle={currentOutputStyle} onComplete={style => {
+          <OutputStylePicker initialStyle={currentOutputStyle} onComplete={(style: OutputStyle) => {
         isDirty.current = true;
         setCurrentOutputStyle(style ?? DEFAULT_OUTPUT_STYLE_NAME);
         setShowSubmenu(null);
@@ -1556,7 +1560,7 @@ export function Config({
             </Byline>
           </Text>
         </> : showSubmenu === 'Language' ? <>
-          <LanguagePicker initialLanguage={currentLanguage} onComplete={language => {
+          <LanguagePicker initialLanguage={currentLanguage} onComplete={(language: string | undefined) => {
         isDirty.current = true;
         setCurrentLanguage(language);
         setShowSubmenu(null);
@@ -1751,7 +1755,7 @@ const THEME_LABELS: Record<string, string> = {
   'dark-ansi': 'Dark mode (ANSI colors only)',
   'light-ansi': 'Light mode (ANSI colors only)'
 };
-function NotifChannelLabel(t0) {
+function NotifChannelLabel(t0: { value: string }) {
   const $ = _c(4);
   const {
     value
