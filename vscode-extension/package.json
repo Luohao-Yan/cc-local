@@ -1,0 +1,122 @@
+{
+  "name": "vscode-cclocal",
+  "displayName": "CCLocal - Claude Code Local",
+  "description": "在 VSCode 侧边栏中使用 cclocal，支持第三方兼容 Anthropic API 的 LLM 服务",
+  "version": "0.5.1",
+  "publisher": "cclocal",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "AI",
+    "Chat",
+    "Other"
+  ],
+  "keywords": [
+    "claude",
+    "ai",
+    "assistant",
+    "cclocal",
+    "llm"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "cclocal-sidebar",
+          "title": "CCLocal",
+          "icon": "images/icon.svg",
+          "visibility": "visible"
+        }
+      ]
+    },
+    "views": {
+      "cclocal-sidebar": [
+        {
+          "type": "webview",
+          "id": "cclocal.chatView",
+          "name": "CCLocal Chat",
+          "icon": "$(comment-discussion)",
+          "contextualTitle": "CCLocal"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "cclocal.newSession",
+        "title": "CCLocal: 新建会话",
+        "icon": "$(add)"
+      },
+      {
+        "command": "cclocal.clearChat",
+        "title": "CCLocal: 清空聊天记录",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "cclocal.stopGeneration",
+        "title": "CCLocal: 停止生成",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "cclocal.sendSelectedCode",
+        "title": "CCLocal: 发送选中代码到 CCLocal"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "cclocal.newSession",
+          "when": "view == cclocal.chatView",
+          "group": "navigation"
+        },
+        {
+          "command": "cclocal.clearChat",
+          "when": "view == cclocal.chatView",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "cclocal.sendSelectedCode",
+          "when": "editorHasSelection",
+          "group": "cclocal"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "CCLocal",
+      "properties": {
+        "cclocal.cclocalPath": {
+          "type": "string",
+          "default": "",
+          "description": "cclocal 可执行文件的绝对路径（留空则从 PATH 中自动查找）"
+        },
+        "cclocal.model": {
+          "type": "string",
+          "default": "",
+          "description": "指定使用的模型（留空则使用默认模型）"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@types/ws": "^8.5.0",
+    "@vscode/vsce": "^2.24.0",
+    "typescript": "^5.3.0"
+  }
+}
