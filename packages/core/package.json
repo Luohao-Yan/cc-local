@@ -13,9 +13,10 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "zod": "^3.25.0",
+    "axios": "^1.7.0",
+    "better-sqlite3": "^12.9.0",
     "lodash-es": "^4.17.21",
-    "axios": "^1.7.0"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.0",
