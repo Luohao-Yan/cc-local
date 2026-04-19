@@ -11,6 +11,7 @@ import type {
   ToolContext,
   StreamEvent,
 } from '@cclocal/shared'
+import { AnthropicClient } from './anthropicClient.js'
 
 export interface QueryEngineOptions {
   model: string
@@ -19,6 +20,8 @@ export interface QueryEngineOptions {
   maxTokens?: number
   tools?: Tool[]
   onStream?: (event: StreamEvent) => void
+  apiKey?: string
+  baseUrl?: string
 }
 
 export interface QueryResult {
@@ -32,9 +35,15 @@ export interface QueryResult {
 export class QueryEngine {
   private options: QueryEngineOptions
   private abortController?: AbortController
+  private client: AnthropicClient
 
   constructor(options: QueryEngineOptions) {
     this.options = options
+    this.client = new AnthropicClient({
+      apiKey: options.apiKey,
+      baseUrl: options.baseUrl,
+      model: options.model,
+    })
   }
 
   async query(
@@ -44,17 +53,73 @@ export class QueryEngine {
     const opts = { ...this.options, ...options }
     this.abortController = new AbortController()
 
+    const messageId = randomUUID()
+
     try {
       // 发送流开始事件
-      const messageId = randomUUID()
       opts.onStream?.({
         type: 'stream_start',
         messageId,
       })
 
-      // TODO: 实际调用 AI API
-      // 这里使用 mock 实现展示架构
-      const response = await this.mockQuery(messages, opts, messageId)
+      // 准备工具定义
+      const tools = opts.tools?.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        input_schema: tool.input_schema,
+      }))
+
+      // 调用 Anthropic API 流式查询
+      const stream = this.client.streamQuery(messages, {
+        systemPrompt: opts.systemPrompt,
+        maxTokens: opts.maxTokens,
+        temperature: opts.temperature,
+        tools,
+      })
+
+      let fullResponse = ''
+      let inputTokens = 0
+      let outputTokens = 0
+
+      for await (const event of stream) {
+        // 检查是否被取消
+        if (this.abortController?.signal.aborted) {
+          throw new Error('Query aborted')
+        }
+
+        switch (event.type) {
+          case 'text':
+            fullResponse += event.text
+            opts.onStream?.({
+              type: 'stream_delta',
+              messageId,
+              delta: {
+                type: 'text',
+                text: event.text,
+              },
+            })
+            break
+
+          case 'tool_use':
+            opts.onStream?.({
+              type: 'tool_call',
+              messageId,
+              toolCall: {
+                name: event.name,
+                input: event.input,
+              },
+            })
+            break
+
+          case 'usage':
+            inputTokens = event.inputTokens
+            outputTokens = event.outputTokens
+            break
+
+          case 'error':
+            throw new Error(event.error)
+        }
+      }
 
       // 发送流结束事件
       opts.onStream?.({
@@ -62,7 +127,29 @@ export class QueryEngine {
         messageId,
       })
 
-      return response
+      // 构建助手消息
+      const assistantMessage: AssistantMessage = {
+        id: messageId,
+        role: 'assistant',
+        content: [{ type: 'text', text: fullResponse.trim() }],
+        timestamp: Date.now(),
+      } as AssistantMessage
+
+      return {
+        message: assistantMessage,
+        usage: {
+          inputTokens,
+          outputTokens,
+        },
+      }
+    } catch (error) {
+      // 发送错误事件
+      opts.onStream?.({
+        type: 'error',
+        messageId,
+        error: error instanceof Error ? error.message : String(error),
+      })
+      throw error
     } finally {
       this.abortController = undefined
     }
@@ -70,70 +157,6 @@ export class QueryEngine {
 
   cancel(): void {
     this.abortController?.abort()
-  }
-
-  private async mockQuery(
-    messages: Message[],
-    options: QueryEngineOptions,
-    messageId: string
-  ): Promise<QueryResult> {
-    // 获取最后一条用户消息
-    const lastMessage = messages[messages.length - 1]
-    const userContent = lastMessage?.content
-      .filter((c) => c.type === 'text')
-      .map((c) => ('text' in c ? c.text : ''))
-      .join('') || ''
-
-    // 模拟流式响应
-    const response = `I received: "${userContent.substring(0, 50)}${userContent.length > 50 ? '...' : ''}"
-
-This is a mock response from QueryEngine. In production, this would call the actual AI API (Claude, Doubao, etc.).
-
-To integrate with real API:
-1. Add API client configuration
-2. Implement streaming response handler
-3. Add tool calling support
-4. Add error handling and retries`
-
-    const words = response.split(' ')
-    let fullResponse = ''
-
-    for (const word of words) {
-      if (this.abortController?.signal.aborted) {
-        throw new Error('Query aborted')
-      }
-
-      fullResponse += word + ' '
-
-      // 发送增量更新
-      options.onStream?.({
-        type: 'stream_delta',
-        messageId,
-        delta: {
-          type: 'text',
-          text: word + ' ',
-        },
-      })
-
-      // 模拟延迟
-      await new Promise((resolve) => setTimeout(resolve, 30))
-    }
-
-    // 构建助手消息
-    const assistantMessage: AssistantMessage = {
-      id: messageId,
-      role: 'assistant',
-      content: [{ type: 'text', text: fullResponse.trim() }],
-      timestamp: Date.now(),
-    } as AssistantMessage
-
-    return {
-      message: assistantMessage,
-      usage: {
-        inputTokens: 100,
-        outputTokens: words.length,
-      },
-    }
   }
 
   // 工具执行
