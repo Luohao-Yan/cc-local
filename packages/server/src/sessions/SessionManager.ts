@@ -136,5 +136,62 @@ export class SessionManager {
     }
   }
 
-  // 保留的空方法，后续可添加其他辅助功能
+  // 更新会话
+  updateSession(sessionId: string, updates: Partial<Session>): Session {
+    const session = this.sessions.get(sessionId)
+    if (!session) {
+      throw new Error('Session not found')
+    }
+
+    if (updates.name !== undefined) {
+      session.name = updates.name
+    }
+    if (updates.cwd !== undefined) {
+      session.cwd = updates.cwd
+    }
+    if (updates.model !== undefined) {
+      session.model = updates.model
+    }
+    if (updates.messages !== undefined) {
+      session.messages = updates.messages
+    }
+
+    session.updatedAt = Date.now()
+    return session
+  }
+
+  // 获取消息历史
+  getMessageHistory(sessionId: string, limit: number, offset: number): Message[] {
+    const session = this.sessions.get(sessionId)
+    if (!session) {
+      throw new Error('Session not found')
+    }
+
+    const messages = session.messages.slice(offset, offset + limit)
+    return messages
+  }
+
+  // 执行工具
+  async executeTool(
+    toolName: string,
+    input: unknown
+  ): Promise<{ content: string; is_error?: boolean }> {
+    const { toolRegistry } = await import('@cclocal/core')
+    const tool = toolRegistry.get(toolName)
+
+    if (!tool) {
+      return {
+        content: `Tool "${toolName}" not found`,
+        is_error: true,
+      }
+    }
+
+    const context = {
+      sessionId: 'api-call',
+      cwd: process.cwd(),
+      abortSignal: undefined,
+    }
+
+    return await tool.execute(input, context)
+  }
 }

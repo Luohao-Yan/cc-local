@@ -148,6 +148,47 @@ export class Server {
       if (apiPath === 'models' && method === 'GET') {
         return this.listModels()
       }
+
+      // 工具调用 API
+      if (apiPath.startsWith('tools/') && method === 'POST') {
+        const toolName = apiPath.replace('tools/', '').split('/')[0]
+        const action = apiPath.split('/')[1]
+        if (action === 'execute') {
+          return this.executeTool(toolName, request, sessionManager)
+        }
+      }
+
+      // 文件操作 API
+      if (apiPath.startsWith('files/')) {
+        const action = apiPath.replace('files/', '')
+        if (action === 'read' && method === 'POST') {
+          return this.readFile(request, sessionManager)
+        }
+        if (action === 'write' && method === 'POST') {
+          return this.writeFile(request, sessionManager)
+        }
+        if (action === 'edit' && method === 'POST') {
+          return this.editFile(request, sessionManager)
+        }
+        if (action === 'search' && method === 'POST') {
+          return this.searchFiles(request, sessionManager)
+        }
+      }
+
+      // 消息历史 API
+      if (apiPath.startsWith('sessions/')) {
+        const parts = apiPath.replace('sessions/', '').split('/')
+        const sessionId = parts[0]
+        const action = parts[1]
+
+        if (action === 'messages' && method === 'GET') {
+          return this.getMessageHistory(sessionId, url, sessionManager)
+        }
+
+        if (method === 'PUT' && !action) {
+          return this.updateSession(sessionId, request, sessionManager)
+        }
+      }
     }
 
     return new Response('Not Found', { status: 404 })
@@ -259,5 +300,140 @@ export class Server {
     return new Response(JSON.stringify(models), {
       headers: { 'Content-Type': 'application/json' },
     })
+  }
+
+  // 更新会话
+  private async updateSession(
+    sessionId: string,
+    request: Request,
+    sessionManager: SessionManager
+  ): Promise<Response> {
+    try {
+      const body = await request.json()
+      const session = sessionManager.updateSession(sessionId, body)
+      return new Response(JSON.stringify(session), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: String(error) }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
+  // 获取消息历史
+  private async getMessageHistory(
+    sessionId: string,
+    url: URL,
+    sessionManager: SessionManager
+  ): Promise<Response> {
+    const limit = parseInt(url.searchParams.get('limit') || '100', 10)
+    const offset = parseInt(url.searchParams.get('offset') || '0', 10)
+
+    const messages = sessionManager.getMessageHistory(sessionId, limit, offset)
+    return new Response(JSON.stringify(messages), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  // 执行工具
+  private async executeTool(
+    toolName: string,
+    request: Request,
+    sessionManager: SessionManager
+  ): Promise<Response> {
+    try {
+      const body = await request.json()
+      const result = await sessionManager.executeTool(toolName, body)
+      return new Response(JSON.stringify(result), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: String(error) }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
+  // 读取文件
+  private async readFile(
+    request: Request,
+    sessionManager: SessionManager
+  ): Promise<Response> {
+    try {
+      const body = await request.json()
+      const result = await sessionManager.executeTool('file_read', body)
+      return new Response(JSON.stringify(result), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: String(error) }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
+  // 写入文件
+  private async writeFile(
+    request: Request,
+    sessionManager: SessionManager
+  ): Promise<Response> {
+    try {
+      const body = await request.json()
+      const result = await sessionManager.executeTool('file_write', body)
+      return new Response(JSON.stringify(result), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: String(error) }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
+  // 编辑文件
+  private async editFile(
+    request: Request,
+    sessionManager: SessionManager
+  ): Promise<Response> {
+    try {
+      const body = await request.json()
+      const result = await sessionManager.executeTool('file_edit', body)
+      return new Response(JSON.stringify(result), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: String(error) }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
+  // 搜索文件
+  private async searchFiles(
+    request: Request,
+    sessionManager: SessionManager
+  ): Promise<Response> {
+    try {
+      const body = await request.json()
+      const { type = 'glob', ...params } = body
+
+      const toolName = type === 'content' ? 'grep' : 'glob'
+      const result = await sessionManager.executeTool(toolName, params)
+
+      return new Response(JSON.stringify(result), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: String(error) }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
   }
 }
