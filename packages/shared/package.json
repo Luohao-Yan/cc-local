@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target bun",
+    "build": "bun build src/index.ts --outdir dist --target bun && tsc --declaration --emitDeclarationOnly --outDir dist",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
