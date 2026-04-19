@@ -16,12 +16,16 @@
     "baseUrl": ".",
     "paths": {
       "src/*": ["./src/*"],
+      "@cclocal/shared": ["./packages/shared/src/index.ts"],
+      "@cclocal/shared/*": ["./packages/shared/src/*"],
+      "@cclocal/core": ["./packages/core/src/index.ts"],
+      "@cclocal/core/*": ["./packages/core/src/*"],
       "bun:bundle": ["./src/_external/bun-bundle.d.ts"],
       "bun:ffi": ["./src/_external/bun-ffi.d.ts"],
       "react/compiler-runtime": ["./src/types/react-compiler-runtime.d.ts"]
     },
     "types": ["bun-types"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "scripts/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "scripts/**/*.ts", "packages/**/*.ts", "packages/**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }

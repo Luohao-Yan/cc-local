@@ -154,32 +154,31 @@ export class AnthropicClient {
    * 将内部消息格式转换为 Anthropic API 格式
    */
   private convertMessages(messages: Message[]): Anthropic.Messages.MessageParam[] {
-    return messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content
-        .map((c: MessageContent) => {
-          if (c.type === 'text') {
-            return { type: 'text', text: c.text }
-          }
-          if (c.type === 'tool_use') {
-            return {
-              type: 'tool_use',
-              id: c.id,
-              name: c.name,
-              input: c.input,
+    return messages
+      .filter((msg) => msg.role !== 'system')
+      .map((msg) => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+          .filter((c): c is Exclude<MessageContent, { type: 'thinking'; thinking: string }> => c.type !== 'thinking')
+          .map((c) => {
+            if (c.type === 'text') {
+              return { type: 'text' as const, text: c.text }
             }
-          }
-          if (c.type === 'tool_result') {
+            if (c.type === 'tool_use') {
+              return {
+                type: 'tool_use' as const,
+                id: c.id,
+                name: c.name,
+                input: c.input,
+              }
+            }
             return {
-              type: 'tool_result',
+              type: 'tool_result' as const,
               tool_use_id: c.tool_use_id,
               content: c.content,
               is_error: c.is_error,
             }
-          }
-          return { type: 'text', text: '' }
-        })
-        .filter((c: MessageContent): boolean => c.type !== 'thinking') as Anthropic.Messages.ContentBlock[],
-    }))
+          }),
+      }))
   }
 }

@@ -11,6 +11,10 @@ export interface Message {
   timestamp: number
 }
 
+export interface AssistantMessage extends Message {
+  role: 'assistant'
+}
+
 export type MessageContent =
   | { type: 'text'; text: string }
   | { type: 'tool_use'; name: string; input: unknown; id: string }

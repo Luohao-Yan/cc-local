@@ -4,18 +4,21 @@
 
 - **Base URL**: `http://localhost:5678/api/v1`
 - **WebSocket**: `ws://localhost:5678/ws`
-- **认证**: Bearer Token (`Authorization: Bearer <api_key>`)
+- **认证**: Bearer Token 或 `X-API-Key`
 
 ## 认证
 
-首次启动服务端自动生成 API key，存储在 `~/.cclocal/api_key`
+服务端支持两种 token 来源：
+
+- 设置 `CCLOCAL_API_KEY`，使用固定 API key
+- 不设置时，服务启动后生成临时 token，并在启动日志中打印
 
 ```bash
-# 获取 API key
-cat ~/.cclocal/api_key
+# 使用 Bearer Token
+curl -H "Authorization: Bearer YOUR_API_KEY" http://localhost:5678/api/v1/sessions
 
-# 使用示例
-curl -H "Authorization: Bearer $(cat ~/.cclocal/api_key)" http://localhost:5678/api/v1/sessions
+# 或使用 X-API-Key
+curl -H "X-API-Key: YOUR_API_KEY" http://localhost:5678/api/v1/sessions
 ```
 
 ## 端点列表
@@ -196,13 +199,94 @@ GET /api/v1/models
 ]
 ```
 
+### MCP 管理
+
+#### 列出 MCP 服务器
+```bash
+GET /api/v1/mcp/servers
+```
+
+#### 注册 MCP 服务器
+```bash
+POST /api/v1/mcp/servers
+Content-Type: application/json
+
+{
+  "name": "filesystem",
+  "config": {
+    "type": "stdio",
+    "command": "npx",
+    "args": ["@modelcontextprotocol/server-filesystem", "/path/to/project"]
+  }
+}
+```
+
+也支持 SSE 服务器：
+
+```json
+{
+  "name": "docs",
+  "config": {
+    "type": "sse",
+    "url": "http://127.0.0.1:8080/sse",
+    "headers": {
+      "Authorization": "Bearer YOUR_TOKEN"
+    }
+  }
+}
+```
+
+可选策略字段：
+
+```json
+{
+  "name": "filesystem",
+  "config": {
+    "type": "stdio",
+    "command": "npx",
+    "args": ["@modelcontextprotocol/server-filesystem", "/path/to/project"],
+    "namespace": "local_fs",
+    "allowedTools": ["read_file", "list_directory"],
+    "blockedTools": ["delete_file"],
+    "syncToolsToRegistry": true
+  }
+}
+```
+
+字段说明：
+
+- `namespace`: 动态工具注册到模型工具池时使用的命名空间，最终工具名形如 `mcp__<namespace>__<tool>`
+- `allowedTools`: 只允许这些远端工具暴露给模型
+- `blockedTools`: 显式屏蔽的远端工具
+- `syncToolsToRegistry`: 是否把已连接的 MCP 工具同步进默认模型工具池；设为 `false` 时只保留连接，不自动暴露给模型
+
+#### 删除 MCP 服务器
+```bash
+DELETE /api/v1/mcp/servers/:name
+```
+
+#### 连接 MCP 服务器
+```bash
+POST /api/v1/mcp/servers/:name/connect
+```
+
+连接成功后，如果 `syncToolsToRegistry` 未设为 `false`，该服务器暴露出的工具会自动进入默认工具池，模型可以直接调用。
+
+#### 断开 MCP 服务器
+```bash
+POST /api/v1/mcp/servers/:name/disconnect
+```
+
 ## 错误处理
 
 所有错误返回 JSON 格式：
 
 ```json
 {
-  "error": "Error message here"
+  "error": {
+    "code": "invalid_request",
+    "message": "Error message here"
+  }
 }
 ```
 
@@ -216,7 +300,7 @@ GET /api/v1/models
 
 ## CORS 支持
 
-服务端默认启用 CORS，允许所有来源：
+服务端默认允许 loopback 来源，也可以通过 `CCLOCAL_ALLOWED_ORIGINS` 配置显式允许来源列表。
 
 ```
 Access-Control-Allow-Origin: *

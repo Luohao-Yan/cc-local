@@ -12,6 +12,7 @@ import type {
   StreamEvent,
 } from '@cclocal/shared'
 import { AnthropicClient } from './anthropicClient.js'
+import { toolRegistry } from '../tools/registry.js'
 
 export interface QueryEngineOptions {
   model: string
@@ -22,7 +23,10 @@ export interface QueryEngineOptions {
   onStream?: (event: StreamEvent) => void
   apiKey?: string
   baseUrl?: string
+  client?: Pick<AnthropicClient, 'streamQuery'>
 }
+
+type QueryClient = Pick<AnthropicClient, 'streamQuery'>
 
 export interface QueryResult {
   message: AssistantMessage
@@ -35,11 +39,11 @@ export interface QueryResult {
 export class QueryEngine {
   private options: QueryEngineOptions
   private abortController?: AbortController
-  private client: AnthropicClient
+  private client: QueryClient
 
   constructor(options: QueryEngineOptions) {
     this.options = options
-    this.client = new AnthropicClient({
+    this.client = options.client ?? new AnthropicClient({
       apiKey: options.apiKey,
       baseUrl: options.baseUrl,
       model: options.model,
@@ -56,6 +60,8 @@ export class QueryEngine {
     const messageId = randomUUID()
 
     try {
+      const availableTools = opts.tools ?? toolRegistry.getAll()
+
       // 发送流开始事件
       opts.onStream?.({
         type: 'stream_start',
@@ -63,7 +69,7 @@ export class QueryEngine {
       })
 
       // 准备工具定义
-      const tools = opts.tools?.map((tool) => ({
+      const tools = availableTools.map((tool) => ({
         name: tool.name,
         description: tool.description,
         input_schema: tool.input_schema,
@@ -73,7 +79,10 @@ export class QueryEngine {
       const result = await this.executeWithTools(
         messages,
         tools,
-        opts,
+        {
+          ...opts,
+          tools: availableTools,
+        },
         messageId
       )
 

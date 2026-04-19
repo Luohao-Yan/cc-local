@@ -1,28 +1,27 @@
 /**
  * 数据库连接管理
- * 使用 better-sqlite3 进行会话持久化
+ * 使用 bun:sqlite 进行会话持久化
  */
 
-import DatabaseConstructor from 'better-sqlite3'
+import { Database } from 'bun:sqlite'
 import { join } from 'path'
 import { homedir } from 'os'
-
-type Database = import('better-sqlite3').default
+import { mkdirSync } from 'fs'
+import { dirname } from 'path'
 
 export class DatabaseConnection {
   private db: Database
   private static instance: DatabaseConnection
 
-  private constructor(dbPath?: string) {
+  constructor(dbPath?: string) {
     // 默认存储在用户主目录
     const path = dbPath || join(homedir(), '.cclocal', 'sessions.db')
 
     // 确保目录存在
-    const { mkdirSync } = require('fs')
-    const { dirname } = require('path')
     mkdirSync(dirname(path), { recursive: true })
 
-    this.db = new DatabaseConstructor(path)
+    this.db = new Database(path)
+    this.db.exec('PRAGMA foreign_keys = ON')
     this.initTables()
   }
 
@@ -35,6 +34,18 @@ export class DatabaseConnection {
 
   getDB(): Database {
     return this.db
+  }
+
+  static create(dbPath: string): DatabaseConnection {
+    return new DatabaseConnection(dbPath)
+  }
+
+  static resetInstance(): void {
+    if (DatabaseConnection.instance) {
+      DatabaseConnection.instance.close()
+      // @ts-expect-error reset singleton for tests
+      delete DatabaseConnection.instance
+    }
   }
 
   private initTables(): void {

@@ -2,12 +2,15 @@
  * WebSocket 管理器
  */
 
-import type { Server } from 'bun'
 import type { AuthManager } from '../auth/AuthManager.js'
 import type { SessionManager } from '../sessions/SessionManager.js'
 
+type WebSocketData = { token: string }
+type BunServer = Bun.Server<WebSocketData>
+type ClientSocket = Bun.ServerWebSocket<WebSocketData>
+
 interface WSClient {
-  socket: ReturnType<Server['upgrade']>
+  socket: ClientSocket
   token: string
   clientType?: 'cli' | 'vscode'
   sessionId?: string
@@ -23,7 +26,7 @@ export class WebSocketManager {
     this.sessionManager = options.sessionManager
   }
 
-  handleUpgrade(request: Request, server: Server): boolean {
+  handleUpgrade(request: Request, server: BunServer): boolean {
     const url = new URL(request.url)
     const token = url.searchParams.get('token')
 
@@ -38,7 +41,7 @@ export class WebSocketManager {
     return success
   }
 
-  onOpen(socket: ReturnType<Server['upgrade']>): void {
+  onOpen(socket: ClientSocket): void {
     const clientId = this.generateClientId()
     const token = (socket.data as { token: string }).token
 
@@ -59,7 +62,7 @@ export class WebSocketManager {
     })
   }
 
-  onMessage(socket: ReturnType<Server['upgrade']>, message: string | Buffer): void {
+  onMessage(socket: ClientSocket, message: string | Buffer): void {
     const client = this.findClientBySocket(socket)
     if (!client) return
 
@@ -76,7 +79,7 @@ export class WebSocketManager {
     }
   }
 
-  onClose(socket: ReturnType<Server['upgrade']>): void {
+  onClose(socket: ClientSocket): void {
     const clientId = this.findClientIdBySocket(socket)
     if (clientId) {
       console.log(`   WebSocket client disconnected: ${clientId}`)
@@ -187,7 +190,7 @@ export class WebSocketManager {
   }
 
   private sendToClient(
-    clientIdOrSocket: string | ReturnType<Server['upgrade']>,
+    clientIdOrSocket: string | ClientSocket,
     message: { type: string; payload?: unknown; timestamp: number }
   ): void {
     const socket =
@@ -208,7 +211,7 @@ export class WebSocketManager {
     return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
-  private findClientBySocket(socket: ReturnType<Server['upgrade']>): WSClient | undefined {
+  private findClientBySocket(socket: ClientSocket): WSClient | undefined {
     for (const client of this.clients.values()) {
       if (client.socket === socket) {
         return client
@@ -217,7 +220,7 @@ export class WebSocketManager {
     return undefined
   }
 
-  private findClientIdBySocket(socket: ReturnType<Server['upgrade']>): string | undefined {
+  private findClientIdBySocket(socket: ClientSocket): string | undefined {
     for (const [id, client] of this.clients.entries()) {
       if (client.socket === socket) {
         return id

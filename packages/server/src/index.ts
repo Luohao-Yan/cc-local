@@ -7,6 +7,7 @@ import { Server } from './api/server.js'
 import { WebSocketManager } from './ws/WebSocketManager.js'
 import { SessionManager } from './sessions/SessionManager.js'
 import { AuthManager } from './auth/AuthManager.js'
+import { mcpManager } from '@cclocal/core'
 
 const DEFAULT_PORT = 5678
 const DEFAULT_HOST = '127.0.0.1'
@@ -22,6 +23,7 @@ async function main() {
   const authManager = new AuthManager()
   const sessionManager = new SessionManager()
   const wsManager = new WebSocketManager({ authManager, sessionManager })
+  const authSummary = authManager.getAuthSummary()
 
   // 创建 HTTP 服务器
   const server = new Server({
@@ -30,6 +32,7 @@ async function main() {
     authManager,
     sessionManager,
     wsManager,
+    mcpManager,
   })
 
   // 启动服务器
@@ -37,6 +40,12 @@ async function main() {
 
   console.log(`✅ Server ready at http://${host}:${port}`)
   console.log(`   WebSocket endpoint: ws://${host}:${port}/ws`)
+  console.log(`   API token source: ${authSummary.configuredApiKey ? 'CCLOCAL_API_KEY' : 'ephemeral startup token'}`)
+  console.log(`   API token: ${authManager.getServerToken()}`)
+  console.log(`   Loopback browser origins: ${authSummary.allowLoopbackOrigins ? 'enabled' : 'disabled'}`)
+  if (authSummary.allowedOrigins.length > 0) {
+    console.log(`   Allowed origins: ${authSummary.allowedOrigins.join(', ')}`)
+  }
 
   // 优雅关闭
   process.on('SIGINT', async () => {

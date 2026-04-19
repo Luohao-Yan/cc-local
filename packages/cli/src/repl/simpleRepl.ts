@@ -6,8 +6,15 @@ import * as readline from 'readline'
 import type { CCLocalClient } from '../client/CCLocalClient.js'
 import type { StreamEvent } from '@cclocal/shared'
 
-export async function launchRepl(client: CCLocalClient): Promise<void> {
+interface LaunchReplOptions {
+  model?: string
+}
+
+export async function launchRepl(client: CCLocalClient, options: LaunchReplOptions = {}): Promise<void> {
   console.log('\n🚀 CCLocal Interactive Mode')
+  if (options.model) {
+    console.log(`Model override: ${options.model}`)
+  }
   console.log('Type your message and press Enter. Press Ctrl+C to exit.\n')
 
   const rl = readline.createInterface({
@@ -65,7 +72,11 @@ export async function launchRepl(client: CCLocalClient): Promise<void> {
         process.exit(0)
       }
 
-      client.sendMessage(trimmed)
+      void client.sendMessage(trimmed, { model: options.model }).catch((error) => {
+        isGenerating = false
+        console.error('\n❌ Error:', error instanceof Error ? error.message : String(error))
+        promptUser()
+      })
       // 等待响应，不立即提示
     })
   }

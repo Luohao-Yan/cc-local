@@ -32,7 +32,7 @@ export const globTool: Tool = {
     const { pattern, path = context.cwd } = input as GlobInput
 
     try {
-      const files = globSync(pattern, {
+      const files = await globSync(pattern, {
         cwd: path,
         absolute: false,
         dot: true,

@@ -122,19 +122,22 @@ bun run dev:cli
 | AnthropicClient | ✅ 完成 | Claude API 封装，支持流式 |
 | HTTP 服务端 | ✅ 完成 | Bun HTTP + SSE 流式响应 |
 | WebSocket | ✅ 完成 | 双向通信支持 |
-| CLI 客户端 | ✅ 完成 | 连接服务端，简化版 REPL |
-| 核心工具 | ✅ 完成 | bash, file_read, file_write |
+| CLI 客户端 | ✅ 完成 | 连接服务端，提供基础 REPL |
+| 核心工具 | ✅ 完成 | 已接入 6 个工具：bash、file_read、file_write、file_edit、glob、grep |
 | VS Code 扩展 | ✅ 完成 | WebSocket 客户端实现 |
-| 会话持久化 | ✅ 完成 | SQLite 存储会话历史 |
+| 工具调用循环 | ✅ 完成 | QueryEngine 已支持 tool_use -> execute -> tool_result 循环 |
+| 会话持久化 | ✅ 基础完成 | 已有 SQLite 能力，但服务端链路仍需继续补强 |
 
 ## 下一步工作
 
-1. **更多工具迁移** - LSP, Glob, Grep, FileEdit 等
-2. **工具执行集成** - 在 QueryEngine 中处理 tool_use 响应
-3. **会话持久化** - 添加 SQLite 存储
-4. **认证完善** - 实现更安全的认证机制
-5. **MCP 支持** - 集成 Model Context Protocol
-6. **测试覆盖** - 添加单元测试和集成测试
+1. **认证与权限模型升级** - 在 GUI/Web 接入前收紧 API Key、CORS 和权限边界
+2. **会话持久化补强** - 完善服务端的重启恢复、消息分页和状态同步
+3. **测试覆盖** - 为 QueryEngine、SessionManager、REST API 建立最小测试基线
+4. **MCP 适配到 `packages/`** - 将原始 `src/` 中较成熟的 MCP 能力抽取为新架构可复用模块
+5. **GUI 客户端实现** - 基于稳定 REST API 和 SSE 能力落地 Tauri 客户端
+6. **统一文档维护** - 让架构、API、GUI 设计和真实代码进度保持同步
+
+更细的实施建议见 [ROADMAP.md](./ROADMAP.md)。
 
 ## 技术决策
 

@@ -2,7 +2,7 @@
  * REPL 交互式界面 - Ink 版本
  */
 
-import React, { useState, useCallback } from 'react'
+import React, { useState } from 'react'
 import { Box, Text, useInput, useApp } from 'ink'
 import type { CCLocalClient } from '../client/CCLocalClient.js'
 import type { StreamEvent } from '@cclocal/shared'
@@ -17,7 +17,7 @@ interface ReplProps {
   client: CCLocalClient
 }
 
-export function Repl({ client }: ReplProps): JSX.Element {
+export function Repl({ client }: ReplProps): React.JSX.Element {
   const { exit } = useApp()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -33,15 +33,18 @@ export function Repl({ client }: ReplProps): JSX.Element {
           setCurrentResponse('')
           break
         case 'stream_delta':
-          if (event.delta?.type === 'text' && event.delta.text) {
-            setCurrentResponse((prev) => prev + event.delta!.text)
+          {
+            const delta = event.delta
+            if (delta && delta.type === 'text' && 'text' in delta && delta.text) {
+              setCurrentResponse((prev) => prev + delta.text)
+            }
           }
           break
         case 'stream_end':
           setMessages((prev) => [
             ...prev,
             {
-              id: event.messageId,
+              id: event.messageId || Date.now().toString(),
               role: 'assistant',
               content: currentResponse,
             },
@@ -75,12 +78,12 @@ export function Repl({ client }: ReplProps): JSX.Element {
           ...prev,
           { id: Date.now().toString(), role: 'user', content: input.trim() },
         ])
-        client.sendMessage(input.trim())
+        void client.sendMessage(input.trim())
         setInput('')
       }
-    } else if (key.escape || (key.ctrl && key.code === 'c')) {
+    } else if (key.escape || (key.ctrl && value === 'c')) {
       if (status === 'running') {
-        client.cancelGeneration()
+        void client.cancelGeneration()
       } else {
         exit()
       }

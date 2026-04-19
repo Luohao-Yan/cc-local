@@ -31,6 +31,7 @@
 - [使用方法](#使用方法)
 - [环境变量说明](#环境变量说明)
 - [多模型配置](#多模型配置)
+- [REST API 与 MCP](#rest-api-与-mcp)
 - [终端宠物伴侣](#终端宠物伴侣buddy)
 - [Auto Mode 自动模式](#auto-mode-自动模式)
 - [构建打包](#构建打包)
@@ -257,6 +258,160 @@ bun run start -- --model sonnet
 **方式二：手动编辑配置文件**
 
 创建或编辑 `~/.claude/models.json`（Windows 为 `%USERPROFILE%\.claude\models.json`）：
+
+---
+
+## REST API 与 MCP
+
+除了主 CLI，这个仓库现在还包含一条正在完善的 `packages/` Client/Server 架构线：
+
+- `packages/server`: 本地 HTTP + SSE 服务端
+- `packages/core`: QueryEngine、会话存储、MCP 管理器
+- `packages/cli`: 轻量 CLI 客户端
+
+### 启动本地服务端
+
+```bash
+# 可选：固定 API key
+export CCLOCAL_API_KEY=your-local-token
+
+# 可选：允许浏览器来源
+export CCLOCAL_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:5173
+
+bun run start:server
+```
+
+启动后可以使用 [API.md](./API.md) 中的 REST 端点管理会话、消息和 MCP 服务器。
+
+### 注册并连接 MCP 服务器
+
+#### stdio MCP
+
+```bash
+cclocal --server http://127.0.0.1:5678 --token your-local-token \
+  mcp add-stdio filesystem npx @modelcontextprotocol/server-filesystem /path/to/project \
+  --namespace local_fs \
+  --allow-tools read_file,list_directory
+
+cclocal --server http://127.0.0.1:5678 --token your-local-token \
+  mcp connect filesystem
+```
+
+#### SSE MCP
+
+```bash
+cclocal --server http://127.0.0.1:5678 --token your-local-token \
+  mcp add-sse docs http://127.0.0.1:8080/sse \
+  --header "Authorization: Bearer YOUR_REMOTE_TOKEN"
+
+cclocal --server http://127.0.0.1:5678 --token your-local-token \
+  mcp connect docs
+```
+
+### 动态工具策略
+
+MCP 动态工具在连接成功后，默认会进入模型工具池，命名格式为：
+
+```text
+mcp__<namespace-or-server-name>__<tool-name>
+```
+
+你可以通过注册参数控制暴露范围：
+
+- `namespace`: 指定工具命名空间，避免不同服务器工具重名
+- `allowedTools`: 仅暴露指定工具
+- `blockedTools`: 屏蔽指定工具
+- `syncToolsToRegistry: false`: 保留连接，但不自动暴露给模型
+
+常用管理命令：
+
+```bash
+# 查看已注册的 MCP 服务器
+cclocal --server http://127.0.0.1:5678 --token your-local-token mcp list
+
+# 断开连接
+cclocal --server http://127.0.0.1:5678 --token your-local-token mcp disconnect filesystem
+
+# 删除服务器
+cclocal --server http://127.0.0.1:5678 --token your-local-token mcp remove filesystem
+```
+
+### 通过 REST 发起对话
+
+只要 MCP server 已连接，且工具被同步进 registry，模型对话时就会自动看到这些动态工具。
+
+现在你既可以继续直接走 REST，也可以直接用新的 `packages/cli` 客户端对话：
+
+```bash
+# 交互式对话
+cclocal --server http://127.0.0.1:5678 --token your-local-token
+
+# 单次提问
+cclocal --server http://127.0.0.1:5678 --token your-local-token \
+  --print "读取项目里的 README 并总结一下"
+```
+
+如果模型在当前上下文里判断需要使用已连接的 MCP 动态工具，它会自动调用对应的 `mcp__<namespace>__<tool>` 工具。
+
+### 用 CLI 管理会话
+
+新 CLI 现在也能直接查看和续接 REST 会话：
+
+```bash
+# 创建新会话
+cclocal --server http://127.0.0.1:5678 --token your-local-token \
+  sessions new "MCP Demo" --model claude-sonnet-4 --cwd "$(pwd)"
+
+# 查看最近会话
+cclocal --server http://127.0.0.1:5678 --token your-local-token sessions list
+
+# 查看某个会话详情和最近 20 条消息
+cclocal --server http://127.0.0.1:5678 --token your-local-token \
+  sessions show <SESSION_ID> --messages 20
+
+# 直接用已有会话发一条单次消息
+cclocal --server http://127.0.0.1:5678 --token your-local-token \
+  sessions use <SESSION_ID> --print "继续刚才的话题"
+
+# 基于已有会话继续单次对话
+cclocal --server http://127.0.0.1:5678 --token your-local-token \
+  --session <SESSION_ID> \
+  --print "继续刚才的话题，总结一下下一步"
+
+# 基于已有会话进入交互式 REPL
+cclocal --server http://127.0.0.1:5678 --token your-local-token \
+  --session <SESSION_ID>
+
+# 重命名会话
+cclocal --server http://127.0.0.1:5678 --token your-local-token \
+  sessions rename <SESSION_ID> "新的会话名"
+
+# 删除会话
+cclocal --server http://127.0.0.1:5678 --token your-local-token \
+  sessions delete <SESSION_ID>
+```
+
+REST 示例：
+
+```bash
+# 创建会话
+curl -X POST http://127.0.0.1:5678/api/v1/sessions \
+  -H "Authorization: Bearer your-local-token" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"MCP Demo","cwd":"'"$(pwd)"'","model":"claude-sonnet-4"}'
+
+# 发送消息（SSE 流）
+curl -N -X POST http://127.0.0.1:5678/api/v1/sessions/<SESSION_ID>/messages \
+  -H "Authorization: Bearer your-local-token" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"读取项目里的 README 并总结一下"}'
+```
+
+现在 `packages/` 这条线已经验证了：
+
+- MCP server 可注册、连接、断开
+- 动态工具可按策略进入默认工具池
+- REST -> SessionManager -> QueryEngine -> MCP 动态工具 -> SSE/持久化 这条链路可跑通
 
 ```json
 {

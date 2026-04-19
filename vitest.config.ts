@@ -12,6 +12,8 @@ export default defineConfig({
       'bun:bundle': path.resolve(__dirname, 'src/_external/bun-bundle.ts'),
       // 映射 src/ 路径别名，与 tsconfig paths 保持一致
       src: path.resolve(__dirname, 'src'),
+      '@cclocal/shared': path.resolve(__dirname, 'packages/shared/src/index.ts'),
+      '@cclocal/core': path.resolve(__dirname, 'packages/core/src/index.ts'),
     },
   },
 })

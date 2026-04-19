@@ -3,54 +3,72 @@
  */
 
 import { randomUUID } from 'crypto'
-import { QueryEngine } from '@cclocal/core'
+import { QueryEngine, getSessionStore, toolRegistry } from '@cclocal/core'
 import type { Session, Message, MessageOptions, StreamEvent } from '@cclocal/shared'
+import type { SessionStore } from '@cclocal/core'
 
-interface SessionInternal extends Session {
+interface SessionRuntime {
   abortController?: AbortController
 }
 
+interface SessionManagerOptions {
+  store?: SessionStore
+  createQueryEngine?: (options: ConstructorParameters<typeof QueryEngine>[0]) => QueryEngine
+  now?: () => number
+}
+
 export class SessionManager {
-  private sessions = new Map<string, SessionInternal>()
+  private runtime = new Map<string, SessionRuntime>()
+  private readonly store: SessionStore
+  private readonly createQueryEngine: (options: ConstructorParameters<typeof QueryEngine>[0]) => QueryEngine
+  private readonly now: () => number
+
+  constructor(options: SessionManagerOptions = {}) {
+    this.store = options.store ?? getSessionStore()
+    this.createQueryEngine = options.createQueryEngine ?? ((queryOptions) => new QueryEngine(queryOptions))
+    this.now = options.now ?? (() => Date.now())
+  }
 
   async createSession(options: { name?: string; cwd?: string; model?: string }): Promise<Session> {
-    const session: SessionInternal = {
+    const timestamp = this.now()
+    const session: Session = {
       id: randomUUID(),
       name: options.name || 'New Session',
       messages: [],
       cwd: options.cwd || process.cwd(),
       model: options.model || 'default',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: timestamp,
+      updatedAt: timestamp,
     }
 
-    this.sessions.set(session.id, session)
+    this.store.createSession(session)
     return session
   }
 
   getSession(id: string): Session | undefined {
-    return this.sessions.get(id)
+    return this.store.getSession(id)
   }
 
   getAllSessions(): Session[] {
-    return Array.from(this.sessions.values())
+    return this.store.listSessions()
   }
 
   deleteSession(id: string): void {
-    const session = this.sessions.get(id)
-    if (session?.abortController) {
-      session.abortController.abort()
+    const runtime = this.runtime.get(id)
+    if (runtime?.abortController) {
+      runtime.abortController.abort()
     }
-    this.sessions.delete(id)
+    this.runtime.delete(id)
+    this.store.deleteSession(id)
   }
 
   async sendMessageStream(
     sessionId: string,
     content: string,
-    options: MessageOptions,
+    options: MessageOptions = {},
     controller: ReadableStreamDefaultController
   ): Promise<void> {
-    const session = this.sessions.get(sessionId)
+    const session = this.store.getSession(sessionId)
     if (!session) {
       controller.enqueue(new TextEncoder().encode('event: error\ndata: Session not found\n\n'))
       controller.close()
@@ -58,7 +76,8 @@ export class SessionManager {
     }
 
     // 创建新的 AbortController
-    session.abortController = new AbortController()
+    const runtime = this.getOrCreateRuntime(sessionId)
+    runtime.abortController = new AbortController()
 
     try {
       // 添加用户消息
@@ -66,16 +85,17 @@ export class SessionManager {
         id: randomUUID(),
         role: 'user',
         content: [{ type: 'text', text: content }],
-        timestamp: Date.now(),
+        timestamp: this.now(),
       }
-      session.messages.push(userMessage)
+      this.store.addMessage(userMessage, sessionId)
 
       // 使用 QueryEngine 处理消息
-      const queryEngine = new QueryEngine({
+      const queryEngine = this.createQueryEngine({
         model: options.model || session.model || 'default',
         systemPrompt: options.systemPrompt,
         temperature: options.temperature,
         maxTokens: options.maxTokens,
+        tools: toolRegistry.getAll(),
       })
 
       // 发送流开始事件
@@ -85,9 +105,9 @@ export class SessionManager {
       )
 
       // 调用 QueryEngine 获取流式响应
-      const result = await queryEngine.query(session.messages, {
+      const result = await queryEngine.query([...session.messages, userMessage], {
         onStream: (event: StreamEvent) => {
-          if (session.abortController?.signal.aborted) {
+          if (runtime.abortController?.signal.aborted) {
             queryEngine.cancel()
             return
           }
@@ -105,7 +125,7 @@ export class SessionManager {
       })
 
       // 添加助手消息到会话
-      session.messages.push(result.message)
+      this.store.addMessage(result.message, sessionId)
 
       // 发送流结束事件
       controller.enqueue(
@@ -123,52 +143,53 @@ export class SessionManager {
         )
       }
     } finally {
-      session.abortController = undefined
-      session.updatedAt = Date.now()
+      runtime.abortController = undefined
       controller.close()
     }
   }
 
   async cancelGeneration(sessionId: string): Promise<void> {
-    const session = this.sessions.get(sessionId)
-    if (session?.abortController) {
-      session.abortController.abort()
+    const runtime = this.runtime.get(sessionId)
+    if (runtime?.abortController) {
+      runtime.abortController.abort()
     }
   }
 
   // 更新会话
   updateSession(sessionId: string, updates: Partial<Session>): Session {
-    const session = this.sessions.get(sessionId)
+    const session = this.store.getSession(sessionId)
     if (!session) {
       throw new Error('Session not found')
     }
 
-    if (updates.name !== undefined) {
-      session.name = updates.name
-    }
-    if (updates.cwd !== undefined) {
-      session.cwd = updates.cwd
-    }
-    if (updates.model !== undefined) {
-      session.model = updates.model
-    }
-    if (updates.messages !== undefined) {
-      session.messages = updates.messages
+    const nextSession: Session = {
+      ...session,
+      ...updates,
+      updatedAt: this.now(),
     }
 
-    session.updatedAt = Date.now()
-    return session
+    this.store.updateSession(sessionId, {
+      name: nextSession.name,
+      cwd: nextSession.cwd,
+      model: nextSession.model,
+      metadata: nextSession.metadata,
+      updatedAt: nextSession.updatedAt,
+    })
+
+    if (updates.messages !== undefined) {
+      this.store.replaceMessages(sessionId, updates.messages)
+    }
+
+    return this.store.getSession(sessionId) as Session
   }
 
   // 获取消息历史
   getMessageHistory(sessionId: string, limit: number, offset: number): Message[] {
-    const session = this.sessions.get(sessionId)
-    if (!session) {
+    if (!this.store.hasSession(sessionId)) {
       throw new Error('Session not found')
     }
 
-    const messages = session.messages.slice(offset, offset + limit)
-    return messages
+    return this.store.getMessages(sessionId, { limit, offset })
   }
 
   // 执行工具
@@ -193,5 +214,14 @@ export class SessionManager {
     }
 
     return await tool.execute(input, context)
+  }
+
+  private getOrCreateRuntime(sessionId: string): SessionRuntime {
+    let runtime = this.runtime.get(sessionId)
+    if (!runtime) {
+      runtime = {}
+      this.runtime.set(sessionId, runtime)
+    }
+    return runtime
   }
 }

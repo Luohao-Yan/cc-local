@@ -6,6 +6,7 @@
 import type { AuthManager } from '../auth/AuthManager.js'
 import type { SessionManager } from '../sessions/SessionManager.js'
 import type { WebSocketManager } from '../ws/WebSocketManager.js'
+import type { MCPManager } from '@cclocal/core'
 
 interface ServerOptions {
   port: number
@@ -13,6 +14,7 @@ interface ServerOptions {
   authManager: AuthManager
   sessionManager: SessionManager
   wsManager: WebSocketManager
+  mcpManager: MCPManager
 }
 
 export class Server {
@@ -32,6 +34,7 @@ export class Server {
 
       fetch: async (request, server) => {
         const url = new URL(request.url)
+        const origin = request.headers.get('Origin')
 
         // WebSocket 升级
         if (url.pathname === '/ws') {
@@ -44,32 +47,35 @@ export class Server {
 
         // CORS 处理
         if (request.method === 'OPTIONS') {
+          if (!authManager.isOriginAllowed(origin)) {
+            return this.errorResponse(403, 'origin_not_allowed', 'Origin is not allowed')
+          }
           return new Response(null, {
             status: 204,
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            },
+            headers: authManager.getCorsHeaders(
+              origin,
+              request.headers.get('Access-Control-Request-Headers')
+            ),
           })
         }
 
         // API 路由
         try {
+          if (origin && !authManager.isOriginAllowed(origin)) {
+            return this.errorResponse(403, 'origin_not_allowed', 'Origin is not allowed')
+          }
+
           const response = await this.handleRequest(request, url, authManager, sessionManager)
 
           // 添加 CORS 头
-          response.headers.set('Access-Control-Allow-Origin', '*')
+          const corsHeaders = authManager.getCorsHeaders(origin, request.headers.get('Access-Control-Request-Headers'))
+          corsHeaders.forEach((value, key) => {
+            response.headers.set(key, value)
+          })
           return response
         } catch (error) {
           console.error('Request handler error:', error)
-          return new Response(
-            JSON.stringify({ error: 'Internal server error' }),
-            {
-              status: 500,
-              headers: { 'Content-Type': 'application/json' },
-            }
-          )
+          return this.errorResponse(500, 'internal_server_error', 'Internal server error')
         }
       },
     })
@@ -84,6 +90,10 @@ export class Server {
     }
   }
 
+  get port(): number | undefined {
+    return this.server?.port
+  }
+
   private async handleRequest(
     request: Request,
     url: URL,
@@ -95,21 +105,15 @@ export class Server {
 
     // 健康检查
     if (pathname === '/health' && method === 'GET') {
-      return new Response(
-        JSON.stringify({ status: 'ok', version: '1.0.0' }),
-        { headers: { 'Content-Type': 'application/json' } }
-      )
+      return this.jsonResponse({ status: 'ok', version: '1.0.0' })
     }
 
     // API v1 路由
     if (pathname.startsWith('/api/v1/')) {
       // 验证认证
-      const authHeader = request.headers.get('Authorization')
-      if (!authManager.verifyRequest(authHeader)) {
-        return new Response(
-          JSON.stringify({ error: 'Unauthorized' }),
-          { status: 401, headers: { 'Content-Type': 'application/json' } }
-        )
+      const authResult = authManager.authenticateRequest(request.headers)
+      if (!authResult.ok) {
+        return this.errorResponse(401, authResult.code || 'unauthorized', authResult.message || 'Unauthorized')
       }
 
       const apiPath = pathname.replace('/api/v1/', '')
@@ -124,8 +128,9 @@ export class Server {
       }
 
       if (apiPath.startsWith('sessions/')) {
-        const sessionId = apiPath.replace('sessions/', '').split('/')[0]
-        const action = apiPath.split('/')[1]
+        const parts = apiPath.replace('sessions/', '').split('/')
+        const sessionId = parts[0]
+        const action = parts[1]
 
         if (method === 'GET' && !action) {
           return this.getSession(sessionId, sessionManager)
@@ -147,6 +152,32 @@ export class Server {
       // 模型列表
       if (apiPath === 'models' && method === 'GET') {
         return this.listModels()
+      }
+
+      if (apiPath === 'mcp/servers' && method === 'GET') {
+        return this.listMcpServers()
+      }
+
+      if (apiPath === 'mcp/servers' && method === 'POST') {
+        return this.registerMcpServer(request)
+      }
+
+      if (apiPath.startsWith('mcp/servers/')) {
+        const parts = apiPath.replace('mcp/servers/', '').split('/')
+        const serverName = decodeURIComponent(parts[0] || '')
+        const action = parts[1]
+        if (method === 'GET' && !action) {
+          return this.getMcpServer(serverName)
+        }
+        if (method === 'DELETE' && !action) {
+          return this.deleteMcpServer(serverName)
+        }
+        if (method === 'POST' && action === 'connect') {
+          return this.connectMcpServer(serverName)
+        }
+        if (method === 'POST' && action === 'disconnect') {
+          return this.disconnectMcpServer(serverName)
+        }
       }
 
       // 工具调用 API
@@ -191,7 +222,7 @@ export class Server {
       }
     }
 
-    return new Response('Not Found', { status: 404 })
+    return this.errorResponse(404, 'not_found', 'Route not found')
   }
 
   private async createSession(
@@ -201,23 +232,15 @@ export class Server {
     try {
       const body = await request.json()
       const session = await sessionManager.createSession(body)
-      return new Response(JSON.stringify(session), {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return this.jsonResponse(session, 201)
     } catch (error) {
-      return new Response(
-        JSON.stringify({ error: String(error) }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
+      return this.errorResponse(400, 'invalid_request', this.getErrorMessage(error))
     }
   }
 
   private async listSessions(sessionManager: SessionManager): Promise<Response> {
     const sessions = sessionManager.getAllSessions()
-    return new Response(JSON.stringify(sessions), {
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return this.jsonResponse(sessions)
   }
 
   private async getSession(
@@ -226,14 +249,9 @@ export class Server {
   ): Promise<Response> {
     const session = sessionManager.getSession(sessionId)
     if (!session) {
-      return new Response(
-        JSON.stringify({ error: 'Session not found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      )
+      return this.errorResponse(404, 'session_not_found', 'Session not found')
     }
-    return new Response(JSON.stringify(session), {
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return this.jsonResponse(session)
   }
 
   private async sendMessage(
@@ -263,10 +281,7 @@ export class Server {
         },
       })
     } catch (error) {
-      return new Response(
-        JSON.stringify({ error: String(error) }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
+      return this.errorResponse(400, 'invalid_request', this.getErrorMessage(error))
     }
   }
 
@@ -275,9 +290,7 @@ export class Server {
     sessionManager: SessionManager
   ): Promise<Response> {
     await sessionManager.cancelGeneration(sessionId)
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return this.jsonResponse({ success: true })
   }
 
   private async deleteSession(
@@ -285,9 +298,7 @@ export class Server {
     sessionManager: SessionManager
   ): Promise<Response> {
     sessionManager.deleteSession(sessionId)
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return this.jsonResponse({ success: true })
   }
 
   private async listModels(): Promise<Response> {
@@ -297,9 +308,82 @@ export class Server {
       { id: 'claude-opus-4', name: 'Claude Opus 4' },
       { id: 'doubao', name: 'Doubao' },
     ]
-    return new Response(JSON.stringify(models), {
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return this.jsonResponse(models)
+  }
+
+  private async listMcpServers(): Promise<Response> {
+    return this.jsonResponse(this.options.mcpManager.listServers())
+  }
+
+  private async getMcpServer(serverName: string): Promise<Response> {
+    const record = this.options.mcpManager.getServer(serverName)
+    if (!record) {
+      return this.errorResponse(404, 'mcp_server_not_found', 'MCP server not found')
+    }
+
+    return this.jsonResponse(record)
+  }
+
+  private async registerMcpServer(request: Request): Promise<Response> {
+    try {
+      const body = await request.json() as {
+        name: string
+        config: {
+          type: 'stdio' | 'sse' | 'http' | 'ws'
+          command?: string
+          args?: string[]
+          cwd?: string
+          url?: string
+          env?: Record<string, string>
+          headers?: Record<string, string>
+          namespace?: string
+          allowedTools?: string[]
+          blockedTools?: string[]
+          syncToolsToRegistry?: boolean
+        }
+        tools?: Array<{ name: string; description: string; inputSchema?: Record<string, unknown> }>
+      }
+
+      if (!body?.name || !body?.config?.type) {
+        return this.errorResponse(400, 'invalid_request', 'MCP server name and config.type are required')
+      }
+
+      const record = this.options.mcpManager.registerServer({
+        name: body.name,
+        config: body.config,
+        tools: body.tools,
+      })
+
+      return this.jsonResponse(record, 201)
+    } catch (error) {
+      return this.errorResponse(400, 'invalid_request', this.getErrorMessage(error))
+    }
+  }
+
+  private async deleteMcpServer(serverName: string): Promise<Response> {
+    const deleted = await this.options.mcpManager.removeServer(serverName)
+    if (!deleted) {
+      return this.errorResponse(404, 'mcp_server_not_found', 'MCP server not found')
+    }
+    return this.jsonResponse({ success: true })
+  }
+
+  private async connectMcpServer(serverName: string): Promise<Response> {
+    try {
+      const record = await this.options.mcpManager.connectServer(serverName)
+      return this.jsonResponse(record)
+    } catch (error) {
+      return this.errorResponse(400, 'mcp_connect_failed', this.getErrorMessage(error))
+    }
+  }
+
+  private async disconnectMcpServer(serverName: string): Promise<Response> {
+    try {
+      const record = await this.options.mcpManager.disconnectServer(serverName)
+      return this.jsonResponse(record)
+    } catch (error) {
+      return this.errorResponse(400, 'mcp_disconnect_failed', this.getErrorMessage(error))
+    }
   }
 
   // 更新会话
@@ -311,14 +395,9 @@ export class Server {
     try {
       const body = await request.json()
       const session = sessionManager.updateSession(sessionId, body)
-      return new Response(JSON.stringify(session), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return this.jsonResponse(session)
     } catch (error) {
-      return new Response(
-        JSON.stringify({ error: String(error) }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
+      return this.errorResponse(400, 'invalid_request', this.getErrorMessage(error))
     }
   }
 
@@ -332,9 +411,7 @@ export class Server {
     const offset = parseInt(url.searchParams.get('offset') || '0', 10)
 
     const messages = sessionManager.getMessageHistory(sessionId, limit, offset)
-    return new Response(JSON.stringify(messages), {
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return this.jsonResponse(messages)
   }
 
   // 执行工具
@@ -346,14 +423,9 @@ export class Server {
     try {
       const body = await request.json()
       const result = await sessionManager.executeTool(toolName, body)
-      return new Response(JSON.stringify(result), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return this.jsonResponse(result)
     } catch (error) {
-      return new Response(
-        JSON.stringify({ error: String(error) }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
+      return this.errorResponse(400, 'tool_execution_failed', this.getErrorMessage(error))
     }
   }
 
@@ -365,14 +437,9 @@ export class Server {
     try {
       const body = await request.json()
       const result = await sessionManager.executeTool('file_read', body)
-      return new Response(JSON.stringify(result), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return this.jsonResponse(result)
     } catch (error) {
-      return new Response(
-        JSON.stringify({ error: String(error) }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
+      return this.errorResponse(400, 'file_read_failed', this.getErrorMessage(error))
     }
   }
 
@@ -384,14 +451,9 @@ export class Server {
     try {
       const body = await request.json()
       const result = await sessionManager.executeTool('file_write', body)
-      return new Response(JSON.stringify(result), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return this.jsonResponse(result)
     } catch (error) {
-      return new Response(
-        JSON.stringify({ error: String(error) }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
+      return this.errorResponse(400, 'file_write_failed', this.getErrorMessage(error))
     }
   }
 
@@ -403,14 +465,9 @@ export class Server {
     try {
       const body = await request.json()
       const result = await sessionManager.executeTool('file_edit', body)
-      return new Response(JSON.stringify(result), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return this.jsonResponse(result)
     } catch (error) {
-      return new Response(
-        JSON.stringify({ error: String(error) }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
+      return this.errorResponse(400, 'file_edit_failed', this.getErrorMessage(error))
     }
   }
 
@@ -426,14 +483,33 @@ export class Server {
       const toolName = type === 'content' ? 'grep' : 'glob'
       const result = await sessionManager.executeTool(toolName, params)
 
-      return new Response(JSON.stringify(result), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return this.jsonResponse(result)
     } catch (error) {
-      return new Response(
-        JSON.stringify({ error: String(error) }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
+      return this.errorResponse(400, 'file_search_failed', this.getErrorMessage(error))
     }
+  }
+
+  private jsonResponse(data: unknown, status = 200): Response {
+    return new Response(JSON.stringify(data), {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  private errorResponse(status: number, code: string, message: string, details?: unknown): Response {
+    return new Response(JSON.stringify({
+      error: {
+        code,
+        message,
+        details,
+      },
+    }), {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  private getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error)
   }
 }
