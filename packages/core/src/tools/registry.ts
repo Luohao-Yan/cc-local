@@ -4,7 +4,14 @@
  */
 
 import type { Tool } from '@cclocal/shared'
-import { bashTool, fileReadTool, fileWriteTool } from './impl/index.js'
+import {
+  bashTool,
+  fileReadTool,
+  fileWriteTool,
+  fileEditTool,
+  globTool,
+  grepTool,
+} from './impl/index.js'
 
 export class ToolRegistry {
   private tools = new Map<string, Tool>()
@@ -40,6 +47,9 @@ export class ToolRegistry {
     this.register(bashTool)
     this.register(fileReadTool)
     this.register(fileWriteTool)
+    this.register(fileEditTool)
+    this.register(globTool)
+    this.register(grepTool)
   }
 }
 

@@ -15,6 +15,7 @@
     "@modelcontextprotocol/sdk": "^1.12.1",
     "axios": "^1.7.0",
     "better-sqlite3": "^12.9.0",
+    "glob": "^13.0.6",
     "lodash-es": "^4.17.21",
     "zod": "^3.25.0"
   },

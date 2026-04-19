@@ -125,6 +125,7 @@ bun run dev:cli
 | CLI 客户端 | ✅ 完成 | 连接服务端，简化版 REPL |
 | 核心工具 | ✅ 完成 | bash, file_read, file_write |
 | VS Code 扩展 | ✅ 完成 | WebSocket 客户端实现 |
+| 会话持久化 | ✅ 完成 | SQLite 存储会话历史 |
 
 ## 下一步工作
 
