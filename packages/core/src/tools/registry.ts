@@ -4,6 +4,7 @@
  */
 
 import type { Tool } from '@cclocal/shared'
+import { bashTool, fileReadTool, fileWriteTool } from './impl/index.js'
 
 export class ToolRegistry {
   private tools = new Map<string, Tool>()
@@ -31,7 +32,17 @@ export class ToolRegistry {
   clear(): void {
     this.tools.clear()
   }
+
+  /**
+   * 注册默认工具集
+   */
+  registerDefaults(): void {
+    this.register(bashTool)
+    this.register(fileReadTool)
+    this.register(fileWriteTool)
+  }
 }
 
-// 全局工具注册表实例
+// 全局工具注册表实例（预装默认工具）
 export const toolRegistry = new ToolRegistry()
+toolRegistry.registerDefaults()
