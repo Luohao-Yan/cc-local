@@ -69,17 +69,59 @@ export class QueryEngine {
         input_schema: tool.input_schema,
       }))
 
+      // 执行查询（支持工具循环）
+      const result = await this.executeWithTools(
+        messages,
+        tools,
+        opts,
+        messageId
+      )
+
+      // 发送流结束事件
+      opts.onStream?.({
+        type: 'stream_end',
+        messageId,
+      })
+
+      return result
+    } catch (error) {
+      // 发送错误事件
+      opts.onStream?.({
+        type: 'error',
+        messageId,
+        error: error instanceof Error ? error.message : String(error),
+      })
+      throw error
+    } finally {
+      this.abortController = undefined
+    }
+  }
+
+  /**
+   * 执行查询并处理工具调用循环
+   */
+  private async executeWithTools(
+    messages: Message[],
+    tools: Array<{ name: string; description: string; input_schema: unknown }> | undefined,
+    opts: QueryEngineOptions,
+    messageId: string
+  ): Promise<QueryResult> {
+    let currentMessages = [...messages]
+    let fullResponse = ''
+    let inputTokens = 0
+    let outputTokens = 0
+    let maxIterations = 10 // 防止无限循环
+
+    while (maxIterations-- > 0) {
       // 调用 Anthropic API 流式查询
-      const stream = this.client.streamQuery(messages, {
+      const stream = this.client.streamQuery(currentMessages, {
         systemPrompt: opts.systemPrompt,
         maxTokens: opts.maxTokens,
         temperature: opts.temperature,
         tools,
       })
 
-      let fullResponse = ''
-      let inputTokens = 0
-      let outputTokens = 0
+      const toolCalls: Array<{ name: string; input: unknown; id: string }> = []
 
       for await (const event of stream) {
         // 检查是否被取消
@@ -101,6 +143,11 @@ export class QueryEngine {
             break
 
           case 'tool_use':
+            toolCalls.push({
+              name: event.name,
+              input: event.input,
+              id: event.id,
+            })
             opts.onStream?.({
               type: 'tool_call',
               messageId,
@@ -112,8 +159,8 @@ export class QueryEngine {
             break
 
           case 'usage':
-            inputTokens = event.inputTokens
-            outputTokens = event.outputTokens
+            inputTokens += event.inputTokens
+            outputTokens += event.outputTokens
             break
 
           case 'error':
@@ -121,37 +168,70 @@ export class QueryEngine {
         }
       }
 
-      // 发送流结束事件
-      opts.onStream?.({
-        type: 'stream_end',
-        messageId,
-      })
-
-      // 构建助手消息
-      const assistantMessage: AssistantMessage = {
-        id: messageId,
-        role: 'assistant',
-        content: [{ type: 'text', text: fullResponse.trim() }],
-        timestamp: Date.now(),
-      } as AssistantMessage
-
-      return {
-        message: assistantMessage,
-        usage: {
-          inputTokens,
-          outputTokens,
-        },
+      // 如果没有工具调用，直接返回结果
+      if (toolCalls.length === 0) {
+        break
       }
-    } catch (error) {
-      // 发送错误事件
-      opts.onStream?.({
-        type: 'error',
-        messageId,
-        error: error instanceof Error ? error.message : String(error),
-      })
-      throw error
-    } finally {
-      this.abortController = undefined
+
+      // 执行工具调用
+      const toolResults: Message[] = []
+      for (const toolCall of toolCalls) {
+        const tool = opts.tools?.find((t) => t.name === toolCall.name)
+        if (!tool) {
+          toolResults.push({
+            id: randomUUID(),
+            role: 'user',
+            content: [{
+              type: 'tool_result',
+              tool_use_id: toolCall.id,
+              content: `Tool "${toolCall.name}" not found`,
+              is_error: true,
+            }],
+            timestamp: Date.now(),
+          })
+          continue
+        }
+
+        // 执行工具
+        const context: ToolContext = {
+          sessionId: messageId,
+          cwd: process.cwd(),
+          abortSignal: this.abortController?.signal,
+        }
+
+        const result = await this.executeTool(tool, toolCall.input, context)
+
+        toolResults.push({
+          id: randomUUID(),
+          role: 'user',
+          content: [{
+            type: 'tool_result',
+            tool_use_id: toolCall.id,
+            content: result.content,
+            is_error: result.is_error,
+          }],
+          timestamp: Date.now(),
+        })
+      }
+
+      // 更新消息列表继续循环
+      currentMessages = [...currentMessages, ...toolResults]
+    }
+
+    // 构建助手消息
+    const assistantMessage: AssistantMessage = {
+      id: messageId,
+      role: 'assistant',
+      content: [{ type: 'text', text: fullResponse.trim() }],
+      timestamp: Date.now(),
+    } as AssistantMessage
+
+    return {
+      message: assistantMessage,
+      usage: {
+        inputTokens,
+        outputTokens,
+      },
     }
   }
 
