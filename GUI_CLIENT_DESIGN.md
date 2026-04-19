@@ -1,36 +1,66 @@
 # GUI 客户端设计文档
 
+参考: [OpenCode](https://github.com/anomalyco/opencode) - 开源编码助手，采用 Tauri + Client/Server 架构
+
 ## 架构目标
 
-1. **独立 GUI 客户端** - 用户安装桌面应用进行开发
-2. **服务端模式** - 应用作为服务端给其他 Web 应用提供 API
+1. **独立 GUI 客户端** - 桌面应用（Tauri），体积小、性能好
+2. **服务端模式** - 可作为服务端给 Web 应用提供 API
 3. **共享核心逻辑** - CLI/GUI/Server 使用相同的 `@cclocal/core`
+4. **多 Agent 支持** - 类似 OpenCode 的 build/plan 模式
+5. **LSP 集成** - 代码补全、定义跳转等 IDE 功能
 
 ## 技术选型
 
-| 方案 | 优势 | 劣势 | 推荐 |
-|------|------|------|------|
-| **Tauri + Web** | 体积小、性能好、前端自由 | 需要 Rust | ⭐ |
-| **Electron** | 成熟、生态丰富 | 体积大、内存占用 | |
-| **PWA** | 无需安装、自动更新 | 功能受限 | |
+参考 OpenCode 的实现，选择 **Tauri**:
 
-推荐 **Tauri** - 现代、安全、跨平台
+| 特性 | OpenCode | CCLocal |
+|------|----------|---------|
+| 桌面框架 | Tauri | Tauri ✅ |
+| 架构 | Client/Server | Client/Server ✅ |
+| 安装方式 | npm/brew/scoop | npm/brew/scoop |
+| 内置 Agents | build/plan | build/plan |
+| LSP 支持 | ✅ | ✅ |
 
-## 包结构
+**优势**:
+
+- 体积小 (~10MB vs Electron ~100MB+)
+- 内存占用低
+- 原生性能 (Rust 后端)
+- 安全 (Web 前端隔离)
+
+## 包结构 (参考 OpenCode)
 
 ```
 packages/
-├── gui/                    # 桌面 GUI 客户端 (Tauri)
-│   ├── src/
-│   │   ├── main.rs         # Tauri 主进程 (Rust)
-│   │   └── web/
-│   │       ├── App.tsx     # React 应用
-│   │       └── api.ts      # 服务端 API 调用
-│   └── Cargo.toml
-└── server/                 # 扩展服务端功能
+├── gui-desktop/            # 桌面 GUI 客户端 (Tauri)
+│   ├── src-tauri/          # Rust 后端
+│   │   ├── Cargo.toml
+│   │   └── src/main.rs     # Tauri 主进程
+│   ├── src/                # Web 前端
+│   │   ├── App.tsx         # React 应用入口
+│   │   ├── components/     # UI 组件
+│   │   │   ├── Chat.tsx    # 聊天界面
+│   │   │   ├── Sidebar.tsx # 会话列表
+│   │   │   └── FileTree.tsx # 文件浏览器
+│   │   ├── hooks/          # 自定义 hooks
+│   │   │   ├── useChat.ts  # 聊天状态管理
+│   │   │   └── useAPI.ts   # API 调用
+│   │   └── styles.css
+│   └── package.json
+│
+├── server/                 # 服务端 (扩展)
+│   └── src/
+│       ├── http.ts         # HTTP/WebSocket
+│       ├── rest.ts         # REST API
+│       ├── cors.ts         # 跨域配置
+│       └── auth.ts         # 认证中间件
+│
+└── core/                   # 共享核心 (已有)
     └── src/
-        ├── http.ts         # 现有 HTTP/WebSocket
-        └── rest.ts         # 新增 REST API
+        ├── engine/         # QueryEngine
+        ├── tools/          # ToolRegistry
+        └── db/             # SessionStore
 ```
 
 ## 服务端增强
@@ -71,19 +101,52 @@ const corsHeaders = {
 }
 ```
 
-### 3. 认证机制
+### 3. 认证机制 (类似 OpenCode)
 
 ```typescript
-// API Key 认证
-const authHeader = request.headers.get('Authorization')
-if (!authHeader?.startsWith('Bearer ')) {
-  return new Response('Unauthorized', { status: 401 })
+// server/src/auth.ts
+import { randomBytes } from 'crypto'
+import { homedir } from 'os'
+import { join } from 'path'
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+
+const CONFIG_DIR = join(homedir(), '.cclocal')
+const API_KEY_FILE = join(CONFIG_DIR, 'api_key')
+
+export function getOrCreateApiKey(): string {
+  if (existsSync(API_KEY_FILE)) {
+    return readFileSync(API_KEY_FILE, 'utf-8').trim()
+  }
+  
+  // 生成新 key
+  const apiKey = 'cc_' + randomBytes(32).toString('base64url')
+  mkdirSync(CONFIG_DIR, { recursive: true })
+  writeFileSync(API_KEY_FILE, apiKey, { mode: 0o600 }) // 仅限用户读取
+  
+  return apiKey
 }
-const apiKey = authHeader.slice(7)
-if (!validateApiKey(apiKey)) {
-  return new Response('Invalid API key', { status: 401 })
+
+export function validateApiKey(key: string): boolean {
+  return key === getOrCreateApiKey()
+}
+
+// HTTP 中间件
+export function authMiddleware(request: Request): Response | null {
+  const authHeader = request.headers.get('Authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+  
+  const apiKey = authHeader.slice(7)
+  if (!validateApiKey(apiKey)) {
+    return new Response('Invalid API key', { status: 401 })
+  }
+  
+  return null // 认证通过
 }
 ```
+
+**OpenCode 模式**: 首次启动生成 API key，GUI 自动读取本地 key，Web 访问需要手动配置。
 
 ## GUI 客户端功能
 
@@ -139,17 +202,20 @@ if (!validateApiKey(apiKey)) {
 ## 实现步骤
 
 ### Phase 1: 服务端 REST API
+
 1. 添加 CORS 支持
 2. 实现 REST 端点
 3. 添加 API Key 认证
 
 ### Phase 2: GUI 客户端
+
 1. 创建 `packages/gui` 包
 2. Tauri 项目初始化
 3. React 前端开发
 4. 与本地服务端集成
 
 ### Phase 3: Web 访问支持
+
 1. 服务端绑定配置（host/port）
 2. 网络安全（CORS、认证）
 3. 文档和示例
@@ -214,3 +280,70 @@ curl -X POST http://localhost:5678/api/tools/bash/execute \
 │ CLI  │ │VSCode│ │ GUI  │
 └──────┘ └──────┘ └──────┘
 ```
+
+## 多 Agent 模式 (参考 OpenCode)
+
+OpenCode 内置两种 Agents，通过 Tab 键切换：
+
+| Agent | 权限 | 用途 |
+|-------|------|------|
+| **build** | 完整权限 | 默认，执行开发任务 |
+| **plan** | 只读 | 分析代码、规划变更 |
+
+CCLocal 实现：
+
+```typescript
+// core/src/agents/buildAgent.ts
+export const buildAgent: Agent = {
+  name: 'build',
+  systemPrompt: 'You are a helpful coding assistant...',
+  allowFileEdit: true,
+  allowBash: true,
+}
+
+// core/src/agents/planAgent.ts
+export const planAgent: Agent = {
+  name: 'plan',
+  systemPrompt: 'You are a code analysis assistant...',
+  allowFileEdit: false,
+  allowBash: 'ask', // 询问权限
+}
+```
+
+## 安装方式 (参考 OpenCode)
+
+```bash
+# npm
+npm install -g cclocal
+
+# Homebrew (macOS/Linux)
+brew install Luohao-Yan/tap/cclocal
+
+# Scoop (Windows)
+scoop bucket add extras
+scoop install cclocal
+
+# 桌面版
+brew install --cask cclocal-desktop
+```
+
+## 开发计划
+
+### Phase 1: 服务端增强 (2周)
+
+- [ ] REST API 完整实现
+- [ ] CORS 和认证
+- [ ] API 文档 (Swagger/OpenAPI)
+
+### Phase 2: GUI 客户端 (3周)
+
+- [ ] Tauri 项目搭建
+- [ ] React 前端开发
+- [ ] 聊天界面 + 流式展示
+- [ ] 文件浏览器
+
+### Phase 3: 分发和文档 (1周)
+
+- [ ] 安装包构建 (DMG/EXE/DEB)
+- [ ] 安装脚本
+- [ ] 使用文档
