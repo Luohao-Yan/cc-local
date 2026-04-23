@@ -10,7 +10,12 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@cclocal/shared": ["../shared/dist/index.d.ts"],
+      "@cclocal/shared/*": ["../shared/dist/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["out", "node_modules"]

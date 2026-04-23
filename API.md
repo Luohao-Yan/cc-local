@@ -206,6 +206,11 @@ GET /api/v1/models
 GET /api/v1/mcp/servers
 ```
 
+#### 获取单个 MCP 服务器详情
+```bash
+GET /api/v1/mcp/servers/:name
+```
+
 #### 注册 MCP 服务器
 ```bash
 POST /api/v1/mcp/servers

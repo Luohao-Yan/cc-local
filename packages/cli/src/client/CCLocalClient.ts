@@ -7,6 +7,7 @@ import { randomUUID } from 'crypto'
 import type { ClientConfig, StreamEvent, MessageOptions, Message, Session } from '@cclocal/shared'
 
 interface CreateSessionOptions {
+  id?: string
   name?: string
   cwd?: string
   model?: string
@@ -63,6 +64,7 @@ export class CCLocalClient {
       method: 'POST',
       body: JSON.stringify({
         name: options.name,
+        id: options.id,
         cwd: options.cwd,
         model: options.model,
       }),
@@ -77,6 +79,10 @@ export class CCLocalClient {
     this.sessionId = sessionId
   }
 
+  clearSessionId(): void {
+    this.sessionId = undefined
+  }
+
   getSessionId(): string | undefined {
     return this.sessionId
   }
@@ -88,6 +94,28 @@ export class CCLocalClient {
       body: JSON.stringify({
         content,
         options,
+      }),
+    })
+
+    if (!response.body) {
+      throw new Error('Server did not return a streaming response body')
+    }
+
+    await this.consumeSSE(response)
+  }
+
+  async sendEphemeralMessage(
+    content: string,
+    options?: MessageOptions,
+    requestOptions?: { cwd?: string; model?: string }
+  ): Promise<void> {
+    const response = await this.request('/api/v1/query', {
+      method: 'POST',
+      body: JSON.stringify({
+        content,
+        options,
+        cwd: requestOptions?.cwd,
+        model: requestOptions?.model || options?.model,
       }),
     })
 
@@ -152,8 +180,21 @@ export class CCLocalClient {
     })
 
     if (this.sessionId === sessionId) {
-      this.sessionId = undefined
+      this.clearSessionId()
     }
+  }
+
+  async forkSession(
+    sessionId: string,
+    overrides: CreateSessionOptions = {}
+  ): Promise<Session> {
+    const response = await this.request(`/api/v1/sessions/${encodeURIComponent(sessionId)}/fork`, {
+      method: 'POST',
+      body: JSON.stringify(overrides),
+    })
+    const session = await this.parseJson<Session>(response)
+    this.sessionId = session.id
+    return session
   }
 
   async listMcpServers(): Promise<Array<Record<string, unknown>>> {

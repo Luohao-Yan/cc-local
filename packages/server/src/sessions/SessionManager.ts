@@ -29,10 +29,10 @@ export class SessionManager {
     this.now = options.now ?? (() => Date.now())
   }
 
-  async createSession(options: { name?: string; cwd?: string; model?: string }): Promise<Session> {
+  async createSession(options: { id?: string; name?: string; cwd?: string; model?: string }): Promise<Session> {
     const timestamp = this.now()
     const session: Session = {
-      id: randomUUID(),
+      id: options.id || randomUUID(),
       name: options.name || 'New Session',
       messages: [],
       cwd: options.cwd || process.cwd(),
@@ -43,6 +43,41 @@ export class SessionManager {
 
     this.store.createSession(session)
     return session
+  }
+
+  async cloneSession(
+    sessionId: string,
+    overrides: { name?: string; cwd?: string; model?: string } = {}
+  ): Promise<Session> {
+    const source = this.store.getSession(sessionId)
+    if (!source) {
+      throw new Error('Session not found')
+    }
+
+    const timestamp = this.now()
+    const nextSession: Session = {
+      id: randomUUID(),
+      name: overrides.name || `${source.name} (fork)`,
+      messages: [],
+      cwd: overrides.cwd || source.cwd,
+      model: overrides.model || source.model,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      metadata: source.metadata,
+    }
+
+    this.store.createSession(nextSession)
+
+    const clonedMessages = source.messages.map((message) => ({
+      ...message,
+      id: randomUUID(),
+    }))
+
+    if (clonedMessages.length > 0) {
+      this.store.replaceMessages(nextSession.id, clonedMessages)
+    }
+
+    return this.store.getSession(nextSession.id) as Session
   }
 
   getSession(id: string): Session | undefined {
@@ -95,7 +130,10 @@ export class SessionManager {
         systemPrompt: options.systemPrompt,
         temperature: options.temperature,
         maxTokens: options.maxTokens,
+        maxTurns: options.maxTurns,
+        enabledTools: options.enabledTools,
         tools: toolRegistry.getAll(),
+        permissionPolicy: options.permissionPolicy,
       })
 
       // 发送流开始事件
@@ -144,6 +182,62 @@ export class SessionManager {
       }
     } finally {
       runtime.abortController = undefined
+      controller.close()
+    }
+  }
+
+  async sendEphemeralMessageStream(
+    content: string,
+    options: MessageOptions = {},
+    controller: ReadableStreamDefaultController,
+    context: { cwd?: string; model?: string } = {}
+  ): Promise<void> {
+    try {
+      const userMessage: Message = {
+        id: randomUUID(),
+        role: 'user',
+        content: [{ type: 'text', text: content }],
+        timestamp: this.now(),
+      }
+
+      const queryEngine = this.createQueryEngine({
+        model: options.model || context.model || 'default',
+        systemPrompt: options.systemPrompt,
+        temperature: options.temperature,
+        maxTokens: options.maxTokens,
+        maxTurns: options.maxTurns,
+        enabledTools: options.enabledTools,
+        tools: toolRegistry.getAll(),
+        permissionPolicy: options.permissionPolicy,
+      })
+
+      const messageId = randomUUID()
+      controller.enqueue(
+        new TextEncoder().encode(`event: stream_start\ndata: ${JSON.stringify({ messageId })}\n\n`)
+      )
+
+      await queryEngine.query([userMessage], {
+        onStream: (event: StreamEvent) => {
+          if (event.type === 'stream_delta' && event.delta?.type === 'text') {
+            const data = JSON.stringify({
+              type: 'text_delta',
+              text: event.delta.text,
+            })
+            controller.enqueue(
+              new TextEncoder().encode(`event: delta\ndata: ${data}\n\n`)
+            )
+          }
+        },
+      })
+
+      controller.enqueue(
+        new TextEncoder().encode(`event: stream_end\ndata: {}\n\n`)
+      )
+    } catch (error) {
+      controller.enqueue(
+        new TextEncoder().encode(`event: error\ndata: ${JSON.stringify({ error: String(error) })}\n\n`)
+      )
+    } finally {
       controller.close()
     }
   }

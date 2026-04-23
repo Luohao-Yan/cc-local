@@ -28,6 +28,13 @@ export interface MCPToolDefinition {
   registeredName?: string
 }
 
+export interface MCPResourceDefinition {
+  uri: string
+  name?: string
+  description?: string
+  mimeType?: string
+}
+
 export interface MCPServerRecord {
   name: string
   config: MCPServerConfig

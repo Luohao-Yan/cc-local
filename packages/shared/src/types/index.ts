@@ -123,6 +123,119 @@ export interface MessageOptions {
   systemPrompt?: string
   temperature?: number
   maxTokens?: number
+  maxTurns?: number
+  maxThinkingTokens?: number
+  fallbackModel?: string
+  enabledTools?: string[]
+  jsonSchema?: unknown
+  inputFormat?: 'text' | 'stream-json'
+  includeHookEvents?: boolean
+  additionalDirectories?: string[]
+  debug?: {
+    enabled?: boolean
+    file?: string
+    toStderr?: boolean
+    verbose?: boolean
+    mcp?: boolean
+  }
+  compatibility?: {
+    prefill?: string
+    thinking?: 'enabled' | 'adaptive' | 'disabled'
+    pluginDirectories?: string[]
+    workspace?: string
+    worktree?: boolean | string
+    tmux?: boolean | string
+    ide?: boolean
+    chrome?: boolean
+    workload?: string
+    bare?: boolean
+    disableSlashCommands?: boolean
+    files?: string[]
+    remote?: boolean | string
+    remoteControl?: boolean | string
+    rc?: boolean | string
+    teleport?: boolean | string
+    sdkUrl?: string
+    agent?: string
+    agents?: string
+    agentId?: string
+    agentName?: string
+    agentColor?: string
+    agentType?: string
+    agentTeams?: string
+    teamName?: string
+    teammateMode?: 'auto' | 'tmux' | 'in-process'
+    parentSessionId?: string
+    planModeRequired?: boolean
+    tasks?: boolean | string
+    taskBudget?: number
+    channels?: string[]
+    advisor?: string
+    afk?: boolean
+    all?: boolean
+    assistant?: boolean
+    available?: boolean
+    betas?: string[]
+    brief?: boolean
+    claudeai?: boolean
+    clearOwner?: boolean
+    clientSecret?: string
+    console?: boolean
+    cowork?: boolean
+    dangerouslyLoadDevelopmentChannels?: string[]
+    dangerouslySkipPermissionsWithClassifiers?: boolean
+    deepLinkLastFetch?: number
+    deepLinkOrigin?: boolean
+    deepLinkRepo?: string
+    delegatePermissions?: boolean
+    description?: string
+    dryRun?: boolean
+    effort?: string
+    email?: string
+    enableAuthStatus?: boolean
+    enableAutoMode?: boolean
+    force?: boolean
+    fromPr?: boolean | string
+    hardFail?: boolean
+    host?: string
+    idleTimeout?: number
+    init?: boolean
+    initOnly?: boolean
+    keepData?: boolean
+    list?: boolean
+    local?: boolean
+    maintenance?: boolean
+    maxBudgetUsd?: number
+    maxSessions?: number
+    messagingSocketPath?: string
+    output?: string
+    outputStyle?: string
+    vimMode?: boolean | string
+    owner?: string
+    pending?: boolean
+    permissionPromptTool?: string
+    feedback?: boolean | string
+    privacySettings?: boolean | string
+    port?: number
+    proactive?: boolean
+    resumeSessionAt?: string
+    rewindFiles?: string
+    rewindRequested?: boolean | string
+    safe?: boolean
+    scope?: string
+    settingSources?: string[]
+    sparse?: boolean
+    sso?: boolean
+    status?: boolean
+    subject?: string
+    text?: string
+    unix?: string
+  }
+  permissionPolicy?: {
+    mode?: 'default' | 'dontAsk' | 'acceptEdits' | 'bypassPermissions'
+    allowedTools?: string[]
+    blockedTools?: string[]
+  }
 }
 
 // 状态更新

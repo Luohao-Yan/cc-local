@@ -143,6 +143,107 @@ describe('Server REST API integration', () => {
     expect(messages.map((message) => message.id)).toEqual(['msg-2', 'msg-3'])
   })
 
+  it('forks sessions via the REST API', async () => {
+    const ctx = createTestServer()
+    cleanup.push(() => {
+      ctx.connection.close()
+      rmSync(ctx.tempDir, { recursive: true, force: true })
+    })
+
+    const session = await ctx.sessionManager.createSession({
+      name: 'Fork Me',
+      cwd: ctx.tempDir,
+      model: 'fork-model',
+    })
+
+    ctx.store.addMessage({
+      id: 'msg-1',
+      role: 'user',
+      content: [{ type: 'text', text: 'hello fork' }],
+      timestamp: 1,
+    }, session.id)
+
+    const response = await dispatchRequest(
+      ctx.server,
+      ctx.authManager,
+      ctx.sessionManager,
+      new Request(`http://localhost/api/v1/sessions/${session.id}/fork`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer test-token',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      })
+    )
+
+    expect(response.status).toBe(201)
+    const cloned = await response.json() as { id: string; name: string; messages: Array<{ content: unknown }> }
+    expect(cloned.id).not.toBe(session.id)
+    expect(cloned.name).toBe('Fork Me (fork)')
+    expect(cloned.messages).toHaveLength(1)
+  })
+
+  it('streams ephemeral queries without persisting a session via the REST API', async () => {
+    const ctx = createTestServer({
+      sessionManager: new SessionManager({
+        store: undefined as any,
+        createQueryEngine: () => ({
+          async query(_messages: Array<{ content: unknown }>, options?: { onStream?: (event: {
+            type: 'stream_delta'
+            messageId: string
+            delta: { type: 'text'; text: string }
+          }) => void }) {
+            options?.onStream?.({
+              type: 'stream_delta',
+              messageId: 'assistant-1',
+              delta: { type: 'text', text: 'ephemeral reply' },
+            })
+
+            return {
+              message: {
+                id: 'assistant-1',
+                role: 'assistant',
+                content: [{ type: 'text', text: 'ephemeral reply' }],
+                timestamp: 2,
+              },
+              usage: { inputTokens: 1, outputTokens: 1 },
+            }
+          },
+          cancel() {},
+        }) as any,
+      }),
+    })
+    cleanup.push(() => {
+      ctx.connection.close()
+      rmSync(ctx.tempDir, { recursive: true, force: true })
+    })
+
+    const response = await dispatchRequest(
+      ctx.server,
+      ctx.authManager,
+      ctx.sessionManager,
+      new Request('http://localhost/api/v1/query', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer test-token',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: 'ephemeral hello',
+          cwd: ctx.tempDir,
+          model: 'ephemeral-model',
+        }),
+      })
+    )
+
+    expect(response.status).toBe(200)
+    const body = await response.text()
+    expect(body).toContain('event: stream_start')
+    expect(body).toContain('ephemeral reply')
+    expect(body).toContain('event: stream_end')
+  })
+
   it('registers and lists MCP servers via the REST API', async () => {
     const ctx = createTestServer()
     cleanup.push(() => {
@@ -197,6 +298,22 @@ describe('Server REST API integration', () => {
       tools: [],
       updatedAt: expect.any(Number),
     }])
+
+    const getResponse = await dispatchRequest(
+      ctx.server,
+      ctx.authManager,
+      ctx.sessionManager,
+      new Request('http://localhost/api/v1/mcp/servers/filesystem', {
+        headers: {
+          Authorization: 'Bearer test-token',
+        },
+      })
+    )
+
+    expect(getResponse.status).toBe(200)
+    const server = await getResponse.json() as { name: string; config: { type: string } }
+    expect(server.name).toBe('filesystem')
+    expect(server.config.type).toBe('stdio')
   })
 
   it('connects and disconnects MCP servers via the REST API', async () => {

@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { CallToolResultSchema } from '@modelcontextprotocol/sdk/types.js'
 import type { Tool, ToolContext, ToolResult } from '@cclocal/shared'
 import { toolRegistry, type ToolRegistry } from '../tools/registry.js'
@@ -8,6 +9,7 @@ import type {
   MCPServerConfig,
   MCPServerRegistration,
   MCPServerRecord,
+  MCPResourceDefinition,
   MCPServerStatus,
   MCPToolDefinition,
 } from './types.js'
@@ -15,6 +17,8 @@ import type {
 interface MCPConnectionHandle {
   listTools(): Promise<MCPToolDefinition[]>
   callTool(name: string, args: unknown): Promise<ToolResult>
+  listResources?(): Promise<MCPResourceDefinition[]>
+  readResource?(uri: string): Promise<ToolResult>
   close(): Promise<void>
 }
 
@@ -124,17 +128,17 @@ export class MCPManager {
       if (config.url) {
         throw new Error('stdio MCP server must not define url')
       }
-    } else if (config.type === 'sse') {
+    } else if (config.type === 'sse' || config.type === 'http') {
       if (!config.url?.trim()) {
-        throw new Error('sse MCP server requires a non-empty url')
+        throw new Error(`${config.type} MCP server requires a non-empty url`)
       }
       if (config.command) {
-        throw new Error('sse MCP server must not define command')
+        throw new Error(`${config.type} MCP server must not define command`)
       }
       try {
         new URL(config.url)
       } catch {
-        throw new Error('sse MCP server requires a valid url')
+        throw new Error(`${config.type} MCP server requires a valid url`)
       }
     } else {
       throw new Error(`Unsupported MCP transport type: ${config.type}`)
@@ -221,6 +225,28 @@ export class MCPManager {
     return await connection.handle.callTool(toolName, args)
   }
 
+  async listResources(serverName: string): Promise<MCPResourceDefinition[]> {
+    const connection = this.connections.get(serverName)
+    if (!connection) {
+      throw new Error(`MCP server "${serverName}" is not connected`)
+    }
+    if (!connection.handle.listResources) {
+      return []
+    }
+    return await connection.handle.listResources()
+  }
+
+  async readResource(serverName: string, uri: string): Promise<ToolResult> {
+    const connection = this.connections.get(serverName)
+    if (!connection) {
+      throw new Error(`MCP server "${serverName}" is not connected`)
+    }
+    if (!connection.handle.readResource) {
+      throw new Error(`MCP server "${serverName}" does not support resources`)
+    }
+    return await connection.handle.readResource(uri)
+  }
+
   private async createConnection(record: MCPServerRecord): Promise<MCPConnectionHandle> {
     this.validateServerConfig(record.config)
 
@@ -240,6 +266,13 @@ export class MCPManager {
               },
               fetch: globalThis.fetch,
             })
+          : record.config.type === 'http'
+            ? new StreamableHTTPClientTransport(new URL(record.config.url as string), {
+                requestInit: {
+                  headers: record.config.headers,
+                },
+                fetch: globalThis.fetch,
+              })
           : (() => {
               throw new Error(`Unsupported MCP transport type: ${record.config.type}`)
             })()
@@ -280,6 +313,36 @@ export class MCPManager {
 
         return {
           content: this.formatToolResultContent(result.content),
+        }
+      },
+      listResources: async () => {
+        const listResources = (client as unknown as {
+          listResources?: () => Promise<{ resources?: Array<{ uri: string; name?: string; description?: string; mimeType?: string }> }>
+        }).listResources
+        if (!listResources) {
+          return []
+        }
+        const result = await listResources.call(client)
+        return (result.resources || []).map((resource) => ({
+          uri: resource.uri,
+          name: resource.name,
+          description: resource.description,
+          mimeType: resource.mimeType,
+        }))
+      },
+      readResource: async (uri) => {
+        const request = (client as unknown as {
+          request?: (request: unknown, schema: unknown) => Promise<{ contents?: unknown[] }>
+        }).request
+        if (!request) {
+          throw new Error('MCP client does not support resource reads')
+        }
+        const result = await request.call(client, {
+          method: 'resources/read',
+          params: { uri },
+        }, undefined)
+        return {
+          content: this.formatToolResultContent(result.contents || []),
         }
       },
       close: async () => {
@@ -391,3 +454,76 @@ export const mcpManager = new MCPManager({
   toolRegistry,
   syncToolsToRegistry: true,
 })
+
+function registerMcpCompatibilityTools(manager: MCPManager): void {
+  if (!toolRegistry.has('mcp')) {
+    toolRegistry.register({
+      name: 'mcp',
+      description: 'Call a tool on a connected MCP server by server and tool name.',
+      input_schema: {
+        type: 'object',
+        properties: {
+          server: { type: 'string', description: 'MCP server name.' },
+          tool: { type: 'string', description: 'MCP tool name on that server.' },
+          arguments: { type: 'object', description: 'Arguments to pass to the MCP tool.' },
+        },
+        required: ['server', 'tool'],
+      },
+      execute: async (input: unknown) => {
+        const { server, tool, arguments: args = {} } = input as {
+          server?: string
+          tool?: string
+          arguments?: unknown
+        }
+        if (!server || !tool) {
+          return {
+            content: 'Error: server and tool are required',
+            is_error: true,
+          }
+        }
+        try {
+          return await manager.callTool(server, tool, args)
+        } catch (error) {
+          return {
+            content: error instanceof Error ? error.message : String(error),
+            is_error: true,
+          }
+        }
+      },
+    })
+  }
+
+  if (!toolRegistry.has('ReadMcpResourceTool')) {
+    toolRegistry.register({
+      name: 'ReadMcpResourceTool',
+      description: 'Read a resource URI from a connected MCP server.',
+      input_schema: {
+        type: 'object',
+        properties: {
+          server: { type: 'string', description: 'MCP server name.' },
+          uri: { type: 'string', description: 'Resource URI to read.' },
+        },
+        required: ['server', 'uri'],
+      },
+      execute: async (input: unknown) => {
+        const { server, uri } = input as { server?: string; uri?: string }
+        if (!server || !uri) {
+          return {
+            content: 'Error: server and uri are required',
+            is_error: true,
+          }
+        }
+        try {
+          return await manager.readResource(server, uri)
+        } catch (error) {
+          return {
+            content: error instanceof Error ? error.message : String(error),
+            is_error: true,
+          }
+        }
+      },
+    })
+  }
+}
+
+registerMcpCompatibilityTools(mcpManager)

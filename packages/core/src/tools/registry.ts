@@ -11,6 +11,19 @@ import {
   fileEditTool,
   globTool,
   grepTool,
+  webFetchTool,
+  webFetchAliasTool,
+  webSearchTool,
+  webSearchAliasTool,
+  todoWriteTool,
+  notebookEditTool,
+  taskCreateTool,
+  taskGetTool,
+  taskListTool,
+  taskUpdateTool,
+  mcpCompatTool,
+  readMcpResourceTool,
+  legacyCompatibilityTools,
 } from './impl/index.js'
 
 export class ToolRegistry {
@@ -50,6 +63,21 @@ export class ToolRegistry {
     this.register(fileEditTool)
     this.register(globTool)
     this.register(grepTool)
+    this.register(webFetchTool)
+    this.register(webFetchAliasTool)
+    this.register(webSearchTool)
+    this.register(webSearchAliasTool)
+    this.register(todoWriteTool)
+    this.register(notebookEditTool)
+    this.register(taskCreateTool)
+    this.register(taskGetTool)
+    this.register(taskListTool)
+    this.register(taskUpdateTool)
+    this.register(mcpCompatTool)
+    this.register(readMcpResourceTool)
+    for (const tool of legacyCompatibilityTools) {
+      this.register(tool)
+    }
   }
 }
 

@@ -204,4 +204,75 @@ describe('MCPManager', () => {
 
     await manager.disconnectServer('docs')
   })
+
+  it('supports http config validation and connection lifecycle', async () => {
+    const manager = new MCPManager({
+      connectionFactory: async () => ({
+        async listTools() {
+          return [{ name: 'search_docs', description: 'Search docs' }]
+        },
+        async callTool(name) {
+          return { content: `called:${name}` }
+        },
+        async close() {},
+      }),
+    })
+
+    manager.registerServer({
+      name: 'remote-docs',
+      config: {
+        type: 'http',
+        url: 'http://127.0.0.1:8080/mcp',
+      },
+    })
+
+    const connected = await manager.connectServer('remote-docs')
+    expect(connected.status).toBe('connected')
+    expect(connected.tools.map((tool) => tool.name)).toEqual(['search_docs'])
+
+    const disconnected = await manager.disconnectServer('remote-docs')
+    expect(disconnected.status).toBe('disconnected')
+  })
+
+  it('supports MCP resources when the connector exposes them', async () => {
+    const manager = new MCPManager({
+      connectionFactory: async () => ({
+        async listTools() {
+          return []
+        },
+        async callTool(name) {
+          return { content: `called:${name}` }
+        },
+        async listResources() {
+          return [{
+            uri: 'file:///demo.txt',
+            name: 'demo',
+            mimeType: 'text/plain',
+          }]
+        },
+        async readResource(uri) {
+          return { content: `resource:${uri}` }
+        },
+        async close() {},
+      }),
+    })
+
+    manager.registerServer({
+      name: 'resources',
+      config: {
+        type: 'stdio',
+        command: 'demo-mcp',
+      },
+    })
+
+    await manager.connectServer('resources')
+    await expect(manager.listResources('resources')).resolves.toEqual([{
+      uri: 'file:///demo.txt',
+      name: 'demo',
+      mimeType: 'text/plain',
+    }])
+    await expect(manager.readResource('resources', 'file:///demo.txt')).resolves.toEqual({
+      content: 'resource:file:///demo.txt',
+    })
+  })
 })

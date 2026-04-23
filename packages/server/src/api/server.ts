@@ -127,6 +127,10 @@ export class Server {
         return this.listSessions(sessionManager)
       }
 
+      if (apiPath === 'query' && method === 'POST') {
+        return this.queryWithoutPersistence(request, sessionManager)
+      }
+
       if (apiPath.startsWith('sessions/')) {
         const parts = apiPath.replace('sessions/', '').split('/')
         const sessionId = parts[0]
@@ -146,6 +150,10 @@ export class Server {
 
         if (method === 'DELETE' && !action) {
           return this.deleteSession(sessionId, sessionManager)
+        }
+
+        if (method === 'POST' && action === 'fork') {
+          return this.forkSession(sessionId, request, sessionManager)
         }
       }
 
@@ -299,6 +307,58 @@ export class Server {
   ): Promise<Response> {
     sessionManager.deleteSession(sessionId)
     return this.jsonResponse({ success: true })
+  }
+
+  private async forkSession(
+    sessionId: string,
+    request: Request,
+    sessionManager: SessionManager
+  ): Promise<Response> {
+    try {
+      const body = await request.json().catch(() => ({}))
+      const session = await sessionManager.cloneSession(sessionId, body)
+      return this.jsonResponse(session, 201)
+    } catch (error) {
+      return this.errorResponse(400, 'invalid_request', this.getErrorMessage(error))
+    }
+  }
+
+  private async queryWithoutPersistence(
+    request: Request,
+    sessionManager: SessionManager
+  ): Promise<Response> {
+    try {
+      const body = await request.json() as {
+        content: string
+        options?: Record<string, unknown>
+        cwd?: string
+        model?: string
+      }
+
+      const stream = new ReadableStream({
+        start: (controller) => {
+          sessionManager.sendEphemeralMessageStream(
+            body.content,
+            body.options || {},
+            controller,
+            {
+              cwd: body.cwd,
+              model: body.model,
+            }
+          )
+        },
+      })
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      })
+    } catch (error) {
+      return this.errorResponse(400, 'invalid_request', this.getErrorMessage(error))
+    }
   }
 
   private async listModels(): Promise<Response> {

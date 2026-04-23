@@ -165,4 +165,80 @@ describe('QueryEngine', () => {
 
     await manager.removeServer('filesystem')
   })
+
+  it('filters advertised tools and rejects denied tool execution by permission policy', async () => {
+    const seenToolSets: Array<Array<{ name: string }>> = []
+    const executed: string[] = []
+    let callCount = 0
+
+    const engine = new QueryEngine({
+      model: 'test-model',
+      permissionPolicy: {
+        mode: 'dontAsk',
+      },
+      client: {
+        async *streamQuery(_messages, options) {
+          seenToolSets.push(((options?.tools) ?? []) as Array<{ name: string }>)
+
+          if (callCount === 0) {
+            callCount += 1
+            yield {
+              type: 'tool_use' as const,
+              name: 'bash',
+              input: { command: 'echo blocked' },
+              id: 'tool-1',
+            }
+            return
+          }
+
+          yield {
+            type: 'text' as const,
+            text: 'permission handled',
+          }
+        },
+      },
+      tools: [{
+        name: 'bash',
+        description: 'Runs shell commands',
+        input_schema: {
+          type: 'object',
+          properties: {
+            command: { type: 'string' },
+          },
+        },
+        async execute() {
+          executed.push('bash')
+          return {
+            content: 'should not run',
+          }
+        },
+      }, {
+        name: 'file_read',
+        description: 'Reads files',
+        input_schema: {
+          type: 'object',
+          properties: {
+            path: { type: 'string' },
+          },
+        },
+        async execute() {
+          executed.push('file_read')
+          return {
+            content: 'read',
+          }
+        },
+      }],
+    })
+
+    const result = await engine.query([{
+      id: 'user-1',
+      role: 'user',
+      content: [{ type: 'text', text: 'try a risky tool' }],
+      timestamp: 1,
+    }])
+
+    expect(seenToolSets[0]?.map((tool) => tool.name)).toEqual(['file_read'])
+    expect(executed).toEqual([])
+    expect(result.message.content).toEqual([{ type: 'text', text: 'permission handled' }])
+  })
 })

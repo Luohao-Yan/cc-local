@@ -13,17 +13,25 @@ import type {
 } from '@cclocal/shared'
 import { AnthropicClient } from './anthropicClient.js'
 import { toolRegistry } from '../tools/registry.js'
+import {
+  decideToolPermission,
+  filterToolsByPermission,
+  type PermissionPolicy,
+} from '../permissions/permissionPolicy.js'
 
 export interface QueryEngineOptions {
   model: string
   systemPrompt?: string
   temperature?: number
   maxTokens?: number
+  maxTurns?: number
+  enabledTools?: string[]
   tools?: Tool[]
   onStream?: (event: StreamEvent) => void
   apiKey?: string
   baseUrl?: string
   client?: Pick<AnthropicClient, 'streamQuery'>
+  permissionPolicy?: PermissionPolicy
 }
 
 type QueryClient = Pick<AnthropicClient, 'streamQuery'>
@@ -60,7 +68,11 @@ export class QueryEngine {
     const messageId = randomUUID()
 
     try {
-      const availableTools = opts.tools ?? toolRegistry.getAll()
+      const allTools = filterToolsByName(opts.tools ?? toolRegistry.getAll(), opts.enabledTools)
+      const availableTools = filterToolsByPermission(
+        allTools,
+        opts.permissionPolicy
+      )
 
       // 发送流开始事件
       opts.onStream?.({
@@ -81,7 +93,7 @@ export class QueryEngine {
         tools,
         {
           ...opts,
-          tools: availableTools,
+          tools: allTools,
         },
         messageId
       )
@@ -119,7 +131,7 @@ export class QueryEngine {
     let fullResponse = ''
     let inputTokens = 0
     let outputTokens = 0
-    let maxIterations = 10 // 防止无限循环
+    let maxIterations = Math.max(1, opts.maxTurns ?? 10) // 防止无限循环
 
     while (maxIterations-- > 0) {
       // 调用 Anthropic API 流式查询
@@ -201,6 +213,22 @@ export class QueryEngine {
           continue
         }
 
+        const decision = decideToolPermission(tool.name, opts.permissionPolicy)
+        if (!decision.allowed) {
+          toolResults.push({
+            id: randomUUID(),
+            role: 'user',
+            content: [{
+              type: 'tool_result',
+              tool_use_id: toolCall.id,
+              content: decision.reason || `Tool "${toolCall.name}" denied by policy`,
+              is_error: true,
+            }],
+            timestamp: Date.now(),
+          })
+          continue
+        }
+
         // 执行工具
         const context: ToolContext = {
           sessionId: messageId,
@@ -264,4 +292,18 @@ export class QueryEngine {
       }
     }
   }
+}
+
+function filterToolsByName(tools: Tool[], enabledTools?: string[]): Tool[] {
+  if (!enabledTools) {
+    return tools
+  }
+  if (enabledTools.length === 0) {
+    return []
+  }
+  if (enabledTools.includes('default')) {
+    return tools
+  }
+  const allowed = new Set(enabledTools)
+  return tools.filter((tool) => allowed.has(tool.name))
 }
