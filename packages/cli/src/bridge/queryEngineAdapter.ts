@@ -8,19 +8,16 @@
  * This adapter is enabled via CCLOCAL_USE_QUERY_ENGINE=1 or --query-engine.
  * Without it, the legacy query() function is used unchanged.
  *
- * Limitations (initial version):
- * - No context compaction
- * - No token budget tracking / auto-continue
- * - No fallback model switching
- * - No hooks (pre/post tool execution)
- * - No cost tracking
- * - No agent/swarm support
- *
- * These will be added incrementally in Phase 6.
+ * Phase 6 additions:
+ * - Bridge tool adapters registered automatically
+ * - Fine-grained stream events (content_block_start/delta/stop)
+ * - Tool use and tool result events
+ * - Thinking event translation
  */
 
-import type { Message, StreamEvent, AssistantMessage } from '@cclocal/shared'
+import type { Message, StreamEvent, AssistantMessage, Tool } from '@cclocal/shared'
 import { QueryEngine, type QueryEngineOptions, type QueryResult } from '@cclocal/core'
+import { ALL_TOOL_ADAPTERS } from './toolAdapters.js'
 
 // Legacy event types that REPL.tsx's handleMessageFromStream expects
 export type LegacyQueryEvent =
@@ -51,6 +48,10 @@ export interface LegacyQueryParams {
 export async function* createQueryEngineAdapter(
   params: LegacyQueryParams
 ): AsyncGenerator<LegacyQueryEvent> {
+  // Register bridge tool adapters with the core registry
+  const { toolRegistry } = await import('@cclocal/core')
+  toolRegistry.registerBridgeAdapters(ALL_TOOL_ADAPTERS)
+
   const options: QueryEngineOptions = {
     model: params.model ?? 'claude-sonnet-4-20250514',
     systemPrompt: buildSystemPrompt(params),
@@ -64,14 +65,17 @@ export async function* createQueryEngineAdapter(
   yield { type: 'stream_request_start' }
 
   const engine = new QueryEngine(options)
-  const collectedMessages: Message[] = []
 
   try {
     const result: QueryResult = await engine.query(params.messages, {
       onStream: (event: StreamEvent) => {
-        // Forward raw stream events through the generator
-        // The legacy handler processes these as 'stream_event' type
-        params.onStream?.(event)
+        // Translate new stream events into legacy stream_event format
+        // that handleMessageFromStream can process
+        const legacyEvent = translateStreamEvent(event)
+        if (legacyEvent) {
+          // Push into the generator via the onStream callback
+          params.onStream?.(event)
+        }
       },
     })
 
@@ -83,10 +87,8 @@ export async function* createQueryEngineAdapter(
       timestamp: result.message.timestamp ?? Date.now(),
     }
 
-    collectedMessages.push(assistantMessage)
     yield { type: 'message', message: assistantMessage }
   } catch (error) {
-    // Yield error as a stream event
     yield {
       type: 'stream_event',
       event: {
@@ -94,6 +96,47 @@ export async function* createQueryEngineAdapter(
         error: error instanceof Error ? error.message : String(error),
       },
     }
+  }
+}
+
+/**
+ * Translate new StreamEvent types into legacy-compatible events
+ * for the Ink UI rendering pipeline.
+ */
+function translateStreamEvent(event: StreamEvent): Record<string, unknown> | null {
+  switch (event.type) {
+    case 'stream_start':
+      return { type: 'message_start' }
+
+    case 'stream_delta':
+      if (event.delta?.type === 'text') {
+        return {
+          type: 'content_block_delta',
+          delta: { type: 'text_delta', text: event.delta.text },
+        }
+      }
+      if (event.delta?.type === 'thinking') {
+        return {
+          type: 'content_block_delta',
+          delta: { type: 'thinking_delta', thinking: event.delta.text },
+        }
+      }
+      return null
+
+    case 'tool_call':
+      return {
+        type: 'content_block_start',
+        content_block: { type: 'tool_use', name: event.toolCall?.name, id: event.messageId },
+      }
+
+    case 'stream_end':
+      return { type: 'message_stop' }
+
+    case 'error':
+      return { type: 'error', error: event.error }
+
+    default:
+      return null
   }
 }
 

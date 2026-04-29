@@ -54,7 +54,7 @@ export class ToolRegistry {
   }
 
   /**
-   * 注册默认工具集
+   * 注册默认工具集 + 桥接适配器
    */
   registerDefaults(): void {
     this.register(bashTool)
@@ -77,6 +77,18 @@ export class ToolRegistry {
     this.register(readMcpResourceTool)
     for (const tool of legacyCompatibilityTools) {
       this.register(tool)
+    }
+  }
+
+  /**
+   * 注册来自 packages/cli 桥接层的工具适配器。
+   * 这些适配器将遗留工具实现封装到新的 Tool 接口中。
+   */
+  registerBridgeAdapters(adapters: Tool[]): void {
+    for (const tool of adapters) {
+      if (!this.has(tool.name)) {
+        this.register(tool)
+      }
     }
   }
 }
