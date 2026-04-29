@@ -8,23 +8,26 @@ import {
   resolveLegacyUiSurfaceMap,
 } from './surfaceLoaders.js'
 
+// Normalize path to forward slashes for cross-platform assertions
+const toPosix = (p: string) => p.replace(/\\/g, '/')
+
 describe('legacy UI surface loaders', () => {
   it('resolves all legacy UI surface files that packages must progressively own', () => {
     const surfaceMap = resolveLegacyUiSurfaceMap()
 
     assertLegacyUiSurfaceFiles(surfaceMap)
-    expect(surfaceMap.inkEntry).toContain('/packages/cli/src/ink.ts')
-    expect(surfaceMap.appShellEntry).toContain('/packages/cli/src/components/App.tsx')
-    expect(surfaceMap.appStateEntry).toContain('/packages/cli/src/state/AppState.tsx')
-    expect(surfaceMap.replScreenEntry).toContain('/packages/cli/src/screens/REPL.tsx')
-    expect(surfaceMap.commandRegistryEntry).toContain('/packages/cli/src/commands.ts')
-    expect(surfaceMap.toolRegistryEntry).toContain('/packages/cli/src/tools.ts')
-    expect(surfaceMap.permissionRequestEntry).toContain('/packages/cli/src/components/permissions/PermissionRequest.tsx')
-    expect(surfaceMap.mcpToolListEntry).toContain('/packages/cli/src/components/mcp/MCPToolListView.tsx')
-    expect(surfaceMap.messagesEntry).toContain('/packages/cli/src/components/Messages.tsx')
-    expect(surfaceMap.messageResponseEntry).toContain('/packages/cli/src/components/MessageResponse.tsx')
-    expect(surfaceMap.assistantToolUseMessageEntry).toContain('/packages/cli/src/components/messages/AssistantToolUseMessage.tsx')
-    expect(surfaceMap.diffRenderingEntry).toContain('/packages/cli/src/components/FileEditToolDiff.tsx')
+    expect(toPosix(surfaceMap.inkEntry)).toContain('/packages/cli/src/ink.ts')
+    expect(toPosix(surfaceMap.appShellEntry)).toContain('/packages/cli/src/components/App.tsx')
+    expect(toPosix(surfaceMap.appStateEntry)).toContain('/packages/cli/src/state/AppState.tsx')
+    expect(toPosix(surfaceMap.replScreenEntry)).toContain('/packages/cli/src/screens/REPL.tsx')
+    expect(toPosix(surfaceMap.commandRegistryEntry)).toContain('/packages/cli/src/commands.ts')
+    expect(toPosix(surfaceMap.toolRegistryEntry)).toContain('/packages/cli/src/tools.ts')
+    expect(toPosix(surfaceMap.permissionRequestEntry)).toContain('/packages/cli/src/components/permissions/PermissionRequest.tsx')
+    expect(toPosix(surfaceMap.mcpToolListEntry)).toContain('/packages/cli/src/components/mcp/MCPToolListView.tsx')
+    expect(toPosix(surfaceMap.messagesEntry)).toContain('/packages/cli/src/components/Messages.tsx')
+    expect(toPosix(surfaceMap.messageResponseEntry)).toContain('/packages/cli/src/components/MessageResponse.tsx')
+    expect(toPosix(surfaceMap.assistantToolUseMessageEntry)).toContain('/packages/cli/src/components/messages/AssistantToolUseMessage.tsx')
+    expect(toPosix(surfaceMap.diffRenderingEntry)).toContain('/packages/cli/src/components/FileEditToolDiff.tsx')
 
     for (const [key, value] of Object.entries(surfaceMap)) {
       if (key !== 'repoRoot') {

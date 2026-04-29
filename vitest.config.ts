@@ -13,6 +13,8 @@ export default defineConfig({
       'bun:sqlite': path.resolve(__dirname, 'packages/cli/src/_external/bun-sqlite.ts'),
       '@cclocal/shared': path.resolve(__dirname, 'packages/shared/src/index.ts'),
       '@cclocal/core': path.resolve(__dirname, 'packages/core/src/index.ts'),
+      // Resolve better-sqlite3 from core's node_modules for vitest (test runs from repo root)
+      'better-sqlite3': path.resolve(__dirname, 'packages/core/node_modules/better-sqlite3'),
     },
   },
 })
