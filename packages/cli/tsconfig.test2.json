@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "jsx": "react-jsx",
+    "paths": {}
+  },
+  "include": ["src/client/**/*", "src/config/**/*", "src/index.ts", "src/index.test.ts", "src/ink.ts", "src/ink/**/*", "src/legacy-ui/**/*", "src/parityAudit.test.ts", "src/plugins/**/*", "src/repl/**/*", "src/runtime/**/*", "src/state/**/*", "src/ui/**/*", "src/components/App.tsx", "src/components/FileEditToolDiff.tsx", "src/components/MessageResponse.tsx", "src/components/design-system/**/*", "src/components/permissions/**/*"],
+  "exclude": ["dist", "node_modules"]
+}

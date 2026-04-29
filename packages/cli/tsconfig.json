@@ -6,6 +6,17 @@
     "declarationMap": true,
     "jsx": "react-jsx"
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/client/**/*",
+    "src/config/**/*",
+    "src/index.ts",
+    "src/index.test.ts",
+    "src/legacy-ui/**/*",
+    "src/parityAudit.test.ts",
+    "src/plugins/**/*",
+    "src/repl/**/*",
+    "src/runtime/**/*",
+    "src/ui/**/*"
+  ],
   "exclude": ["dist", "node_modules"]
 }

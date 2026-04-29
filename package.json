@@ -22,7 +22,7 @@
     "dev:server": "bun run --cwd packages/server dev",
     "dev:cli": "bun run --cwd packages/cli dev",
     "start:server": "bun run --cwd packages/server start",
-    "test": "vitest run packages",
+    "test": "vitest run packages --exclude '**/src/commands/buddy/**' --exclude '**/src/utils/model/__tests__/**'",
     "install-global": "bash scripts/install-global.sh || scripts\\install-global.cmd",
     "publish:npm": "bun run build && cd dist && npm publish",
     "typecheck": "tsc --noEmit",

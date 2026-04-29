@@ -1,4 +1,4 @@
-import BetterSqlite3 from '../../packages/core/node_modules/better-sqlite3'
+import BetterSqlite3 from '../../../../packages/core/node_modules/better-sqlite3'
 
 type StatementArgs = unknown[]
 

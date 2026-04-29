@@ -362,6 +362,7 @@ async function runCli(
         cwd: process.cwd(),
         env: {
           ...process.env,
+          NO_PROXY: '127.0.0.1,localhost',
           ...options.env,
         },
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -385,6 +386,38 @@ async function runCli(
         stderr,
       })
     })
+  })
+}
+
+async function runCliWithoutServer(
+  args: string[],
+  options: { env?: NodeJS.ProcessEnv } = {}
+): Promise<{ code: number; stdout: string; stderr: string }> {
+  return await new Promise((resolve, reject) => {
+    const child = spawn(
+      'bun',
+      ['run', 'packages/cli/src/index.ts', ...args],
+      {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          NO_PROXY: '127.0.0.1,localhost',
+          ...options.env,
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      }
+    )
+
+    let stdout = ''
+    let stderr = ''
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString()
+    })
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString()
+    })
+    child.on('error', reject)
+    child.on('close', (code) => resolve({ code: code ?? 0, stdout, stderr }))
   })
 }
 
@@ -829,14 +862,18 @@ describe('packages/cli command integration', () => {
   })
 
   it('keeps legacy Claude UI as the default help while native management commands stay available', async () => {
-    const helpResult = await runCli(server.baseUrl, ['--help'], {
-      includeToken: false,
-    })
+    const helpResult = await runCliWithoutServer(['--help'])
     expect(helpResult.code).toBe(0)
     expect(helpResult.stdout).toContain('Usage: claude')
     expect(helpResult.stdout).toContain('Claude Code - starts an interactive session by default')
     expect(helpResult.stdout).toContain('--worktree')
     expect(helpResult.stdout).not.toContain('CCLocal Interactive Mode')
+
+    const explicitServerHelpResult = await runCli(server.baseUrl, ['--help'], {
+      includeToken: false,
+    })
+    expect(explicitServerHelpResult.code).toBe(0)
+    expect(explicitServerHelpResult.stdout).toContain('Usage: cclocal')
 
     const explicitLegacyResult = await runCli(server.baseUrl, ['--legacy', '--help'], {
       includeToken: false,

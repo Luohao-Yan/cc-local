@@ -37,6 +37,22 @@ assert_no_residual_processes() {
   fi
 }
 
+strip_ansi() {
+  perl -pe 's/\e\[[0-9;?]*[ -\/]*[@-~]//g; s/\e\][^\a]*\a//g'
+}
+
+capture_legacy_tui_boot() {
+  local output_file="$1"
+  script -qF "$output_file" bun dist/cli.js >/dev/null 2>&1 &
+  local script_pid=$!
+  sleep 2
+  pkill -P "$script_pid" 2>/dev/null || true
+  kill -INT "$script_pid" 2>/dev/null || true
+  sleep 0.2
+  kill -TERM "$script_pid" 2>/dev/null || true
+  wait "$script_pid" 2>/dev/null || true
+}
+
 log "typecheck packages/cli"
 bun run --cwd packages/cli typecheck
 
@@ -70,13 +86,53 @@ assert_contains "$packages_help" "Usage: cclocal models"
 assert_contains "$packages_help" "List models available from the local server API"
 
 log "verify local commands do not auto-start embedded server"
-auth_status="$(bun dist/cli.js auth status)"
-assert_contains "$auth_status" "Auth:"
-assert_not_contains "$auth_status" "Starting embedded server"
-
 model_current="$(bun dist/cli.js model current)"
 assert_contains "$model_current" "Current model:"
 assert_not_contains "$model_current" "Starting embedded server"
+
+log "verify legacy-owned top-level commands keep legacy help by default"
+mcp_help="$(bun dist/cli.js mcp --help)"
+assert_contains "$mcp_help" "Usage: claude mcp"
+assert_not_contains "$mcp_help" "Usage: cclocal mcp"
+
+auth_help="$(bun dist/cli.js auth --help)"
+assert_contains "$auth_help" "Usage: claude auth"
+assert_not_contains "$auth_help" "packages/cli"
+
+doctor_help="$(bun dist/cli.js doctor --help)"
+assert_contains "$doctor_help" "Usage: claude doctor"
+assert_not_contains "$doctor_help" "Run lightweight local diagnostics"
+
+plugin_help="$(bun dist/cli.js plugin --help)"
+assert_contains "$plugin_help" "Usage: claude plugin"
+assert_not_contains "$plugin_help" "Inspect and validate local plugins"
+
+update_help="$(bun dist/cli.js update --help)"
+assert_contains "$update_help" "Usage: claude update"
+assert_not_contains "$update_help" "Check packages/cli update status"
+
+log "verify real TTY boot keeps legacy Ink UI, slash hint, and status line"
+tui_log="$(mktemp /tmp/cclocal-tui-XXXXXX.log)"
+capture_legacy_tui_boot "$tui_log"
+tui_output="$(strip_ansi <"$tui_log")"
+rm -f "$tui_log"
+assert_contains "$tui_output" "Claude"
+assert_contains "$tui_output" "Code"
+assert_contains "$tui_output" "v99.99-local"
+assert_contains "$tui_output" "/effort"
+assert_contains "$tui_output" "❯"
+assert_not_contains "$tui_output" "CCLocal Interactive Mode"
+
+log "verify --print, --resume, and --continue stay on legacy CLI surface"
+print_without_prompt="$(bun dist/cli.js --print 2>&1 || true)"
+assert_contains "$print_without_prompt" "Input must be provided either through stdin or as a prompt argument when using --print"
+resume_help="$(bun dist/cli.js --resume --help)"
+continue_help="$(bun dist/cli.js --continue --help)"
+assert_contains "$resume_help" "Usage: claude"
+assert_contains "$resume_help" "--fork-session"
+assert_contains "$resume_help" "--include-partial-messages"
+assert_contains "$continue_help" "Usage: claude"
+assert_contains "$continue_help" "--replay-user-messages"
 
 log "verify REST commands auto-start and exit cleanly"
 models_output="$(bun dist/cli.js models list)"

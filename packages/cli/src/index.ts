@@ -3,6 +3,18 @@
  * CCLocal CLI 客户端入口
  */
 
+const httpProxy = process.env.HTTP_PROXY || process.env.http_proxy || process.env.HTTPS_PROXY || process.env.https_proxy
+if (httpProxy && !process.env.CCLOCAL_NO_PROXY_SET) {
+  const noProxy = process.env.NO_PROXY || process.env.no_proxy || ''
+  if (!noProxy.includes('127.0.0.1') && !noProxy.includes('localhost')) {
+    const result = Bun.spawnSync([process.execPath, process.argv[1], ...process.argv.slice(2)], {
+      env: { ...process.env, NO_PROXY: '127.0.0.1,localhost', CCLOCAL_NO_PROXY_SET: '1' },
+      stdio: ['inherit', 'inherit', 'inherit'],
+    })
+    process.exit(result.exitCode ?? 0)
+  }
+}
+
 import { Command } from 'commander'
 import { spawnSync } from 'child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs'
@@ -18,22 +30,19 @@ import {
   updateInstalledPlugin,
   validatePluginTarget,
 } from './plugins/localPlugins.js'
-import { launchRepl } from './repl/simpleRepl.js'
+import {
+  buildInteractiveLaunchContext,
+  buildSinglePromptLaunchContext,
+} from './runtime/launchContext.js'
+import { buildEffectiveRootOptions } from './runtime/launchOptions.js'
+import { renderInteractiveRepl } from './runtime/replRenderer.js'
+import {
+  commandUsesRestApi,
+  hasExplicitServerArg,
+  shouldAutoStartEmbeddedServer,
+} from './runtime/routeContext.js'
+import { delegateToLegacyUi, getUserArgs, shouldUseLegacyUi } from './ui/legacyAdapter.js'
 import type { Message, MessageOptions, Session, StreamEvent } from '@cclocal/shared'
-
-const PACKAGE_ONLY_OPTIONS_WITH_VALUE = new Set([
-  '--server',
-  '-s',
-  '--token',
-  '-t',
-  '--cwd',
-  '--session',
-])
-
-const PACKAGE_ONLY_BOOLEAN_OPTIONS = new Set([
-  '--server-embedded',
-  '--legacy',
-])
 
 let embeddedServerProcess: any = null
 let embeddedServerToken: string | undefined
@@ -105,19 +114,6 @@ const PACKAGES_NATIVE_COMMANDS = new Set([
   'upgrade',
 ])
 
-const REST_BACKED_COMMANDS = new Set([
-  'mcp',
-  'models',
-  'sessions',
-  'doctor',
-  'context',
-  'stats',
-  'cost',
-  'model',
-  'export',
-  'assistant',
-])
-
 const LEGACY_TOP_LEVEL_COMMANDS = new Map([
   ['agents', 'List configured agents'],
   ['assistant', 'Launch the assistant flow'],
@@ -134,9 +130,6 @@ const LEGACY_TOP_LEVEL_COMMANDS = new Map([
   ['ssh', 'Run SSH helpers'],
   ['task', 'Manage task flows'],
   ['up', 'Start background services'],
-])
-
-const LEGACY_ONLY_OPTIONS: Set<string> = new Set([
 ])
 
 function findRepoRoot(): string {
@@ -162,108 +155,18 @@ function findEmbeddedServerEntrypoint(): string {
   return join(dirname(fileURLToPath(import.meta.url)), 'server.js')
 }
 
-function getUserArgs(argv: string[]): string[] {
-  return argv.slice(2).filter((arg) => arg !== '--')
-}
-
-function stripPackageOnlyArgs(args: string[]): string[] {
-  const result: string[] = []
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index]
-    if (PACKAGE_ONLY_BOOLEAN_OPTIONS.has(arg)) {
-      continue
-    }
-    if (PACKAGE_ONLY_OPTIONS_WITH_VALUE.has(arg)) {
-      index += 1
-      continue
-    }
-    if ([...PACKAGE_ONLY_OPTIONS_WITH_VALUE, ...PACKAGE_ONLY_BOOLEAN_OPTIONS].some((option) => arg.startsWith(`${option}=`))) {
-      continue
-    }
-    result.push(arg)
-  }
-  return result
-}
-
-function getFirstCommand(args: string[]): string | undefined {
-  for (const arg of stripPackageOnlyArgs(args)) {
-    if (arg.startsWith('-')) {
-      continue
-    }
-    return arg
-  }
-  return undefined
-}
-
-function getRawUserOptionValue(flag: string): string | undefined {
-  const args = getUserArgs(process.argv)
-  const equalsPrefix = `${flag}=`
-  const equalsMatch = args.find((arg) => arg.startsWith(equalsPrefix))
-  if (equalsMatch) {
-    return equalsMatch.slice(equalsPrefix.length)
-  }
-  const index = args.lastIndexOf(flag)
-  if (index === -1) {
-    return undefined
-  }
-  const value = args[index + 1]
-  return value && !value.startsWith('--') ? value : undefined
-}
-
-function parseOptionalIntegerOption(value?: string): number | undefined {
-  return value === undefined ? undefined : parseIntegerOption(value)
-}
-
-function shouldDelegateToLegacy(args: string[]): boolean {
-  if (args.some((arg) => arg === '--legacy' || arg.startsWith('--legacy='))) {
-    return true
-  }
-
-  const stripped = stripPackageOnlyArgs(args)
-  const firstCommand = getFirstCommand(args)
-  if (firstCommand && PACKAGES_NATIVE_COMMANDS.has(firstCommand)) {
-    return false
-  }
-  if (firstCommand && LEGACY_TOP_LEVEL_COMMANDS.has(firstCommand) && !PACKAGES_NATIVE_COMMANDS.has(firstCommand)) {
-    return true
-  }
-
-  if (!firstCommand) {
-    return true
-  }
-
-  return stripped.some((arg) => {
-    const option = arg.split('=')[0]
-    return LEGACY_ONLY_OPTIONS.has(option)
+function httpGetOk(url: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const child = spawnSync(
+      'bun',
+      ['-e', `const { get } = require('http'); get('${url}', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))`],
+      {
+        env: { ...process.env, NO_PROXY: '127.0.0.1,localhost' },
+        stdio: 'pipe',
+      },
+    )
+    resolve(child.status === 0)
   })
-}
-
-function hasExplicitServerArg(args: string[]): boolean {
-  return args.some((arg) => arg === '--server' || arg === '-s' || arg.startsWith('--server='))
-}
-
-function shouldAutoStartEmbeddedServer(args: string[]): boolean {
-  return !hasExplicitServerArg(args) && !args.some((arg) => arg === '--legacy' || arg.startsWith('--legacy='))
-}
-
-function commandUsesRestApi(command: Command): boolean {
-  const names: string[] = []
-  let current: Command | null = command
-  while (current) {
-    names.unshift(current.name())
-    current = current.parent || null
-  }
-
-  const topLevelCommand = names[1]
-  if (!topLevelCommand) {
-    return true
-  }
-
-  if (topLevelCommand === 'model') {
-    return command.name() !== 'current'
-  }
-
-  return REST_BACKED_COMMANDS.has(topLevelCommand)
 }
 
 async function ensureEmbeddedServer(options: { server?: string; token?: string; serverEmbedded?: boolean }): Promise<void> {
@@ -289,8 +192,7 @@ async function ensureEmbeddedServer(options: { server?: string; token?: string; 
     }
 
     try {
-      const response = await fetch(`${serverUrl}/health`)
-      if (response.ok) {
+      if (await httpGetOk(`${serverUrl}/health`)) {
         embeddedServerStarted = true
         return
       }
@@ -344,8 +246,7 @@ async function ensureEmbeddedServer(options: { server?: string; token?: string; 
 
     const check = async () => {
       try {
-        const response = await fetch(`${serverUrl}/health`)
-        if (response.ok && embeddedServerToken) {
+        if ((await httpGetOk(`${serverUrl}/health`)) && embeddedServerToken) {
           await new Promise((ready) => setTimeout(ready, 500))
           embeddedServerStarted = true
           console.log('✅ Embedded server started')
@@ -391,28 +292,9 @@ async function findAvailablePort(): Promise<number> {
   })
 }
 
-function delegateToLegacyCli(args: string[]): never {
-  const repoRoot = findRepoRoot()
-  const legacyArgs = stripPackageOnlyArgs(args)
-  const sourceEntrypoint = join(repoRoot, 'src', 'entrypoints', 'cli.tsx')
-  const bundledEntrypoint = join(dirname(fileURLToPath(import.meta.url)), 'legacy-cli.js')
-  const legacyEntrypoint = existsSync(sourceEntrypoint) ? sourceEntrypoint : bundledEntrypoint
-  const result = spawnSync('bun', [legacyEntrypoint, ...legacyArgs], {
-    cwd: existsSync(sourceEntrypoint) ? repoRoot : process.cwd(),
-    stdio: 'inherit',
-    env: process.env,
-  })
-
-  if (result.error) {
-    console.error(`Failed to delegate to legacy CLI: ${result.error.message}`)
-    process.exit(1)
-  }
-  process.exit(result.status ?? 0)
-}
-
 const rawUserArgs = getUserArgs(process.argv)
-if (shouldDelegateToLegacy(rawUserArgs)) {
-  delegateToLegacyCli(rawUserArgs)
+if (shouldUseLegacyUi(rawUserArgs)) {
+  delegateToLegacyUi(rawUserArgs)
 }
 
 const program = new Command()
@@ -553,21 +435,7 @@ program
   .option('--status', 'Compatibility status metadata', false)
   .action(async (options) => {
     try {
-      const rawPrint = getRawUserOptionValue('--print')
-      const settings = loadSettingsFromOptions(options)
-      const effectiveOptions = {
-        ...options,
-        model: options.model || getStringSetting(settings, 'model'),
-        authToken: options.authToken || getStringSetting(settings, 'authToken') || getStringSetting(settings, 'apiToken'),
-        systemPrompt: options.systemPrompt || getStringSetting(settings, 'systemPrompt'),
-        cwd: getRawUserOptionValue('--cwd') || options.workspace || getStringSetting(settings, 'workspace') || options.cwd,
-        print: options.print || options.text || rawPrint || getRawUserOptionValue('--text'),
-        sessionId: options.sessionId || getRawUserOptionValue('--session-id'),
-        name: options.name || getRawUserOptionValue('--name') || getRawUserOptionValue('-n') || getStringSetting(settings, 'name'),
-        maxTurns: options.maxTurns ?? parseOptionalIntegerOption(getRawUserOptionValue('--max-turns')),
-        maxThinkingTokens: options.maxThinkingTokens ?? parseOptionalIntegerOption(getRawUserOptionValue('--max-thinking-tokens')),
-        fallbackModel: options.fallbackModel || getRawUserOptionValue('--fallback-model') || getStringSetting(settings, 'fallbackModel'),
-      }
+      const effectiveOptions = buildEffectiveRootOptions(options, rawUserArgs)
       const localConfig = readLocalConfig()
       const client = new CCLocalClient({
         serverUrl: options.server,
@@ -586,21 +454,22 @@ program
         console.log('✅ Connected to CCLocal Server')
       }
 
-      if (effectiveOptions.print) {
+      const singlePromptContext = buildSinglePromptLaunchContext(effectiveOptions)
+      if (singlePromptContext) {
         const result = await handleSinglePrompt(
           client,
-          effectiveOptions.print,
-          effectiveOptions.model,
-          effectiveOptions.outputFormat,
-          effectiveOptions.cwd,
-          effectiveOptions.includePartialMessages,
-          effectiveOptions.replayUserMessages,
-          effectiveOptions.sessionPersistence === false,
+          singlePromptContext.prompt,
+          singlePromptContext.model,
+          singlePromptContext.outputFormat,
+          singlePromptContext.cwd,
+          singlePromptContext.includePartialMessages,
+          singlePromptContext.replayUserMessages,
+          singlePromptContext.ephemeral,
           buildPermissionPolicy(effectiveOptions),
           buildSystemPromptOption(effectiveOptions),
           buildMessageCompatibilityOptions(effectiveOptions)
         )
-        if (effectiveOptions.outputFormat === 'json') {
+        if (singlePromptContext.shouldPrintJsonResult) {
           console.log(JSON.stringify({
             type: 'result',
             sessionId: client.getSessionId(),
@@ -609,9 +478,10 @@ program
           }, null, 2))
         }
       } else {
-        await launchRepl(client, buildLaunchReplOptions(effectiveOptions, {
+        const interactiveContext = buildInteractiveLaunchContext({
           createSessionIfNeeded: true,
-        }))
+        })
+        await renderInteractiveRepl(client, buildLaunchReplOptions(effectiveOptions, interactiveContext))
       }
     } catch (error) {
       console.error('❌ Failed to connect:', error)
@@ -679,7 +549,7 @@ function registerLegacyCompatibilityCommands(rootProgram: Command): void {
       .allowExcessArguments(true)
       .argument('[args...]')
       .action(() => {
-        delegateToLegacyCli(getUserArgs(process.argv))
+        delegateToLegacyUi(getUserArgs(process.argv))
       })
   }
 }
@@ -907,7 +777,7 @@ sessionsCommand
       return
     }
 
-    await launchRepl(client, buildLaunchReplOptions({
+    await renderInteractiveRepl(client, buildLaunchReplOptions({
       ...rootOptions,
       model: options.model || rootOptions.model,
     }))
@@ -952,7 +822,7 @@ sessionsCommand
       return
     }
 
-    await launchRepl(client, buildLaunchReplOptions({
+    await renderInteractiveRepl(client, buildLaunchReplOptions({
       ...program.opts(),
       model,
       cwd,
@@ -1244,7 +1114,7 @@ modelCommand
       return
     }
 
-    await launchRepl(client, buildLaunchReplOptions({
+    await renderInteractiveRepl(client, buildLaunchReplOptions({
       ...rootOptions,
       model: name,
     }))
@@ -1649,7 +1519,7 @@ assistantCommand
       await handleSinglePrompt(client, options.print, program.opts().model, program.opts().outputFormat, program.opts().cwd, false, false, false, buildPermissionPolicy(program.opts()), buildSystemPromptOption(program.opts()))
       return
     }
-    await launchRepl(client, buildLaunchReplOptions(program.opts(), {
+    await renderInteractiveRepl(client, buildLaunchReplOptions(program.opts(), {
       createSessionIfNeeded: !client.getSessionId(),
     }))
   })
@@ -2843,19 +2713,6 @@ function readMcpConfigValue(value: string): unknown {
   } catch (error) {
     throw new Error(`Invalid --mcp-config value "${value}": ${error instanceof Error ? error.message : String(error)}`)
   }
-}
-
-function loadSettingsFromOptions(options: { settings?: string[] } = {}): Record<string, unknown> {
-  const merged: Record<string, unknown> = {}
-  for (const value of options.settings || []) {
-    Object.assign(merged, readJsonFileOrString(value, '--settings'))
-  }
-  return merged
-}
-
-function getStringSetting(settings: Record<string, unknown>, key: string): string | undefined {
-  const value = settings[key]
-  return typeof value === 'string' ? value : undefined
 }
 
 function readJsonFileOrString(value: string, flagName: string): Record<string, unknown> {

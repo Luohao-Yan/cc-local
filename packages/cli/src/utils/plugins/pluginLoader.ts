@@ -47,10 +47,13 @@ import {
 import memoize from 'lodash-es/memoize.js'
 import { basename, dirname, join, relative, resolve, sep } from 'path'
 import { getInlinePlugins } from '../../bootstrap/state.js'
-import {
-  BUILTIN_MARKETPLACE_NAME,
-  getBuiltinPlugins,
-} from '../../plugins/builtinPlugins.js'
+const BUILTIN_MARKETPLACE_NAME = 'builtin'
+// Avoid static import of builtinPlugins to prevent pulling root src/ into
+// packages/cli typecheck and to avoid top-level await in CJS require chains.
+async function getBuiltinPlugins(): Promise<{ enabled: any[]; disabled: any[] }> {
+  const mod = await import('../../plugins/builtinPlugins.js')
+  return mod.getBuiltinPlugins()
+}
 import type {
   LoadedPlugin,
   PluginComponent,
@@ -3169,7 +3172,7 @@ async function assemblePluginLoadResult(
       : Promise.resolve({ plugins: [], errors: [] }),
   ])
   // 3. Load built-in plugins that ship with the CLI
-  const builtinResult = getBuiltinPlugins()
+  const builtinResult = await getBuiltinPlugins()
 
   // Session plugins (--plugin-dir) override installed ones by name,
   // UNLESS the installed plugin is locked by managed settings

@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "jsx": "react-jsx"
+  },
+  "include": [
+    "src/client/**/*",
+    "src/config/**/*",
+    "src/index.ts",
+    "src/index.test.ts",
+    "src/parityAudit.test.ts",
+    "src/plugins/**/*",
+    "src/repl/**/*",
+    "src/runtime/**/*",
+    "src/ui/**/*"
+  ],
+  "exclude": ["dist", "node_modules"]
+}

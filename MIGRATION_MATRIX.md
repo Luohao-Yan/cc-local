@@ -22,6 +22,7 @@
 - 默认用户主路径不能展示 packages 简化 REPL，必须保持旧版 Claude Code UI。
 - `dist/cli.js` 是统一路由入口：用户主路径转到旧 UI；`mcp`、`models`、`sessions` 等管理子命令进入 packages 路径。
 - UI 迁移必须按 [UI_MIGRATION_PLAN.md](/Users/yanluohao/开发/cc-local/UI_MIGRATION_PLAN.md) 执行，在 parity 通过前不能切换默认 UI。
+- 旧 UI 迁移依赖图见 [UI_DEPENDENCY_MAP.md](/Users/yanluohao/开发/cc-local/UI_DEPENDENCY_MAP.md)。
 - `bun run parity:check` 当前要求顶层命令、顶层参数、slash commands、工具注册均无未覆盖缺口。
 
 ## 状态说明
