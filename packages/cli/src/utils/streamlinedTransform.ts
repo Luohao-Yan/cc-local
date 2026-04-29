@@ -8,21 +8,21 @@
  * - Strips tool list and model info from init messages
  */
 
-import type { SDKAssistantMessage } from 'src/entrypoints/agentSdkTypes.js'
-import type { StdoutMessage } from 'src/entrypoints/sdk/controlTypes.js'
-import { FILE_EDIT_TOOL_NAME } from 'src/tools/FileEditTool/constants.js'
-import { FILE_READ_TOOL_NAME } from 'src/tools/FileReadTool/prompt.js'
-import { FILE_WRITE_TOOL_NAME } from 'src/tools/FileWriteTool/prompt.js'
-import { GLOB_TOOL_NAME } from 'src/tools/GlobTool/prompt.js'
-import { GREP_TOOL_NAME } from 'src/tools/GrepTool/prompt.js'
-import { LIST_MCP_RESOURCES_TOOL_NAME } from 'src/tools/ListMcpResourcesTool/prompt.js'
-import { LSP_TOOL_NAME } from 'src/tools/LSPTool/prompt.js'
-import { NOTEBOOK_EDIT_TOOL_NAME } from 'src/tools/NotebookEditTool/constants.js'
-import { TASK_STOP_TOOL_NAME } from 'src/tools/TaskStopTool/prompt.js'
-import { WEB_SEARCH_TOOL_NAME } from 'src/tools/WebSearchTool/prompt.js'
-import { extractTextContent } from 'src/utils/messages.js'
-import { SHELL_TOOL_NAMES } from 'src/utils/shell/shellToolUtils.js'
-import { capitalize } from 'src/utils/stringUtils.js'
+import type { SDKAssistantMessage } from '../entrypoints/agentSdkTypes.js'
+import type { StdoutMessage } from '../entrypoints/sdk/controlTypes.js'
+import { FILE_EDIT_TOOL_NAME } from '../tools/FileEditTool/constants.js'
+import { FILE_READ_TOOL_NAME } from '../tools/FileReadTool/prompt.js'
+import { FILE_WRITE_TOOL_NAME } from '../tools/FileWriteTool/prompt.js'
+import { GLOB_TOOL_NAME } from '../tools/GlobTool/prompt.js'
+import { GREP_TOOL_NAME } from '../tools/GrepTool/prompt.js'
+import { LIST_MCP_RESOURCES_TOOL_NAME } from '../tools/ListMcpResourcesTool/prompt.js'
+import { LSP_TOOL_NAME } from '../tools/LSPTool/prompt.js'
+import { NOTEBOOK_EDIT_TOOL_NAME } from '../tools/NotebookEditTool/constants.js'
+import { TASK_STOP_TOOL_NAME } from '../tools/TaskStopTool/prompt.js'
+import { WEB_SEARCH_TOOL_NAME } from '../tools/WebSearchTool/prompt.js'
+import { extractTextContent } from './messages.js'
+import { SHELL_TOOL_NAMES } from './shell/shellToolUtils.js'
+import { capitalize } from './stringUtils.js'
 
 type ToolCounts = {
   searches: number

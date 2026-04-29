@@ -1,10 +1,10 @@
 import { c as _c } from "react/compiler-runtime";
 import { feature } from 'bun:bundle';
 import * as React from 'react';
-import { getAllowedChannels, getQuestionPreviewFormat } from 'src/bootstrap/state.js';
-import { MessageResponse } from 'src/components/MessageResponse.js';
-import { BLACK_CIRCLE } from 'src/constants/figures.js';
-import { getModeColor } from 'src/utils/permissions/PermissionMode.js';
+import { getAllowedChannels, getQuestionPreviewFormat } from '../../bootstrap/state.js';
+import { MessageResponse } from '../../components/MessageResponse.js';
+import { BLACK_CIRCLE } from '../../constants/figures.js';
+import { getModeColor } from '../../utils/permissions/PermissionMode.js';
 import { z } from 'zod/v4';
 import { Box, Text } from '../../ink.js';
 import type { Tool } from '../../Tool.js';

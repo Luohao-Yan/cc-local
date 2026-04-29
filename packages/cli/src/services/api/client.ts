@@ -9,14 +9,14 @@ import {
   isClaudeAISubscriber,
   refreshAndGetAwsCredentials,
   refreshGcpCredentialsIfNeeded,
-} from 'src/utils/auth.js'
-import { getUserAgent } from 'src/utils/http.js'
-import { getSmallFastModel } from 'src/utils/model/model.js'
+} from '../../utils/auth.js'
+import { getUserAgent } from '../../utils/http.js'
+import { getSmallFastModel } from '../../utils/model/model.js'
 import {
   getAPIProvider,
   isFirstPartyAnthropicBaseUrl,
-} from 'src/utils/model/providers.js'
-import { getProxyFetchOptions } from 'src/utils/proxy.js'
+} from '../../utils/model/providers.js'
+import { getProxyFetchOptions } from '../../utils/proxy.js'
 import {
   getIsNonInteractiveSession,
   getSessionId,

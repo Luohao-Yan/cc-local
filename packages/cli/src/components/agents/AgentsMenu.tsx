@@ -2,7 +2,7 @@ import { c as _c } from "react/compiler-runtime";
 import chalk from 'chalk';
 import * as React from 'react';
 import { useCallback, useMemo, useState } from 'react';
-import type { SettingSource } from 'src/utils/settings/constants.js';
+import type { SettingSource } from '../../utils/settings/constants.js';
 import type { CommandResultDisplay } from '../../commands.js';
 import { useExitOnCtrlCDWithKeybindings } from '../../hooks/useExitOnCtrlCDWithKeybindings.js';
 import { useMergedTools } from '../../hooks/useMergedTools.js';

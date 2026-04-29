@@ -1,11 +1,11 @@
 import chalk from 'chalk'
-import { logForDebugging } from 'src/utils/debug.js'
-import { fileHistoryEnabled } from 'src/utils/fileHistory.js'
+import { logForDebugging } from '../../utils/debug.js'
+import { fileHistoryEnabled } from '../../utils/fileHistory.js'
 import {
   getInitialSettings,
   getSettings_DEPRECATED,
   getSettingsForSource,
-} from 'src/utils/settings/settings.js'
+} from '../../utils/settings/settings.js'
 import { shouldOfferTerminalSetup } from '../../commands/terminalSetup/terminalSetup.js'
 import { getDesktopUpsellConfig } from '../../components/DesktopUpsell/DesktopUpsellStartup.js'
 import { color } from '../../components/design-system/color.js'

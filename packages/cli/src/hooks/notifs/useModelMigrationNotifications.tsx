@@ -1,5 +1,5 @@
-import type { Notification } from 'src/context/notifications.js';
-import { type GlobalConfig, getGlobalConfig } from 'src/utils/config.js';
+import type { Notification } from '../../context/notifications.js';
+import { type GlobalConfig, getGlobalConfig } from '../../utils/config.js';
 import { useStartupNotification } from './useStartupNotification.js';
 
 // Shows a one-time notification right after a model migration writes its

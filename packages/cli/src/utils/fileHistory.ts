@@ -15,10 +15,10 @@ import {
   getIsNonInteractiveSession,
   getOriginalCwd,
   getSessionId,
-} from 'src/bootstrap/state.js'
-import { logEvent } from 'src/services/analytics/index.js'
-import { notifyVscodeFileUpdated } from 'src/services/mcp/vscodeSdkMcp.js'
-import type { LogOption } from 'src/types/logs.js'
+} from '../bootstrap/state.js'
+import { logEvent } from '../services/analytics/index.js'
+import { notifyVscodeFileUpdated } from '../services/mcp/vscodeSdkMcp.js'
+import type { LogOption } from '../types/logs.js'
 import { inspect } from 'util'
 import { getGlobalConfig } from './config.js'
 import { logForDebugging } from './debug.js'

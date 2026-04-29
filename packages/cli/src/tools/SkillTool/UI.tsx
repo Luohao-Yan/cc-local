@@ -1,8 +1,8 @@
 import type { ToolResultBlockParam } from '@anthropic-ai/sdk/resources/index.mjs';
 import * as React from 'react';
-import { SubAgentProvider } from 'src/components/CtrlOToExpand.js';
-import { FallbackToolUseErrorMessage } from 'src/components/FallbackToolUseErrorMessage.js';
-import { FallbackToolUseRejectedMessage } from 'src/components/FallbackToolUseRejectedMessage.js';
+import { SubAgentProvider } from '../../components/CtrlOToExpand.js';
+import { FallbackToolUseErrorMessage } from '../../components/FallbackToolUseErrorMessage.js';
+import { FallbackToolUseRejectedMessage } from '../../components/FallbackToolUseRejectedMessage.js';
 import type { z } from 'zod/v4';
 import type { Command } from '../../commands.js';
 import { Byline } from '../../components/design-system/Byline.js';

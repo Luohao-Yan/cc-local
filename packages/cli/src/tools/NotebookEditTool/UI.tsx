@@ -1,8 +1,8 @@
 import type { ToolResultBlockParam } from '@anthropic-ai/sdk/resources/index.mjs';
 import * as React from 'react';
-import type { Message, ProgressMessage } from 'src/types/message.js';
-import { extractTag } from 'src/utils/messages.js';
-import type { ThemeName } from 'src/utils/theme.js';
+import type { Message, ProgressMessage } from '../../types/message.js';
+import { extractTag } from '../../utils/messages.js';
+import type { ThemeName } from '../../utils/theme.js';
 import type { z } from 'zod/v4';
 import { FallbackToolUseErrorMessage } from '../../components/FallbackToolUseErrorMessage.js';
 import { FilePathLink } from '../../components/FilePathLink.js';

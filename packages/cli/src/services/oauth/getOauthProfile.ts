@@ -1,9 +1,9 @@
 import axios from 'axios'
-import { getOauthConfig, OAUTH_BETA_HEADER } from 'src/constants/oauth.js'
-import type { OAuthProfileResponse } from 'src/services/oauth/types.js'
-import { getAnthropicApiKey } from 'src/utils/auth.js'
-import { getGlobalConfig } from 'src/utils/config.js'
-import { logError } from 'src/utils/log.js'
+import { getOauthConfig, OAUTH_BETA_HEADER } from '../../constants/oauth.js'
+import type { OAuthProfileResponse } from './types.js'
+import { getAnthropicApiKey } from '../../utils/auth.js'
+import { getGlobalConfig } from '../../utils/config.js'
+import { logError } from '../../utils/log.js'
 export async function getOauthProfileFromApiKey(): Promise<
   OAuthProfileResponse | undefined
 > {

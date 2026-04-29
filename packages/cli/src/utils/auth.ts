@@ -4,13 +4,13 @@ import { execa } from 'execa'
 import { mkdir, stat } from 'fs/promises'
 import memoize from 'lodash-es/memoize.js'
 import { join } from 'path'
-import { CLAUDE_AI_PROFILE_SCOPE } from 'src/constants/oauth.js'
+import { CLAUDE_AI_PROFILE_SCOPE } from '../constants/oauth.js'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from 'src/services/analytics/index.js'
-import { getModelStrings } from 'src/utils/model/modelStrings.js'
-import { getAPIProvider } from 'src/utils/model/providers.js'
+} from '../services/analytics/index.js'
+import { getModelStrings } from './model/modelStrings.js'
+import { getAPIProvider } from './model/providers.js'
 import {
   getIsNonInteractiveSession,
   preferThirdPartyAuthentication,

@@ -6,16 +6,16 @@ import {
   HOOK_EVENTS,
   type HookInput,
   type PermissionUpdate,
-} from 'src/entrypoints/agentSdkTypes.js'
+} from '../entrypoints/agentSdkTypes.js'
 import type {
   HookJSONOutput,
   AsyncHookJSONOutput,
   SyncHookJSONOutput,
-} from 'src/entrypoints/agentSdkTypes.js'
-import type { Message } from 'src/types/message.js'
-import type { PermissionResult } from 'src/utils/permissions/PermissionResult.js'
-import { permissionBehaviorSchema } from 'src/utils/permissions/PermissionRule.js'
-import { permissionUpdateSchema } from 'src/utils/permissions/PermissionUpdateSchema.js'
+} from '../entrypoints/agentSdkTypes.js'
+import type { Message } from './message.js'
+import type { PermissionResult } from '../utils/permissions/PermissionResult.js'
+import { permissionBehaviorSchema } from '../utils/permissions/PermissionRule.js'
+import { permissionUpdateSchema } from '../utils/permissions/PermissionUpdateSchema.js'
 import type { AppState } from '../state/AppState.js'
 import type { AttributionState } from '../utils/commitAttribution.js'
 

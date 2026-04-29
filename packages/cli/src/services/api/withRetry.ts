@@ -5,13 +5,13 @@ import {
   APIError,
   APIUserAbortError,
 } from '@anthropic-ai/sdk'
-import type { QuerySource } from 'src/constants/querySource.js'
-import type { SystemAPIErrorMessage } from 'src/types/message.js'
-import { isAwsCredentialsProviderError } from 'src/utils/aws.js'
-import { logForDebugging } from 'src/utils/debug.js'
-import { logError } from 'src/utils/log.js'
-import { createSystemAPIErrorMessage } from 'src/utils/messages.js'
-import { getAPIProviderForStatsig } from 'src/utils/model/providers.js'
+import type { QuerySource } from '../../constants/querySource.js'
+import type { SystemAPIErrorMessage } from '../../types/message.js'
+import { isAwsCredentialsProviderError } from '../../utils/aws.js'
+import { logForDebugging } from '../../utils/debug.js'
+import { logError } from '../../utils/log.js'
+import { createSystemAPIErrorMessage } from '../../utils/messages.js'
+import { getAPIProviderForStatsig } from '../../utils/model/providers.js'
 import {
   clearApiKeyHelperCache,
   clearAwsCredentialsCache,

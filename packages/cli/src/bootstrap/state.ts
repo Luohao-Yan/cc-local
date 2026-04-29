@@ -7,26 +7,26 @@ import type { BasicTracerProvider } from '@opentelemetry/sdk-trace-base'
 import { realpathSync } from 'fs'
 import sumBy from 'lodash-es/sumBy.js'
 import { cwd } from 'process'
-import type { HookEvent, ModelUsage } from 'src/entrypoints/agentSdkTypes.js'
-import type { AgentColorName } from 'src/tools/AgentTool/agentColorManager.js'
-import type { HookCallbackMatcher } from 'src/types/hooks.js'
+import type { HookEvent, ModelUsage } from '../entrypoints/agentSdkTypes.js'
+import type { AgentColorName } from '../tools/AgentTool/agentColorManager.js'
+import type { HookCallbackMatcher } from '../types/hooks.js'
 // Indirection for browser-sdk build (package.json "browser" field swaps
 // crypto.ts for crypto.browser.ts). Pure leaf re-export of node:crypto —
 // zero circular-dep risk. Path-alias import bypasses bootstrap-isolation
 // (rule only checks ./ and / prefixes); explicit disable documents intent.
 // eslint-disable-next-line custom-rules/bootstrap-isolation
-import { randomUUID } from 'src/utils/crypto.js'
-import type { ModelSetting } from 'src/utils/model/model.js'
-import type { ModelStrings } from 'src/utils/model/modelStrings.js'
-import type { SettingSource } from 'src/utils/settings/constants.js'
-import { resetSettingsCache } from 'src/utils/settings/settingsCache.js'
-import type { PluginHookMatcher } from 'src/utils/settings/types.js'
-import { createSignal } from 'src/utils/signal.js'
+import { randomUUID } from '../utils/crypto.js'
+import type { ModelSetting } from '../utils/model/model.js'
+import type { ModelStrings } from '../utils/model/modelStrings.js'
+import type { SettingSource } from '../utils/settings/constants.js'
+import { resetSettingsCache } from '../utils/settings/settingsCache.js'
+import type { PluginHookMatcher } from '../utils/settings/types.js'
+import { createSignal } from '../utils/signal.js'
 
 // Union type for registered hooks - can be SDK callbacks or native plugin hooks
 type RegisteredHookMatcher = HookCallbackMatcher | PluginHookMatcher
 
-import type { SessionId } from 'src/types/ids.js'
+import type { SessionId } from '../types/ids.js'
 
 // DO NOT ADD MORE STATE HERE - BE JUDICIOUS WITH GLOBAL STATE
 

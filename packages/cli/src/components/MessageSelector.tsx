@@ -4,10 +4,10 @@ import { randomUUID, type UUID } from 'crypto';
 import figures from 'figures';
 import * as React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, logEvent } from 'src/services/analytics/index.js';
-import { useAppState } from 'src/state/AppState.js';
-import { type DiffStats, fileHistoryCanRestore, fileHistoryEnabled, fileHistoryGetDiffStats } from 'src/utils/fileHistory.js';
-import { logError } from 'src/utils/log.js';
+import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, logEvent } from '../services/analytics/index.js';
+import { useAppState } from '../state/AppState.js';
+import { type DiffStats, fileHistoryCanRestore, fileHistoryEnabled, fileHistoryGetDiffStats } from '../utils/fileHistory.js';
+import { logError } from '../utils/log.js';
 import { useExitOnCtrlCDWithKeybindings } from '../hooks/useExitOnCtrlCDWithKeybindings.js';
 import { Box, Text } from '../ink.js';
 import { useKeybinding, useKeybindings } from '../keybindings/useKeybinding.js';
@@ -20,9 +20,9 @@ function isTextBlock(block: ContentBlockParam): block is TextBlockParam {
   return block.type === 'text';
 }
 import * as path from 'path';
-import { useTerminalSize } from 'src/hooks/useTerminalSize.js';
-import type { FileEditOutput } from 'src/tools/FileEditTool/types.js';
-import type { Output as FileWriteToolOutput } from 'src/tools/FileWriteTool/FileWriteTool.js';
+import { useTerminalSize } from '../hooks/useTerminalSize.js';
+import type { FileEditOutput } from '../tools/FileEditTool/types.js';
+import type { Output as FileWriteToolOutput } from '../tools/FileWriteTool/FileWriteTool.js';
 import { BASH_STDERR_TAG, BASH_STDOUT_TAG, COMMAND_MESSAGE_TAG, LOCAL_COMMAND_STDERR_TAG, LOCAL_COMMAND_STDOUT_TAG, TASK_NOTIFICATION_TAG, TEAMMATE_MESSAGE_TAG, TICK_TAG } from '../constants/xml.js';
 import { count } from '../utils/array.js';
 import { formatRelativeTimeAgo, truncate } from '../utils/format.js';

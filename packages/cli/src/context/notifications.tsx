@@ -1,6 +1,6 @@
 import type * as React from 'react';
 import { useCallback, useEffect } from 'react';
-import { useAppStateStore, useSetAppState } from 'src/state/AppState.js';
+import { useAppStateStore, useSetAppState } from '../state/AppState.js';
 import type { Theme } from '../utils/theme.js';
 type Priority = 'low' | 'medium' | 'high' | 'immediate';
 type BaseNotification = {

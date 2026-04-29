@@ -1,11 +1,11 @@
 import type { ContentBlockParam } from '@anthropic-ai/sdk/resources';
 import { randomUUID } from 'crypto';
 import * as React from 'react';
-import { BashModeProgress } from 'src/components/BashModeProgress.js';
-import type { SetToolJSXFn } from 'src/Tool.js';
-import { BashTool } from 'src/tools/BashTool/BashTool.js';
-import type { AttachmentMessage, SystemMessage, UserMessage } from 'src/types/message.js';
-import type { ShellProgress } from 'src/types/tools.js';
+import { BashModeProgress } from '../../components/BashModeProgress.js';
+import type { SetToolJSXFn } from '../../Tool.js';
+import { BashTool } from '../../tools/BashTool/BashTool.js';
+import type { AttachmentMessage, SystemMessage, UserMessage } from '../../types/message.js';
+import type { ShellProgress } from '../../types/tools.js';
 import { logEvent } from '../../services/analytics/index.js';
 import { errorMessage, ShellError } from '../errors.js';
 import { createSyntheticUserCaveatMessage, createUserInterruptionMessage, createUserMessage, prepareUserContent } from '../messages.js';
@@ -71,11 +71,11 @@ export async function processBashCommand(inputString: string, precedingInputBloc
     // native, shouldUseSandbox() returns false regardless (unsupported platform).
     // Lazy-require PowerShellTool so its ~300KB chunk only loads when the
     // user has actually selected the powershell default shell.
-    type PSMod = typeof import('src/tools/PowerShellTool/PowerShellTool.js');
+    type PSMod = typeof import('../../tools/PowerShellTool/PowerShellTool.js');
     let PowerShellTool: PSMod['PowerShellTool'] | null = null;
     if (usePowerShell) {
       /* eslint-disable @typescript-eslint/no-require-imports */
-      PowerShellTool = (require('src/tools/PowerShellTool/PowerShellTool.js') as PSMod).PowerShellTool;
+      PowerShellTool = (require('../../tools/PowerShellTool/PowerShellTool.js') as PSMod).PowerShellTool;
       /* eslint-enable @typescript-eslint/no-require-imports */
     }
     const shellTool = PowerShellTool ?? BashTool;

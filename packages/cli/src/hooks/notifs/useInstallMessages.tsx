@@ -1,4 +1,4 @@
-import { checkInstall } from 'src/utils/nativeInstaller/index.js';
+import { checkInstall } from '../../utils/nativeInstaller/index.js';
 import { useStartupNotification } from './useStartupNotification.js';
 export function useInstallMessages() {
   useStartupNotification(_temp2);

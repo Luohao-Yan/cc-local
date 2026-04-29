@@ -1,6 +1,6 @@
 import { c as _c } from "react/compiler-runtime";
 import React from 'react';
-import type { DeepImmutable } from 'src/types/utils.js';
+import type { DeepImmutable } from '../../types/utils.js';
 import { useElapsedTime } from '../../hooks/useElapsedTime.js';
 import type { KeyboardEvent } from '../../ink/events/keyboard-event.js';
 import { Box, Text } from '../../ink.js';

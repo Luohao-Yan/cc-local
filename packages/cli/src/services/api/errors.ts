@@ -7,29 +7,29 @@ import type {
   BetaMessage,
   BetaStopReason,
 } from '@anthropic-ai/sdk/resources/beta/messages/messages.mjs'
-import { AFK_MODE_BETA_HEADER } from 'src/constants/betas.js'
-import type { SDKAssistantMessageError } from 'src/entrypoints/agentSdkTypes.js'
+import { AFK_MODE_BETA_HEADER } from '../../constants/betas.js'
+import type { SDKAssistantMessageError } from '../../entrypoints/agentSdkTypes.js'
 import type {
   AssistantMessage,
   Message,
   UserMessage,
-} from 'src/types/message.js'
+} from '../../types/message.js'
 import {
   getAnthropicApiKeyWithSource,
   getClaudeAIOAuthTokens,
   getOauthAccountInfo,
   isClaudeAISubscriber,
-} from 'src/utils/auth.js'
+} from '../../utils/auth.js'
 import {
   createAssistantAPIErrorMessage,
   NO_RESPONSE_REQUESTED,
-} from 'src/utils/messages.js'
+} from '../../utils/messages.js'
 import {
   getDefaultMainLoopModelSetting,
   isNonCustomOpusModel,
-} from 'src/utils/model/model.js'
-import { getModelStrings } from 'src/utils/model/modelStrings.js'
-import { getAPIProvider } from 'src/utils/model/providers.js'
+} from '../../utils/model/model.js'
+import { getModelStrings } from '../../utils/model/modelStrings.js'
+import { getAPIProvider } from '../../utils/model/providers.js'
 import { getIsNonInteractiveSession } from '../../bootstrap/state.js'
 import {
   API_PDF_MAX_PAGES,

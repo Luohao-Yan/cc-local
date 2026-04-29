@@ -1,31 +1,31 @@
 import chalk from 'chalk'
-import { logEvent } from 'src/services/analytics/index.js'
+import { logEvent } from '../services/analytics/index.js'
 import {
   getLatestVersion,
   type InstallStatus,
   installGlobalPackage,
-} from 'src/utils/autoUpdater.js'
-import { regenerateCompletionCache } from 'src/utils/completionCache.js'
+} from '../utils/autoUpdater.js'
+import { regenerateCompletionCache } from '../utils/completionCache.js'
 import {
   getGlobalConfig,
   type InstallMethod,
   saveGlobalConfig,
-} from 'src/utils/config.js'
-import { logForDebugging } from 'src/utils/debug.js'
-import { getDoctorDiagnostic } from 'src/utils/doctorDiagnostic.js'
-import { gracefulShutdown } from 'src/utils/gracefulShutdown.js'
+} from '../utils/config.js'
+import { logForDebugging } from '../utils/debug.js'
+import { getDoctorDiagnostic } from '../utils/doctorDiagnostic.js'
+import { gracefulShutdown } from '../utils/gracefulShutdown.js'
 import {
   installOrUpdateClaudePackage,
   localInstallationExists,
-} from 'src/utils/localInstaller.js'
+} from '../utils/localInstaller.js'
 import {
   installLatest as installLatestNative,
   removeInstalledSymlink,
-} from 'src/utils/nativeInstaller/index.js'
-import { getPackageManager } from 'src/utils/nativeInstaller/packageManagers.js'
-import { writeToStdout } from 'src/utils/process.js'
-import { gte } from 'src/utils/semver.js'
-import { getInitialSettings } from 'src/utils/settings/settings.js'
+} from '../utils/nativeInstaller/index.js'
+import { getPackageManager } from '../utils/nativeInstaller/packageManagers.js'
+import { writeToStdout } from '../utils/process.js'
+import { gte } from '../utils/semver.js'
+import { getInitialSettings } from '../utils/settings/settings.js'
 
 export async function update() {
   logEvent('tengu_update_check', {})

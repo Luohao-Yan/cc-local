@@ -2,7 +2,7 @@ import { c as _c } from "react/compiler-runtime";
 import { diffWordsWithSpace, type StructuredPatchHunk } from 'diff';
 import * as React from 'react';
 import { useMemo } from 'react';
-import type { ThemeName } from 'src/utils/theme.js';
+import type { ThemeName } from '../../utils/theme.js';
 import { stringWidth } from '../../ink/stringWidth.js';
 import { Box, NoSelect, Text, useTheme, wrapText } from '../../ink.js';
 

@@ -3,7 +3,7 @@ import type { BetaMessageStreamParams } from '@anthropic-ai/sdk/resources/beta/m
 import { readdir, readFile, stat } from 'fs/promises'
 import memoize from 'lodash-es/memoize.js'
 import { join } from 'path'
-import type { QuerySource } from 'src/constants/querySource.js'
+import type { QuerySource } from '../constants/querySource.js'
 import {
   setLastAPIRequest,
   setLastAPIRequestMessages,

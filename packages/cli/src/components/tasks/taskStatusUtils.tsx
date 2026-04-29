@@ -3,12 +3,12 @@
  */
 
 import figures from 'figures';
-import type { TaskStatus } from 'src/Task.js';
-import type { InProcessTeammateTaskState } from 'src/tasks/InProcessTeammateTask/types.js';
-import { isPanelAgentTask } from 'src/tasks/LocalAgentTask/LocalAgentTask.js';
-import { isBackgroundTask, type TaskState } from 'src/tasks/types.js';
-import type { DeepImmutable } from 'src/types/utils.js';
-import { summarizeRecentActivities } from 'src/utils/collapseReadSearch.js';
+import type { TaskStatus } from '../../Task.js';
+import type { InProcessTeammateTaskState } from '../../tasks/InProcessTeammateTask/types.js';
+import { isPanelAgentTask } from '../../tasks/LocalAgentTask/LocalAgentTask.js';
+import { isBackgroundTask, type TaskState } from '../../tasks/types.js';
+import type { DeepImmutable } from '../../types/utils.js';
+import { summarizeRecentActivities } from '../../utils/collapseReadSearch.js';
 
 /**
  * Returns true if the given task status represents a terminal (finished) state.

@@ -7,7 +7,7 @@ import {
   type ListToolsResult,
   type Tool,
 } from '@modelcontextprotocol/sdk/types.js'
-import { getDefaultAppState } from 'src/state/AppStateStore.js'
+import { getDefaultAppState } from '../state/AppStateStore.js'
 import review from '../commands/review.js'
 import type { Command } from '../commands.js'
 import {

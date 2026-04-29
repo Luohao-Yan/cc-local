@@ -3,7 +3,7 @@ import type {
   AttachmentMessage,
   SystemMessage,
   UserMessage,
-} from 'src/types/message.js'
+} from '../types/message.js'
 
 /**
  * Tags user messages with a sourceToolUseID so they stay transient until the tool resolves.

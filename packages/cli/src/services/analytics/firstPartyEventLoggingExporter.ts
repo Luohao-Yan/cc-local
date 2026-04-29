@@ -8,7 +8,7 @@ import axios from 'axios'
 import { randomUUID } from 'crypto'
 import { appendFile, mkdir, readdir, unlink, writeFile } from 'fs/promises'
 import * as path from 'path'
-import type { CoreUserData } from 'src/utils/user.js'
+import type { CoreUserData } from '../../utils/user.js'
 import {
   getIsNonInteractiveSession,
   getSessionId,

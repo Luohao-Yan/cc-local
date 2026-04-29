@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { Markdown } from 'src/components/Markdown.js';
-import { MessageResponse } from 'src/components/MessageResponse.js';
-import { RejectedPlanMessage } from 'src/components/messages/UserToolResultMessage/RejectedPlanMessage.js';
-import { BLACK_CIRCLE } from 'src/constants/figures.js';
-import { getModeColor } from 'src/utils/permissions/PermissionMode.js';
+import { Markdown } from '../../components/Markdown.js';
+import { MessageResponse } from '../../components/MessageResponse.js';
+import { RejectedPlanMessage } from '../../components/messages/UserToolResultMessage/RejectedPlanMessage.js';
+import { BLACK_CIRCLE } from '../../constants/figures.js';
+import { getModeColor } from '../../utils/permissions/PermissionMode.js';
 import { Box, Text } from '../../ink.js';
 import type { ToolProgressData } from '../../Tool.js';
 import type { ProgressMessage } from '../../types/message.js';

@@ -4,39 +4,39 @@ import type {
   JSONRPCMessage,
 } from '@modelcontextprotocol/sdk/types.js'
 import { randomUUID } from 'crypto'
-import type { AssistantMessage } from 'src//types/message.js'
+import type { AssistantMessage } from '../types/message.js'
 import type {
   HookInput,
   HookJSONOutput,
   PermissionUpdate,
   SDKMessage,
   SDKUserMessage,
-} from 'src/entrypoints/agentSdkTypes.js'
-import { SDKControlElicitationResponseSchema } from 'src/entrypoints/sdk/controlSchemas.js'
+} from '../entrypoints/agentSdkTypes.js'
+import { SDKControlElicitationResponseSchema } from '../entrypoints/sdk/controlSchemas.js'
 import type {
   SDKControlRequest,
   SDKControlResponse,
   StdinMessage,
   StdoutMessage,
-} from 'src/entrypoints/sdk/controlTypes.js'
-import type { CanUseToolFn } from 'src/hooks/useCanUseTool.js'
-import type { Tool, ToolUseContext } from 'src/Tool.js'
-import { type HookCallback, hookJSONOutputSchema } from 'src/types/hooks.js'
-import { logForDebugging } from 'src/utils/debug.js'
-import { logForDiagnosticsNoPII } from 'src/utils/diagLogs.js'
-import { AbortError } from 'src/utils/errors.js'
+} from '../entrypoints/sdk/controlTypes.js'
+import type { CanUseToolFn } from '../hooks/useCanUseTool.js'
+import type { Tool, ToolUseContext } from '../Tool.js'
+import { type HookCallback, hookJSONOutputSchema } from '../types/hooks.js'
+import { logForDebugging } from '../utils/debug.js'
+import { logForDiagnosticsNoPII } from '../utils/diagLogs.js'
+import { AbortError } from '../utils/errors.js'
 import {
   type Output as PermissionToolOutput,
   permissionPromptToolResultToPermissionDecision,
   outputSchema as permissionToolOutputSchema,
-} from 'src/utils/permissions/PermissionPromptToolResultSchema.js'
+} from '../utils/permissions/PermissionPromptToolResultSchema.js'
 import type {
   PermissionDecision,
   PermissionDecisionReason,
-} from 'src/utils/permissions/PermissionResult.js'
-import { hasPermissionsToUseTool } from 'src/utils/permissions/permissions.js'
-import { writeToStdout } from 'src/utils/process.js'
-import { jsonStringify } from 'src/utils/slowOperations.js'
+} from '../utils/permissions/PermissionResult.js'
+import { hasPermissionsToUseTool } from '../utils/permissions/permissions.js'
+import { writeToStdout } from '../utils/process.js'
+import { jsonStringify } from '../utils/slowOperations.js'
 import { z } from 'zod/v4'
 import { notifyCommandLifecycle } from '../utils/commandLifecycle.js'
 import { normalizeControlMessageKeys } from '../utils/controlMessageCompat.js'

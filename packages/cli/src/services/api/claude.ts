@@ -23,7 +23,7 @@ import { randomUUID } from 'crypto'
 import {
   getAPIProvider,
   isFirstPartyAnthropicBaseUrl,
-} from 'src/utils/model/providers.js'
+} from '../../utils/model/providers.js'
 import {
   getAttributionHeader,
   getCLISyspromptPrefix,
@@ -129,7 +129,7 @@ import {
   setPromptCache1hAllowlist,
   setPromptCache1hEligible,
   setThinkingClearLatched,
-} from 'src/bootstrap/state.js'
+} from '../../bootstrap/state.js'
 import {
   AFK_MODE_BETA_HEADER,
   CONTEXT_1M_BETA_HEADER,
@@ -140,54 +140,54 @@ import {
   REDACT_THINKING_BETA_HEADER,
   STRUCTURED_OUTPUTS_BETA_HEADER,
   TASK_BUDGETS_BETA_HEADER,
-} from 'src/constants/betas.js'
-import type { QuerySource } from 'src/constants/querySource.js'
-import type { Notification } from 'src/context/notifications.js'
-import { addToTotalSessionCost } from 'src/cost-tracker.js'
-import { getFeatureValue_CACHED_MAY_BE_STALE } from 'src/services/analytics/growthbook.js'
-import type { AgentId } from 'src/types/ids.js'
+} from '../../constants/betas.js'
+import type { QuerySource } from '../../constants/querySource.js'
+import type { Notification } from '../../context/notifications.js'
+import { addToTotalSessionCost } from '../../cost-tracker.js'
+import { getFeatureValue_CACHED_MAY_BE_STALE } from '../analytics/growthbook.js'
+import type { AgentId } from '../../types/ids.js'
 import {
   ADVISOR_TOOL_INSTRUCTIONS,
   getExperimentAdvisorModels,
   isAdvisorEnabled,
   isValidAdvisorModel,
   modelSupportsAdvisor,
-} from 'src/utils/advisor.js'
-import { getAgentContext } from 'src/utils/agentContext.js'
-import { isClaudeAISubscriber } from 'src/utils/auth.js'
+} from '../../utils/advisor.js'
+import { getAgentContext } from '../../utils/agentContext.js'
+import { isClaudeAISubscriber } from '../../utils/auth.js'
 import {
   getToolSearchBetaHeader,
   modelSupportsStructuredOutputs,
   shouldIncludeFirstPartyOnlyBetas,
   shouldUseGlobalCacheScope,
-} from 'src/utils/betas.js'
-import { CLAUDE_IN_CHROME_MCP_SERVER_NAME } from 'src/utils/claudeInChrome/common.js'
-import { CHROME_TOOL_SEARCH_INSTRUCTIONS } from 'src/utils/claudeInChrome/prompt.js'
-import { getMaxThinkingTokensForModel } from 'src/utils/context.js'
-import { logForDebugging } from 'src/utils/debug.js'
-import { logForDiagnosticsNoPII } from 'src/utils/diagLogs.js'
-import { type EffortValue, modelSupportsEffort } from 'src/utils/effort.js'
+} from '../../utils/betas.js'
+import { CLAUDE_IN_CHROME_MCP_SERVER_NAME } from '../../utils/claudeInChrome/common.js'
+import { CHROME_TOOL_SEARCH_INSTRUCTIONS } from '../../utils/claudeInChrome/prompt.js'
+import { getMaxThinkingTokensForModel } from '../../utils/context.js'
+import { logForDebugging } from '../../utils/debug.js'
+import { logForDiagnosticsNoPII } from '../../utils/diagLogs.js'
+import { type EffortValue, modelSupportsEffort } from '../../utils/effort.js'
 import {
   isFastModeAvailable,
   isFastModeCooldown,
   isFastModeEnabled,
   isFastModeSupportedByModel,
-} from 'src/utils/fastMode.js'
-import { returnValue } from 'src/utils/generators.js'
-import { headlessProfilerCheckpoint } from 'src/utils/headlessProfiler.js'
-import { isMcpInstructionsDeltaEnabled } from 'src/utils/mcpInstructionsDelta.js'
-import { calculateUSDCost } from 'src/utils/modelCost.js'
-import { endQueryProfile, queryCheckpoint } from 'src/utils/queryProfiler.js'
+} from '../../utils/fastMode.js'
+import { returnValue } from '../../utils/generators.js'
+import { headlessProfilerCheckpoint } from '../../utils/headlessProfiler.js'
+import { isMcpInstructionsDeltaEnabled } from '../../utils/mcpInstructionsDelta.js'
+import { calculateUSDCost } from '../../utils/modelCost.js'
+import { endQueryProfile, queryCheckpoint } from '../../utils/queryProfiler.js'
 import {
   modelSupportsAdaptiveThinking,
   modelSupportsThinking,
   type ThinkingConfig,
-} from 'src/utils/thinking.js'
+} from '../../utils/thinking.js'
 import {
   extractDiscoveredToolNames,
   isDeferredToolsDeltaEnabled,
   isToolSearchEnabled,
-} from 'src/utils/toolSearch.js'
+} from '../../utils/toolSearch.js'
 import { API_MAX_MEDIA_PER_REQUEST } from '../../constants/apiLimits.js'
 import { ADVISOR_BETA_HEADER } from '../../constants/betas.js'
 import {
@@ -1193,7 +1193,7 @@ async function* queryModel(
       isModelSupportedForCacheEditing,
       getCachedMCConfig,
     } = await import('../compact/cachedMicrocompact.js')
-    const betas = await import('src/constants/betas.js')
+    const betas = await import('../../constants/betas.js')
     cacheEditingBetaHeader = betas.CACHE_EDITING_BETA_HEADER
     const featureEnabled = isCachedMicrocompactEnabled()
     const modelSupported = isModelSupportedForCacheEditing(options.model)

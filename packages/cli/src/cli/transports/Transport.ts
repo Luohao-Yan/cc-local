@@ -1,4 +1,4 @@
-import type { StdoutMessage } from 'src/entrypoints/sdk/controlTypes.js'
+import type { StdoutMessage } from '../../entrypoints/sdk/controlTypes.js'
 
 /**
  * Bidirectional session transport (SSE/WebSocket) used by RemoteIO / CCR.

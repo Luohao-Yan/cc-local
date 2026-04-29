@@ -5,7 +5,7 @@ import last from 'lodash-es/last.js'
 import {
   getSessionId,
   isSessionPersistenceDisabled,
-} from 'src/bootstrap/state.js'
+} from './bootstrap/state.js'
 import type {
   PermissionMode,
   SDKCompactBoundaryMessage,
@@ -13,10 +13,10 @@ import type {
   SDKPermissionDenial,
   SDKStatus,
   SDKUserMessageReplay,
-} from 'src/entrypoints/agentSdkTypes.js'
-import { accumulateUsage, updateUsage } from 'src/services/api/claude.js'
-import type { NonNullableUsage } from 'src/services/api/logging.js'
-import { EMPTY_USAGE } from 'src/services/api/logging.js'
+} from './entrypoints/agentSdkTypes.js'
+import { accumulateUsage, updateUsage } from './services/api/claude.js'
+import type { NonNullableUsage } from './services/api/logging.js'
+import { EMPTY_USAGE } from './services/api/logging.js'
 import stripAnsi from 'strip-ansi'
 import type { Command } from './commands.js'
 import { getSlashCommandToolSkills } from './commands.js'
@@ -85,8 +85,8 @@ import {
 // Lazy: MessageSelector.tsx pulls React/ink; only needed for message filtering at query time
 /* eslint-disable @typescript-eslint/no-require-imports */
 const messageSelector =
-  (): typeof import('src/components/MessageSelector.js') =>
-    require('src/components/MessageSelector.js')
+  (): typeof import('./components/MessageSelector.js') =>
+    require('./components/MessageSelector.js')
 
 import {
   localCommandOutputToSDKAssistantMessage,

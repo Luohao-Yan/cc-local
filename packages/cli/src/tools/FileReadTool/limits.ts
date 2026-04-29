@@ -13,8 +13,8 @@
  * tool-result while truncation yields ~25K tokens of content at the cap.
  */
 import memoize from 'lodash-es/memoize.js'
-import { getFeatureValue_CACHED_MAY_BE_STALE } from 'src/services/analytics/growthbook.js'
-import { MAX_OUTPUT_SIZE } from 'src/utils/file.js'
+import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/growthbook.js'
+import { MAX_OUTPUT_SIZE } from '../../utils/file.js'
 export const DEFAULT_MAX_OUTPUT_TOKENS = 25000
 
 /**

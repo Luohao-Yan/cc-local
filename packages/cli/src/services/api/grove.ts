@@ -3,12 +3,12 @@ import memoize from 'lodash-es/memoize.js'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from 'src/services/analytics/index.js'
-import { getOauthAccountInfo, isConsumerSubscriber } from 'src/utils/auth.js'
-import { logForDebugging } from 'src/utils/debug.js'
-import { gracefulShutdown } from 'src/utils/gracefulShutdown.js'
-import { isEssentialTrafficOnly } from 'src/utils/privacyLevel.js'
-import { writeToStderr } from 'src/utils/process.js'
+} from '../analytics/index.js'
+import { getOauthAccountInfo, isConsumerSubscriber } from '../../utils/auth.js'
+import { logForDebugging } from '../../utils/debug.js'
+import { gracefulShutdown } from '../../utils/gracefulShutdown.js'
+import { isEssentialTrafficOnly } from '../../utils/privacyLevel.js'
+import { writeToStderr } from '../../utils/process.js'
 import { getOauthConfig } from '../../constants/oauth.js'
 import { getGlobalConfig, saveGlobalConfig } from '../../utils/config.js'
 import {

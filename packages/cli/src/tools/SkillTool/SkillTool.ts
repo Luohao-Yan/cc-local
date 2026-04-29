@@ -2,37 +2,37 @@ import { feature } from 'bun:bundle'
 import type { ToolResultBlockParam } from '@anthropic-ai/sdk/resources/index.mjs'
 import uniqBy from 'lodash-es/uniqBy.js'
 import { dirname } from 'path'
-import { getProjectRoot } from 'src/bootstrap/state.js'
+import { getProjectRoot } from '../../bootstrap/state.js'
 import {
   builtInCommandNames,
   findCommand,
   getCommands,
   type PromptCommand,
-} from 'src/commands.js'
+} from '../../commands.js'
 import type {
   Tool,
   ToolCallProgress,
   ToolResult,
   ToolUseContext,
   ValidationResult,
-} from 'src/Tool.js'
-import { buildTool, type ToolDef } from 'src/Tool.js'
-import type { Command } from 'src/types/command.js'
+} from '../../Tool.js'
+import { buildTool, type ToolDef } from '../../Tool.js'
+import type { Command } from '../../types/command.js'
 import type {
   AssistantMessage,
   AttachmentMessage,
   Message,
   SystemMessage,
   UserMessage,
-} from 'src/types/message.js'
-import { logForDebugging } from 'src/utils/debug.js'
-import type { PermissionDecision } from 'src/utils/permissions/PermissionResult.js'
-import { getRuleByContentsForTool } from 'src/utils/permissions/permissions.js'
+} from '../../types/message.js'
+import { logForDebugging } from '../../utils/debug.js'
+import type { PermissionDecision } from '../../utils/permissions/PermissionResult.js'
+import { getRuleByContentsForTool } from '../../utils/permissions/permissions.js'
 import {
   isOfficialMarketplaceName,
   parsePluginIdentifier,
-} from 'src/utils/plugins/pluginIdentifier.js'
-import { buildPluginCommandTelemetryFields } from 'src/utils/telemetry/pluginTelemetry.js'
+} from '../../utils/plugins/pluginIdentifier.js'
+import { buildPluginCommandTelemetryFields } from '../../utils/telemetry/pluginTelemetry.js'
 import { z } from 'zod/v4'
 import {
   addInvokedSkill,
@@ -633,7 +633,7 @@ export const SkillTool: Tool<InputSchema, Output, Progress> = buildTool({
 
     // Process the skill with optional args
     const { processPromptSlashCommand } = await import(
-      'src/utils/processUserInput/processSlashCommand.js'
+      '../../utils/processUserInput/processSlashCommand.js'
     )
     const processedCommand = await processPromptSlashCommand(
       commandName,

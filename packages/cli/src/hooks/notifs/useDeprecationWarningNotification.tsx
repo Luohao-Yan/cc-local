@@ -1,7 +1,7 @@
 import { c as _c } from "react/compiler-runtime";
 import { useEffect, useRef } from 'react';
-import { useNotifications } from 'src/context/notifications.js';
-import { getModelDeprecationWarning } from 'src/utils/model/deprecation.js';
+import { useNotifications } from '../../context/notifications.js';
+import { getModelDeprecationWarning } from '../../utils/model/deprecation.js';
 import { getIsRemoteMode } from '../../bootstrap/state.js';
 export function useDeprecationWarningNotification(model) {
   const $ = _c(4);

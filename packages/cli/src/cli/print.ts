@@ -5,41 +5,41 @@ import { dirname } from 'path'
 import {
   downloadUserSettings,
   redownloadUserSettings,
-} from 'src/services/settingsSync/index.js'
-import { waitForRemoteManagedSettingsToLoad } from 'src/services/remoteManagedSettings/index.js'
-import { StructuredIO } from 'src/cli/structuredIO.js'
-import { RemoteIO } from 'src/cli/remoteIO.js'
+} from '../services/settingsSync/index.js'
+import { waitForRemoteManagedSettingsToLoad } from '../services/remoteManagedSettings/index.js'
+import { StructuredIO } from './structuredIO.js'
+import { RemoteIO } from './remoteIO.js'
 import {
   type Command,
   formatDescriptionWithSource,
   getCommandName,
-} from 'src/commands.js'
-import { createStreamlinedTransformer } from 'src/utils/streamlinedTransform.js'
-import { installStreamJsonStdoutGuard } from 'src/utils/streamJsonStdoutGuard.js'
-import type { ToolPermissionContext } from 'src/Tool.js'
-import type { ThinkingConfig } from 'src/utils/thinking.js'
-import { assembleToolPool, filterToolsByDenyRules } from 'src/tools.js'
+} from '../commands.js'
+import { createStreamlinedTransformer } from '../utils/streamlinedTransform.js'
+import { installStreamJsonStdoutGuard } from '../utils/streamJsonStdoutGuard.js'
+import type { ToolPermissionContext } from '../Tool.js'
+import type { ThinkingConfig } from '../utils/thinking.js'
+import { assembleToolPool, filterToolsByDenyRules } from '../tools.js'
 import uniqBy from 'lodash-es/uniqBy.js'
-import { uniq } from 'src/utils/array.js'
-import { mergeAndFilterTools } from 'src/utils/toolPool.js'
+import { uniq } from '../utils/array.js'
+import { mergeAndFilterTools } from '../utils/toolPool.js'
 import {
   logEvent,
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-} from 'src/services/analytics/index.js'
-import { getFeatureValue_CACHED_MAY_BE_STALE } from 'src/services/analytics/growthbook.js'
-import { logForDebugging } from 'src/utils/debug.js'
+} from '../services/analytics/index.js'
+import { getFeatureValue_CACHED_MAY_BE_STALE } from '../services/analytics/growthbook.js'
+import { logForDebugging } from '../utils/debug.js'
 import {
   logForDiagnosticsNoPII,
   withDiagnosticsTiming,
-} from 'src/utils/diagLogs.js'
-import { toolMatchesName, type Tool, type Tools } from 'src/Tool.js'
+} from '../utils/diagLogs.js'
+import { toolMatchesName, type Tool, type Tools } from '../Tool.js'
 import {
   type AgentDefinition,
   isBuiltInAgent,
   parseAgentsFromJson,
-} from 'src/tools/AgentTool/loadAgentsDir.js'
-import type { Message, NormalizedUserMessage } from 'src/types/message.js'
-import type { QueuedCommand } from 'src/types/textInputTypes.js'
+} from '../tools/AgentTool/loadAgentsDir.js'
+import type { Message, NormalizedUserMessage } from '../types/message.js'
+import type { QueuedCommand } from '../types/textInputTypes.js'
 import {
   dequeue,
   dequeueAllMatching,
@@ -48,8 +48,8 @@ import {
   peek,
   subscribeToCommandQueue,
   getCommandsByMaxPriority,
-} from 'src/utils/messageQueueManager.js'
-import { notifyCommandLifecycle } from 'src/utils/commandLifecycle.js'
+} from '../utils/messageQueueManager.js'
+import { notifyCommandLifecycle } from '../utils/commandLifecycle.js'
 import {
   getSessionState,
   notifySessionStateChanged,
@@ -57,56 +57,56 @@ import {
   setPermissionModeChangedListener,
   type RequiresActionDetails,
   type SessionExternalMetadata,
-} from 'src/utils/sessionState.js'
-import { externalMetadataToAppState } from 'src/state/onChangeAppState.js'
-import { getInMemoryErrors, logError, logMCPDebug } from 'src/utils/log.js'
+} from '../utils/sessionState.js'
+import { externalMetadataToAppState } from '../state/onChangeAppState.js'
+import { getInMemoryErrors, logError, logMCPDebug } from '../utils/log.js'
 import {
   writeToStdout,
   registerProcessOutputErrorHandlers,
-} from 'src/utils/process.js'
-import type { Stream } from 'src/utils/stream.js'
-import { EMPTY_USAGE } from 'src/services/api/logging.js'
+} from '../utils/process.js'
+import type { Stream } from '../utils/stream.js'
+import { EMPTY_USAGE } from '../services/api/logging.js'
 import {
   loadConversationForResume,
   type TurnInterruptionState,
-} from 'src/utils/conversationRecovery.js'
+} from '../utils/conversationRecovery.js'
 import type {
   MCPServerConnection,
   McpSdkServerConfig,
   ScopedMcpServerConfig,
-} from 'src/services/mcp/types.js'
+} from '../services/mcp/types.js'
 import {
   ChannelMessageNotificationSchema,
   gateChannelServer,
   wrapChannelMessage,
   findChannelEntry,
-} from 'src/services/mcp/channelNotification.js'
+} from '../services/mcp/channelNotification.js'
 import {
   isChannelAllowlisted,
   isChannelsEnabled,
-} from 'src/services/mcp/channelAllowlist.js'
-import { parsePluginIdentifier } from 'src/utils/plugins/pluginIdentifier.js'
-import { validateUuid } from 'src/utils/uuid.js'
-import { fromArray } from 'src/utils/generators.js'
-import { ask } from 'src/QueryEngine.js'
-import type { PermissionPromptTool } from 'src/utils/queryHelpers.js'
+} from '../services/mcp/channelAllowlist.js'
+import { parsePluginIdentifier } from '../utils/plugins/pluginIdentifier.js'
+import { validateUuid } from '../utils/uuid.js'
+import { fromArray } from '../utils/generators.js'
+import { ask } from '../QueryEngine.js'
+import type { PermissionPromptTool } from '../utils/queryHelpers.js'
 import {
   createFileStateCacheWithSizeLimit,
   mergeFileStateCaches,
   READ_FILE_STATE_CACHE_SIZE,
-} from 'src/utils/fileStateCache.js'
-import { expandPath } from 'src/utils/path.js'
-import { extractReadFilesFromMessages } from 'src/utils/queryHelpers.js'
-import { registerHookEventHandler } from 'src/utils/hooks/hookEvents.js'
-import { executeFilePersistence } from 'src/utils/filePersistence/filePersistence.js'
-import { finalizePendingAsyncHooks } from 'src/utils/hooks/AsyncHookRegistry.js'
+} from '../utils/fileStateCache.js'
+import { expandPath } from '../utils/path.js'
+import { extractReadFilesFromMessages } from '../utils/queryHelpers.js'
+import { registerHookEventHandler } from '../utils/hooks/hookEvents.js'
+import { executeFilePersistence } from '../utils/filePersistence/filePersistence.js'
+import { finalizePendingAsyncHooks } from '../utils/hooks/AsyncHookRegistry.js'
 import {
   gracefulShutdown,
   gracefulShutdownSync,
   isShuttingDown,
-} from 'src/utils/gracefulShutdown.js'
-import { registerCleanup } from 'src/utils/cleanupRegistry.js'
-import { createIdleTimeoutManager } from 'src/utils/idleTimeout.js'
+} from '../utils/gracefulShutdown.js'
+import { registerCleanup } from '../utils/cleanupRegistry.js'
+import { createIdleTimeoutManager } from '../utils/idleTimeout.js'
 import type {
   SDKStatus,
   ModelInfo,
@@ -117,7 +117,7 @@ import type {
   McpServerConfigForProcessTransport,
   McpServerStatus,
   RewindFilesResult,
-} from 'src/entrypoints/agentSdkTypes.js'
+} from '../entrypoints/agentSdkTypes.js'
 import type {
   StdoutMessage,
   SDKControlInitializeRequest,
@@ -126,82 +126,82 @@ import type {
   SDKControlResponse,
   SDKControlMcpSetServersResponse,
   SDKControlReloadPluginsResponse,
-} from 'src/entrypoints/sdk/controlTypes.js'
+} from '../entrypoints/sdk/controlTypes.js'
 import type { PermissionMode } from '@anthropic-ai/claude-agent-sdk'
-import type { PermissionMode as InternalPermissionMode } from 'src/types/permissions.js'
+import type { PermissionMode as InternalPermissionMode } from '../types/permissions.js'
 import { cwd } from 'process'
-import { getCwd } from 'src/utils/cwd.js'
+import { getCwd } from '../utils/cwd.js'
 import omit from 'lodash-es/omit.js'
 import reject from 'lodash-es/reject.js'
-import { isPolicyAllowed } from 'src/services/policyLimits/index.js'
-import type { ReplBridgeHandle } from 'src/bridge/replBridge.js'
-import { getRemoteSessionUrl } from 'src/constants/product.js'
-import { buildBridgeConnectUrl } from 'src/bridge/bridgeStatusUtil.js'
-import { extractInboundMessageFields } from 'src/bridge/inboundMessages.js'
-import { resolveAndPrepend } from 'src/bridge/inboundAttachments.js'
-import type { CanUseToolFn } from 'src/hooks/useCanUseTool.js'
-import { hasPermissionsToUseTool } from 'src/utils/permissions/permissions.js'
-import { safeParseJSON } from 'src/utils/json.js'
+import { isPolicyAllowed } from '../services/policyLimits/index.js'
+import type { ReplBridgeHandle } from '../bridge/replBridge.js'
+import { getRemoteSessionUrl } from '../constants/product.js'
+import { buildBridgeConnectUrl } from '../bridge/bridgeStatusUtil.js'
+import { extractInboundMessageFields } from '../bridge/inboundMessages.js'
+import { resolveAndPrepend } from '../bridge/inboundAttachments.js'
+import type { CanUseToolFn } from '../hooks/useCanUseTool.js'
+import { hasPermissionsToUseTool } from '../utils/permissions/permissions.js'
+import { safeParseJSON } from '../utils/json.js'
 import {
   outputSchema as permissionToolOutputSchema,
   permissionPromptToolResultToPermissionDecision,
-} from 'src/utils/permissions/PermissionPromptToolResultSchema.js'
-import { createAbortController } from 'src/utils/abortController.js'
-import { createCombinedAbortSignal } from 'src/utils/combinedAbortSignal.js'
-import { generateSessionTitle } from 'src/utils/sessionTitle.js'
-import { buildSideQuestionFallbackParams } from 'src/utils/queryContext.js'
-import { runSideQuestion } from 'src/utils/sideQuestion.js'
+} from '../utils/permissions/PermissionPromptToolResultSchema.js'
+import { createAbortController } from '../utils/abortController.js'
+import { createCombinedAbortSignal } from '../utils/combinedAbortSignal.js'
+import { generateSessionTitle } from '../utils/sessionTitle.js'
+import { buildSideQuestionFallbackParams } from '../utils/queryContext.js'
+import { runSideQuestion } from '../utils/sideQuestion.js'
 import {
   processSessionStartHooks,
   processSetupHooks,
   takeInitialUserMessage,
-} from 'src/utils/sessionStart.js'
+} from '../utils/sessionStart.js'
 import {
   DEFAULT_OUTPUT_STYLE_NAME,
   getAllOutputStyles,
-} from 'src/constants/outputStyles.js'
-import { TEAMMATE_MESSAGE_TAG, TICK_TAG } from 'src/constants/xml.js'
+} from '../constants/outputStyles.js'
+import { TEAMMATE_MESSAGE_TAG, TICK_TAG } from '../constants/xml.js'
 import {
   getSettings_DEPRECATED,
   getSettingsWithSources,
-} from 'src/utils/settings/settings.js'
-import { settingsChangeDetector } from 'src/utils/settings/changeDetector.js'
-import { applySettingsChange } from 'src/utils/settings/applySettingsChange.js'
+} from '../utils/settings/settings.js'
+import { settingsChangeDetector } from '../utils/settings/changeDetector.js'
+import { applySettingsChange } from '../utils/settings/applySettingsChange.js'
 import {
   isFastModeAvailable,
   isFastModeEnabled,
   isFastModeSupportedByModel,
   getFastModeState,
-} from 'src/utils/fastMode.js'
+} from '../utils/fastMode.js'
 import {
   isAutoModeGateEnabled,
   getAutoModeUnavailableNotification,
   getAutoModeUnavailableReason,
   isBypassPermissionsModeDisabled,
   transitionPermissionMode,
-} from 'src/utils/permissions/permissionSetup.js'
+} from '../utils/permissions/permissionSetup.js'
 import {
   tryGenerateSuggestion,
   logSuggestionOutcome,
   logSuggestionSuppressed,
   type PromptVariant,
-} from 'src/services/PromptSuggestion/promptSuggestion.js'
-import { getLastCacheSafeParams } from 'src/utils/forkedAgent.js'
-import { getAccountInformation } from 'src/utils/auth.js'
-import { OAuthService } from 'src/services/oauth/index.js'
-import { installOAuthTokens } from 'src/cli/handlers/auth.js'
-import { getAPIProvider } from 'src/utils/model/providers.js'
-import type { HookCallbackMatcher } from 'src/types/hooks.js'
-import { AwsAuthStatusManager } from 'src/utils/awsAuthStatusManager.js'
-import type { HookEvent } from 'src/entrypoints/agentSdkTypes.js'
+} from '../services/PromptSuggestion/promptSuggestion.js'
+import { getLastCacheSafeParams } from '../utils/forkedAgent.js'
+import { getAccountInformation } from '../utils/auth.js'
+import { OAuthService } from '../services/oauth/index.js'
+import { installOAuthTokens } from './handlers/auth.js'
+import { getAPIProvider } from '../utils/model/providers.js'
+import type { HookCallbackMatcher } from '../types/hooks.js'
+import { AwsAuthStatusManager } from '../utils/awsAuthStatusManager.js'
+import type { HookEvent } from '../entrypoints/agentSdkTypes.js'
 import {
   registerHookCallbacks,
   setInitJsonSchema,
   getInitJsonSchema,
   setSdkAgentProgressSummariesEnabled,
-} from 'src/bootstrap/state.js'
-import { createSyntheticOutputTool } from 'src/tools/SyntheticOutputTool/SyntheticOutputTool.js'
-import { parseSessionIdentifier } from 'src/utils/sessionUrl.js'
+} from '../bootstrap/state.js'
+import { createSyntheticOutputTool } from '../tools/SyntheticOutputTool/SyntheticOutputTool.js'
+import { parseSessionIdentifier } from '../utils/sessionUrl.js'
 import {
   hydrateRemoteSession,
   hydrateFromCCRv2InternalEvents,
@@ -213,8 +213,8 @@ import {
   saveMode,
   saveAiGeneratedTitle,
   restoreSessionMetadata,
-} from 'src/utils/sessionStorage.js'
-import { incrementPromptCount } from 'src/utils/commitAttribution.js'
+} from '../utils/sessionStorage.js'
+import { incrementPromptCount } from '../utils/commitAttribution.js'
 import {
   setupSdkMcpClients,
   connectToServer,
@@ -222,64 +222,64 @@ import {
   fetchToolsForClient,
   areMcpConfigsEqual,
   reconnectMcpServerImpl,
-} from 'src/services/mcp/client.js'
+} from '../services/mcp/client.js'
 import {
   filterMcpServersByPolicy,
   getMcpConfigByName,
   isMcpServerDisabled,
   setMcpServerEnabled,
-} from 'src/services/mcp/config.js'
+} from '../services/mcp/config.js'
 import {
   performMCPOAuthFlow,
   revokeServerTokens,
-} from 'src/services/mcp/auth.js'
+} from '../services/mcp/auth.js'
 import {
   runElicitationHooks,
   runElicitationResultHooks,
-} from 'src/services/mcp/elicitationHandler.js'
-import { executeNotificationHooks } from 'src/utils/hooks.js'
+} from '../services/mcp/elicitationHandler.js'
+import { executeNotificationHooks } from '../utils/hooks.js'
 import {
   ElicitRequestSchema,
   ElicitationCompleteNotificationSchema,
 } from '@modelcontextprotocol/sdk/types.js'
-import { getMcpPrefix } from 'src/services/mcp/mcpStringUtils.js'
+import { getMcpPrefix } from '../services/mcp/mcpStringUtils.js'
 import {
   commandBelongsToServer,
   filterToolsByServer,
-} from 'src/services/mcp/utils.js'
-import { setupVscodeSdkMcp } from 'src/services/mcp/vscodeSdkMcp.js'
-import { getAllMcpConfigs } from 'src/services/mcp/config.js'
+} from '../services/mcp/utils.js'
+import { setupVscodeSdkMcp } from '../services/mcp/vscodeSdkMcp.js'
+import { getAllMcpConfigs } from '../services/mcp/config.js'
 import {
   isQualifiedForGrove,
   checkGroveForNonInteractive,
-} from 'src/services/api/grove.js'
+} from '../services/api/grove.js'
 import {
   toInternalMessages,
   toSDKRateLimitInfo,
-} from 'src/utils/messages/mappers.js'
-import { createModelSwitchBreadcrumbs } from 'src/utils/messages.js'
-import { collectContextData } from 'src/commands/context/context-noninteractive.js'
-import { LOCAL_COMMAND_STDOUT_TAG } from 'src/constants/xml.js'
+} from '../utils/messages/mappers.js'
+import { createModelSwitchBreadcrumbs } from '../utils/messages.js'
+import { collectContextData } from '../commands/context/context-noninteractive.js'
+import { LOCAL_COMMAND_STDOUT_TAG } from '../constants/xml.js'
 import {
   statusListeners,
   type ClaudeAILimits,
-} from 'src/services/claudeAiLimits.js'
+} from '../services/claudeAiLimits.js'
 import {
   getDefaultMainLoopModel,
   getMainLoopModel,
   modelDisplayString,
   parseUserSpecifiedModel,
-} from 'src/utils/model/model.js'
-import { getModelOptions } from 'src/utils/model/modelOptions.js'
+} from '../utils/model/model.js'
+import { getModelOptions } from '../utils/model/modelOptions.js'
 import {
   modelSupportsEffort,
   modelSupportsMaxEffort,
   EFFORT_LEVELS,
   resolveAppliedEffort,
-} from 'src/utils/effort.js'
-import { modelSupportsAdaptiveThinking } from 'src/utils/thinking.js'
-import { modelSupportsAutoMode } from 'src/utils/betas.js'
-import { ensureModelStringsInitialized } from 'src/utils/model/modelStrings.js'
+} from '../utils/effort.js'
+import { modelSupportsAdaptiveThinking } from '../utils/thinking.js'
+import { modelSupportsAutoMode } from '../utils/betas.js'
+import { ensureModelStringsInitialized } from '../utils/model/modelStrings.js'
 import {
   getSessionId,
   setMainLoopModelOverride,
@@ -293,33 +293,33 @@ import {
   getAllowedChannels,
   setAllowedChannels,
   type ChannelEntry,
-} from 'src/bootstrap/state.js'
-import { runWithWorkload, WORKLOAD_CRON } from 'src/utils/workloadContext.js'
+} from '../bootstrap/state.js'
+import { runWithWorkload, WORKLOAD_CRON } from '../utils/workloadContext.js'
 import type { UUID } from 'crypto'
 import { randomUUID } from 'crypto'
 import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages.mjs'
-import type { AppState } from 'src/state/AppStateStore.js'
+import type { AppState } from '../state/AppStateStore.js'
 import {
   fileHistoryRewind,
   fileHistoryCanRestore,
   fileHistoryEnabled,
   fileHistoryGetDiffStats,
-} from 'src/utils/fileHistory.js'
+} from '../utils/fileHistory.js'
 import {
   restoreAgentFromSession,
   restoreSessionStateFromLog,
-} from 'src/utils/sessionRestore.js'
-import { SandboxManager } from 'src/utils/sandbox/sandbox-adapter.js'
+} from '../utils/sessionRestore.js'
+import { SandboxManager } from '../utils/sandbox/sandbox-adapter.js'
 import {
   headlessProfilerStartTurn,
   headlessProfilerCheckpoint,
   logHeadlessProfilerTurn,
-} from 'src/utils/headlessProfiler.js'
+} from '../utils/headlessProfiler.js'
 import {
   startQueryProfile,
   logQueryProfileReport,
-} from 'src/utils/queryProfiler.js'
-import { asSessionId } from 'src/types/ids.js'
+} from '../utils/queryProfiler.js'
+import { asSessionId } from '../types/ids.js'
 import { jsonStringify } from '../utils/slowOperations.js'
 import { skillChangeDetector } from '../utils/skills/skillChangeDetector.js'
 import { getCommands, clearCommandsCache } from '../commands.js'
@@ -3913,7 +3913,7 @@ function runHeadlessStreaming(
               let bridgeFailureDetail: string | undefined
               try {
                 const { initReplBridge } = await import(
-                  'src/bridge/initReplBridge.js'
+                  '../bridge/initReplBridge.js'
                 )
                 const handle = await initReplBridge({
                   onInboundMessage(msg) {
@@ -5005,7 +5005,7 @@ async function loadInitialMessages(
         processMessagesForTeleportResume,
         teleportResumeCodeSession,
         validateGitState,
-      } = await import('src/utils/teleport.js')
+      } = await import('../utils/teleport.js')
       await validateGitState()
       const teleportResult = await teleportResumeCodeSession(options.teleport)
       const { branchError } = await checkOutTeleportedSessionBranch(

@@ -33,7 +33,7 @@ import { basename, delimiter, dirname, join, resolve } from 'path'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from 'src/services/analytics/index.js'
+} from '../../services/analytics/index.js'
 import { getMaxVersion, shouldSkipVersion } from '../autoUpdater.js'
 import { getModelConfig } from '../model/modelConfig.js'
 import { registerCleanup } from '../cleanupRegistry.js'

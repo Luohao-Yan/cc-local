@@ -1,11 +1,11 @@
 import { feature } from 'bun:bundle';
 import type { ContentBlockParam, TextBlockParam } from '@anthropic-ai/sdk/resources';
 import { randomUUID } from 'crypto';
-import { setPromptId } from 'src/bootstrap/state.js';
-import { builtInCommandNames, type Command, type CommandBase, findCommand, getCommand, getCommandName, hasCommand, type PromptCommand } from 'src/commands.js';
-import { NO_CONTENT_MESSAGE } from 'src/constants/messages.js';
-import type { SetToolJSXFn, ToolUseContext } from 'src/Tool.js';
-import type { AssistantMessage, AttachmentMessage, Message, NormalizedUserMessage, ProgressMessage, UserMessage } from 'src/types/message.js';
+import { setPromptId } from '../../bootstrap/state.js';
+import { builtInCommandNames, type Command, type CommandBase, findCommand, getCommand, getCommandName, hasCommand, type PromptCommand } from '../../commands.js';
+import { NO_CONTENT_MESSAGE } from '../../constants/messages.js';
+import type { SetToolJSXFn, ToolUseContext } from '../../Tool.js';
+import type { AssistantMessage, AttachmentMessage, Message, NormalizedUserMessage, ProgressMessage, UserMessage } from '../../types/message.js';
 import { addInvokedSkill, getSessionId } from '../../bootstrap/state.js';
 import { COMMAND_MESSAGE_TAG, COMMAND_NAME_TAG } from '../../constants/xml.js';
 import type { CanUseToolFn } from '../../hooks/useCanUseTool.js';

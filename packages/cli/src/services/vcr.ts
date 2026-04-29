@@ -4,8 +4,8 @@ import { mkdir, readFile, writeFile } from 'fs/promises'
 import isPlainObject from 'lodash-es/isPlainObject.js'
 import mapValues from 'lodash-es/mapValues.js'
 import { dirname, join } from 'path'
-import { addToTotalSessionCost } from 'src/cost-tracker.js'
-import { calculateUSDCost } from 'src/utils/modelCost.js'
+import { addToTotalSessionCost } from '../cost-tracker.js'
+import { calculateUSDCost } from '../utils/modelCost.js'
 import type {
   AssistantMessage,
   Message,

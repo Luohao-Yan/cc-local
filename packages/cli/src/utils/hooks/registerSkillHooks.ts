@@ -1,5 +1,5 @@
-import { HOOK_EVENTS } from 'src/entrypoints/agentSdkTypes.js'
-import type { AppState } from 'src/state/AppState.js'
+import { HOOK_EVENTS } from '../../entrypoints/agentSdkTypes.js'
+import type { AppState } from '../../state/AppState.js'
 import { logForDebugging } from '../debug.js'
 import type { HooksSettings } from '../settings/types.js'
 import { addSessionHook, removeSessionHook } from './sessionHooks.js'

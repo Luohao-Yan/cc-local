@@ -1,9 +1,9 @@
 import { c as _c } from "react/compiler-runtime";
 import figures from 'figures';
 import React, { useMemo, useState } from 'react';
-import type { SDKMessage } from 'src/entrypoints/agentSdkTypes.js';
-import type { ToolUseContext } from 'src/Tool.js';
-import type { DeepImmutable } from 'src/types/utils.js';
+import type { SDKMessage } from '../../entrypoints/agentSdkTypes.js';
+import type { ToolUseContext } from '../../Tool.js';
+import type { DeepImmutable } from '../../types/utils.js';
 import type { CommandResultDisplay } from '../../commands.js';
 import { DIAMOND_FILLED, DIAMOND_OPEN } from '../../constants/figures.js';
 import { useElapsedTime } from '../../hooks/useElapsedTime.js';

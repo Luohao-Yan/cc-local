@@ -6,7 +6,7 @@ import memoize from 'lodash-es/memoize.js'
 import { createConnection } from 'net'
 import * as os from 'os'
 import { basename, join, sep as pathSeparator, resolve } from 'path'
-import { logEvent } from 'src/services/analytics/index.js'
+import { logEvent } from '../services/analytics/index.js'
 import { getIsScrollDraining, getOriginalCwd } from '../bootstrap/state.js'
 import { callIdeRpc } from '../services/mcp/client.js'
 import type {
@@ -31,8 +31,8 @@ import { lt } from './semver.js'
 // Lazy: IdeOnboardingDialog.tsx pulls React/ink; only needed in interactive onboarding path
 /* eslint-disable @typescript-eslint/no-require-imports */
 const ideOnboardingDialog =
-  (): typeof import('src/components/IdeOnboardingDialog.js') =>
-    require('src/components/IdeOnboardingDialog.js')
+  (): typeof import('../components/IdeOnboardingDialog.js') =>
+    require('../components/IdeOnboardingDialog.js')
 
 import { createAbortController } from './abortController.js'
 import { logForDebugging } from './debug.js'

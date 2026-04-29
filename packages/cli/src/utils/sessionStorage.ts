@@ -20,7 +20,7 @@ import { basename, dirname, join } from 'path'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from 'src/services/analytics/index.js'
+} from '../services/analytics/index.js'
 import {
   getOriginalCwd,
   getPlanSlugCache,

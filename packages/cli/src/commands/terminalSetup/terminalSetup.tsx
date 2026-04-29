@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto';
 import { copyFile, mkdir, readFile, writeFile } from 'fs/promises';
 import { homedir, platform } from 'os';
 import { dirname, join } from 'path';
-import type { ThemeName } from 'src/utils/theme.js';
+import type { ThemeName } from '../../utils/theme.js';
 import { pathToFileURL } from 'url';
 import { supportsHyperlinks } from '../../ink/supports-hyperlinks.js';
 import { color } from '../../ink.js';

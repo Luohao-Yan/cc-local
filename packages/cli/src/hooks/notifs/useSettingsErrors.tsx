@@ -1,6 +1,6 @@
 import { c as _c } from "react/compiler-runtime";
 import { useCallback, useEffect, useState } from 'react';
-import { useNotifications } from 'src/context/notifications.js';
+import { useNotifications } from '../../context/notifications.js';
 import { getIsRemoteMode } from '../../bootstrap/state.js';
 import { getSettingsWithAllErrors } from '../../utils/settings/allErrors.js';
 import type { ValidationError } from '../../utils/settings/validation.js';
