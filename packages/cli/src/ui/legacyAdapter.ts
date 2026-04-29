@@ -173,11 +173,16 @@ export function shouldUseLegacyUi(args: string[]): boolean {
 export function findLegacyRepoRoot(): string {
   let current = dirname(fileURLToPath(import.meta.url))
   for (let depth = 0; depth < 8; depth += 1) {
-    if (
-      existsSync(join(current, 'package.json')) &&
-      existsSync(join(current, 'AGENTS.md')) &&
-      existsSync(join(current, 'src', 'entrypoints', 'cli.tsx'))
-    ) {
+    if (!existsSync(join(current, 'package.json'))) {
+      current = dirname(current)
+      continue
+    }
+    // New monorepo layout
+    if (existsSync(join(current, 'packages', 'cli', 'src', 'entrypoints', 'cli.tsx'))) {
+      return current
+    }
+    // Old flat layout (src/ at repo root)
+    if (existsSync(join(current, 'src', 'entrypoints', 'cli.tsx'))) {
       return current
     }
     current = dirname(current)
@@ -186,6 +191,13 @@ export function findLegacyRepoRoot(): string {
 }
 
 export function resolveLegacyUiEntrypoint(repoRoot = findLegacyRepoRoot()): { entrypoint: string; cwd: string } {
+  // New monorepo layout
+  const monorepoEntrypoint = join(repoRoot, 'packages', 'cli', 'src', 'entrypoints', 'cli.tsx')
+  if (existsSync(monorepoEntrypoint)) {
+    return { entrypoint: monorepoEntrypoint, cwd: repoRoot }
+  }
+
+  // Old flat layout
   const sourceEntrypoint = join(repoRoot, 'src', 'entrypoints', 'cli.tsx')
   if (existsSync(sourceEntrypoint)) {
     return { entrypoint: sourceEntrypoint, cwd: repoRoot }
