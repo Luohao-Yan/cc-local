@@ -28,7 +28,7 @@ export const enterPlanModeTool: Tool = {
     required: ['plan'],
   },
 
-  async call(input: EnterPlanModeInput, context: ToolContext): Promise<ToolResult> {
+  async execute(input: EnterPlanModeInput, context: ToolContext): Promise<ToolResult> {
     return {
       content: [
         {
@@ -61,7 +61,7 @@ export const exitPlanModeTool: Tool = {
     required: ['plan'],
   },
 
-  async call(input: ExitPlanModeInput, context: ToolContext): Promise<ToolResult> {
+  async execute(input: ExitPlanModeInput, context: ToolContext): Promise<ToolResult> {
     return {
       content: [
         {

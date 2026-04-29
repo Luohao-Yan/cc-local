@@ -44,7 +44,7 @@ export function createToolAdapter(legacyPath: string, overrides?: Partial<Tool>)
       type: 'object',
       properties: {},
     },
-    async call(input: any, context: ToolContext) {
+    async execute(input: any, context: ToolContext) {
       const mod = await load()
       // Legacy tools export a default class with a static or instance call method
       const ToolClass = mod.default ?? mod
@@ -55,6 +55,14 @@ export function createToolAdapter(legacyPath: string, overrides?: Partial<Tool>)
       const instance = typeof ToolClass === 'function' ? new ToolClass() : ToolClass
       if (typeof instance.call === 'function') {
         return await instance.call(input, adaptContext(context))
+      }
+      // Also try execute (new-style tools)
+      if (typeof ToolClass.execute === 'function') {
+        return await ToolClass.execute(input, adaptContext(context))
+      }
+      const inst2 = typeof ToolClass === 'function' ? new ToolClass() : ToolClass
+      if (typeof inst2.execute === 'function') {
+        return await inst2.execute(input, adaptContext(context))
       }
       throw new Error(`Legacy tool at ${legacyPath} has no callable interface`)
     },
@@ -83,11 +91,14 @@ export const agentToolAdapter: Tool = {
     },
     required: ['prompt'],
   },
-  async call(input: { prompt: string; model?: string }, context: ToolContext) {
+  async execute(input: { prompt: string; model?: string }, context: ToolContext) {
     // Delegate to the legacy AgentTool via the bridge
     try {
       const { AgentTool } = await import('../tools/AgentTool/AgentTool.js')
       const tool = typeof AgentTool === 'function' ? new AgentTool() : AgentTool
+      if (typeof tool.execute === 'function') {
+        return await tool.execute(input, adaptContext(context))
+      }
       if (typeof tool.call === 'function') {
         return await tool.call(input, adaptContext(context))
       }
@@ -113,10 +124,13 @@ export const taskOutputToolAdapter: Tool = {
     },
     required: ['taskId'],
   },
-  async call(input: { taskId: string }, context: ToolContext) {
+  async execute(input: { taskId: string }, context: ToolContext) {
     try {
       const { TaskOutputTool } = await import('../tools/TaskOutputTool/TaskOutputTool.js')
       const tool = typeof TaskOutputTool === 'function' ? new TaskOutputTool() : TaskOutputTool
+      if (typeof tool.execute === 'function') {
+        return await tool.execute(input, adaptContext(context))
+      }
       if (typeof tool.call === 'function') {
         return await tool.call(input, adaptContext(context))
       }
@@ -141,10 +155,13 @@ export const taskStopToolAdapter: Tool = {
     },
     required: ['taskId'],
   },
-  async call(input: { taskId: string }, context: ToolContext) {
+  async execute(input: { taskId: string }, context: ToolContext) {
     try {
       const { TaskStopTool } = await import('../tools/TaskStopTool/TaskStopTool.js')
       const tool = typeof TaskStopTool === 'function' ? new TaskStopTool() : TaskStopTool
+      if (typeof tool.execute === 'function') {
+        return await tool.execute(input, adaptContext(context))
+      }
       if (typeof tool.call === 'function') {
         return await tool.call(input, adaptContext(context))
       }
@@ -171,10 +188,13 @@ export const enterPlanModeToolAdapter: Tool = {
     },
     required: ['plan'],
   },
-  async call(input: { plan: string }, context: ToolContext) {
+  async execute(input: { plan: string }, context: ToolContext) {
     try {
       const { EnterPlanModeTool } = await import('../tools/EnterPlanModeTool/EnterPlanModeTool.js')
       const tool = typeof EnterPlanModeTool === 'function' ? new EnterPlanModeTool() : EnterPlanModeTool
+      if (typeof tool.execute === 'function') {
+        return await tool.execute(input, adaptContext(context))
+      }
       if (typeof tool.call === 'function') {
         return await tool.call(input, adaptContext(context))
       }
@@ -199,10 +219,13 @@ export const exitPlanModeToolAdapter: Tool = {
     },
     required: ['plan'],
   },
-  async call(input: { plan: string }, context: ToolContext) {
+  async execute(input: { plan: string }, context: ToolContext) {
     try {
       const { ExitPlanModeV2Tool } = await import('../tools/ExitPlanModeTool/ExitPlanModeV2Tool.js')
       const tool = typeof ExitPlanModeV2Tool === 'function' ? new ExitPlanModeV2Tool() : ExitPlanModeV2Tool
+      if (typeof tool.execute === 'function') {
+        return await tool.execute(input, adaptContext(context))
+      }
       if (typeof tool.call === 'function') {
         return await tool.call(input, adaptContext(context))
       }
@@ -230,7 +253,7 @@ export const skillToolAdapter: Tool = {
     },
     required: ['skill_name'],
   },
-  async call(input: { skill_name: string; input?: string }, context: ToolContext) {
+  async execute(input: { skill_name: string; input?: string }, context: ToolContext) {
     return {
       content: [{ type: 'text', text: `[Skill invoked: ${input.skill_name}]\n${input.input ?? ''}` }],
     }
@@ -247,7 +270,7 @@ export const askUserQuestionToolAdapter: Tool = {
     },
     required: ['question'],
   },
-  async call(input: { question: string }, context: ToolContext) {
+  async execute(input: { question: string }, context: ToolContext) {
     // In the new architecture, this needs an interactive callback.
     // For now, return a placeholder that the adapter layer can hook into.
     return {
@@ -269,7 +292,7 @@ export const sendMessageToolAdapter: Tool = {
     },
     required: ['recipient', 'content'],
   },
-  async call(input: { recipient: string; content: string }, context: ToolContext) {
+  async execute(input: { recipient: string; content: string }, context: ToolContext) {
     return {
       content: [{ type: 'text', text: `[Message sent to ${input.recipient}]: ${input.content}` }],
     }
@@ -286,7 +309,7 @@ export const sendUserMessageToolAdapter: Tool = {
     },
     required: ['message'],
   },
-  async call(input: { message: string }, context: ToolContext) {
+  async execute(input: { message: string }, context: ToolContext) {
     return {
       content: [{ type: 'text', text: input.message }],
     }
@@ -305,7 +328,7 @@ export const toolSearchToolAdapter: Tool = {
     },
     required: ['query'],
   },
-  async call(input: { query: string }, context: ToolContext) {
+  async execute(input: { query: string }, context: ToolContext) {
     return {
       content: [{ type: 'text', text: `[Tool search results for: ${input.query}]` }],
     }

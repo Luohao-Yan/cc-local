@@ -238,13 +238,20 @@ export class QueryEngine {
 
         const result = await this.executeTool(tool, toolCall.input, context)
 
+        // Normalize tool result content to string for the API
+        const normalizedContent = typeof result.content === 'string'
+          ? result.content
+          : Array.isArray(result.content)
+            ? result.content.map((c: any) => c.text ?? JSON.stringify(c)).join('\n')
+            : String(result.content)
+
         toolResults.push({
           id: randomUUID(),
           role: 'user',
           content: [{
             type: 'tool_result',
             tool_use_id: toolCall.id,
-            content: result.content,
+            content: normalizedContent,
             is_error: result.is_error,
           }],
           timestamp: Date.now(),

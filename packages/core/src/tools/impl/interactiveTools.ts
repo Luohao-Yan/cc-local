@@ -28,7 +28,7 @@ export const askUserQuestionTool: Tool = {
     required: ['question'],
   },
 
-  async call(input: AskUserQuestionInput, context: ToolContext): Promise<ToolResult> {
+  async execute(input: AskUserQuestionInput, context: ToolContext): Promise<ToolResult> {
     // If the context provides an interactive callback, use it.
     // Otherwise, return a placeholder that the adapter layer handles.
     if (context.onPermissionRequest) {
@@ -78,7 +78,7 @@ export const sendMessageTool: Tool = {
     required: ['recipient', 'content'],
   },
 
-  async call(input: SendMessageInput, context: ToolContext): Promise<ToolResult> {
+  async execute(input: SendMessageInput, context: ToolContext): Promise<ToolResult> {
     // In the native architecture, messages are dispatched via the session layer
     return {
       content: [
@@ -112,7 +112,7 @@ export const sendUserMessageTool: Tool = {
     required: ['message'],
   },
 
-  async call(input: SendUserMessageInput, context: ToolContext): Promise<ToolResult> {
+  async execute(input: SendUserMessageInput, context: ToolContext): Promise<ToolResult> {
     return {
       content: [{ type: 'text', text: input.message }],
     }

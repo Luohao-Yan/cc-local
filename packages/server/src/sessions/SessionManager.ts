@@ -307,7 +307,17 @@ export class SessionManager {
       abortSignal: undefined,
     }
 
-    return await tool.execute(input, context)
+    const result = await tool.execute(input, context)
+
+    // Normalize content blocks to string for the API response
+    if (typeof result.content === 'string') {
+      return result
+    }
+    if (Array.isArray(result.content)) {
+      const text = result.content.map((c: any) => c.text ?? JSON.stringify(c)).join('\n')
+      return { content: text, is_error: result.is_error }
+    }
+    return { content: String(result.content), is_error: result.is_error }
   }
 
   private getOrCreateRuntime(sessionId: string): SessionRuntime {

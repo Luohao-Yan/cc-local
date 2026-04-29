@@ -26,7 +26,7 @@ export const taskOutputTool: Tool = {
     required: ['taskId'],
   },
 
-  async call(input: TaskOutputInput, context: ToolContext): Promise<ToolResult> {
+  async execute(input: TaskOutputInput, context: ToolContext): Promise<ToolResult> {
     // In the native architecture, task output is retrieved from the session store
     try {
       const { getSessionStore } = await import('../../db/index.js')
@@ -85,7 +85,7 @@ export const taskStopTool: Tool = {
     required: ['taskId'],
   },
 
-  async call(input: TaskStopInput, context: ToolContext): Promise<ToolResult> {
+  async execute(input: TaskStopInput, context: ToolContext): Promise<ToolResult> {
     // In the native architecture, task cancellation is handled via AbortController
     // The session store tracks active tasks and their abort signals
     return {

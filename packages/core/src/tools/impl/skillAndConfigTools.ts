@@ -32,7 +32,7 @@ export const skillTool: Tool = {
     required: ['skill_name'],
   },
 
-  async call(input: SkillInput, context: ToolContext): Promise<ToolResult> {
+  async execute(input: SkillInput, context: ToolContext): Promise<ToolResult> {
     // Try to find the skill as a registered tool
     const skillTool = toolRegistry.get(input.skill_name)
     if (skillTool) {
@@ -71,7 +71,7 @@ export const toolSearchTool: Tool = {
     required: ['query'],
   },
 
-  async call(input: ToolSearchInput, context: ToolContext): Promise<ToolResult> {
+  async execute(input: ToolSearchInput, context: ToolContext): Promise<ToolResult> {
     const allTools = toolRegistry.getAll()
     const query = input.query.toLowerCase()
 
@@ -137,7 +137,7 @@ export const configTool: Tool = {
     required: ['action'],
   },
 
-  async call(input: ConfigInput, context: ToolContext): Promise<ToolResult> {
+  async execute(input: ConfigInput, context: ToolContext): Promise<ToolResult> {
     switch (input.action) {
       case 'get': {
         if (!input.key) {

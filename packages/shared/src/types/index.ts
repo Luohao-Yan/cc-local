@@ -67,7 +67,7 @@ export interface ToolProgress {
 }
 
 export interface ToolResult {
-  content: string
+  content: string | Array<{ type: 'text'; text: string }>
   is_error?: boolean
 }
 

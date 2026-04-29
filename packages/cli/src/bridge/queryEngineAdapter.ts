@@ -8,14 +8,12 @@
  * This adapter is enabled via CCLOCAL_USE_QUERY_ENGINE=1 or --query-engine.
  * Without it, the legacy query() function is used unchanged.
  *
- * Phase 6 additions:
- * - Bridge tool adapters registered automatically
- * - Fine-grained stream events (content_block_start/delta/stop)
- * - Tool use and tool result events
- * - Thinking event translation
+ * Stream events are pushed from the onStream callback into the generator
+ * via an async push queue, so the Ink UI receives fine-grained deltas
+ * (text, thinking, tool calls) in real time.
  */
 
-import type { Message, StreamEvent, AssistantMessage, Tool } from '@cclocal/shared'
+import type { Message, StreamEvent, Tool } from '@cclocal/shared'
 import { QueryEngine, type QueryEngineOptions, type QueryResult } from '@cclocal/core'
 import { ALL_TOOL_ADAPTERS } from './toolAdapters.js'
 
@@ -42,6 +40,45 @@ export interface LegacyQueryParams {
 }
 
 /**
+ * Async push queue — bridges callback-based onStream to generator yield.
+ */
+class EventQueue<T> {
+  private queue: T[] = []
+  private waiting: ((value: IteratorResult<T>) => void)[] = []
+  private done = false
+
+  push(item: T): void {
+    if (this.done) return
+    if (this.waiting.length > 0) {
+      const resolve = this.waiting.shift()!
+      resolve({ value: item, done: false })
+    } else {
+      this.queue.push(item)
+    }
+  }
+
+  close(): void {
+    this.done = true
+    for (const resolve of this.waiting) {
+      resolve({ value: undefined, done: true } as IteratorResult<T>)
+    }
+    this.waiting.length = 0
+  }
+
+  async next(): Promise<IteratorResult<T>> {
+    if (this.queue.length > 0) {
+      return { value: this.queue.shift()!, done: false }
+    }
+    if (this.done) {
+      return { value: undefined, done: true } as IteratorResult<T>
+    }
+    return new Promise<IteratorResult<T>>((resolve) => {
+      this.waiting.push(resolve)
+    })
+  }
+}
+
+/**
  * Create an AsyncGenerator that wraps QueryEngine.query() and yields
  * legacy-compatible events for the Ink UI to consume.
  */
@@ -61,41 +98,55 @@ export async function* createQueryEngineAdapter(
     baseUrl: params.baseUrl,
   }
 
+  const eventQueue = new EventQueue<LegacyQueryEvent>()
+
   // Yield stream_request_start to match legacy protocol
   yield { type: 'stream_request_start' }
 
   const engine = new QueryEngine(options)
 
-  try {
-    const result: QueryResult = await engine.query(params.messages, {
-      onStream: (event: StreamEvent) => {
-        // Translate new stream events into legacy stream_event format
-        // that handleMessageFromStream can process
-        const legacyEvent = translateStreamEvent(event)
-        if (legacyEvent) {
-          // Push into the generator via the onStream callback
-          params.onStream?.(event)
-        }
-      },
-    })
+  // Start the query in the background; push stream events into the queue
+  const queryPromise = engine.query(params.messages, {
+    onStream: (event: StreamEvent) => {
+      const legacyEvent = translateStreamEvent(event)
+      if (legacyEvent) {
+        eventQueue.push({ type: 'stream_event', event: legacyEvent })
+      }
+      // Also forward raw events to the caller's onStream if provided
+      params.onStream?.(event)
+    },
+  })
 
-    // Yield the final assistant message
-    const assistantMessage: Message = {
-      id: result.message.id,
-      role: 'assistant',
-      content: result.message.content,
-      timestamp: result.message.timestamp ?? Date.now(),
+  // Consume events from the queue while the query runs
+  queryPromise.then(
+    (result) => {
+      // Yield final assistant message
+      const assistantMessage: Message = {
+        id: result.message.id,
+        role: 'assistant',
+        content: result.message.content,
+        timestamp: result.message.timestamp ?? Date.now(),
+      }
+      eventQueue.push({ type: 'message', message: assistantMessage })
+      eventQueue.close()
+    },
+    (error) => {
+      eventQueue.push({
+        type: 'stream_event',
+        event: {
+          type: 'error',
+          error: error instanceof Error ? error.message : String(error),
+        },
+      })
+      eventQueue.close()
     }
+  )
 
-    yield { type: 'message', message: assistantMessage }
-  } catch (error) {
-    yield {
-      type: 'stream_event',
-      event: {
-        type: 'error',
-        error: error instanceof Error ? error.message : String(error),
-      },
-    }
+  // Yield events from the queue as they arrive
+  while (true) {
+    const result = await eventQueue.next()
+    if (result.done) break
+    yield result.value
   }
 }
 

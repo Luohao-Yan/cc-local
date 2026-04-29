@@ -39,7 +39,7 @@ export const agentTool: Tool = {
     required: ['prompt'],
   },
 
-  async call(input: AgentInput, context: ToolContext): Promise<ToolResult> {
+  async execute(input: AgentInput, context: ToolContext): Promise<ToolResult> {
     const agentEngine = new QueryEngine({
       model: input.model ?? context.model ?? 'claude-sonnet-4-20250514',
       systemPrompt: `You are a sub-agent handling a delegated task. Complete the task and return results concisely.
