@@ -5,8 +5,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { CallToolResultSchema } from '@modelcontextprotocol/sdk/types.js'
-import { connectToServer } from '../src/services/mcp/client.ts'
-import { subprocessEnv } from '../src/utils/subprocessEnv.ts'
+import { connectToServer } from '../packages/cli/src/services/mcp/client.ts'
+import { subprocessEnv } from '../packages/cli/src/utils/subprocessEnv.ts'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const distCliPath = path.join(rootDir, 'dist', 'cli.js')

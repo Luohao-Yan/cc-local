@@ -3,8 +3,8 @@
 import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { connectToServer } from '../src/services/mcp/client.ts'
-import { subprocessEnv } from '../src/utils/subprocessEnv.ts'
+import { connectToServer } from '../packages/cli/src/services/mcp/client.ts'
+import { subprocessEnv } from '../packages/cli/src/utils/subprocessEnv.ts'
 import { CallToolResultSchema } from '@modelcontextprotocol/sdk/types.js'
 
 function assert(condition, message) {
