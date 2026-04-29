@@ -13,18 +13,18 @@ describe('legacy UI surface loaders', () => {
     const surfaceMap = resolveLegacyUiSurfaceMap()
 
     assertLegacyUiSurfaceFiles(surfaceMap)
-    expect(surfaceMap.inkEntry).toContain('/src/ink.ts')
-    expect(surfaceMap.appShellEntry).toContain('/src/components/App.tsx')
-    expect(surfaceMap.appStateEntry).toContain('/src/state/AppState.tsx')
-    expect(surfaceMap.replScreenEntry).toContain('/src/screens/REPL.tsx')
-    expect(surfaceMap.commandRegistryEntry).toContain('/src/commands.ts')
-    expect(surfaceMap.toolRegistryEntry).toContain('/src/tools.ts')
-    expect(surfaceMap.permissionRequestEntry).toContain('/src/components/permissions/PermissionRequest.tsx')
-    expect(surfaceMap.mcpToolListEntry).toContain('/src/components/mcp/MCPToolListView.tsx')
-    expect(surfaceMap.messagesEntry).toContain('/src/components/Messages.tsx')
-    expect(surfaceMap.messageResponseEntry).toContain('/src/components/MessageResponse.tsx')
-    expect(surfaceMap.assistantToolUseMessageEntry).toContain('/src/components/messages/AssistantToolUseMessage.tsx')
-    expect(surfaceMap.diffRenderingEntry).toContain('/src/components/FileEditToolDiff.tsx')
+    expect(surfaceMap.inkEntry).toContain('/packages/cli/src/ink.ts')
+    expect(surfaceMap.appShellEntry).toContain('/packages/cli/src/components/App.tsx')
+    expect(surfaceMap.appStateEntry).toContain('/packages/cli/src/state/AppState.tsx')
+    expect(surfaceMap.replScreenEntry).toContain('/packages/cli/src/screens/REPL.tsx')
+    expect(surfaceMap.commandRegistryEntry).toContain('/packages/cli/src/commands.ts')
+    expect(surfaceMap.toolRegistryEntry).toContain('/packages/cli/src/tools.ts')
+    expect(surfaceMap.permissionRequestEntry).toContain('/packages/cli/src/components/permissions/PermissionRequest.tsx')
+    expect(surfaceMap.mcpToolListEntry).toContain('/packages/cli/src/components/mcp/MCPToolListView.tsx')
+    expect(surfaceMap.messagesEntry).toContain('/packages/cli/src/components/Messages.tsx')
+    expect(surfaceMap.messageResponseEntry).toContain('/packages/cli/src/components/MessageResponse.tsx')
+    expect(surfaceMap.assistantToolUseMessageEntry).toContain('/packages/cli/src/components/messages/AssistantToolUseMessage.tsx')
+    expect(surfaceMap.diffRenderingEntry).toContain('/packages/cli/src/components/FileEditToolDiff.tsx')
 
     for (const [key, value] of Object.entries(surfaceMap)) {
       if (key !== 'repoRoot') {
@@ -33,7 +33,7 @@ describe('legacy UI surface loaders', () => {
     }
   })
 
-  it('exposes file URL based lazy loaders without statically importing legacy src into package typecheck', () => {
+  it('exposes file URL based lazy loaders without statically importing legacy UI into package typecheck', () => {
     const surfaceMap = resolveLegacyUiSurfaceMap()
     const urls = legacyUiSurfaceUrls(surfaceMap)
     const loaders = createLegacyUiSurfaceLoaders()

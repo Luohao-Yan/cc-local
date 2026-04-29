@@ -27,7 +27,7 @@ describe('legacy app shell adapter', () => {
     expect(await runtime.loadREPL()).toBeTypeOf('symbol')
   })
 
-  it('can load the real legacy app shell runtime from src/*', async () => {
+  it('can load the real legacy app shell runtime', async () => {
     const runtime = await loadLegacyAppShellRuntime()
 
     expect(runtime.App).toBeTypeOf('function')

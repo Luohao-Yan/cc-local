@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { launchLegacyReplFromContext } from './launchReplBridge.js'
 
 describe('legacy launchRepl bridge', () => {
-  it('loads the legacy runtime and invokes src/replLauncher.tsx with app and repl props', async () => {
+  it('loads the legacy runtime and invokes packages/cli/src/replLauncher.tsx with app and repl props', async () => {
     const launchRepl = vi.fn(async () => {})
     const loadRuntime = vi.fn(async () => ({
       App: Symbol('App'),

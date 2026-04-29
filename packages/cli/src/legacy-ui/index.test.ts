@@ -10,7 +10,7 @@ import {
 } from './index.js'
 
 describe('legacy UI public package boundary', () => {
-  it('exports the production migration entrypoints used to replace src/main.tsx launch calls', () => {
+  it('exports the production migration entrypoints used to replace packages/cli/src/main.tsx launch calls', () => {
     expect(buildLegacyNormalSessionLaunchContext).toBeTypeOf('function')
     expect(buildLegacyResumeSessionLaunchContext).toBeTypeOf('function')
     expect(launchLegacyNormalSession).toBeTypeOf('function')

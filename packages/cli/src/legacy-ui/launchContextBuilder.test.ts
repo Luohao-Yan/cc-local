@@ -6,7 +6,7 @@ import {
 } from './launchContextBuilder.js'
 
 describe('legacy launch context builder', () => {
-  it('builds the App shell props contract expected by src/replLauncher.tsx', () => {
+  it('builds the App shell props contract expected by packages/cli/src/replLauncher.tsx', () => {
     const getFpsMetrics = vi.fn(() => ({ fps: 60 }))
     const stats = { turns: 3 }
     const initialState = { cwd: '/tmp/project' }
