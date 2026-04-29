@@ -378,7 +378,7 @@ program
   .option('--cwd <cwd>', 'Working directory', process.cwd())
   .option('--session <id>', 'Reuse an existing session')
   .option('--server-embedded', 'Auto-start embedded server (default for bun run start)', false)
-  .option('--legacy', 'Run the previous src/* CLI implementation directly', false)
+  .option('--legacy', 'Run the legacy CLI implementation directly', false)
   .option('--text <prompt>', 'Compatibility alias for --print prompt text')
   .option('--description <text>', 'Compatibility description metadata')
   .option('--subject <text>', 'Compatibility subject metadata')
@@ -548,7 +548,7 @@ function registerLegacyCompatibilityCommands(rootProgram: Command): void {
     }
     rootProgram
       .command(commandName)
-      .description(`${description} (previous src/* bridge)`)
+      .description(`${description} (legacy bridge)`)
       .allowUnknownOption(true)
       .allowExcessArguments(true)
       .argument('[args...]')
