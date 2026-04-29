@@ -293,8 +293,8 @@ async function findAvailablePort(): Promise<number> {
 }
 
 const rawUserArgs = getUserArgs(process.argv)
-const useLegacyBridge = shouldUseLegacyUi(rawUserArgs)
-if (useLegacyBridge && rawUserArgs.some((arg) => arg === '--spawn-legacy')) {
+const useLegacyUi = shouldUseLegacyUi(rawUserArgs)
+if (useLegacyUi && !rawUserArgs.some((arg) => arg === '--legacy-bridge')) {
   delegateToLegacyUi(rawUserArgs)
 }
 
@@ -484,7 +484,7 @@ program
         })
         await renderInteractiveRepl(client, {
           ...buildLaunchReplOptions(effectiveOptions, interactiveContext),
-          legacyBridgeMode: useLegacyBridge,
+          legacyBridgeMode: rawUserArgs.some((arg) => arg === '--legacy-bridge'),
         })
       }
     } catch (error) {
@@ -554,7 +554,8 @@ function registerLegacyCompatibilityCommands(rootProgram: Command): void {
       .argument('[args...]')
       .action(async () => {
         const args = getUserArgs(process.argv)
-        if (args.some((arg) => arg === '--spawn-legacy')) {
+        // 默认走 spawnSync（稳定），--legacy-bridge 才走 in-process bridge
+        if (!args.some((arg) => arg === '--legacy-bridge')) {
           delegateToLegacyUi(args)
           return
         }
