@@ -2,7 +2,7 @@
  * Pure permission type definitions extracted to break import cycles.
  *
  * This file contains only type definitions and constants with no runtime dependencies.
- * Implementation files remain in src/utils/permissions/ but can now import from here
+ * Implementation files remain in packages/cli/src/utils/permissions/ but can now import from here
  * to avoid circular dependencies.
  */
 

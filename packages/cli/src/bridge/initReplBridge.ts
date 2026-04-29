@@ -4,7 +4,7 @@
  * derivation — then delegates to the bootstrap-free core.
  *
  * Split out of replBridge.ts because the sessionStorage import
- * (getCurrentSessionTitle) transitively pulls in src/commands.ts → the
+ * (getCurrentSessionTitle) transitively pulls in packages/cli/src/commands.ts → the
  * entire slash command + React component tree (~1300 modules). Keeping
  * initBridgeCore in a file that doesn't touch sessionStorage lets
  * daemonBridge.ts import the core without bloating the Agent SDK bundle.

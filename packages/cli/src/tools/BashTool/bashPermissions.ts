@@ -192,7 +192,7 @@ export function getSimpleCommandPrefix(command: string): string | null {
 // `env` is NOT in SAFE_WRAPPER_PATTERNS, so `env bash -c "evil"` survives
 // stripSafeWrappers unchanged and hits the startsWith("env ") check at
 // the prefix-rule matcher. Shell list mirrors DANGEROUS_SHELL_PREFIXES in
-// src/utils/shell/prefix.ts which guarded the old Haiku extractor.
+// packages/cli/src/utils/shell/prefix.ts which guarded the old Haiku extractor.
 const BARE_SHELL_PREFIXES = new Set([
   'sh',
   'bash',

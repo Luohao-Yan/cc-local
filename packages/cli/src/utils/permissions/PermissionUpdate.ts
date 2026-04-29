@@ -1,6 +1,6 @@
 import { posix } from 'path'
 import type { ToolPermissionContext } from '../../Tool.js'
-// Types extracted to src/types/permissions.ts to break import cycles
+// Types extracted to packages/cli/src/types/permissions.ts to break import cycles
 import type {
   AdditionalWorkingDirectory,
   WorkingDirectorySource,

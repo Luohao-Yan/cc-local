@@ -142,7 +142,7 @@ export type BridgeCoreParams = {
    * code paths are unreachable.
    *
    * Injected rather than imported because mappers.ts transitively pulls in
-   * src/commands.ts via messages.ts → api.ts → prompts.ts, dragging the
+   * packages/cli/src/commands.ts via messages.ts → api.ts → prompts.ts, dragging the
    * entire command registry + React tree into the Agent SDK bundle.
    */
   toSDKMessages?: (messages: Message[]) => SDKMessage[]
@@ -186,7 +186,7 @@ export type BridgeCoreParams = {
    * isBypassPermissionsModeAvailable) BEFORE calling transitionPermissionMode —
    * that function's internal auto-gate check is a defensive throw, not a
    * graceful guard, and its side-effect order is setAutoModeActive(true) then
-   * throw, which corrupts the 3-way invariant documented in src/CLAUDE.md if
+   * throw, which corrupts the 3-way invariant documented in packages/cli/src/CLAUDE.md if
    * the callback lets the throw escape here.
    */
   onSetPermissionMode?: (

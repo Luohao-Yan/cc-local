@@ -1164,7 +1164,7 @@ function astRedirectsToOutputRedirections(redirects: Redirect[]): {
 //
 // KEEP IN SYNC with:
 //   - SAFE_WRAPPER_PATTERNS in bashPermissions.ts (text-based stripSafeWrappers)
-//   - the wrapper-stripping loop in checkSemantics (src/utils/bash/ast.ts ~1860)
+//   - the wrapper-stripping loop in checkSemantics (packages/cli/src/utils/bash/ast.ts ~1860)
 // If you add a wrapper in either, add it here too. Asymmetry means
 // checkSemantics exposes the wrapped command to semantic checks but path
 // validation sees the wrapper name → passthrough → wrapped paths never

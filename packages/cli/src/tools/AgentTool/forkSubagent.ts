@@ -154,7 +154,7 @@ export function buildForkedMessages(
   // TODO(smoosh): this text sibling creates a [tool_result, text] pattern on the wire
   // (renders as </function_results>\n\nHuman:<text>). One-off per-child construction,
   // not a repeated teacher, so low-priority. If we ever care, use smooshIntoToolResult
-  // from src/utils/messages.ts to fold the directive into the last tool_result.content.
+  // from packages/cli/src/utils/messages.ts to fold the directive into the last tool_result.content.
   const toolResultMessage = createUserMessage({
     content: [
       ...toolResultBlocks,

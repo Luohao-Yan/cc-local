@@ -95,7 +95,7 @@ export type EnvLessBridgeParams = {
   /**
    * Converts internal Message[] → SDKMessage[] for writeMessages() and the
    * initial-flush/drain paths. Injected rather than imported — mappers.ts
-   * transitively pulls in src/commands.ts (entire command registry + React
+   * transitively pulls in packages/cli/src/commands.ts (entire command registry + React
    * tree) which would bloat bundles that don't already have it.
    */
   toSDKMessages: (messages: Message[]) => SDKMessage[]

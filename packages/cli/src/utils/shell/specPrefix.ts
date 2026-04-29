@@ -7,7 +7,7 @@
  * skip it, find `status` as a known subcommand).
  *
  * Pure over (string, string[], CommandSpec) — no parser dependency. Extracted
- * from src/utils/bash/prefix.ts so PowerShell's extractor can reuse it;
+ * from packages/cli/src/utils/bash/prefix.ts so PowerShell's extractor can reuse it;
  * external CLIs (git, npm, kubectl) are shell-agnostic.
  */
 

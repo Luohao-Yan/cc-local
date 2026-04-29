@@ -191,7 +191,7 @@ export function detectBlockedSleepPattern(command: string): string | null {
   // `&`/`&&`/`||` (pwsh 7+), and newline (PS's primary separator). This is
   // intentionally shallow — sleep inside script blocks, subshells, or later
   // pipeline stages is fine. Matches BashTool's splitCommandWithOperators
-  // intent (src/utils/bash/commands.ts) without a full PS parser.
+  // intent (packages/cli/src/utils/bash/commands.ts) without a full PS parser.
   const first = command.trim().split(/[;|&\r\n]/)[0]?.trim() ?? '';
   // Match: Start-Sleep N, Start-Sleep -Seconds N, Start-Sleep -s N, sleep N
   // (case-insensitive; -Seconds can be abbreviated to -s per PS convention)

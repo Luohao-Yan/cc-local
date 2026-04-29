@@ -167,7 +167,7 @@ export type AppState = DeepImmutable<{
   foregroundedTaskId?: string
   // Task ID of in-process teammate whose transcript is being viewed (undefined = leader's view)
   viewingAgentTaskId?: string
-  // Latest companion reaction from the friend observer (src/buddy/observer.ts)
+  // Latest companion reaction from the friend observer (packages/cli/src/buddy/observer.ts)
   companionReaction?: string
   // Timestamp of last /buddy pet — CompanionSprite renders hearts while recent
   companionPetAt?: number

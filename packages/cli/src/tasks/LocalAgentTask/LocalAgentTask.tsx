@@ -264,7 +264,7 @@ export function enqueueAgentNotification({
 /**
  * LocalAgentTask - Handles background agent execution.
  *
- * Replaces the AsyncAgent implementation from src/tools/AgentTool/asyncAgentUtils.ts
+ * Replaces the AsyncAgent implementation from packages/cli/src/tools/AgentTool/asyncAgentUtils.ts
  * with a unified Task interface.
  */
 export const LocalAgentTask: Task = {

@@ -929,12 +929,12 @@ export function resetStateForTests(): void {
   sessionSwitched.clear()
 }
 
-// You shouldn't use this directly. See src/utils/model/modelStrings.ts::getModelStrings()
+// You shouldn't use this directly. See packages/cli/src/utils/model/modelStrings.ts::getModelStrings()
 export function getModelStrings(): ModelStrings | null {
   return STATE.modelStrings
 }
 
-// You shouldn't use this directly. See src/utils/model/modelStrings.ts
+// You shouldn't use this directly. See packages/cli/src/utils/model/modelStrings.ts
 export function setModelStrings(modelStrings: ModelStrings): void {
   STATE.modelStrings = modelStrings
 }

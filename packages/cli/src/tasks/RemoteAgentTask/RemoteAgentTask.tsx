@@ -802,8 +802,8 @@ function startRemoteSessionPolling(taskId: string, context: TaskContext): () => 
  * RemoteAgentTask - Handles remote Claude.ai session execution.
  *
  * Replaces the BackgroundRemoteSession implementation from:
- * - src/utils/background/remote/remoteSession.ts
- * - src/components/tasks/BackgroundTaskStatus.tsx (polling logic)
+ * - packages/cli/src/utils/background/remote/remoteSession.ts
+ * - packages/cli/src/components/tasks/BackgroundTaskStatus.tsx (polling logic)
  */
 export const RemoteAgentTask: Task = {
   name: 'RemoteAgentTask',

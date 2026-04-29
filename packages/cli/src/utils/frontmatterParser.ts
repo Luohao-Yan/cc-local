@@ -12,7 +12,7 @@ export type FrontmatterData = {
   'allowed-tools'?: string | string[] | null
   description?: string | null
   // Memory type: 'user', 'feedback', 'project', or 'reference'
-  // Only applicable to memory files; narrowed via parseMemoryType() in src/memdir/memoryTypes.ts
+  // Only applicable to memory files; narrowed via parseMemoryType() in packages/cli/src/memdir/memoryTypes.ts
   type?: string | null
   'argument-hint'?: string | null
   when_to_use?: string | null

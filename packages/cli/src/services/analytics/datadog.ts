@@ -156,7 +156,7 @@ export async function shutdownDatadog(): Promise<void> {
   await flushLogs()
 }
 
-// NOTE: use via src/services/analytics/index.ts > logEvent
+// NOTE: use via packages/cli/src/services/analytics/index.ts > logEvent
 export async function trackDatadogEvent(
   eventName: string,
   properties: { [key: string]: boolean | number | undefined },

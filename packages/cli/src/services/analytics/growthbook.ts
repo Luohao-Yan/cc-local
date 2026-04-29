@@ -431,7 +431,7 @@ function isGrowthBookEnabled(): boolean {
  * apiKeyHelper auth, which means isAnthropicAuthEnabled() returns false and
  * organizationUUID/accountUUID/email are all absent from GrowthBook
  * attributes. Without this, there's no stable attribute to target them on
- * — only per-device IDs. See src/utils/auth.ts isAnthropicAuthEnabled().
+ * — only per-device IDs. See packages/cli/src/utils/auth.ts isAnthropicAuthEnabled().
  *
  * Returns undefined for unset/default (api.anthropic.com) so the attribute
  * is absent for direct-API users. Hostname only — no path/query/creds.

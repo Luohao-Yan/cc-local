@@ -2282,7 +2282,7 @@ async function run(): Promise<CommanderCommand> {
       }
       if (onboardingShown) {
         // Refresh auth-dependent services now that the user has logged in during onboarding.
-        // Keep in sync with the post-login logic in src/commands/login.tsx
+        // Keep in sync with the post-login logic in packages/cli/src/commands/login/login.tsx
         void refreshRemoteManagedSettings();
         void refreshPolicyLimits();
         // Clear user data cache BEFORE GrowthBook refresh so it picks up fresh credentials

@@ -2,10 +2,10 @@
  * PowerShell static command prefix extraction.
  *
  * Mirrors bash's getCommandPrefixStatic / getCompoundCommandPrefixesStatic
- * (src/utils/bash/prefix.ts) but uses the PowerShell AST parser instead of
+ * (packages/cli/src/utils/bash/prefix.ts) but uses the PowerShell AST parser instead of
  * tree-sitter. The AST gives us cmd.name and cmd.args already split; for
  * external commands we feed those into the same fig-spec walker bash uses
- * (src/utils/shell/specPrefix.ts) — git/npm/kubectl CLIs are shell-agnostic.
+ * (packages/cli/src/utils/shell/specPrefix.ts) — git/npm/kubectl CLIs are shell-agnostic.
  *
  * Feeds the "Yes, and don't ask again for: ___" editable input in the
  * permission dialog — static extractor provides a best-guess prefix, user
@@ -247,7 +247,7 @@ export async function getCompoundCommandPrefixesStatic(
   // rather than suggest either the too-broad root or N un-collapsed rules.
   //
   // Bash's getCompoundCommandPrefixesStatic has this same collapse without
-  // the guard (src/utils/bash/prefix.ts:360-365) — that's a separate fix.
+  // the guard (packages/cli/src/utils/bash/prefix.ts:360-365) — that's a separate fix.
   //
   // Grouping and word-comparison are case-insensitive (PowerShell is
   // case-insensitive: Git === git, Get-Process === get-process). The Map key
