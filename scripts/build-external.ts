@@ -92,6 +92,8 @@ const ENABLED_FEATURES = [
   "BREAK_CACHE_COMMAND",
   "BUDDY",
   "BUILTIN_EXPLORE_PLAN_AGENTS",
+  "TRANSCRIPT_CLASSIFIER",
+  "BASH_CLASSIFIER",
 ] as const;
 
 const ENABLED_SET = new Set<string>(ENABLED_FEATURES);
@@ -159,7 +161,7 @@ async function buildEntrypoint(source: string, destination: string): Promise<voi
     // TRANSCRIPT_CLASSIFIER: Auto Mode 自动模式（安全分类器）
     // BASH_CLASSIFIER: Bash 命令分类器（Auto Mode 依赖）
     // AUTO_THEME: 主题自动切换和完整主题列表
-    features: ["BUDDY", "TRANSCRIPT_CLASSIFIER", "BASH_CLASSIFIER", "AUTO_THEME"],
+    features: Array.from(ENABLED_FEATURES),
     define: {
       "MACRO.VERSION": JSON.stringify(version),
       "MACRO.BUILD_TIME": JSON.stringify(new Date().toISOString()),
@@ -179,6 +181,7 @@ async function buildEntrypoint(source: string, destination: string): Promise<voi
       "@anthropic-ai/sandbox-runtime",
       "@anthropic-ai/mcpb",
       "@anthropic-ai/claude-agent-sdk",
+      "@ant/claude-for-chrome-mcp",
       "@ant/computer-use-mcp",
       "@ant/computer-use-swift",
       "@ant/computer-use-input",
