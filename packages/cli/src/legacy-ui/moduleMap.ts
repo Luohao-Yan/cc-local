@@ -16,12 +16,24 @@ export function findLegacyUiRepoRoot(fromPath = fileURLToPath(import.meta.url)):
   for (let depth = 0; depth < 10; depth += 1) {
     if (
       existsSync(join(current, 'package.json')) &&
-      existsSync(join(current, 'AGENTS.md')) &&
-      existsSync(join(current, 'src', 'components', 'App.tsx')) &&
-      existsSync(join(current, 'src', 'screens', 'REPL.tsx')) &&
-      existsSync(join(current, 'src', 'replLauncher.tsx'))
+      existsSync(join(current, 'AGENTS.md'))
     ) {
-      return current
+      // Check new layout first (packages/cli/src/ directly)
+      if (
+        existsSync(join(current, 'packages', 'cli', 'src', 'components', 'App.tsx')) &&
+        existsSync(join(current, 'packages', 'cli', 'src', 'screens', 'REPL.tsx')) &&
+        existsSync(join(current, 'packages', 'cli', 'src', 'replLauncher.tsx'))
+      ) {
+        return current
+      }
+      // Fallback: old layout (src/ pointer files)
+      if (
+        existsSync(join(current, 'src', 'components', 'App.tsx')) &&
+        existsSync(join(current, 'src', 'screens', 'REPL.tsx')) &&
+        existsSync(join(current, 'src', 'replLauncher.tsx'))
+      ) {
+        return current
+      }
     }
     current = dirname(current)
   }
@@ -30,7 +42,7 @@ export function findLegacyUiRepoRoot(fromPath = fileURLToPath(import.meta.url)):
 
 export function resolveLegacyUiModuleMap(repoRoot = findLegacyUiRepoRoot()): LegacyUiModuleMap {
   if (!repoRoot) {
-    throw new Error('Legacy UI source tree not found. Expected src/components/App.tsx and src/screens/REPL.tsx.')
+    throw new Error('Legacy UI source tree not found. Expected packages/cli/src/components/App.tsx and packages/cli/src/screens/REPL.tsx.')
   }
 
   return {

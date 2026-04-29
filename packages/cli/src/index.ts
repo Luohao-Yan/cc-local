@@ -293,7 +293,8 @@ async function findAvailablePort(): Promise<number> {
 }
 
 const rawUserArgs = getUserArgs(process.argv)
-if (shouldUseLegacyUi(rawUserArgs)) {
+const useLegacyBridge = shouldUseLegacyUi(rawUserArgs)
+if (useLegacyBridge && rawUserArgs.some((arg) => arg === '--spawn-legacy')) {
   delegateToLegacyUi(rawUserArgs)
 }
 
@@ -481,7 +482,10 @@ program
         const interactiveContext = buildInteractiveLaunchContext({
           createSessionIfNeeded: true,
         })
-        await renderInteractiveRepl(client, buildLaunchReplOptions(effectiveOptions, interactiveContext))
+        await renderInteractiveRepl(client, {
+          ...buildLaunchReplOptions(effectiveOptions, interactiveContext),
+          legacyBridgeMode: useLegacyBridge,
+        })
       }
     } catch (error) {
       console.error('❌ Failed to connect:', error)
@@ -548,8 +552,19 @@ function registerLegacyCompatibilityCommands(rootProgram: Command): void {
       .allowUnknownOption(true)
       .allowExcessArguments(true)
       .argument('[args...]')
-      .action(() => {
-        delegateToLegacyUi(getUserArgs(process.argv))
+      .action(async () => {
+        const args = getUserArgs(process.argv)
+        if (args.some((arg) => arg === '--spawn-legacy')) {
+          delegateToLegacyUi(args)
+          return
+        }
+        try {
+          const { renderLegacyBridgeRepl } = await import('./runtime/legacyBridgeRenderer.js')
+          await renderLegacyBridgeRepl({})
+        } catch (error) {
+          console.error('Failed to launch legacy bridge:', error)
+          delegateToLegacyUi(args)
+        }
       })
   }
 }

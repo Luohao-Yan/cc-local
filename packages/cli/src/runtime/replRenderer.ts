@@ -5,7 +5,9 @@ import {
 } from '../legacy-ui/appShellAdapter.js'
 import { launchRepl as launchSimpleRepl } from '../repl/simpleRepl.js'
 
-export type InteractiveReplOptions = Parameters<typeof launchSimpleRepl>[1]
+export type InteractiveReplOptions = Parameters<typeof launchSimpleRepl>[1] & {
+  legacyBridgeMode?: boolean
+}
 export type InteractiveReplRendererMode = 'packages-simple' | 'legacy-source-shell'
 
 export interface InteractiveReplRenderer {
@@ -48,6 +50,10 @@ export async function renderInteractiveRepl(
   client: CCLocalClient,
   options: InteractiveReplOptions = {}
 ): Promise<void> {
+  if (options.legacyBridgeMode) {
+    const { renderLegacyBridgeRepl } = await import('./legacyBridgeRenderer.js')
+    return await renderLegacyBridgeRepl(options)
+  }
   await defaultInteractiveReplRenderer.render(client, options)
 }
 
