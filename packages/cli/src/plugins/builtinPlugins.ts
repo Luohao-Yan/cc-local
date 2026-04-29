@@ -1,4 +1,4 @@
-const builtinPluginsPath = '../../../../src/plugins/builtinPlugins.js'
+const builtinPluginsPath = './bundled/index.js'
 
 let builtinPluginsPromise: Promise<any> | null = null
 

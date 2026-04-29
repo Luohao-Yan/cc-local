@@ -12,7 +12,7 @@
   "scripts": {
     "start": "bun run packages/cli/src/index.ts --server-embedded",
     "start:packages-cli": "bun run packages/cli/src/index.ts --server-embedded",
-    "start:legacy": "bun run src/entrypoints/cli.tsx",
+    "start:legacy": "bun run packages/cli/src/entrypoints/cli.tsx",
     "build": "bun run scripts/build-external.ts",
     "build:legacy": "CCLOCAL_BUILD_LEGACY=1 bun run scripts/build-external.ts",
     "build:packages": "bun run --filter '*' build",

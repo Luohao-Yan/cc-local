@@ -139,7 +139,7 @@ const bunBundlePlugin = {
 };
 
 const buildLegacy = process.env.CCLOCAL_BUILD_LEGACY === "1";
-const entrypoint = buildLegacy ? "./src/entrypoints/cli.tsx" : "./packages/cli/src/index.ts";
+const entrypoint = buildLegacy ? "./packages/cli/src/entrypoints/cli.tsx" : "./packages/cli/src/index.ts";
 
 async function buildEntrypoint(source: string, destination: string): Promise<void> {
   const buildName = basename(destination, ".js");
@@ -237,7 +237,7 @@ async function buildEntrypoint(source: string, destination: string): Promise<voi
 await buildEntrypoint(entrypoint, "./dist/cli.js");
 if (!buildLegacy) {
   await buildEntrypoint("./packages/server/src/index.ts", "./dist/server.js");
-  await buildEntrypoint("./src/entrypoints/cli.tsx", "./dist/legacy-cli.js");
+  await buildEntrypoint("./packages/cli/src/entrypoints/cli.tsx", "./dist/legacy-cli.js");
 }
 
 // 生成发布用的 package.json

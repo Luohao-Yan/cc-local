@@ -1,4 +1,4 @@
-preload = ["./src/_external/preload.ts"]
+preload = ["./packages/cli/src/_external/preload.ts"]
 
 [loader]
 ".md" = "text"
