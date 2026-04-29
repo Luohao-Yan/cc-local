@@ -77,6 +77,36 @@ Content-Type: application/json
 DELETE /api/v1/sessions/:id
 ```
 
+#### Fork 会话
+```bash
+POST /api/v1/sessions/:id/fork
+Content-Type: application/json
+
+{
+  "name": "Forked Session",
+  "cwd": "/path/to/project",
+  "model": "claude-sonnet-4"
+}
+```
+
+响应：返回新创建的会话对象（包含克隆的消息历史）。
+
+### 临时查询
+
+```bash
+POST /api/v1/query
+Content-Type: application/json
+
+{
+  "content": "What files are in this project?",
+  "options": {},
+  "cwd": "/path/to/project",
+  "model": "claude-sonnet-4"
+}
+```
+
+不创建持久会话，直接流式返回结果。响应格式与 `POST /sessions/:id/messages` 相同（SSE）。
+
 ### 消息操作
 
 #### 获取消息历史
@@ -193,10 +223,270 @@ GET /api/v1/models
 响应：
 ```json
 [
-  { "id": "claude-sonnet-4", "name": "Claude Sonnet 4" },
-  { "id": "claude-opus-4", "name": "Claude Opus 4" },
-  { "id": "doubao", "name": "Doubao" }
+  { "id": "claude-sonnet-4-20250514", "name": "Claude Sonnet 4" },
+  { "id": "claude-opus-4-20250514", "name": "Claude Opus 4" },
+  { "id": "claude-haiku-4-5-20251001", "name": "Claude Haiku 4.5" }
 ]
+```
+
+模型列表优先从配置 `models` 键读取；未配置时返回内置默认值。
+
+### Hook 管理
+
+#### 列出 Hook
+
+```bash
+GET /api/v1/hooks?event=pre_tool
+```
+
+查询参数：
+- `event`（可选）: 过滤特定事件类型 (`pre_tool`, `post_tool`, `pre_query`, `post_query`, `stop`, `session_start`, `session_end`)
+
+响应：
+```json
+[
+  { "event": "pre_tool", "command": "echo 'running'", "timeout": 5000, "enabled": true }
+]
+```
+
+#### 注册 Hook
+
+```bash
+POST /api/v1/hooks
+Content-Type: application/json
+
+{
+  "event": "pre_tool",
+  "command": "echo 'hook triggered'",
+  "timeout": 5000,
+  "enabled": true
+}
+```
+
+#### 删除 Hook
+
+```bash
+DELETE /api/v1/hooks/:event/:command
+```
+
+`event` 和 `command` 均需 URL 编码。例如 `DELETE /api/v1/hooks/pre_tool/echo%20'hook%20triggered'`
+
+#### 执行 Hook
+
+```bash
+POST /api/v1/hooks/execute
+Content-Type: application/json
+
+{
+  "event": "pre_tool",
+  "context": {
+    "toolName": "bash",
+    "input": { "command": "ls" },
+    "sessionId": "abc123"
+  }
+}
+```
+
+响应：
+```json
+[
+  { "exitCode": 0, "stdout": "...", "stderr": "", "blocked": false }
+]
+```
+
+### 配置管理
+
+#### 获取配置
+
+```bash
+# 获取全部配置
+GET /api/v1/config
+
+# 获取指定 key
+GET /api/v1/config?key=models
+```
+
+响应（获取全部）：
+```json
+{
+  "models": [...],
+  "theme": "dark"
+}
+```
+
+响应（获取指定 key）：
+```json
+{ "key": "models", "value": [...] }
+```
+
+#### 更新配置
+
+```bash
+PATCH /api/v1/config
+Content-Type: application/json
+
+{
+  "theme": "dark",
+  "models": [{"id": "custom-model", "name": "Custom"}]
+}
+```
+
+响应：
+```json
+{ "success": true, "updated": { "theme": "dark", "models": [...] } }
+```
+
+#### 删除配置键
+
+```bash
+DELETE /api/v1/config?key=theme
+```
+
+### 权限策略
+
+#### 获取当前策略
+
+```bash
+GET /api/v1/permissions
+```
+
+响应：
+```json
+{
+  "mode": "default",
+  "allowedTools": ["glob", "grep", "file_read"],
+  "blockedTools": []
+}
+```
+
+#### 更新策略
+
+```bash
+PATCH /api/v1/permissions
+Content-Type: application/json
+
+{
+  "mode": "acceptEdits",
+  "allowedTools": ["*"]
+}
+```
+
+#### 检查工具权限
+
+```bash
+POST /api/v1/permissions/check
+Content-Type: application/json
+
+{
+  "toolName": "bash"
+}
+```
+
+响应：
+```json
+{ "allowed": false, "reason": "Tool \"bash\" requires approval in dontAsk mode" }
+```
+
+### 会话压缩
+
+#### 压缩会话上下文
+
+```bash
+POST /api/v1/sessions/:id/compact
+Content-Type: application/json
+
+{
+  "summaryText": "User was working on API endpoints"
+}
+```
+
+响应：
+```json
+{
+  "compacted": true,
+  "before": 42,
+  "after": 7,
+  "estimatedTokens": 2400
+}
+```
+
+#### 获取压缩状态
+
+```bash
+GET /api/v1/sessions/:id/compaction-status
+```
+
+响应：
+```json
+{
+  "estimatedTokens": 45000,
+  "maxTokens": 180000,
+  "needsCompaction": false,
+  "messageCount": 12
+}
+```
+
+### 分析统计
+
+#### 记录事件
+
+```bash
+POST /api/v1/analytics/events
+Content-Type: application/json
+
+{
+  "name": "tool_usage",
+  "properties": { "toolName": "bash", "durationMs": 340 },
+  "sessionId": "abc123"
+}
+```
+
+#### 获取使用数据
+
+```bash
+GET /api/v1/analytics/usage
+```
+
+响应：
+```json
+{
+  "events": [
+    { "name": "query_complete", "properties": { "inputTokens": 1200, "outputTokens": 800 }, "timestamp": 1714300000000 }
+  ],
+  "total": 42
+}
+```
+
+返回最近 100 条事件。
+
+### 工具注册表
+
+```bash
+GET /api/v1/tools
+```
+
+响应：返回当前注册的所有工具列表（受权限策略过滤）：
+```json
+[
+  { "name": "bash", "description": "...", "input_schema": {...} },
+  { "name": "file_read", "description": "...", "input_schema": {...} }
+]
+```
+
+### 认证信息
+
+```bash
+GET /api/v1/auth/info
+```
+
+响应：
+```json
+{
+  "configuredApiKey": true,
+  "allowedOrigins": [],
+  "allowLoopbackOrigins": true,
+  "serverToken": "abc123..."
+}
 ```
 
 ### MCP 管理

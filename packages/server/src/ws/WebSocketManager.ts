@@ -133,7 +133,6 @@ export class WebSocketManager {
     const { sessionId, content } = payload
     client.sessionId = sessionId
 
-    // 获取会话
     const session = this.sessionManager.getSession(sessionId)
     if (!session) {
       this.sendToClient(client.socket, {
@@ -144,16 +143,71 @@ export class WebSocketManager {
       return
     }
 
-    // 发送流开始
+    const messageId = this.generateId()
     this.sendToClient(client.socket, {
       type: 'stream_start',
-      payload: { sessionId, messageId: this.generateId() },
+      payload: { sessionId, messageId },
       timestamp: Date.now(),
     })
 
-    // TODO: 实际调用 AI 生成回复
-    // 这里模拟响应
-    await this.mockStreamResponse(client, sessionId, content)
+    // Create a SSE-format ReadableStream controller adapter that forwards
+    // parsed text_delta events as WebSocket stream_delta messages
+    const pendingDeltas: string[] = []
+    let flushTimer: ReturnType<typeof setTimeout> | null = null
+
+    const flushPending = () => {
+      if (pendingDeltas.length > 0) {
+        const combined = pendingDeltas.join('')
+        pendingDeltas.length = 0
+        this.sendToClient(client.socket, {
+          type: 'stream_delta',
+          payload: { sessionId, delta: { type: 'text_delta', text: combined } },
+          timestamp: Date.now(),
+        })
+      }
+      flushTimer = null
+    }
+
+    const sseController = {
+      enqueue(chunk: Uint8Array) {
+        const text = new TextDecoder().decode(chunk)
+        for (const line of text.split('\n')) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+              if (data.type === 'text_delta' && data.text) {
+                pendingDeltas.push(data.text)
+                if (!flushTimer) {
+                  flushTimer = setTimeout(flushPending, 50)
+                }
+              }
+            } catch {
+              // Ignore non-JSON data lines
+            }
+          }
+        }
+      },
+      close() {
+        if (flushTimer) clearTimeout(flushTimer)
+        flushPending()
+        // stream_end is sent after sendMessageStream resolves below
+      },
+      error() {},
+      desiredSize: 1,
+    }
+
+    await this.sessionManager.sendMessageStream(
+      sessionId,
+      content,
+      {},
+      sseController as any
+    )
+
+    this.sendToClient(client.socket, {
+      type: 'stream_end',
+      payload: { sessionId },
+      timestamp: Date.now(),
+    })
   }
 
   private async handleCancel(client: WSClient, payload: { sessionId: string }): Promise<void> {
@@ -161,30 +215,6 @@ export class WebSocketManager {
     this.sendToClient(client.socket, {
       type: 'cancelled',
       payload: { sessionId: payload.sessionId },
-      timestamp: Date.now(),
-    })
-  }
-
-  private async mockStreamResponse(client: WSClient, sessionId: string, content: string): Promise<void> {
-    const response = `Received: ${content}\nThis is a mock response from CCLocal Server.`
-    const words = response.split(' ')
-
-    for (const word of words) {
-      this.sendToClient(client.socket, {
-        type: 'stream_delta',
-        payload: {
-          sessionId,
-          delta: { type: 'text_delta', text: word + ' ' },
-        },
-        timestamp: Date.now(),
-      })
-
-      await new Promise((resolve) => setTimeout(resolve, 50))
-    }
-
-    this.sendToClient(client.socket, {
-      type: 'stream_end',
-      payload: { sessionId },
       timestamp: Date.now(),
     })
   }
