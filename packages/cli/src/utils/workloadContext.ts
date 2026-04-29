@@ -2,7 +2,7 @@
  * Turn-scoped workload tag via AsyncLocalStorage.
  *
  * WHY a separate module from bootstrap/state.ts:
- * bootstrap is transitively imported by src/entrypoints/browser-sdk.ts, and
+ * bootstrap is transitively imported by packages/cli/src/entrypoints/browser-sdk.ts, and
  * the browser bundle cannot import Node's async_hooks. This module is only
  * imported from CLI/SDK code paths that never end up in the browser build.
  *

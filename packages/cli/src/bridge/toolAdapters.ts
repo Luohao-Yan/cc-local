@@ -17,9 +17,7 @@
 import type { Tool, ToolContext, ToolInputSchema } from '@cclocal/shared'
 
 // Lazy-load legacy tool implementations to avoid pulling the entire legacy
-// module graph at import time.  The legacy tools use `from 'src/...'` imports
-// that were already converted to relative paths in Phase 3, so they resolve
-// correctly from within packages/cli/src/.
+// module graph at import time.
 
 function lazyImport<T>(path: string): () => Promise<T> {
   return () => import(path)
