@@ -24,6 +24,17 @@ import {
   mcpCompatTool,
   readMcpResourceTool,
   legacyCompatibilityTools,
+  agentTool,
+  enterPlanModeTool,
+  exitPlanModeTool,
+  askUserQuestionTool,
+  sendMessageTool,
+  sendUserMessageTool,
+  skillTool,
+  toolSearchTool,
+  configTool,
+  taskOutputTool,
+  taskStopTool,
 } from './impl/index.js'
 
 export class ToolRegistry {
@@ -78,6 +89,18 @@ export class ToolRegistry {
     for (const tool of legacyCompatibilityTools) {
       this.register(tool)
     }
+    // Critical new tools — native packages implementations
+    this.register(agentTool)
+    this.register(enterPlanModeTool)
+    this.register(exitPlanModeTool)
+    this.register(askUserQuestionTool)
+    this.register(sendMessageTool)
+    this.register(sendUserMessageTool)
+    this.register(skillTool)
+    this.register(toolSearchTool)
+    this.register(configTool)
+    this.register(taskOutputTool)
+    this.register(taskStopTool)
   }
 
   /**
