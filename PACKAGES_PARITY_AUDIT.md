@@ -13,7 +13,7 @@ Compatibility note: `packages/cli` keeps an explicit `--legacy` escape hatch. To
 | Top-level commands | 21 | 30 | 0 | 0 |
 | Top-level options | 127 | 147 | 0 | 0 |
 | Slash commands | 107 | 121 | 0 | 1 |
-| Tools | 11 | 26 | 0 | 0 |
+| Tools | 11 | 37 | 0 | 0 |
 
 ## Bridged Top-Level Commands
 
@@ -363,7 +363,12 @@ These are parser noise from compiler output, examples, labels, or template strin
 
 ## Current Packages Tools
 
+- `Agent`
+- `AskUserQuestion`
 - `bash`
+- `Config`
+- `EnterPlanMode`
+- `ExitPlanMode`
 - `file_edit`
 - `file_read`
 - `file_write`
@@ -377,13 +382,19 @@ These are parser noise from compiler output, examples, labels, or template strin
 - `ReadMcpResourceTool`
 - `remote_skill`
 - `REPL`
+- `SendMessage`
+- `SendUserMessage`
 - `ship-audit`
+- `Skill`
 - `SuggestBackgroundPR`
 - `TaskCreate`
 - `TaskGet`
 - `TaskList`
+- `TaskOutput`
+- `TaskStop`
 - `TaskUpdate`
 - `TodoWrite`
+- `ToolSearch`
 - `VerifyPlanExecution`
 - `web_fetch`
 - `web_search`
