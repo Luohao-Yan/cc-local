@@ -13,7 +13,7 @@ This is **Claude Code Rebuilt** - a fully functional reconstruction of Anthropic
 - Language: TypeScript (strict mode)
 - UI: React + Ink (terminal UI)
 - **Important**: All `.tsx` files are React Compiler output (not original source)
-- Internal Anthropic features are disabled via feature flags (91 flags total: 85 disabled, 6 enabled)
+- Internal Anthropic features are disabled via feature flags (91 flags total: 88 disabled, 6 enabled)
 
 ---
 

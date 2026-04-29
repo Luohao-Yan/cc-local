@@ -17,9 +17,9 @@
 
 关键文件：
 
-- `src/entrypoints/cli.tsx`
-- `src/main.tsx`
-- `src/replLauncher.tsx`
+- `packages/cli/src/entrypoints/cli.tsx`
+- `packages/cli/src/main.tsx`
+- `packages/cli/src/replLauncher.tsx`
 
 职责：
 
@@ -40,10 +40,10 @@ packages 当前对应进展：
 
 关键文件：
 
-- `src/components/App.tsx`
-- `src/state/AppState.tsx`
-- `src/state/onChangeAppState.ts`
-- `src/context/*`
+- `packages/cli/src/components/App.tsx`
+- `packages/cli/src/state/AppState.tsx`
+- `packages/cli/src/state/onChangeAppState.ts`
+- `packages/cli/src/context/*`
 
 职责：
 
@@ -60,7 +60,7 @@ packages 当前对应进展：
 
 关键文件：
 
-- `src/screens/REPL.tsx`
+- `packages/cli/src/screens/REPL.tsx`
 
 职责：
 
@@ -80,7 +80,7 @@ packages 当前对应进展：
 
 关键文件：
 
-- `src/ink/**`
+- `packages/cli/src/ink/**`
 
 职责：
 
@@ -96,13 +96,13 @@ packages 当前对应进展：
 
 关键文件群：
 
-- `src/components/messages/**`
-- `src/components/permissions/**`
-- `src/components/tasks/**`
-- `src/components/mcp/**`
-- `src/components/PromptInput/**`
-- `src/components/Settings/**`
-- `src/components/shell/**`
+- `packages/cli/src/components/messages/**`
+- `packages/cli/src/components/permissions/**`
+- `packages/cli/src/components/tasks/**`
+- `packages/cli/src/components/mcp/**`
+- `packages/cli/src/components/PromptInput/**`
+- `packages/cli/src/components/Settings/**`
+- `packages/cli/src/components/shell/**`
 - 以及 `StatusLine.tsx`、`FullscreenLayout.tsx`、`MessageResponse.tsx` 等核心组件
 
 职责：
@@ -118,16 +118,16 @@ packages 当前对应进展：
 
 关键文件群：
 
-- `src/hooks/useGlobalKeybindings.tsx`
-- `src/hooks/useCommandKeybindings.tsx`
-- `src/hooks/useReplBridge.tsx`
-- `src/hooks/useRemoteSession.ts`
-- `src/hooks/useSSHSession.ts`
-- `src/hooks/useApiKeyVerification.ts`
-- `src/hooks/useCanUseTool.tsx`
-- `src/hooks/useTerminalSize.ts`
-- `src/hooks/useTextInput.ts`
-- `src/hooks/useVimInput.ts`
+- `packages/cli/src/hooks/useGlobalKeybindings.tsx`
+- `packages/cli/src/hooks/useCommandKeybindings.tsx`
+- `packages/cli/src/hooks/useReplBridge.tsx`
+- `packages/cli/src/hooks/useRemoteSession.ts`
+- `packages/cli/src/hooks/useSSHSession.ts`
+- `packages/cli/src/hooks/useApiKeyVerification.ts`
+- `packages/cli/src/hooks/useCanUseTool.tsx`
+- `packages/cli/src/hooks/useTerminalSize.ts`
+- `packages/cli/src/hooks/useTextInput.ts`
+- `packages/cli/src/hooks/useVimInput.ts`
 
 职责：
 
@@ -141,10 +141,10 @@ packages 当前对应进展：
 
 关键文件群：
 
-- `src/commands/**`
-- `src/tools/**`
-- `src/commands.ts`
-- `src/tools.ts`
+- `packages/cli/src/commands/**`
+- `packages/cli/src/tools/**`
+- `packages/cli/src/commands.ts`
+- `packages/cli/src/tools.ts`
 
 职责：
 
@@ -175,6 +175,6 @@ packages 当前对应进展：
 ## 下一步优先级
 
 1. 让 `replRenderer.ts` 从“packages simple renderer adapter”继续升级为“可驱动 legacy `launchRepl` 的 renderer adapter”
-2. 复用 `src/replLauncher.tsx` 的入口形态，补齐 packages 到 legacy REPL props 的装配层
-3. 评估 `src/components/App.tsx`、`src/state/*`、`src/context/*` 的最小搬迁集合
-4. 再进入 `src/screens/REPL.tsx` 主屏迁移
+2. 复用 `packages/cli/src/replLauncher.tsx` 的入口形态，补齐 packages 到 legacy REPL props 的装配层
+3. 评估 `packages/cli/src/components/App.tsx`、`packages/cli/src/state/*`、`packages/cli/src/context/*` 的最小搬迁集合
+4. 再进入 `packages/cli/src/screens/REPL.tsx` 主屏迁移

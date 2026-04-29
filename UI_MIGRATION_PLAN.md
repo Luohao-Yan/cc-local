@@ -12,17 +12,17 @@
 
 旧 UI 不是单个页面，最小完整迁移范围包括：
 
-- `src/screens/REPL.tsx`
-- `src/screens/ResumeConversation.tsx`
-- `src/screens/Doctor.tsx`
-- `src/components/**`
-- `src/hooks/**`
-- `src/ink/**`
-- `src/state/**`
-- `src/replLauncher.tsx`
-- `src/main.tsx` 中与交互式启动、`--print`、resume、permissions、MCP、hooks、plugins、IDE/Chrome/tmux/worktree 相关的启动编排
-- `src/commands/**` slash commands
-- `src/tools/**` tool rendering 与 permission UI 所需类型/状态
+- `packages/cli/src/screens/REPL.tsx`
+- `packages/cli/src/screens/ResumeConversation.tsx`
+- `packages/cli/src/screens/Doctor.tsx`
+- `packages/cli/src/components/**`
+- `packages/cli/src/hooks/**`
+- `packages/cli/src/ink/**`
+- `packages/cli/src/state/**`
+- `packages/cli/src/replLauncher.tsx`
+- `packages/cli/src/main.tsx` 中与交互式启动、`--print`、resume、permissions、MCP、hooks、plugins、IDE/Chrome/tmux/worktree 相关的启动编排
+- `packages/cli/src/commands/**` slash commands
+- `packages/cli/src/tools/**` tool rendering 与 permission UI 所需类型/状态
 
 ## 不可降级验收标准
 
@@ -49,7 +49,7 @@
 
 状态：进行中。
 
-目标：把旧 UI 的依赖从 `src/main.tsx` 中分层。
+目标：把旧 UI 的依赖从 `packages/cli/src/main.tsx` 中分层。
 
 - [x] 抽出默认旧 UI 路由边界：`packages/cli/src/ui/legacyAdapter.ts`
 - [x] 明确默认用户路径、显式 REST/packages 路径、legacy 命令路径的分流规则
@@ -83,10 +83,10 @@
 - [x] 把 `src/main.tsx -> launchRepl(...)` 的公共参数装配抽成 packages 侧 builder：`packages/cli/src/legacy-ui/launchContextBuilder.ts`
 - [x] 接通 packages 侧 `buildLegacyLaunchContext -> loadLegacyAppShellRuntime -> launchRepl(...)` 调用链：`packages/cli/src/legacy-ui/launchReplBridge.ts`
 - [x] 抽出 normal session 与 resume/continue 的 branch-specific launch adapter：`packages/cli/src/legacy-ui/sessionLaunchAdapters.ts`
-- [x] 封装可直接替换 `src/main.tsx` 调用点的 `launchLegacyNormalSession(...)` / `launchLegacyResumeSession(...)` facade
+- [x] 封装可直接替换 `packages/cli/src/main.tsx` 调用点的 `launchLegacyNormalSession(...)` / `launchLegacyResumeSession(...)` facade
 - [x] 建立 packages 侧 legacy UI 公共导出边界：`packages/cli/src/legacy-ui/index.ts`
-- [x] 将旧 `src/main.tsx` 的 normal、continue、resume 调用点接入 packages facade
-- [x] 建立 `src/ink/**`、`src/components/App.tsx`、`src/state/**` 的 packages lazy surface loader
+- [x] 将旧 `packages/cli/src/main.tsx` 的 normal、continue、resume 调用点接入 packages facade
+- [x] 建立 `packages/cli/src/ink/**`、`packages/cli/src/components/App.tsx`、`packages/cli/src/state/**` 的 packages lazy surface loader
 - [x] 建立 slash commands、tool registry、permission UI、MCP UI、message/tool rendering 的 packages lazy surface loader
 - [ ] 将 lazy surface loader 收敛为逐模块 packages-owned re-export 或物理搬迁文件。
 - [ ] 保留 import alias，避免一次性改 500+ 个相对路径。
@@ -100,7 +100,7 @@
 
 ### Phase 3：REPL 主屏迁移
 
-目标：迁入 `src/screens/REPL.tsx`，并让它使用 packages QueryEngine/SessionManager/MCPManager。
+目标：迁入 `packages/cli/src/screens/REPL.tsx`，并让它使用 packages QueryEngine/SessionManager/MCPManager。
 
 - 替换 query loop 数据源为 `packages/core`。
 - 替换 session persistence 为 `packages/server`/`packages/core` 会话层。
@@ -116,7 +116,7 @@
 
 目标：迁移旧 slash command 运行时和工具展示。
 
-- 搬迁 `src/commands/**` registry。
+- 搬迁 `packages/cli/src/commands/**` registry。
 - 搬迁 tool permission/dialog/render components。
 - 将旧工具 registry 与 packages ToolRegistry 统一。
 

@@ -1124,8 +1124,8 @@ React Components → Custom Reconciler → Yoga Layout → Screen Buffer → Dif
 **本项目提供**:
 1. **`bunfig.toml` + `preload.ts`** - 运行时注册 Bun 插件，解析 `bun:bundle` 导入，定义 `MACRO.VERSION` 等全局变量
 2. **`scripts/build-external.ts`** - `Bun.build()` 脚本，通过插件替换 `bun:bundle`，通过 `define` 注入 `MACRO.*`，将私有包标记为 external
-3. **`src/_external/shims/` 下的 stub 包** - `@ant/*` 内部包和不可公开获取的原生 NAPI 插件的轻量级无操作模块
-4. **`src/types/` 下的重建类型文件** - 缺失的高扇出模块
+3. **`packages/cli/src/_external/shims/` 下的 stub 包** - `@ant/*` 内部包和不可公开获取的原生 NAPI 插件的轻量级无操作模块
+4. **`packages/cli/src/types/` 下的重建类型文件** - 缺失的高扇出模块
 
 ---
 
@@ -1166,14 +1166,14 @@ React Components → Custom Reconciler → Yoga Layout → Screen Buffer → Dif
 
 | 文件 | 行数 | 说明 |
 |------|------|------|
-| `src/main.tsx` | 785KB | 主 CLI 设置 (很大!) |
-| `src/query.ts` | - | 查询引擎核心 |
-| `src/tools.ts` | 390 | 工具注册表 |
-| `src/commands.ts` | 755 | 命令注册表 |
-| `src/utils/auth.ts` | 65KB | 认证逻辑 |
-| `src/utils/claudemd.ts` | 46KB | CLAUDE.md 解析 |
-| `src/state/AppState.ts` | - | 450+ 字段状态 |
-| `src/_external/preload.ts` | 28 | 运行时 shim |
+| `packages/cli/src/main.tsx` | 785KB | 主 CLI 设置 (很大!) |
+| `packages/cli/src/query.ts` | - | 查询引擎核心 |
+| `packages/cli/src/tools.ts` | 390 | 工具注册表 |
+| `packages/cli/src/commands.ts` | 755 | 命令注册表 |
+| `packages/cli/src/utils/auth.ts` | 65KB | 认证逻辑 |
+| `packages/cli/src/utils/claudemd.ts` | 46KB | CLAUDE.md 解析 |
+| `packages/cli/src/state/AppState.ts` | - | 450+ 字段状态 |
+| `packages/cli/src/_external/preload.ts` | 28 | 运行时 shim |
 | `scripts/build-external.ts` | 185 | 构建脚本 |
 
 ---

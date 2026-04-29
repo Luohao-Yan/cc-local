@@ -18,9 +18,9 @@ import { c as $$c } from "react/compiler-runtime";
 
 **创建三层 shim 系统来处理 `react/compiler-runtime` 依赖：**
 
-1. **运行时 Shim** (`src/_external/preload.ts`) - Bun 插件在运行时解析导入
+1. **运行时 Shim** (`packages/cli/src/_external/preload.ts`) - Bun 插件在运行时解析导入
 2. **构建时 Shim** (`scripts/build-external.ts`) - 构建插件处理相同的导入
-3. **TypeScript Shim** (`src/types/react-compiler-runtime.d.ts` + `tsconfig.json` 路径映射) - 类型声明
+3. **TypeScript Shim** (`packages/cli/src/types/react-compiler-runtime.d.ts` + `tsconfig.json` 路径映射) - 类型声明
 
 ## 后果
 

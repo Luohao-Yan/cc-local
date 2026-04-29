@@ -780,8 +780,8 @@ bun run acceptance:complete
 
 1. **`bunfig.toml` + `preload.ts`** — 注册 Bun 插件，在运行时解析 `import { feature } from 'bun:bundle'`，并定义 `MACRO.VERSION` 等全局变量。
 2. **`scripts/build-external.ts`** — 默认构建统一路由 `dist/cli.js`、packages 服务端 `dist/server.js`、旧 UI `dist/legacy-cli.js`；设置 `CCLOCAL_BUILD_LEGACY=1` 时只构建旧 `src/*` 入口，并通过插件替换 `bun:bundle`、注入 `MACRO.*`、处理私有包 external。
-3. **`src/_external/shims/`** — 为 `@ant/*` 内部包和原生 NAPI 插件提供的轻量 no-op 模块。
-4. **重构的类型文件** — `src/types/message.ts`、`src/types/tools.ts` 等泄露源码中缺失的高引用模块。
+3. **`packages/cli/src/_external/shims/`** — 为 `@ant/*` 内部包和原生 NAPI 插件提供的轻量 no-op 模块。
+4. **重构的类型文件** — `packages/cli/src/types/message.ts`、`packages/cli/src/types/tools.ts` 等泄露源码中缺失的高引用模块。
 
 ### 第三方 API 适配
 

@@ -72,9 +72,9 @@
 
 源码中确认存在的能力面：
 
-- `src/main.tsx` 中已定义正式顶层命令和参数
-- `src/commands/` 下存在大量 slash/辅助命令实现
-- `src/tools/` 下存在完整工具体系，包括 Bash、Edit、Read、MCP、WebSearch、Agent、Todo、LSP 等
+- `packages/cli/src/main.tsx` 中已定义正式顶层命令和参数
+- `packages/cli/src/commands/` 下存在大量 slash/辅助命令实现
+- `packages/cli/src/tools/` 下存在完整工具体系，包括 Bash、Edit、Read、MCP、WebSearch、Agent、Todo、LSP 等
 
 这说明旧主线从命令结构上仍然是完整的，而不是只剩一个“瘦壳”。
 

@@ -20,7 +20,7 @@ AppState 使用 Zustand 风格的状态管理，支持：
 - 函数式更新
 - 订阅状态变化
 
-AppState 定义在 `src/state/AppState.ts`。
+AppState 定义在 `packages/cli/src/state/AppState.ts`。
 
 ---
 

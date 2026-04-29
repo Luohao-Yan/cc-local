@@ -19,14 +19,14 @@
 
 | 模块 | 文件 | 说明 |
 |------|------|------|
-| `Tool` | `src/Tool.ts` | 工具基类定义 |
-| `tools.ts` | `src/tools.ts` | 工具注册表 |
-| `commands.ts` | `src/commands.ts` | 命令注册表 |
-| `query.ts` | `src/query.ts` | 查询引擎 |
-| `AppState` | `src/state/AppState.ts` | 全局状态管理 |
-| `logError` | `src/utils/log.ts` | 错误日志 |
-| `logForDebugging` | `src/utils/debug.ts` | 调试日志 |
-| `profileCheckpoint` | `src/utils/startupProfiler.ts` | 启动分析 |
+| `Tool` | `packages/cli/src/Tool.ts` | 工具基类定义 |
+| `tools.ts` | `packages/cli/src/tools.ts` | 工具注册表 |
+| `commands.ts` | `packages/cli/src/commands.ts` | 命令注册表 |
+| `query.ts` | `packages/cli/src/query.ts` | 查询引擎 |
+| `AppState` | `packages/cli/src/state/AppState.ts` | 全局状态管理 |
+| `logError` | `packages/cli/src/utils/log.ts` | 错误日志 |
+| `logForDebugging` | `packages/cli/src/utils/debug.ts` | 调试日志 |
+| `profileCheckpoint` | `packages/cli/src/utils/startupProfiler.ts` | 启动分析 |
 
 ---
 

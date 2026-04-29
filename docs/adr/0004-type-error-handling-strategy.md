@@ -8,7 +8,7 @@
 
 泄露的源代码缺少大量类型定义：
 - 内部 `@ant/*` 包没有类型声明
-- 某些核心模块（如 `src/types/message.ts`）缺失
+- 某些核心模块（如 `packages/cli/src/types/message.ts`）缺失
 - React Compiler 输出的代码类型信息不完整
 - 原生 NAPI 模块没有类型定义
 
@@ -20,7 +20,7 @@
 
 1. **不尝试修复所有类型错误** - 大多数错误是由于缺少原始类型定义
 2. **使用 `// @ts-ignore`** - 针对特定的、阻塞性的类型错误
-3. **添加最小类型声明** - 仅在必要时在 `src/types/` 下添加类型
+3. **添加最小类型声明** - 仅在必要时在 `packages/cli/src/types/` 下添加类型
 4. **保持 `strict: true`** - 继续使用严格模式，但容忍现有错误
 
 ## 后果
@@ -40,7 +40,7 @@
 ### 何时添加类型声明
 - 当某个模块被大量其他模块依赖时
 - 当类型错误阻塞了关键功能时
-- 在 `src/types/` 下创建，如 `src/types/missing-module.d.ts`
+- 在 `packages/cli/src/types/` 下创建，如 `packages/cli/src/types/missing-module.d.ts`
 
 ### 何时使用 `// @ts-ignore`
 - 针对单行、非关键的类型错误

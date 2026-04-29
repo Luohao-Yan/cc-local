@@ -13,7 +13,7 @@ This is **Codex Rebuilt** - a fully functional reconstruction of Anthropic's Cod
 - Language: TypeScript (strict mode)
 - UI: React + Ink (terminal UI)
 - **Important**: All `.tsx` files are React Compiler output (not original source)
-- Internal Anthropic features are disabled via feature flags (91 flags total: 3 enabled, 88 disabled)
+- Internal Anthropic features are disabled via feature flags (91 flags total: 6 enabled, 88 disabled (AUTO_THEME, BREAK_CACHE_COMMAND, BUDDY, BUILTIN_EXPLORE_PLAN_AGENTS, TRANSCRIPT_CLASSIFIER, BASH_CLASSIFIER))
 
 ---
 
@@ -54,30 +54,30 @@ import { c as $$c } from "react/compiler-runtime";
 ```
 
 A 3-layer shim system handles this:
-1. **Runtime**: `src/_external/preload.ts` - Bun plugin that shims `react/compiler-runtime`
+1. **Runtime**: `packages/cli/src/_external/preload.ts` - Bun plugin that shims `react/compiler-runtime`
 2. **Build-time**: `scripts/build-external.ts` - Build plugin for the same
-3. **TypeScript**: `src/types/react-compiler-runtime.d.ts` + `tsconfig.json` path mapping
+3. **TypeScript**: `packages/cli/src/types/react-compiler-runtime.d.ts` + `tsconfig.json` path mapping
 
 ### Entrypoint Flow
-1. **`src/entrypoints/cli.tsx`** - Bootstrap entry with fast-path handling for `--version`, special daemon modes, etc. Uses dynamic imports to minimize startup time.
-2. **`src/main.tsx`** - Commander CLI setup, REPL launch (785KB file)
-3. **REPL screen** - Interactive terminal UI in `src/screens/REPL.tsx`.
+1. **`packages/cli/src/entrypoints/cli.tsx`** - Bootstrap entry with fast-path handling for `--version`, special daemon modes, etc. Uses dynamic imports to minimize startup time.
+2. **`packages/cli/src/main.tsx`** - Commander CLI setup, REPL launch (785KB file)
+3. **REPL screen** - Interactive terminal UI in `packages/cli/src/screens/REPL.tsx`.
 
 ### Key Modules
 
 | Module | Purpose |
 |---|---|
-| `src/tools.ts` | Registry of all built-in tools (50+ tools) |
-| `src/commands.ts` | Registry of slash-commands (100+ commands) |
-| `src/query.ts` | LLM query engine with infinite loop architecture |
-| `src/Tool.ts` | Base tool type definitions |
-| `src/ink/` | Custom Ink terminal renderer (52 files) |
-| `src/components/` | React terminal UI components (146+) |
-| `src/screens/` | Full-screen UIs (REPL, Doctor, Resume) |
-| `src/services/` | API client, MCP, analytics, context compaction (41+) |
-| `src/hooks/` | React hooks (87+) |
-| `src/utils/` | Utility functions (335+) |
-| `src/state/` | AppState with 450+ fields for global state |
+| `packages/cli/src/tools.ts` | Registry of all built-in tools (50+ tools) |
+| `packages/cli/src/commands.ts` | Registry of slash-commands (100+ commands) |
+| `packages/cli/src/query.ts` | LLM query engine with infinite loop architecture |
+| `packages/cli/src/Tool.ts` | Base tool type definitions |
+| `packages/cli/src/ink/` | Custom Ink terminal renderer (52 files) |
+| `packages/cli/src/components/` | React terminal UI components (146+) |
+| `packages/cli/src/screens/` | Full-screen UIs (REPL, Doctor, Resume) |
+| `packages/cli/src/services/` | API client, MCP, analytics, context compaction (41+) |
+| `packages/cli/src/hooks/` | React hooks (87+) |
+| `packages/cli/src/utils/` | Utility functions (335+) |
+| `packages/cli/src/state/` | AppState with 450+ fields for global state |
 
 ### Query Engine Architecture
 
@@ -88,24 +88,24 @@ The query engine uses an infinite loop pattern:
 4. Execute tools and return results
 5. Repeat until model generates final answer
 
-Core in `src/query.ts` - `queryLoop()` function.
+Core in `packages/cli/src/query.ts` - `queryLoop()` function.
 
 ### Tool System
 
-Tools are defined in `src/tools/<ToolName>/` directories:
+Tools are defined in `packages/cli/src/tools/<ToolName>/` directories:
 - Use Zod for input/output schemas
 - Implement `call()` method for core logic
 - `checkPermissions()` for authorization
-- Register in `src/tools.ts`
+- Register in `packages/cli/src/tools.ts`
 
 50+ tools including: FileReadTool, BashTool, AgentTool, WebSearchTool, EditTool, etc.
 
 ### Command System
 
-Slash commands (`/command`) are in `src/commands/<command-name>/`:
+Slash commands (`/command`) are in `packages/cli/src/commands/<command-name>/`:
 - **3 types**: `local` (text output), `local-jsx` (UI output), `prompt` (sends to model)
 - Implement `run()` method
-- Register in `src/commands.ts`
+- Register in `packages/cli/src/commands.ts`
 
 100+ commands including: help, model, plan, commit, cost, stats, etc.
 
@@ -113,10 +113,10 @@ Slash commands (`/command`) are in `src/commands/<command-name>/`:
 
 The original code depends on internal Anthropic build infrastructure. This project provides:
 
-- **`src/_external/preload.ts`** - Runtime shim for `bun:bundle` module, `MACRO.*` globals, and `react/compiler-runtime`
-- **`src/_external/shims/`** - Stub packages for `@ant/*` internal packages and native NAPI addons
-- **`scripts/build-external.ts`** - `Bun.build()` script with feature flag handling (91 flags: 88 disabled, 3 enabled)
-- **`src/types/`** - Reconstructed type definitions for missing modules
+- **`packages/cli/src/_external/preload.ts`** - Runtime shim for `bun:bundle` module, `MACRO.*` globals, and `react/compiler-runtime`
+- **`packages/cli/src/_external/shims/`** - Stub packages for `@ant/*` internal packages and native NAPI addons
+- **`scripts/build-external.ts`** - `Bun.build()` script with feature flag handling (91 flags: 88 disabled, 6 enabled)
+- **`packages/cli/src/types/`** - Reconstructed type definitions for missing modules
 
 ### Feature Flags
 
@@ -130,8 +130,8 @@ Most internal features are disabled (see `scripts/build-external.ts`). Only thes
 ## Important Patterns
 
 - **Dynamic imports** used extensively for fast startup
-- **Tool system**: Tools defined in `src/tools/*/` directories, registered in `tools.ts`
-- **Command system**: Slash commands defined in `src/commands/*/`, registered in `commands.ts`
+- **Tool system**: Tools defined in `packages/cli/src/tools/*/` directories, registered in `tools.ts`
+- **Command system**: Slash commands defined in `packages/cli/src/commands/*/`, registered in `commands.ts`
 - **React + Ink**: Terminal UI uses React components rendered via custom Ink
 - **State management**: `useAppState` hook with selectors for AppState (450+ fields)
 - **TypeScript**: Strict mode enabled; many type errors are expected (missing original types) - use `// @ts-ignore` when needed
@@ -153,6 +153,6 @@ Many TypeScript errors are expected due to:
 
 See `docs/debugging.md` for comprehensive debugging guide. Quick tips:
 - `export DEBUG=*` for debug logging
-- Use `logForDebugging()` from `src/utils/debug.ts`
+- Use `logForDebugging()` from `packages/cli/src/utils/debug.ts`
 - Add `console.log()` in tool/command implementations
 - Check `DEVELOPING.md` for more

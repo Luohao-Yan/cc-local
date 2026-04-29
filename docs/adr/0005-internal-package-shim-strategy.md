@@ -21,7 +21,7 @@
 2. **类型-only shims** - 仅提供类型声明，无实际实现
 3. **部分实现** - 对于关键功能，提供最小可行实现
 
-Shim 位于 `src/_external/shims/` 目录。
+Shim 位于 `packages/cli/src/_external/shims/` 目录。
 
 ## 后果
 
@@ -39,7 +39,7 @@ Shim 位于 `src/_external/shims/` 目录。
 
 ### 模式 1: 空对象 Shim
 ```typescript
-// src/_external/shims/@ant/telemetry.ts
+// packages/cli/src/_external/shims/@ant/telemetry.ts
 export default {};
 export const logEvent = () => {};
 export const trackMetric = () => {};
@@ -47,7 +47,7 @@ export const trackMetric = () => {};
 
 ### 模式 2: 默认值 Shim
 ```typescript
-// src/_external/shims/@ant/config.ts
+// packages/cli/src/_external/shims/@ant/config.ts
 export const getConfig = () => ({});
 export const saveConfig = () => {};
 ```

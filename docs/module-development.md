@@ -18,7 +18,7 @@
 
 ### 工具系统概述
 
-工具是 Claude Code 与外部系统交互的核心方式。每个工具都定义在 `src/tools/<ToolName>/` 目录下。
+工具是 Claude Code 与外部系统交互的核心方式。每个工具都定义在 `packages/cli/src/tools/<ToolName>/` 目录下。
 
 ### 工具开发步骤
 
@@ -30,7 +30,7 @@ mkdir -p src/tools/MyNewTool
 
 #### 2. 创建工具实现文件
 
-创建 `src/tools/MyNewTool/MyNewTool.ts`：
+创建 `packages/cli/src/tools/MyNewTool/MyNewTool.ts`：
 
 ```typescript
 import { z } from 'zod';
@@ -112,7 +112,7 @@ export default MyNewTool;
 
 #### 3. 注册工具
 
-在 `src/tools.ts` 中添加：
+在 `packages/cli/src/tools.ts` 中添加：
 
 ```typescript
 import { MyNewTool } from './tools/MyNewTool/MyNewTool.js';
@@ -132,10 +132,10 @@ export function getAllBaseTools(): Tools {
 
 | 工具 | 位置 | 说明 |
 |------|------|------|
-| FileReadTool | `src/tools/FileReadTool/` | 文件读取，处理多种格式 |
-| BashTool | `src/tools/BashTool/` | Shell 命令执行 |
-| AgentTool | `src/tools/AgentTool/` | 子 Agent 启动 |
-| WebSearchTool | `src/tools/WebSearchTool/` | Web 搜索 |
+| FileReadTool | `packages/cli/src/tools/FileReadTool/` | 文件读取，处理多种格式 |
+| BashTool | `packages/cli/src/tools/BashTool/` | Shell 命令执行 |
+| AgentTool | `packages/cli/src/tools/AgentTool/` | 子 Agent 启动 |
+| WebSearchTool | `packages/cli/src/tools/WebSearchTool/` | Web 搜索 |
 
 ---
 
@@ -143,7 +143,7 @@ export function getAllBaseTools(): Tools {
 
 ### 命令系统概述
 
-斜杠命令（`/command`）是用户直接调用的功能。命令定义在 `src/commands/<command-name>/` 目录下。
+斜杠命令（`/command`）是用户直接调用的功能。命令定义在 `packages/cli/src/commands/<command-name>/` 目录下。
 
 ### 命令类型
 
@@ -165,7 +165,7 @@ mkdir -p src/commands/my-command
 
 #### 2. 创建命令实现
 
-创建 `src/commands/my-command/index.ts`：
+创建 `packages/cli/src/commands/my-command/index.ts`：
 
 ```typescript
 import { type Command } from '../../types/command.js';
@@ -249,7 +249,7 @@ export const myJsxCommand: Command = {
 
 #### 3. 注册命令
 
-在 `src/commands.ts` 中添加：
+在 `packages/cli/src/commands.ts` 中添加：
 
 ```typescript
 import myCommand from './commands/my-command/index.js';
@@ -265,10 +265,10 @@ const COMMANDS = memoize((): Command[] => [
 
 | 命令 | 位置 | 类型 | 说明 |
 |------|------|------|------|
-| help | `src/commands/help/` | prompt | 帮助命令 |
-| model | `src/commands/model/` | local-jsx | 模型选择 |
-| plan | `src/commands/plan/` | local | 计划模式切换 |
-| commit | `src/commands/commit.js` | local | Git 提交 |
+| help | `packages/cli/src/commands/help/` | prompt | 帮助命令 |
+| model | `packages/cli/src/commands/model/` | local-jsx | 模型选择 |
+| plan | `packages/cli/src/commands/plan/` | local | 计划模式切换 |
+| commit | `packages/cli/src/commands/commit.js` | local | Git 提交 |
 
 ---
 
@@ -276,13 +276,13 @@ const COMMANDS = memoize((): Command[] => [
 
 ### 组件系统概述
 
-项目使用 **React + 自定义 Ink** 构建终端 UI。组件位于 `src/components/` 目录下。
+项目使用 **React + 自定义 Ink** 构建终端 UI。组件位于 `packages/cli/src/components/` 目录下。
 
 ### 组件开发步骤
 
 #### 1. 创建组件文件
 
-创建 `src/components/MyComponent.tsx`：
+创建 `packages/cli/src/components/MyComponent.tsx`：
 
 ```typescript
 import React, { useState, useEffect } from 'react';
@@ -364,14 +364,14 @@ function MyComponent() {
 
 ### Skills 系统概述
 
-Skills 是可重用的提示模板，位于 `src/skills/` 目录。项目支持：
+Skills 是可重用的提示模板，位于 `packages/cli/src/skills/` 目录。项目支持：
 - **内置 Skills** (`bundledSkills.ts`)
 - **目录加载 Skills** (`./skills/` 目录)
 - **MCP Skills** (从 MCP 服务器加载)
 
 ### 内置 Skill 开发步骤
 
-#### 1. 在 `src/skills/bundledSkills.ts` 中添加
+#### 1. 在 `packages/cli/src/skills/bundledSkills.ts` 中添加
 
 ```typescript
 import { registerBundledSkill } from './bundledSkills.js';

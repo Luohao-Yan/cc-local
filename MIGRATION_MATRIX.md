@@ -54,7 +54,7 @@
 
 | 能力组 | 旧主线 `src/*` | 新架构 `packages/*` | 状态 | 说明 |
 |---|---|---|---|---|
-| 正式 CLI 入口 | `src/entrypoints/cli.tsx` | `packages/cli/src/index.ts` 路由 + `src/entrypoints/cli.tsx` 默认 UI | `done` | 统一入口已保留旧 UI，packages 子命令作为新底座能力接入 |
+| 正式 CLI 入口 | `packages/cli/src/entrypoints/cli.tsx` | `packages/cli/src/index.ts` 路由 + `packages/cli/src/entrypoints/cli.tsx` 默认 UI | `done` | 统一入口已保留旧 UI，packages 子命令作为新底座能力接入 |
 | 单次调用 `--print` | 已验证 | 默认转旧 UI | `done` | 避免 packages 简化输出造成用户感知变化 |
 | 交互式 REPL | 已验证 | 默认转旧 UI | `done` | packages simple REPL 不再作为默认用户入口 |
 | 会话创建 | 已验证 | 已实现 | `done` | `sessions new` / 自动创建会话已具备 |
@@ -101,7 +101,7 @@
 | 会话持久化 | 已验证 | 已实现 | `done` | SQLite + SessionManager 已接通 |
 | REST API | 旧主线无此重点 | 已实现 | `done` | 这是新架构的新增优势 |
 | GUI/Tauri 基座 | 无 | 设计已完成 | `future` | 文档已齐，实际客户端属于后续 GUI 产品线，不阻塞 CLI 重构完成 |
-| legacy fallback | 无 | 已保留显式入口 | `done` | 仅 `--legacy` 显式委托到 `src/entrypoints/cli.tsx` |
+| legacy fallback | 无 | 已保留显式入口 | `done` | 仅 `--legacy` 显式委托到 `packages/cli/src/entrypoints/cli.tsx` |
 
 ## 当前结论
 

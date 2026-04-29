@@ -106,12 +106,12 @@ claude-code-rebuilt/
 
 | 文件 | 行数 | 说明 |
 |------|------|------|
-| `src/main.tsx` | 785KB | 主 CLI 设置 |
-| `src/query.ts` | - | 查询引擎核心 |
-| `src/tools.ts` | 390 | 工具注册表 |
-| `src/commands.ts` | 755 | 命令注册表 |
-| `src/utils/auth.ts` | 65KB | 认证逻辑 |
-| `src/_external/preload.ts` | 28 | 运行时 shim |
+| `packages/cli/src/main.tsx` | 785KB | 主 CLI 设置 |
+| `packages/cli/src/query.ts` | - | 查询引擎核心 |
+| `packages/cli/src/tools.ts` | 390 | 工具注册表 |
+| `packages/cli/src/commands.ts` | 755 | 命令注册表 |
+| `packages/cli/src/utils/auth.ts` | 65KB | 认证逻辑 |
+| `packages/cli/src/_external/preload.ts` | 28 | 运行时 shim |
 
 ---
 
@@ -197,15 +197,15 @@ logForDebugging('My debug message', { data: 'value' });
 
 #### 调试工具执行
 
-在 `src/tools/<YourTool>/<YourTool>.ts` 中添加断点或日志。
+在 `packages/cli/src/tools/<YourTool>/<YourTool>.ts` 中添加断点或日志。
 
 #### 调试命令执行
 
-在 `src/commands/<your-command>/index.ts` 中添加日志。
+在 `packages/cli/src/commands/<your-command>/index.ts` 中添加日志。
 
 #### 调试查询引擎
 
-在 `src/query.ts` 的 `queryLoop()` 函数中添加日志。
+在 `packages/cli/src/query.ts` 的 `queryLoop()` 函数中添加日志。
 
 ---
 
@@ -213,7 +213,7 @@ logForDebugging('My debug message', { data: 'value' });
 
 ### Q: 如何修复 `react/compiler-runtime` 错误？
 
-A: 项目已经通过 `src/_external/preload.ts` 提供了 shim，确保 `bunfig.toml` 正确配置了预加载。
+A: 项目已经通过 `packages/cli/src/_external/preload.ts` 提供了 shim，确保 `bunfig.toml` 正确配置了预加载。
 
 ### Q: 类型检查报错很多怎么办？
 

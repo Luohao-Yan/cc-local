@@ -24,9 +24,9 @@ A: Claude Code Rebuilt 是 Anthropic Claude Code 的重构版本，基于泄露�
 ### Q: 为什么所有 .tsx 文件都有 `react/compiler-runtime` 导入？
 
 A: 这些文件是 **React Compiler** 的输出，不是原始源代码。原始源代码经过 React Compiler 编译后生成了这些文件，因此都包含运行时导入。项目通过三层 shim 系统来处理这个问题：
-- 运行时 shim (`src/_external/preload.ts`)
+- 运行时 shim (`packages/cli/src/_external/preload.ts`)
 - 构建时 shim (`scripts/build-external.ts`)
-- TypeScript 类型声明 (`src/types/react-compiler-runtime.d.ts`)
+- TypeScript 类型声明 (`packages/cli/src/types/react-compiler-runtime.d.ts`)
 
 ### Q: 项目的原始源代码在哪里？
 
@@ -84,8 +84,8 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 
 A: 确保以下文件都正确配置：
 
-1. `bunfig.toml` 存在且包含 `preload = "./src/_external/preload.ts"`
-2. `src/_external/preload.ts` 包含 react/compiler-runtime shim
+1. `bunfig.toml` 存在且包含 `preload = "./packages/cli/src/_external/preload.ts"`
+2. `packages/cli/src/_external/preload.ts` 包含 react/compiler-runtime shim
 3. 清理缓存后重新运行：
    ```bash
    rm -rf .bun
@@ -154,7 +154,7 @@ A: **大部分类型错误不影响运行**。原因：
 解决方案：
 - 可以忽略非关键错误
 - 使用 `// @ts-ignore` 注释特定行
-- 在 `src/types/` 下添加缺失的类型声明
+- 在 `packages/cli/src/types/` 下添加缺失的类型声明
 
 ### Q: 如何忽略特定的类型错误？
 
@@ -171,7 +171,7 @@ const value: any = something;
 
 A: 这是常见的类型缺失错误。解决方案：
 1. 使用 `// @ts-ignore` 忽略
-2. 在 `src/types/` 下创建模块声明
+2. 在 `packages/cli/src/types/` 下创建模块声明
 3. 使用类型断言 `as any`
 
 ### Q: 类型错误会影响运行吗？
@@ -185,27 +185,27 @@ A: **不会**。Bun 直接运行 TypeScript/JavaScript，不依赖类型检查�
 ### Q: 如何添加新工具？
 
 A: 简要步骤：
-1. 创建 `src/tools/MyNewTool/MyNewTool.ts`
+1. 创建 `packages/cli/src/tools/MyNewTool/MyNewTool.ts`
 2. 使用 Zod 定义输入输出 Schema
 3. 实现 `call()` 方法
-4. 在 `src/tools.ts` 中注册
+4. 在 `packages/cli/src/tools.ts` 中注册
 
 详细指南请参考 [module-development.md](./module-development.md)
 
 ### Q: 如何添加新命令？
 
 A: 简要步骤：
-1. 创建 `src/commands/my-command/index.ts`
+1. 创建 `packages/cli/src/commands/my-command/index.ts`
 2. 选择命令类型 (`local` / `local-jsx` / `prompt`)
 3. 实现 `run()` 方法
-4. 在 `src/commands.ts` 中注册
+4. 在 `packages/cli/src/commands.ts` 中注册
 
 详细指南请参考 [module-development.md](./module-development.md)
 
 ### Q: 如何添加新组件？
 
 A: 简要步骤：
-1. 创建 `src/components/MyComponent.tsx`
+1. 创建 `packages/cli/src/components/MyComponent.tsx`
 2. 使用 React + Ink 组件
 3. 使用 `useAppState` 访问全局状态
 4. 在需要的地方导入使用
@@ -219,7 +219,7 @@ A:
 |------|-------------|-----------------|
 | 调用者 | AI 模型 | 用户 (斜杠命令) |
 | 前缀 | 无 (模型调用) | `/` (如 `/help`) |
-| 定义位置 | `src/tools/` | `src/commands/` |
+| 定义位置 | `packages/cli/src/tools/` | `packages/cli/src/commands/` |
 | Schema | Zod 必需 | 可选 (参数解析) |
 | 权限检查 | `checkPermissions()` | `isEnabled()` |
 
@@ -248,7 +248,7 @@ A: 查询引擎采用 **无限循环架构**：
 4. 执行工具并返回结果
 5. 重复直到模型生成最终答案
 
-核心在 `src/query.ts` 的 `queryLoop()` 函数。
+核心在 `packages/cli/src/query.ts` 的 `queryLoop()` 函数。
 
 ### Q: AppState 有多大？
 
@@ -256,13 +256,13 @@ A: AppState 有 **450+ 字段**，是全局状态管理的核心。使用 Zustan
 
 ### Q: Ink 渲染器是自定义的吗？
 
-A: 是的，项目包含 **52 个文件** 的自定义 Ink 实现，位于 `src/ink/` 目录。
+A: 是的，项目包含 **52 个文件** 的自定义 Ink 实现，位于 `packages/cli/src/ink/` 目录。
 
 ### Q: 有多少工具和命令？
 
 A:
-- **工具**: 50+ 个，位于 `src/tools/`
-- **命令**: 100+ 个，位于 `src/commands/`
+- **工具**: 50+ 个，位于 `packages/cli/src/tools/`
+- **命令**: 100+ 个，位于 `packages/cli/src/commands/`
 
 详细列表请参考 [PROJECT_ANALYSIS.md](../PROJECT_ANALYSIS.md)
 

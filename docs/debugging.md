@@ -47,7 +47,7 @@ logForDebugging('我的调试消息', {
 
 ### 3. 使用启动分析器
 
-项目内置了启动分析器，在 `src/utils/startupProfiler.ts` 中：
+项目内置了启动分析器，在 `packages/cli/src/utils/startupProfiler.ts` 中：
 
 ```typescript
 import { profileCheckpoint } from '../utils/startupProfiler.js';
@@ -74,9 +74,9 @@ profileCheckpoint('my_module_end');
 
 | 函数 | 说明 | 文件 |
 |------|------|------|
-| `logError()` | 错误日志 | `src/utils/log.ts` |
-| `logEvent()` | 事件日志 | `src/services/analytics/index.ts` |
-| `logForDebugging()` | 调试日志 | `src/utils/debug.ts` |
+| `logError()` | 错误日志 | `packages/cli/src/utils/log.ts` |
+| `logEvent()` | 事件日志 | `packages/cli/src/services/analytics/index.ts` |
+| `logForDebugging()` | 调试日志 | `packages/cli/src/utils/debug.ts` |
 
 ### 使用 logError
 
@@ -144,7 +144,7 @@ NODE_DEBUG=* bun run start
 
 **常见原因**:
 - `bunfig.toml` 配置错误
-- `src/_external/preload.ts` 语法错误
+- `packages/cli/src/_external/preload.ts` 语法错误
 - 缺少环境变量
 
 ---
@@ -165,7 +165,7 @@ NODE_DEBUG=* bun run start
 
 3. **检查 tsconfig.json** - 确保配置正确
 
-4. **添加类型声明** - 在 `src/types/` 下创建缺失的类型
+4. **添加类型声明** - 在 `packages/cli/src/types/` 下创建缺失的类型
 
 ---
 
@@ -175,7 +175,7 @@ NODE_DEBUG=* bun run start
 
 **排查步骤**:
 
-1. **检查工具注册** - 确认在 `src/tools.ts` 中已添加
+1. **检查工具注册** - 确认在 `packages/cli/src/tools.ts` 中已添加
 2. **检查权限** - `checkPermissions()` 是否返回 `allowed: true`
 3. **检查输入验证** - Zod schema 是否匹配
 4. **添加调试日志** - 在工具的 `call()` 方法中添加日志
@@ -195,7 +195,7 @@ async call(input, context: ToolUseContext) {
 
 **排查步骤**:
 
-1. **检查命令注册** - 确认在 `src/commands.ts` 中已添加
+1. **检查命令注册** - 确认在 `packages/cli/src/commands.ts` 中已添加
 2. **检查命令名称** - `name` 字段是否正确
 3. **检查 `isEnabled()`** - 是否返回 `true`
 4. **重新加载** - 某些命令需要重启 REPL
@@ -229,7 +229,7 @@ async call(input, context: ToolUseContext) {
 
 **解决方案**:
 1. 确认 `bunfig.toml` 存在且包含 `preload` 配置
-2. 确认 `src/_external/preload.ts` 正确导出了 shim
+2. 确认 `packages/cli/src/_external/preload.ts` 正确导出了 shim
 3. 清理并重新运行：
    ```bash
    rm -rf .bun
@@ -300,7 +300,7 @@ const value = something as SomeType;
 
 ### 策略 3: 创建类型声明
 
-在 `src/types/` 下创建声明文件：
+在 `packages/cli/src/types/` 下创建声明文件：
 
 ```typescript
 // src/types/missing-module.d.ts
