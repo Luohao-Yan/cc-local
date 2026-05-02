@@ -25,7 +25,7 @@
 #### 1. 创建工具目录
 
 ```bash
-mkdir -p src/tools/MyNewTool
+mkdir -p packages/cli/src/tools/MyNewTool
 ```
 
 #### 2. 创建工具实现文件
@@ -160,7 +160,7 @@ export function getAllBaseTools(): Tools {
 #### 1. 创建命令目录
 
 ```bash
-mkdir -p src/commands/my-command
+mkdir -p packages/cli/src/commands/my-command
 ```
 
 #### 2. 创建命令实现
@@ -419,13 +419,13 @@ whenToUse: 当需要时使用
 
 ### 插件系统概述
 
-插件可以提供 skills、hooks 和 MCP 服务器。内置插件位于 `src/plugins/`。
+插件可以提供 skills、hooks 和 MCP 服务器。内置插件位于 `packages/cli/src/plugins/`。
 
 ### 插件开发步骤
 
 #### 1. 创建插件
 
-在 `src/plugins/builtinPlugins.ts` 中注册：
+在 `packages/cli/src/plugins/builtinPlugins.ts` 中注册：
 
 ```typescript
 import { registerBuiltinPlugin } from './builtinPlugins.js';

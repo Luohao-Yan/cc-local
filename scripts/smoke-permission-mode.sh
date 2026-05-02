@@ -43,7 +43,7 @@ cmd = [
 try:
     proc = subprocess.run(
         cmd,
-        cwd='/Users/yanluohao/开发/cc-local',
+        cwd=os.environ.get('CCLOCAL_ROOT', os.getcwd()),
         capture_output=True,
         text=True,
         timeout=35,
@@ -66,13 +66,14 @@ assert_contains "$deny_output" "TARGET_EXISTS=False"
 echo "[smoke-permission-mode] verifying acceptEdits auto-allow branch"
 accept_output="$(
   python3 - <<'PY'
+import os
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
 
 repo = Path(tempfile.mkdtemp(prefix='cc-local-perm-'))
-cli = '/Users/yanluohao/开发/cc-local/dist/cli.js'
+cli = os.environ.get('CCLOCAL_ROOT', os.getcwd()) + '/dist/cli.js'
 
 cmd = [
     'bun',
@@ -130,7 +131,7 @@ cmd = [
 try:
     proc = subprocess.run(
         cmd,
-        cwd='/Users/yanluohao/开发/cc-local',
+        cwd=os.environ.get('CCLOCAL_ROOT', os.getcwd()),
         capture_output=True,
         text=True,
         timeout=18,

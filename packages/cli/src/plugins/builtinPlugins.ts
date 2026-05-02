@@ -7,7 +7,7 @@ function loadBuiltinPlugins(): Promise<any> {
     return builtinPluginsPromise
   }
 
-  builtinPluginsPromise = import(builtinPluginsPath).catch(() => {
+  builtinPluginsPromise = import(builtinPluginsPath).catch((err) => {
     // When running from a bundled distribution (dist/legacy-cli.js) outside
     // the repository layout, the relative path to src/plugins won't resolve.
     // Provide no-op fallbacks so the CLI can still boot.

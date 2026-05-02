@@ -18,19 +18,10 @@ export function findLegacyUiRepoRoot(fromPath = fileURLToPath(import.meta.url)):
       existsSync(join(current, 'package.json')) &&
       existsSync(join(current, 'AGENTS.md'))
     ) {
-      // Check new layout first (packages/cli/src/ directly)
       if (
         existsSync(join(current, 'packages', 'cli', 'src', 'components', 'App.tsx')) &&
         existsSync(join(current, 'packages', 'cli', 'src', 'screens', 'REPL.tsx')) &&
         existsSync(join(current, 'packages', 'cli', 'src', 'replLauncher.tsx'))
-      ) {
-        return current
-      }
-      // Fallback: old layout (src/ pointer files)
-      if (
-        existsSync(join(current, 'src', 'components', 'App.tsx')) &&
-        existsSync(join(current, 'src', 'screens', 'REPL.tsx')) &&
-        existsSync(join(current, 'src', 'replLauncher.tsx'))
       ) {
         return current
       }

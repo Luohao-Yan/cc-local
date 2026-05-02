@@ -254,6 +254,19 @@ export const skillToolAdapter: Tool = {
     required: ['skill_name'],
   },
   async execute(input: { skill_name: string; input?: string }, context: ToolContext) {
+    try {
+      const mod = await import('../tools/SkillTool/SkillTool.js')
+      const ToolClass = mod.SkillTool ?? mod.default
+      const tool = typeof ToolClass === 'function' ? new ToolClass() : ToolClass
+      if (typeof tool.execute === 'function') {
+        return await tool.execute(input, adaptContext(context))
+      }
+      if (typeof tool.call === 'function') {
+        return await tool.call(input, adaptContext(context))
+      }
+    } catch {
+      // Fall through to placeholder
+    }
     return {
       content: [{ type: 'text', text: `[Skill invoked: ${input.skill_name}]\n${input.input ?? ''}` }],
     }
@@ -271,10 +284,11 @@ export const askUserQuestionToolAdapter: Tool = {
     required: ['question'],
   },
   async execute(input: { question: string }, context: ToolContext) {
-    // In the new architecture, this needs an interactive callback.
-    // For now, return a placeholder that the adapter layer can hook into.
+    // The legacy AskUserQuestionTool is a React/Ink component (TSX) that renders a UI.
+    // In native mode without Ink, fall back to a text-based interaction.
+    // The native REPL can intercept this by checking tool_call events.
     return {
-      content: [{ type: 'text', text: `[Clarification needed]: ${input.question}` }],
+      content: [{ type: 'text', text: `[Clarification needed]: ${input.question}\n(Please provide your answer in the next message)` }],
     }
   },
 }
@@ -293,6 +307,19 @@ export const sendMessageToolAdapter: Tool = {
     required: ['recipient', 'content'],
   },
   async execute(input: { recipient: string; content: string }, context: ToolContext) {
+    try {
+      const mod = await import('../tools/SendMessageTool/SendMessageTool.js')
+      const ToolClass = mod.SendMessageTool ?? mod.default
+      const tool = typeof ToolClass === 'function' ? new ToolClass() : ToolClass
+      if (typeof tool.execute === 'function') {
+        return await tool.execute(input, adaptContext(context))
+      }
+      if (typeof tool.call === 'function') {
+        return await tool.call(input, adaptContext(context))
+      }
+    } catch {
+      // Fall through to placeholder
+    }
     return {
       content: [{ type: 'text', text: `[Message sent to ${input.recipient}]: ${input.content}` }],
     }
@@ -329,6 +356,19 @@ export const toolSearchToolAdapter: Tool = {
     required: ['query'],
   },
   async execute(input: { query: string }, context: ToolContext) {
+    try {
+      const mod = await import('../tools/ToolSearchTool/ToolSearchTool.js')
+      const ToolClass = mod.ToolSearchTool ?? mod.default
+      const tool = typeof ToolClass === 'function' ? new ToolClass() : ToolClass
+      if (typeof tool.execute === 'function') {
+        return await tool.execute(input, adaptContext(context))
+      }
+      if (typeof tool.call === 'function') {
+        return await tool.call(input, adaptContext(context))
+      }
+    } catch {
+      // Fall through to placeholder
+    }
     return {
       content: [{ type: 'text', text: `[Tool search results for: ${input.query}]` }],
     }
@@ -336,17 +376,12 @@ export const toolSearchToolAdapter: Tool = {
 }
 
 /**
- * All tool adapters ready for registration in the @cclocal/core ToolRegistry.
+ * Bridge adapters for registering legacy CLI tools into the core ToolRegistry.
+ *
+ * Note: The 10 original adapters (Agent, TaskOutput, TaskStop, EnterPlanMode,
+ * ExitPlanMode, Skill, AskUserQuestion, SendMessage, SendUserMessage, ToolSearch)
+ * have been superseded by native implementations in @cclocal/core. This array
+ * is now empty but retained as an extension point for future bridge tools
+ * that don't have a native core implementation.
  */
-export const ALL_TOOL_ADAPTERS: Tool[] = [
-  agentToolAdapter,
-  taskOutputToolAdapter,
-  taskStopToolAdapter,
-  enterPlanModeToolAdapter,
-  exitPlanModeToolAdapter,
-  skillToolAdapter,
-  askUserQuestionToolAdapter,
-  sendMessageToolAdapter,
-  sendUserMessageToolAdapter,
-  toolSearchToolAdapter,
-]
+export const ALL_TOOL_ADAPTERS: Tool[] = []

@@ -3,7 +3,7 @@
 审计对象：
 
 - 正式 CLI：`bun run start`
-- 正式构建物：`/Users/yanluohao/开发/cc-local/dist/cli.js`
+- 正式构建物：`./dist/cli.js`
 - 旧主线插件生命周期命令
 
 审计日期：
@@ -49,7 +49,7 @@
 
 本轮新增：
 
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-plugin-lifecycle.sh`
+- `./scripts/smoke-plugin-lifecycle.sh`
 
 ## 当前结论
 

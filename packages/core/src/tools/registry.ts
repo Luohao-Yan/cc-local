@@ -35,6 +35,7 @@ import {
   configTool,
   taskOutputTool,
   taskStopTool,
+  getConditionalTools,
 } from './impl/index.js'
 
 export class ToolRegistry {
@@ -101,6 +102,10 @@ export class ToolRegistry {
     this.register(configTool)
     this.register(taskOutputTool)
     this.register(taskStopTool)
+    // 条件工具 — 与旧版 tools.ts 的条件判断对齐
+    for (const tool of getConditionalTools()) {
+      this.register(tool)
+    }
   }
 
   /**

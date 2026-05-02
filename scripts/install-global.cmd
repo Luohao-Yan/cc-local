@@ -103,6 +103,10 @@ if exist "%LOCALAPPDATA%\pnpm\cclocal.cmd"  del "%LOCALAPPDATA%\pnpm\cclocal.cmd
 set "CMD_FILE=%BUN_DIR%cclocal.cmd"
 echo @bun "%PROJECT_DIR%\dist\cli.js" %%* > "%CMD_FILE%"
 
+:: 创建 cclocal-next.cmd 灰度候选入口
+set "NEXT_CMD_FILE=%BUN_DIR%cclocal-next.cmd"
+echo @bun "%PROJECT_DIR%\dist\next-cli.js" %%* > "%NEXT_CMD_FILE%"
+
 :: ===== .env 自动迁移到 ~/.claude/models.json =====
 :: 使用独立 .ps1 脚本执行，解决 bun 读取 GBK 编码 .env 文件乱码问题
 set "MODELS_JSON=%CLAUDE_DIR%\models.json"

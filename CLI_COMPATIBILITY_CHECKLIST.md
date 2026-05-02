@@ -7,11 +7,11 @@
 从现在起，`cclocal` 的唯一正式入口定义为：
 
 - 开发启动：`bun run start`
-- 构建产物：`/Users/yanluohao/开发/cc-local/dist/cli.js`
-- 源码路由入口：`/Users/yanluohao/开发/cc-local/packages/cli/src/index.ts`
-- 默认 UI 入口：`/Users/yanluohao/开发/cc-local/src/entrypoints/cli.tsx`
-- 全局安装脚本：`/Users/yanluohao/开发/cc-local/scripts/install-global.sh`
-- Windows 安装脚本：`/Users/yanluohao/开发/cc-local/scripts/install-global.cmd`
+- 构建产物：`./dist/cli.js`
+- 源码路由入口：`./packages/cli/src/index.ts`
+- 默认 UI 入口：`./packages/cli/src/entrypoints/cli.tsx`
+- 全局安装脚本：`./scripts/install-global.sh`
+- Windows 安装脚本：`./scripts/install-global.cmd`
 
 `dist/cli.js` 是统一路由入口。无子命令、`--help`、`--print`、默认 REPL 等用户主路径必须保持旧版 Claude Code UI；`packages/cli`、`packages/server`、`packages/core` 作为新架构底座承接 `mcp`、`models`、`sessions` 等管理子命令和 REST/MCP 能力。
 

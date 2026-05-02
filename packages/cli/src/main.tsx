@@ -801,7 +801,9 @@ export async function main() {
   const hasPrintFlag = cliArgs.includes('-p') || cliArgs.includes('--print');
   const hasInitOnlyFlag = cliArgs.includes('--init-only');
   const hasSdkUrl = cliArgs.some(arg => arg.startsWith('--sdk-url'));
-  const isNonInteractive = hasPrintFlag || hasInitOnlyFlag || hasSdkUrl || !process.stdout.isTTY;
+  // When spawned via delegateToLegacyUi, TTY is false on Windows, so check for force interactive flag
+  const forceInteractive = process.env.CCLOCAL_FORCE_INTERACTIVE === '1';
+  const isNonInteractive = hasPrintFlag || hasInitOnlyFlag || hasSdkUrl || (!process.stdout.isTTY && !forceInteractive);
 
   // Stop capturing early input for non-interactive modes
   if (isNonInteractive) {
@@ -856,6 +858,11 @@ export async function main() {
   profileCheckpoint('main_after_run');
 }
 async function getInputPrompt(prompt: string, inputFormat: 'text' | 'stream-json'): Promise<string | AsyncIterable<string>> {
+  // Skip stdin reading when running as a spawned child process (e.g., delegateToLegacyUi)
+  // On Windows, spawnSync may not properly inherit stdin, causing 3s timeout
+  if (process.env.CCLOCAL_SKIP_STDIN === '1') {
+    return prompt;
+  }
   if (!process.stdin.isTTY &&
   // Input hijacking breaks MCP.
   !process.argv.includes('mcp')) {
@@ -1911,12 +1918,13 @@ async function run(): Promise<CommanderCommand> {
     const messagingSocketPath = feature('UDS_INBOX') ? (options as {
       messagingSocketPath?: string;
     }).messagingSocketPath : undefined;
+
+    const preSetupCwd = getCwd();
     // Parallelize setup() with commands+agents loading. setup()'s ~28ms is
     // mostly startUdsMessaging (socket bind, ~20ms) — not disk-bound, so it
     // doesn't contend with getCommands' file reads. Gated on !worktreeEnabled
     // since --worktree makes setup() process.chdir() (setup.ts:203), and
     // commands/agents need the post-chdir cwd.
-    const preSetupCwd = getCwd();
     // Register bundled skills/plugins before kicking getCommands() — they're
     // pure in-memory array pushes (<1ms, zero I/O) that getBundledSkills()
     // reads synchronously. Previously ran inside setup() after ~20ms of
@@ -2027,7 +2035,14 @@ async function run(): Promise<CommanderCommand> {
     const commandsStart = Date.now();
     // Join the promises kicked before setup() (or start fresh if
     // worktreeEnabled gated the early kick). Both memoized by cwd.
-    const [commands, agentDefinitionsResult] = await Promise.all([commandsPromise ?? getCommands(currentCwd), agentDefsPromise ?? getAgentDefinitionsWithOverrides(currentCwd)]);
+    let commands, agentDefinitionsResult;
+    try {
+      const cmdPromise = commandsPromise ?? getCommands(currentCwd);
+      const agPromise = agentDefsPromise ?? getAgentDefinitionsWithOverrides(currentCwd);
+      [commands, agentDefinitionsResult] = await Promise.all([cmdPromise, agPromise]);
+    } catch (e) {
+      throw e;
+    }
     logForDebugging(`[STARTUP] Commands and agents loaded in ${Date.now() - commandsStart}ms`);
     profileCheckpoint('action_commands_loaded');
 
@@ -2227,9 +2242,8 @@ async function run(): Promise<CommanderCommand> {
       if ("external" === 'ant') {
         installAsciicastRecorder();
       }
-      const {
-        createRoot
-      } = await import('./ink.js');
+      const inkModule = await import('./ink.js');
+      const createRoot = inkModule.createRoot;
       root = await createRoot(ctx.renderOptions);
 
       // Log startup time now, before any blocking dialog renders. Logging

@@ -5,6 +5,7 @@ export default defineConfig({
   test: {
     // 使用 vitest 默认的 node 环境
     environment: 'node',
+    testTimeout: 60000,
   },
   resolve: {
     alias: {

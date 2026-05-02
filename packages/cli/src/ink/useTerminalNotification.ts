@@ -5,7 +5,26 @@ import { ITERM2, OSC, osc, PROGRESS, wrapForMultiplexer } from './termio/osc.js'
 
 type WriteRaw = (data: string) => void
 
-export const TerminalWriteContext = createContext<WriteRaw | null>(null)
+// Use globalThis to ensure the same context instance is used across all module instantiations
+const GLOBAL_KEY = Symbol.for('cclocal.TerminalWriteContext')
+
+function getOrCreateTerminalWriteContext(): React.Context<WriteRaw | null> {
+  // @ts-expect-error: globalThis access
+  if (!globalThis[GLOBAL_KEY]) {
+    // @ts-expect-error: globalThis access
+    globalThis[GLOBAL_KEY] = createContext<WriteRaw | null>(null)
+  }
+  // @ts-expect-error: globalThis access
+  return globalThis[GLOBAL_KEY]
+}
+
+export const TerminalWriteContext = getOrCreateTerminalWriteContext()
+
+// Debug: unique ID to track context instance
+export const TERMINAL_WRITE_CONTEXT_ID = Symbol.for('TerminalWriteContext')
+
+// @ts-expect-error: debug attachment
+TerminalWriteContext._debugId = TERMINAL_WRITE_CONTEXT_ID
 
 export const TerminalWriteProvider = TerminalWriteContext.Provider
 

@@ -100,7 +100,7 @@ A: 排查步骤：
 bun --version
 
 # 2. 检查预加载是否工作
-bun run src/entrypoints/cli.tsx --version
+bun run packages/cli/src/entrypoints/cli.tsx --version
 
 # 3. 启用调试输出
 NODE_DEBUG=* bun run start
@@ -277,7 +277,7 @@ A: 插件可以提供：
 - Hooks (生命周期钩子)
 - MCP 服务器
 
-内置插件在 `src/plugins/builtinPlugins.ts` 中注册。
+内置插件在 `packages/cli/src/plugins/builtinPlugins.ts` 中注册。
 
 ---
 

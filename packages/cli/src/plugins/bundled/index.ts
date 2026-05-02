@@ -8,11 +8,10 @@
  * features that users should be able to explicitly enable/disable. For
  * features with complex setup or automatic-enabling logic (e.g.
  * claude-in-chrome), use packages/cli/src/skills/bundled/ instead.
- *
- * To add a new built-in plugin:
- * 1. Import registerBuiltinPlugin from '../builtinPlugins.js'
- * 2. Call registerBuiltinPlugin() with the plugin definition here
  */
+
+// In-memory storage for builtin plugins
+let builtinPlugins: { enabled: string[]; disabled: string[] } = { enabled: [], disabled: [] }
 
 /**
  * Initialize built-in plugins. Called during CLI startup.
@@ -21,3 +20,29 @@ export function initBuiltinPlugins(): void {
   // No built-in plugins registered yet — this is the scaffolding for
   // migrating bundled skills that should be user-toggleable.
 }
+
+export function getBuiltinPluginSkillCommands(): any[] {
+  return []
+}
+
+export function registerBuiltinPlugin(): void {
+  // No-op for now
+}
+
+export function isBuiltinPluginId(id: string): boolean {
+  return false
+}
+
+export function getBuiltinPluginDefinition(): undefined {
+  return undefined
+}
+
+export function getBuiltinPlugins(): { enabled: string[]; disabled: string[] } {
+  return builtinPlugins
+}
+
+export function clearBuiltinPlugins(): void {
+  builtinPlugins = { enabled: [], disabled: [] }
+}
+
+export const BUILTIN_MARKETPLACE_NAME = 'builtin'

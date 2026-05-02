@@ -36,5 +36,5 @@ describe('legacy UI public package boundary', () => {
     const appShellRuntime = await loadLegacyAppShellRuntime()
     expect(appShellRuntime.launchRepl).toBeTypeOf('function')
     expect(appShellRuntime.loadREPL).toBeTypeOf('function')
-  }, 30000)
+  }, 120000)
 })

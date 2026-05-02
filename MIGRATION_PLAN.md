@@ -35,8 +35,8 @@
 
 输出物：
 
-- [/Users/yanluohao/开发/cc-local/MIGRATION_MATRIX.md](/Users/yanluohao/开发/cc-local/MIGRATION_MATRIX.md)
-- [/Users/yanluohao/开发/cc-local/CLI_COMPATIBILITY_CHECKLIST.md](/Users/yanluohao/开发/cc-local/CLI_COMPATIBILITY_CHECKLIST.md)
+- [./MIGRATION_MATRIX.md](./MIGRATION_MATRIX.md)
+- [./CLI_COMPATIBILITY_CHECKLIST.md](./CLI_COMPATIBILITY_CHECKLIST.md)
 
 完成标准：
 
@@ -66,9 +66,9 @@
 
 建议写入文件：
 
-- `/Users/yanluohao/开发/cc-local/packages/cli/src/index.ts`
-- `/Users/yanluohao/开发/cc-local/packages/cli/src/client/CCLocalClient.ts`
-- `/Users/yanluohao/开发/cc-local/packages/cli/src/index.test.ts`
+- `./packages/cli/src/index.ts`
+- `./packages/cli/src/client/CCLocalClient.ts`
+- `./packages/cli/src/index.test.ts`
 
 完成标准：
 
@@ -94,9 +94,9 @@
 
 建议写入文件：
 
-- `/Users/yanluohao/开发/cc-local/packages/cli/src/repl/simpleRepl.ts`
-- `/Users/yanluohao/开发/cc-local/packages/cli/src/repl/repl.tsx`
-- `/Users/yanluohao/开发/cc-local/packages/cli/src/index.test.ts`
+- `./packages/cli/src/repl/simpleRepl.ts`
+- `./packages/cli/src/repl/repl.tsx`
+- `./packages/cli/src/index.test.ts`
 
 完成标准：
 
@@ -117,9 +117,9 @@
 
 建议写入文件：
 
-- `/Users/yanluohao/开发/cc-local/packages/core/src/mcp/*`
-- `/Users/yanluohao/开发/cc-local/packages/server/src/api/*`
-- `/Users/yanluohao/开发/cc-local/packages/cli/src/index.ts`
+- `./packages/core/src/mcp/*`
+- `./packages/server/src/api/*`
+- `./packages/cli/src/index.ts`
 
 完成标准：
 
@@ -151,21 +151,23 @@
 
 ### Phase 4：认证、插件、更新迁移
 
+状态：已启动。
+
 目标：
 
 - 解决阻塞正式替换的系统级能力
 
 任务：
 
-1. 设计新 CLI 的认证命令面
+1. 设计新 CLI 的认证命令面 ✅
    - `auth status`
    - `auth login/logout`
    - `setup-token`
 
-2. 设计插件兼容策略
+2. 设计插件兼容策略 ✅
    - 至少补 `validate/list/install/update/uninstall`
 
-3. 设计升级策略
+3. 设计升级策略 ✅
    - `update|upgrade`
 
 完成标准：
@@ -265,7 +267,7 @@
 当前状态：
 
 - 已补独立 smoke 脚本：
-  - [/Users/yanluohao/开发/cc-local/scripts/smoke-packages-cli.sh](/Users/yanluohao/开发/cc-local/scripts/smoke-packages-cli.sh)
+  - [./scripts/smoke-packages-cli.sh](./scripts/smoke-packages-cli.sh)
 
 ### Batch C
 

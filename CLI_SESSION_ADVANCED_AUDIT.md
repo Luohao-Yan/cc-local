@@ -3,7 +3,7 @@
 审计对象：
 
 - 正式 CLI：`bun run start`
-- 正式构建物：`/Users/yanluohao/开发/cc-local/dist/cli.js`
+- 正式构建物：`./dist/cli.js`
 - 高级会话恢复与流式输出选项
 
 审计日期：
@@ -82,7 +82,7 @@ claude --resume <session_id> --fork-session --print "say ok again" --output-form
 
 本轮新增：
 
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-session-advanced.sh`
+- `./scripts/smoke-session-advanced.sh`
 
 ## 当前结论
 

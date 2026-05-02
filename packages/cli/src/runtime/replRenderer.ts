@@ -4,11 +4,13 @@ import {
   type LegacyAppShellRuntime,
 } from '../legacy-ui/appShellAdapter.js'
 import { launchRepl as launchSimpleRepl } from '../repl/simpleRepl.js'
+import { launchNativeRepl } from '../repl/nativeRepl.js'
 
 export type InteractiveReplOptions = Parameters<typeof launchSimpleRepl>[1] & {
   legacyBridgeMode?: boolean
+  nativeMode?: boolean
 }
-export type InteractiveReplRendererMode = 'packages-simple' | 'legacy-source-shell'
+export type InteractiveReplRendererMode = 'packages-simple' | 'packages-native' | 'legacy-source-shell'
 
 export interface InteractiveReplRenderer {
   mode: InteractiveReplRendererMode
@@ -54,6 +56,20 @@ export async function renderInteractiveRepl(
     const { renderLegacyBridgeRepl } = await import('./legacyBridgeRenderer.js')
     return await renderLegacyBridgeRepl(options)
   }
+
+  if (options.nativeMode) {
+    const nativeOptions = {
+      model: options.model ?? process.env.CCLOCAL_MODEL ?? 'claude-sonnet-4-6',
+      cwd: options.cwd,
+      prefill: options.prefill,
+      systemPrompt: options.messageOptions?.systemPrompt,
+      permissionMode: options.messageOptions?.permissionPolicy?.mode,
+      sessionId: options.createSessionOnStart?.id,
+      sessionName: options.createSessionOnStart?.name,
+    }
+    return await launchNativeRepl(nativeOptions)
+  }
+
   await defaultInteractiveReplRenderer.render(client, options)
 }
 

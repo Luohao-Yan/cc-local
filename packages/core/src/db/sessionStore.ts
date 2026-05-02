@@ -261,6 +261,93 @@ export class SessionStore {
       metadata: JSON.parse(row.metadata || '{}') as SessionMetadata,
     }))
   }
+
+  // 按 cwd 查找最近更新的会话（供 --resume/--continue 使用）
+  findSessionByCwd(cwd: string): Session | undefined {
+    const stmt = this.db.prepare(`
+      SELECT * FROM sessions
+      WHERE cwd = $cwd
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `)
+
+    const row = stmt.get({ $cwd: cwd }) as {
+      id: string
+      name: string
+      cwd: string
+      model: string
+      created_at: number
+      updated_at: number
+      metadata: string
+    } | undefined
+
+    if (!row) return undefined
+    return {
+      id: row.id,
+      name: row.name,
+      cwd: row.cwd,
+      model: row.model,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      messages: [],
+      metadata: JSON.parse(row.metadata || '{}') as SessionMetadata,
+    }
+  }
+
+  // 分叉会话：创建新会话并复制消息（供 --fork-session 使用）
+  forkSession(sourceId: string, options?: { name?: string; cwd?: string; model?: string }): Session {
+    const source = this.getSession(sourceId)
+    if (!source) {
+      throw new Error(`Session ${sourceId} not found`)
+    }
+
+    const { randomUUID } = require('crypto') as typeof import('crypto')
+    const now = Date.now()
+    const newId = randomUUID()
+    const newName = options?.name ?? `${source.name} (fork)`
+
+    this.db.transaction(() => {
+      // 创建新会话
+      this.db.prepare(`
+        INSERT INTO sessions (id, name, cwd, model, created_at, updated_at, metadata)
+        VALUES ($id, $name, $cwd, $model, $now, $now, $metadata)
+      `).run({
+        $id: newId,
+        $name: newName,
+        $cwd: options?.cwd ?? source.cwd,
+        $model: options?.model ?? source.model,
+        $now: now,
+        $metadata: JSON.stringify(source.metadata ?? {}),
+      })
+
+      // 复制消息（分配新 ID 避免主键冲突）
+      const messages = this.getMessages(sourceId)
+      const insertStmt = this.db.prepare(`
+        INSERT INTO messages (id, session_id, role, content, timestamp)
+        VALUES ($id, $sessionId, $role, $content, $timestamp)
+      `)
+      for (const msg of messages) {
+        insertStmt.run({
+          $id: randomUUID(),
+          $sessionId: newId,
+          $role: msg.role,
+          $content: JSON.stringify(msg.content),
+          $timestamp: msg.timestamp,
+        })
+      }
+    })()
+
+    return {
+      id: newId,
+      name: newName,
+      cwd: options?.cwd ?? source.cwd,
+      model: options?.model ?? source.model,
+      createdAt: now,
+      updatedAt: now,
+      messages: [],
+      metadata: source.metadata ?? {},
+    }
+  }
 }
 
 // 全局存储实例 - 延迟初始化

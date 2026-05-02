@@ -3,10 +3,7 @@
   "version": "1.0.0",
   "description": "CCLocal 命令行客户端",
   "type": "module",
-  "main": "dist/index.js",
-  "bin": {
-    "cclocal": "dist/index.js"
-  },
+  "main": "src/index.ts",
   "jsx": "react-jsx",
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target bun",
@@ -20,7 +17,7 @@
     "@cclocal/shared": "workspace:*",
     "react": "^19.1.0",
     "react-reconciler": "0.33.0",
-    "ink": "^5.0.0",
+    "ink": "^7.0.0",
     "commander": "^12.0.0",
     "chalk": "^5.4.0",
     "ws": "^8.18.0"

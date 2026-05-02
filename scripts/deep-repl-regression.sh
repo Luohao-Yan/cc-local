@@ -7,6 +7,7 @@ cd "$ROOT_DIR"
 
 python3 - <<'PY'
 import os
+import os
 import pty
 import re
 import select
@@ -14,7 +15,7 @@ import signal
 import time
 from pathlib import Path
 
-ROOT = Path('/Users/yanluohao/开发/cc-local').resolve()
+ROOT = Path(os.environ.get('CCLOCAL_ROOT', os.getcwd())).resolve()
 CLI = str(ROOT / 'dist' / 'cli.js')
 project_dir = Path.home() / '.claude' / 'projects' / re.sub(r'[^a-zA-Z0-9]', '-', str(ROOT))
 project_dir.mkdir(parents=True, exist_ok=True)

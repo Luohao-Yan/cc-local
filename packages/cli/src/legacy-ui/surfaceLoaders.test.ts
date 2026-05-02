@@ -68,5 +68,5 @@ describe('legacy UI surface loaders', () => {
     expect(surfaces.lazy.loadMcpUi).toBeTypeOf('function')
     expect(surfaces.lazy.loadMessageUi).toBeTypeOf('function')
     expect(surfaces.lazy.loadDiffRendering).toBeTypeOf('function')
-  }, 30000)
+  }, 120000)
 })

@@ -16,6 +16,8 @@ import { toolRegistry } from '../tools/registry.js'
 import {
   decideToolPermission,
   filterToolsByPermission,
+  HIGH_RISK_TOOLS,
+  EDIT_TOOLS,
   type PermissionPolicy,
 } from '../permissions/permissionPolicy.js'
 
@@ -32,6 +34,8 @@ export interface QueryEngineOptions {
   baseUrl?: string
   client?: Pick<AnthropicClient, 'streamQuery'>
   permissionPolicy?: PermissionPolicy
+  /** Called when a tool needs user approval (default permission mode). Return true to allow, false to deny. */
+  onPermissionCheck?: (toolName: string, input: unknown, reason?: string) => Promise<boolean>
 }
 
 type QueryClient = Pick<AnthropicClient, 'streamQuery'>
@@ -214,7 +218,18 @@ export class QueryEngine {
         }
 
         const decision = decideToolPermission(tool.name, opts.permissionPolicy)
-        if (!decision.allowed) {
+        let allowed = decision.allowed
+
+        // In default mode, high-risk tools need user confirmation via callback
+        if (allowed && opts.onPermissionCheck && opts.permissionPolicy?.mode !== 'bypassPermissions') {
+          const isHighRisk = HIGH_RISK_TOOLS.has(tool.name.toLowerCase()) ||
+            EDIT_TOOLS.has(tool.name.toLowerCase())
+          if (isHighRisk) {
+            allowed = await opts.onPermissionCheck(tool.name, toolCall.input, decision.reason)
+          }
+        }
+
+        if (!allowed) {
           toolResults.push({
             id: randomUUID(),
             role: 'user',

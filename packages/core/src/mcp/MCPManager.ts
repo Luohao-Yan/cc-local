@@ -2,6 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
+import { WebSocketClientTransport } from '@modelcontextprotocol/sdk/client/websocket.js'
 import { CallToolResultSchema } from '@modelcontextprotocol/sdk/types.js'
 import type { Tool, ToolContext, ToolResult } from '@cclocal/shared'
 import { toolRegistry, type ToolRegistry } from '../tools/registry.js'
@@ -128,7 +129,7 @@ export class MCPManager {
       if (config.url) {
         throw new Error('stdio MCP server must not define url')
       }
-    } else if (config.type === 'sse' || config.type === 'http') {
+    } else if (config.type === 'sse' || config.type === 'http' || config.type === 'ws') {
       if (!config.url?.trim()) {
         throw new Error(`${config.type} MCP server requires a non-empty url`)
       }
@@ -273,9 +274,11 @@ export class MCPManager {
                 },
                 fetch: globalThis.fetch,
               })
-          : (() => {
-              throw new Error(`Unsupported MCP transport type: ${record.config.type}`)
-            })()
+          : record.config.type === 'ws'
+            ? new WebSocketClientTransport(new URL(record.config.url as string))
+            : (() => {
+                throw new Error(`Unsupported MCP transport type: ${record.config.type}`)
+              })()
 
     const client = new Client(
       {

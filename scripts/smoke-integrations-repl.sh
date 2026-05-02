@@ -17,7 +17,7 @@ import subprocess
 import tempfile
 import time
 
-root = '/Users/yanluohao/开发/cc-local'
+root = os.environ.get('CCLOCAL_ROOT', os.getcwd())
 dist = os.path.join(root, 'dist', 'cli.js')
 
 def ensure(cond, msg):

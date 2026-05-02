@@ -83,7 +83,7 @@ flowchart LR
 
 ## Plan
 
-1. Add the project skeleton at the repo root: `package.json`, `tsconfig.json`, and a small Bun build script such as `scripts/build-external.ts`. `tsconfig.json` should use Bun-friendly settings from the docs: `moduleResolution: "bundler"`, `jsx: "react-jsx"`, and `paths: { "src/*": ["./src/*"] }`.
+1. Add the project skeleton at the repo root: `package.json`, `tsconfig.json`, and a small Bun build script such as `scripts/build-external.ts`. `tsconfig.json` should use Bun-friendly settings from the docs: `moduleResolution: "bundler"`, `jsx: "react-jsx"`, and `paths: { "packages/cli/src/*": ["./packages/cli/src/*"] }`.
 
 2. Add only the external dependency baseline needed for the real boot path first: `react`, `react-reconciler`, `@commander-js/extra-typings`, `@anthropic-ai/sdk`, `@modelcontextprotocol/sdk`, `chalk`, `lodash-es`, `zod`, `axios`, `figures`, `execa`, `ignore`, `semver`, `strip-ansi`, `yaml`, `ws`, `type-fest`, and other packages that are statically imported by `packages/cli/src/entrypoints/cli.tsx -> src/main.tsx -> src/tools.ts/query.ts`.
 
@@ -108,13 +108,13 @@ flowchart LR
 
 7. Patch the remaining ungated missing imports that feature flags cannot eliminate. The most likely ones are the task unions in `src/tasks/types.ts`, core message/tool typings, and a few dialog/helper paths referenced directly from `packages/cli/src/main.tsx` and `src/dialogLaunchers.tsx`. For this milestone, replacements should preserve type shape and startup behavior, not full product parity.
 
-8. Verify in increasing depth so failures stay localized. First make `bun run src/entrypoints/cli.tsx --version` work. Then make `bun build` of `packages/cli/src/entrypoints/cli.tsx` succeed with the external feature profile. After that, verify `--help`, then boot the interactive app with `--bare` and confirm it reaches a first rendered screen without crashing.
+8. Verify in increasing depth so failures stay localized. First make `bun run packages/cli/src/entrypoints/cli.tsx --version` work. Then make `bun build` of `packages/cli/src/entrypoints/cli.tsx` succeed with the external feature profile. After that, verify `--help`, then boot the interactive app with `--bare` and confirm it reaches a first rendered screen without crashing.
 
 ## Verification Target
 
 - `bun install`
-- `bun run src/entrypoints/cli.tsx --version`
-- `bun build src/entrypoints/cli.tsx --target bun ...`
+- `bun run packages/cli/src/entrypoints/cli.tsx --version`
+- `bun build packages/cli/src/entrypoints/cli.tsx --target bun ...`
 - `bun run <built-cli> --help`
 - `bun run <built-cli> --bare`
 

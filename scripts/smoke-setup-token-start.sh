@@ -20,7 +20,7 @@ setup_output="$(
 import os, pty, select, signal, subprocess, time
 cmd=['bun','run','start','--','setup-token']
 master, slave = pty.openpty()
-p = subprocess.Popen(cmd, cwd='/Users/yanluohao/开发/cc-local', stdin=slave, stdout=slave, stderr=slave, text=False)
+p = subprocess.Popen(cmd, cwd=os.environ.get('CCLOCAL_ROOT', os.getcwd()), stdin=slave, stdout=slave, stderr=slave, text=False)
 os.close(slave)
 out = b''
 deadline = time.time() + 12

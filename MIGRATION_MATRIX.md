@@ -21,8 +21,8 @@
 
 - 默认用户主路径不能展示 packages 简化 REPL，必须保持旧版 Claude Code UI。
 - `dist/cli.js` 是统一路由入口：用户主路径转到旧 UI；`mcp`、`models`、`sessions` 等管理子命令进入 packages 路径。
-- UI 迁移必须按 [UI_MIGRATION_PLAN.md](/Users/yanluohao/开发/cc-local/UI_MIGRATION_PLAN.md) 执行，在 parity 通过前不能切换默认 UI。
-- 旧 UI 迁移依赖图见 [UI_DEPENDENCY_MAP.md](/Users/yanluohao/开发/cc-local/UI_DEPENDENCY_MAP.md)。
+- UI 迁移必须按 [UI_MIGRATION_PLAN.md](./UI_MIGRATION_PLAN.md) 执行，在 parity 通过前不能切换默认 UI。
+- 旧 UI 迁移依赖图见 [UI_DEPENDENCY_MAP.md](./UI_DEPENDENCY_MAP.md)。
 - `bun run parity:check` 当前要求顶层命令、顶层参数、slash commands、工具注册均无未覆盖缺口。
 
 ## 状态说明
@@ -100,6 +100,12 @@
 | Agent/多代理能力 | 已验证 | 已实现兼容入口 | `done` | 新 CLI 参数与工具层保留 agent/task/remote-control 元数据，QueryEngine 与 MCP 承接动态工具 |
 | 会话持久化 | 已验证 | 已实现 | `done` | SQLite + SessionManager 已接通 |
 | REST API | 旧主线无此重点 | 已实现 | `done` | 这是新架构的新增优势 |
+| MCP transport: ws | 旧主线无此需求 | 已实现 | `done` | 新 MCPManager 支持 WebSocket transport，用于 IDE MCP 服务器连接 |
+| `--ide` native | 已验证 | 已实现 | `done` | native REPL lockfile 检测 + WebSocket MCP + 元数据注入 |
+| `--chrome` native | 已验证 | 已实现 | `done` | native REPL stdio MCP 注册 + skill hint 注入 |
+| `--tmux` native | 已验证 | 已实现 | `done` | native REPL tmux fast-path + env 检测 |
+| `--worktree` native | 已验证 | 已实现 | `done` | native REPL worktree cwd 切换 |
+| 灰度候选入口 | 无 | 已实现 | `done` | `cclocal-next` 默认走 native 路径，`--legacy` 可回退 |
 | GUI/Tauri 基座 | 无 | 设计已完成 | `future` | 文档已齐，实际客户端属于后续 GUI 产品线，不阻塞 CLI 重构完成 |
 | legacy fallback | 无 | 已保留显式入口 | `done` | 仅 `--legacy` 显式委托到 `packages/cli/src/entrypoints/cli.tsx` |
 
@@ -109,26 +115,40 @@
 
 - 底座层：可用
 - 服务层：可用
-- MCP 主链路：可用
+- MCP 主链路：可用（stdio/sse/http/ws）
 - 会话管理：可用
+- 外部集成（IDE/Chrome/tmux/worktree）：已实现，待真实环境验收
 - 默认 CLI 替代能力：已改为统一路由，默认用户路径保持旧 UI
-- 剩余风险：真实外部环境集成仍需人工验收，例如 OAuth、IDE、Chrome、tmux 等
+- 灰度候选入口：`cclocal-next` 已就绪，默认走 native 路径，`--legacy` 可回退
+- 剩余风险：真实外部环境集成仍需人工验收，例如 OAuth、IDE WebSocket、Chrome stdio
+
+## 回滚方案
+
+灰度切换采用双入口并行策略，确保可安全回滚：
+
+1. **双入口并行期**：`cclocal`（默认旧 UI）和 `cclocal-next`（默认 native）同时存在
+2. **回滚触发条件**：native 路径出现用户可见功能退化或错误率上升
+3. **回滚步骤**：
+   - 全局命令：`bash scripts/install-global.sh` 重新安装，`cclocal` 自动指向 `dist/cli.js`（旧 UI）
+   - npm 发布：回退 `dist/package.json` 中 `bin.cclocal` 指向 `./cli.js`
+   - 环境变量：设置 `CCLOCAL_DEFAULT_NATIVE=0` 可临时强制任何 `cclocal-next` 回退到旧 UI
+4. **切换完成标志**：native 路径通过完整 acceptance 验收后，将 `cclocal` 默认指向 `dist/next-cli.js`
 
 ## 已有证据
 
 以下结论已由仓库内审计文档支撑：
 
-- 会话与输出：[/Users/yanluohao/开发/cc-local/CLI_SESSION_OUTPUT_AUDIT.md](/Users/yanluohao/开发/cc-local/CLI_SESSION_OUTPUT_AUDIT.md)
-- 高级会话：[/Users/yanluohao/开发/cc-local/CLI_SESSION_ADVANCED_AUDIT.md](/Users/yanluohao/开发/cc-local/CLI_SESSION_ADVANCED_AUDIT.md)
-- MCP 配置：[/Users/yanluohao/开发/cc-local/CLI_MCP_AUDIT.md](/Users/yanluohao/开发/cc-local/CLI_MCP_AUDIT.md)
-- MCP 运行态：[/Users/yanluohao/开发/cc-local/CLI_MCP_RUNTIME_AUDIT.md](/Users/yanluohao/开发/cc-local/CLI_MCP_RUNTIME_AUDIT.md)
-- MCP 工具暴露：[/Users/yanluohao/开发/cc-local/CLI_MCP_SERVE_TOOLS_AUDIT.md](/Users/yanluohao/开发/cc-local/CLI_MCP_SERVE_TOOLS_AUDIT.md)
-- MCP 权限：[/Users/yanluohao/开发/cc-local/CLI_MCP_PERMISSION_AUDIT.md](/Users/yanluohao/开发/cc-local/CLI_MCP_PERMISSION_AUDIT.md)
-- 认证/插件/更新：[/Users/yanluohao/开发/cc-local/CLI_AUTH_PLUGIN_UPDATE_AUDIT.md](/Users/yanluohao/开发/cc-local/CLI_AUTH_PLUGIN_UPDATE_AUDIT.md)
-- 插件生命周期：[/Users/yanluohao/开发/cc-local/CLI_PLUGIN_LIFECYCLE_AUDIT.md](/Users/yanluohao/开发/cc-local/CLI_PLUGIN_LIFECYCLE_AUDIT.md)
-- 集成与 REPL：[/Users/yanluohao/开发/cc-local/CLI_INTEGRATIONS_REPL_AUDIT.md](/Users/yanluohao/开发/cc-local/CLI_INTEGRATIONS_REPL_AUDIT.md)
-- 权限模式：[/Users/yanluohao/开发/cc-local/CLI_PERMISSION_MODE_AUDIT.md](/Users/yanluohao/开发/cc-local/CLI_PERMISSION_MODE_AUDIT.md)
-- REPL 深回归：[/Users/yanluohao/开发/cc-local/CLI_REPL_DEEP_AUDIT.md](/Users/yanluohao/开发/cc-local/CLI_REPL_DEEP_AUDIT.md)
+- 会话与输出：[./CLI_SESSION_OUTPUT_AUDIT.md](./CLI_SESSION_OUTPUT_AUDIT.md)
+- 高级会话：[./CLI_SESSION_ADVANCED_AUDIT.md](./CLI_SESSION_ADVANCED_AUDIT.md)
+- MCP 配置：[./CLI_MCP_AUDIT.md](./CLI_MCP_AUDIT.md)
+- MCP 运行态：[./CLI_MCP_RUNTIME_AUDIT.md](./CLI_MCP_RUNTIME_AUDIT.md)
+- MCP 工具暴露：[./CLI_MCP_SERVE_TOOLS_AUDIT.md](./CLI_MCP_SERVE_TOOLS_AUDIT.md)
+- MCP 权限：[./CLI_MCP_PERMISSION_AUDIT.md](./CLI_MCP_PERMISSION_AUDIT.md)
+- 认证/插件/更新：[./CLI_AUTH_PLUGIN_UPDATE_AUDIT.md](./CLI_AUTH_PLUGIN_UPDATE_AUDIT.md)
+- 插件生命周期：[./CLI_PLUGIN_LIFECYCLE_AUDIT.md](./CLI_PLUGIN_LIFECYCLE_AUDIT.md)
+- 集成与 REPL：[./CLI_INTEGRATIONS_REPL_AUDIT.md](./CLI_INTEGRATIONS_REPL_AUDIT.md)
+- 权限模式：[./CLI_PERMISSION_MODE_AUDIT.md](./CLI_PERMISSION_MODE_AUDIT.md)
+- REPL 深回归：[./CLI_REPL_DEEP_AUDIT.md](./CLI_REPL_DEEP_AUDIT.md)
 
 ## 最新进展
 
@@ -178,12 +198,22 @@
 - `packages/cli` REPL 已补 `/ide`、`/chrome`、`/remote-control`、`/plan`、`/privacy-settings`、`/output-style`、`/vim`、`/rewind` 等运行时元数据入口
 - `packages/cli` 已为以下旧参数提供明确兼容缺口报错：
   - 暂无新增 CLI 参数缺口留在 Batch A
+- `packages/core` / `packages/cli` 已补 `MCP ws transport`（IDE WebSocket 连接）
+- `packages/cli` native REPL 已补 `--ide` 集成（lockfile 检测 + WebSocket MCP 注册 + 元数据注入）
+- `packages/cli` native REPL 已补 `--chrome` 集成（stdio MCP 注册 + skill hint 注入）
+- `packages/cli` native REPL 已补 `--tmux` + `--worktree` 集成（tmux fast-path + worktree cwd 切换）
+- `packages/cli` native REPL 权限审批交互已实现（default 模式交互式 y/N 提示）
+- `packages/cli` 灰度候选入口 `cclocal-next` 已就绪（`entrypoints/next.ts`，默认 native 路径）
+- `scripts/build-external.ts` 已增加 `dist/next-cli.js` 构建目标
+- `package.json` bin 已增加 `cclocal-next` 入口
+- `scripts/install-global.sh` 已增加 `cclocal-next` 全局命令安装
+- 回滚方案已记录到本文档
 
 对应实现与验证：
 
-- CLI 兼容实现：[/Users/yanluohao/开发/cc-local/packages/cli/src/index.ts](/Users/yanluohao/开发/cc-local/packages/cli/src/index.ts)
-- CLI 集成测试：[/Users/yanluohao/开发/cc-local/packages/cli/src/index.test.ts](/Users/yanluohao/开发/cc-local/packages/cli/src/index.test.ts)
-- REPL slash command 实现：[/Users/yanluohao/开发/cc-local/packages/cli/src/repl/simpleRepl.ts](/Users/yanluohao/开发/cc-local/packages/cli/src/repl/simpleRepl.ts)
-- REPL slash command 测试：[/Users/yanluohao/开发/cc-local/packages/cli/src/repl/simpleRepl.test.ts](/Users/yanluohao/开发/cc-local/packages/cli/src/repl/simpleRepl.test.ts)
-- 服务端配套实现：[/Users/yanluohao/开发/cc-local/packages/server/src/api/server.ts](/Users/yanluohao/开发/cc-local/packages/server/src/api/server.ts)
-- 会话层配套实现：[/Users/yanluohao/开发/cc-local/packages/server/src/sessions/SessionManager.ts](/Users/yanluohao/开发/cc-local/packages/server/src/sessions/SessionManager.ts)
+- CLI 兼容实现：[./packages/cli/src/index.ts](./packages/cli/src/index.ts)
+- CLI 集成测试：[./packages/cli/src/index.test.ts](./packages/cli/src/index.test.ts)
+- REPL slash command 实现：[./packages/cli/src/repl/simpleRepl.ts](./packages/cli/src/repl/simpleRepl.ts)
+- REPL slash command 测试：[./packages/cli/src/repl/simpleRepl.test.ts](./packages/cli/src/repl/simpleRepl.test.ts)
+- 服务端配套实现：[./packages/server/src/api/server.ts](./packages/server/src/api/server.ts)
+- 会话层配套实现：[./packages/server/src/sessions/SessionManager.ts](./packages/server/src/sessions/SessionManager.ts)

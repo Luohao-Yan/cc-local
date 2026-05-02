@@ -375,7 +375,7 @@ async function getSkills(cwd: string): Promise<{
     const bundledSkills = getBundledSkills()
     // Built-in plugin skills come from enabled built-in plugins
     const { getBuiltinPluginSkillCommands } = await import('./plugins/builtinPlugins.js')
-    const builtinPluginSkills = getBuiltinPluginSkillCommands()
+    const builtinPluginSkills = await getBuiltinPluginSkillCommands()
     logForDebugging(
       `getSkills returning: ${skillDirCommands.length} skill dir commands, ${pluginSkills.length} plugin skills, ${bundledSkills.length} bundled skills, ${builtinPluginSkills.length} builtin plugin skills`,
     )
@@ -458,14 +458,16 @@ const loadAllCommands = memoize(async (cwd: string): Promise<Command[]> => {
     getWorkflowCommands ? getWorkflowCommands(cwd) : Promise.resolve([]),
   ])
 
+  const commandsResult = COMMANDS()
+
   return [
-    ...bundledSkills,
-    ...builtinPluginSkills,
-    ...skillDirCommands,
-    ...workflowCommands,
-    ...pluginCommands,
-    ...pluginSkills,
-    ...COMMANDS(),
+    ...(bundledSkills || []),
+    ...(builtinPluginSkills || []),
+    ...(skillDirCommands || []),
+    ...(workflowCommands || []),
+    ...(pluginCommands || []),
+    ...(pluginSkills || []),
+    ...(commandsResult || []),
   ]
 })
 

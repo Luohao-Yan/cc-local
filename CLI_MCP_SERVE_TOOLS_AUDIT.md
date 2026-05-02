@@ -3,7 +3,7 @@
 审计对象：
 
 - 正式 CLI：`bun run start`
-- 正式构建物：`/Users/yanluohao/开发/cc-local/dist/cli.js`
+- 正式构建物：`./dist/cli.js`
 - 旧主线 `mcp serve` 的工具暴露面
 
 审计日期：
@@ -29,11 +29,11 @@
 
 验证方式：
 
-- 用 SDK 客户端脚本 `/Users/yanluohao/开发/cc-local/scripts/check-mcp-serve-tools.mjs`
+- 用 SDK 客户端脚本 `./scripts/check-mcp-serve-tools.mjs`
 - 通过 stdio 直接连接：
 
 ```bash
-bun /Users/yanluohao/开发/cc-local/dist/cli.js mcp serve
+bun ./dist/cli.js mcp serve
 ```
 
 结果：
@@ -86,8 +86,8 @@ bun /Users/yanluohao/开发/cc-local/dist/cli.js mcp serve
 
 本轮新增：
 
-- `/Users/yanluohao/开发/cc-local/scripts/check-mcp-serve-tools.mjs`
-- `/Users/yanluohao/开发/cc-local/scripts/deep-mcp-serve-tools.sh`
+- `./scripts/check-mcp-serve-tools.mjs`
+- `./scripts/deep-mcp-serve-tools.sh`
 
 其中：
 

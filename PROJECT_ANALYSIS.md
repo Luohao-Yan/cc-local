@@ -53,131 +53,103 @@
 
 ```
 claude-code-rebuilt/
-├── src/
-│   ├── entrypoints/
-│   │   └── cli.tsx                    # 进程入口点
-│   ├── main.tsx                       # Commander CLI 设置，REPL 启动
-│   ├── commands.ts                    # 斜杠命令注册表
-│   ├── tools.ts                       # 工具注册表
-│   ├── Tool.ts                        # 基础工具类型定义
-│   ├── query.ts                       # LLM 查询引擎
+├── packages/
+│   ├── cli/                             # @cclocal/cli - CLI 入口, REPL, Ink UI
+│   │   └── src/
+│   │       ├── entrypoints/
+│   │       │   └── cli.tsx               # 进程入口点
+│   │       ├── main.tsx                  # Commander CLI 设置，REPL 启动
+│   │       ├── commands.ts               # 斜杠命令注册表
+│   │       ├── tools.ts                  # 工具注册表
+│   │       ├── Tool.ts                   # 基础工具类型定义
+│   │       ├── query.ts                  # LLM 查询引擎
+│   │       │
+│   │       ├── ink/                      # 自定义 Ink 终端渲染器 (52 文件)
+│   │       │   ├── reconciler/           # React 协调器
+│   │       │   ├── components/           # Ink 内置组件
+│   │       │   └── ...
+│   │       │
+│   │       ├── components/               # React 终端 UI 组件 (146+)
+│   │       │   ├── messages/             # 消息渲染
+│   │       │   ├── permissions/          # 权限对话框
+│   │       │   ├── mcp/                  # MCP 相关组件
+│   │       │   ├── PromptInput/          # 提示输入
+│   │       │   └── ...
+│   │       │
+│   │       ├── screens/                  # 全屏 UI
+│   │       │   ├── REPL.tsx              # 主交互界面
+│   │       │   ├── Doctor.tsx            # 系统诊断
+│   │       │   └── ResumeConversation.tsx # 恢复对话
+│   │       │
+│   │       ├── services/                 # 核心服务 (41+)
+│   │       │   ├── api/                  # API 客户端 (多提供商)
+│   │       │   ├── analytics/            # 分析和遥测
+│   │       │   ├── compact/              # 上下文压缩
+│   │       │   ├── mcp/                   # MCP 协议客户端
+│   │       │   ├── policyLimits/          # 策略限制
+│   │       │   └── ...
+│   │       │
+│   │       ├── hooks/                    # React Hooks (87+)
+│   │       ├── utils/                    # 工具函数 (335+)
+│   │       ├── tools/                    # 工具实现 (50+)
+│   │       ├── commands/                 # 斜杠命令实现 (100+)
+│   │       ├── skills/                   # Skills 系统
+│   │       ├── plugins/                  # 插件系统
+│   │       ├── state/                    # 状态管理 (AppState 450+ 字段)
+│   │       ├── context/                  # React Context (9 个)
+│   │       ├── types/                    # 类型定义
+│   │       ├── constants/                # 常量 (24 个文件)
+│   │       ├── bootstrap/               # 启动引导
+│   │       ├── bridge/                   # 新旧引擎桥接适配器
+│   │       ├── legacy-ui/               # Legacy UI 懒加载层
+│   │       ├── ui/                       # 路由/legacy适配器
+│   │       ├── runtime/                  # REPL 运行时渲染器
+│   │       │
+│   │       └── _external/               # 构建兼容层
+│   │           ├── preload.ts            # 运行时 MACRO + bun:bundle shim
+│   │           ├── globals.d.ts          # MACRO 类型声明
+│   │           └── shims/                # 内部包的 stub 模块
 │   │
-│   ├── ink/                           # 自定义 Ink 终端渲染器 (52 文件)
-│   │   ├── reconciler/                # React 协调器
-│   │   ├── components/                # Ink 内置组件
-│   │   └── ...
+│   ├── core/                             # @cclocal/core - 查询引擎, 工具注册, MCP, 会话
+│   │   └── src/
+│   │       ├── engine/queryEngine.ts     # 新查询引擎 (Promise-based)
+│   │       ├── tools/registry.ts         # 新工具注册表 (18 核心工具)
+│   │       ├── mcp/MCPManager.ts         # MCP 连接管理器
+│   │       ├── db/sessionStore.ts        # SQLite 会话持久化
+│   │       ├── hooks/                    # 核心状态钩子
+│   │       ├── permissions/              # 权限策略
+│   │       ├── compaction/               # 上下文压缩
+│   │       └── state/                    # 核心状态
 │   │
-│   ├── components/                    # React 终端 UI 组件 (146+)
-│   │   ├── messages/                  # 消息渲染
-│   │   ├── permissions/               # 权限对话框
-│   │   ├── mcp/                       # MCP 相关组件
-│   │   ├── PromptInput/               # 提示输入
-│   │   └── ...
+│   ├── server/                           # @cclocal/server - REST + WebSocket API
+│   │   └── src/
+│   │       ├── index.ts                  # 服务器入口
+│   │       ├── routes/                   # REST 路由
+│   │       ├── ws/                       # WebSocket 处理
+│   │       └── sessionManager.ts         # 会话管理
 │   │
-│   ├── screens/                       # 全屏 UI
-│   │   ├── REPL.tsx                   # 主交互界面
-│   │   ├── Doctor.tsx                 # 系统诊断
-│   │   └── ResumeConversation.tsx     # 恢复对话
+│   ├── shared/                           # @cclocal/shared - 共享类型和工具
+│   │   └── src/
+│   │       ├── index.ts                  # 导出入口
+│   │       └── types.ts                  # 共享类型定义
 │   │
-│   ├── services/                      # 核心服务 (41+)
-│   │   ├── api/                       # API 客户端 (多提供商)
-│   │   ├── analytics/                 # 分析和遥测
-│   │   ├── compact/                   # 上下文压缩
-│   │   ├── mcp/                       # MCP 协议客户端
-│   │   ├── policyLimits/              # 策略限制
-│   │   └── ...
-│   │
-│   ├── hooks/                         # React Hooks (87+)
-│   │   ├── useTimeout.ts
-│   │   ├── useAppState.ts
-│   │   └── ...
-│   │
-│   ├── utils/                         # 工具函数 (335+)
-│   │   ├── auth.ts                    # 认证
-│   │   ├── claudemd.ts                # CLAUDE.md 解析
-│   │   ├── settings/                  # 设置管理
-│   │   ├── model/                     # 模型管理
-│   │   ├── swarm/                     # 多 agent 后端
-│   │   └── ...
-│   │
-│   ├── tools/                         # 工具实现 (50+)
-│   │   ├── AgentTool/
-│   │   ├── BashTool/
-│   │   ├── FileReadTool/
-│   │   ├── FileEditTool/
-│   │   ├── FileWriteTool/
-│   │   ├── GlobTool/
-│   │   ├── GrepTool/
-│   │   ├── WebSearchTool/
-│   │   ├── WebFetchTool/
-│   │   ├── TaskCreateTool/
-│   │   ├── EnterPlanModeTool/
-│   │   ├── SkillTool/
-│   │   └── ...
-│   │
-│   ├── commands/                      # 斜杠命令实现 (100+)
-│   │   ├── init/
-│   │   ├── help/
-│   │   ├── model/
-│   │   ├── commit/
-│   │   ├── review/
-│   │   ├── plan/
-│   │   └── ...
-│   │
-│   ├── skills/                        # Skills 系统
-│   │   ├── bundledSkills.ts           # 内置 skills (18+)
-│   │   ├── loadSkillsDir.ts           # 目录加载
-│   │   └── ...
-│   │
-│   ├── plugins/                       # 插件系统
-│   │   ├── builtinPlugins.ts          # 内置插件
-│   │   └── ...
-│   │
-│   ├── state/                         # 状态管理
-│   │   ├── AppState.ts                # 应用状态 (450+ 字段)
-│   │   └── onChangeAppState.ts        # 状态变更处理
-│   │
-│   ├── context/                       # React Context (9 个)
-│   │   ├── fpsMetrics.ts
-│   │   ├── stats.ts
-│   │   └── ...
-│   │
-│   ├── types/                         # 类型定义
-│   │   ├── message.ts                 # 消息类型
-│   │   ├── command.ts
-│   │   ├── tools.ts
-│   │   └── ...
-│   │
-│   ├── constants/                     # 常量 (24 个文件)
-│   │   ├── prompts.ts
-│   │   ├── oauth.ts
-│   │   ├── tools.ts
-│   │   └── ...
-│   │
-│   ├── bootstrap/                     # 启动引导
-│   ├── coordinator/                   # Coordinator 模式 (禁用)
-│   ├── daemon/                        # Daemon (禁用)
-│   ├── bridge/                        # Bridge 模式 (禁用)
-│   ├── buddy/                         # Buddy 功能 (禁用)
-│   │
-│   └── _external/                     # 构建兼容层
-│       ├── preload.ts                 # 运行时 MACRO + bun:bundle shim
-│       ├── globals.d.ts               # MACRO 类型声明
-│       ├── bun-bundle.d.ts
-│       ├── bun-ffi.d.ts
-│       └── shims/                     # 内部包的 stub 模块
-│           ├── @ant/
-│           ├── @anthropic-ai/
-│           ├── audio-capture-napi/
-│           ├── color-diff-napi/
-│           └── ...
+│   └── vscode-ext/                       # @cclocal/vscode-ext - VS Code 扩展
+│       └── src/
+│           ├── extension.ts              # 扩展入口 (双模式)
+│           ├── CliViewProvider.ts        # CLI 进程模式 ViewProvider
+│           ├── WsViewProvider.ts         # WebSocket 模式 ViewProvider
+│           ├── ServerManager.ts          # 嵌入式服务器管理器
+│           ├── CclocalProcess.ts         # CLI --print 进程管理器
+│           ├── CliProcess.ts             # --ide 模式进程管理器
+│           ├── IdeServer.ts              # WebSocket 服务器 + lock 文件
+│           └── types.ts                  # 消息类型定义
 │
 ├── scripts/
-│   └── build-external.ts              # Bun.build() 脚本
+│   └── build-external.ts                # Bun.build() 脚本
 │
 ├── package.json
 ├── tsconfig.json
-├── bunfig.toml                       # 预加载配置 + .md 文本加载器
+├── bunfig.toml                           # 预加载配置 + .md 文本加载器
 └── CLAUDE.md
 ```
 
@@ -302,11 +274,11 @@ sequenceDiagram
 #### 启动流程图
 
 ```
-src/entrypoints/cli.tsx (入口点)
+packages/cli/src/entrypoints/cli.tsx (入口点)
     ↓
 [快路径处理] --version, --daemon-worker, --bridge 等
     ↓
-src/main.tsx
+packages/cli/src/main.tsx
     ├─ 早期并行预取 (MDM 设置、钥匙串项目)
     ├─ 迁移系统 (CURRENT_MIGRATION_VERSION = 11)
     ├─ Commander.js CLI 解析
@@ -314,7 +286,7 @@ src/main.tsx
     ├─ 状态存储初始化 (getDefaultAppState())
     └─ REPL 启动 (launchRepl())
             ↓
-    src/screens/REPL.tsx (主界面)
+    packages/cli/src/screens/REPL.tsx (主界面)
 ```
 
 ### 2. 核心系统架构图
@@ -619,10 +591,10 @@ src/main.tsx
 
 | 模块 | 位置 | 功能标志 | 说明 |
 |------|------|----------|------|
-| **Coordinator** | src/coordinator/ | COORDINATOR_MODE | 协调器模式 |
-| **Daemon** | src/daemon/ | DAEMON | 后台守护进程 |
-| **Bridge** | src/bridge/ | BRIDGE_MODE | 桥接模式 (30+ 文件) |
-| **Buddy** | src/buddy/ | BUDDY | AI 同伴/精灵 |
+| **Coordinator** | packages/cli/src/coordinator/ | COORDINATOR_MODE | 协调器模式 |
+| **Daemon** | packages/cli/src/daemon/ | DAEMON | 后台守护进程 |
+| **Bridge** | packages/cli/src/bridge/ | BRIDGE_MODE | 桥接模式 (30+ 文件) |
+| **Buddy** | packages/cli/src/buddy/ | BUDDY | AI 同伴/精灵 |
 
 ---
 
@@ -1035,7 +1007,7 @@ graph TB
 | `assembleToolPool()` | 组合内置 + MCP 工具，去重，为缓存稳定性排序 |
 | `filterToolsByDenyRules()` | 按拒绝规则过滤 |
 
-**工具定义** (src/Tool.ts):
+**工具定义** (packages/cli/src/Tool.ts):
 - 30+ 属性/方法的 `Tool` 接口
 - `call()`, `description()`, `inputSchema`, `prompt()`
 - `checkPermissions()`, `renderToolUseMessage()` 等
@@ -1075,7 +1047,7 @@ graph TB
 - `useAppState(selector)` - 高效重渲染
 - `onChangeAppState()` - 集中式副作用和持久化
 
-### 5. 自定义 Ink 渲染器 (src/ink/)
+### 5. 自定义 Ink 渲染器 (packages/cli/src/ink/)
 
 **完整的终端 UI 引擎** (52 文件):
 - 自定义 React 协调器
@@ -1115,7 +1087,7 @@ React Components → Custom Reconciler → Yoga Layout → Screen Buffer → Dif
 - `TEMPLATES` - 项目模板
 - 以及更多实验性功能...
 
-### 构建兼容层 (src/_external/)
+### 构建兼容层 (packages/cli/src/_external/)
 
 **原始代码依赖**:
 - Bun 的 `bun:bundle` 模块 (编译时功能标志)

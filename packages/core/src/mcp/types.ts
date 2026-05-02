@@ -12,6 +12,10 @@ export interface MCPServerConfig {
   allowedTools?: string[]
   blockedTools?: string[]
   syncToolsToRegistry?: boolean
+  /** Auth token for IDE WebSocket connections (sent as header) */
+  authToken?: string
+  /** Whether the IDE is running on Windows (affects host IP detection) */
+  ideRunningInWindows?: boolean
 }
 
 export type MCPServerStatus =

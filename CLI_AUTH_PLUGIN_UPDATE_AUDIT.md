@@ -3,7 +3,7 @@
 审计对象：
 
 - 正式 CLI：`bun run start`
-- 正式构建物：`/Users/yanluohao/开发/cc-local/dist/cli.js`
+- 正式构建物：`./dist/cli.js`
 - 旧主线的认证、插件、更新相关命令
 
 审计日期：
@@ -108,8 +108,8 @@
 
 本轮新增：
 
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-auth-plugin-update.sh`
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-setup-token-start.sh`
+- `./scripts/smoke-auth-plugin-update.sh`
+- `./scripts/smoke-setup-token-start.sh`
 
 其中：
 

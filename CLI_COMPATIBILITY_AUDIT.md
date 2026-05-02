@@ -3,8 +3,8 @@
 审计对象：
 
 - 正式开发入口：`bun run start`
-- 正式构建产物：`/Users/yanluohao/开发/cc-local/dist/cli.js`
-- 正式源码入口：`/Users/yanluohao/开发/cc-local/src/entrypoints/cli.tsx`
+- 正式构建产物：`./dist/cli.js`
+- 正式源码入口：`./packages/cli/src/entrypoints/cli.tsx`
 
 审计日期：
 
@@ -99,32 +99,32 @@
 
 当前已经新增：
 
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-official-cli.sh`
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-session-output.sh`
-- `/Users/yanluohao/开发/cc-local/scripts/deep-session-resume-check.sh`
-- `/Users/yanluohao/开发/cc-local/CLI_SESSION_OUTPUT_AUDIT.md`
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-mcp-config.sh`
-- `/Users/yanluohao/开发/cc-local/scripts/deep-mcp-config.sh`
-- `/Users/yanluohao/开发/cc-local/CLI_MCP_AUDIT.md`
-- `/Users/yanluohao/开发/cc-local/scripts/deep-mcp-runtime.sh`
-- `/Users/yanluohao/开发/cc-local/CLI_MCP_RUNTIME_AUDIT.md`
-- `/Users/yanluohao/开发/cc-local/scripts/deep-mcp-serve-tools.sh`
-- `/Users/yanluohao/开发/cc-local/CLI_MCP_SERVE_TOOLS_AUDIT.md`
-- `/Users/yanluohao/开发/cc-local/scripts/deep-mcp-permissions.sh`
-- `/Users/yanluohao/开发/cc-local/CLI_MCP_PERMISSION_AUDIT.md`
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-auth-plugin-update.sh`
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-setup-token-start.sh`
-- `/Users/yanluohao/开发/cc-local/CLI_AUTH_PLUGIN_UPDATE_AUDIT.md`
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-plugin-lifecycle.sh`
-- `/Users/yanluohao/开发/cc-local/CLI_PLUGIN_LIFECYCLE_AUDIT.md`
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-session-advanced.sh`
-- `/Users/yanluohao/开发/cc-local/CLI_SESSION_ADVANCED_AUDIT.md`
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-integrations-repl.sh`
-- `/Users/yanluohao/开发/cc-local/CLI_INTEGRATIONS_REPL_AUDIT.md`
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-permission-mode.sh`
-- `/Users/yanluohao/开发/cc-local/CLI_PERMISSION_MODE_AUDIT.md`
-- `/Users/yanluohao/开发/cc-local/scripts/deep-repl-regression.sh`
-- `/Users/yanluohao/开发/cc-local/CLI_REPL_DEEP_AUDIT.md`
+- `./scripts/smoke-official-cli.sh`
+- `./scripts/smoke-session-output.sh`
+- `./scripts/deep-session-resume-check.sh`
+- `./CLI_SESSION_OUTPUT_AUDIT.md`
+- `./scripts/smoke-mcp-config.sh`
+- `./scripts/deep-mcp-config.sh`
+- `./CLI_MCP_AUDIT.md`
+- `./scripts/deep-mcp-runtime.sh`
+- `./CLI_MCP_RUNTIME_AUDIT.md`
+- `./scripts/deep-mcp-serve-tools.sh`
+- `./CLI_MCP_SERVE_TOOLS_AUDIT.md`
+- `./scripts/deep-mcp-permissions.sh`
+- `./CLI_MCP_PERMISSION_AUDIT.md`
+- `./scripts/smoke-auth-plugin-update.sh`
+- `./scripts/smoke-setup-token-start.sh`
+- `./CLI_AUTH_PLUGIN_UPDATE_AUDIT.md`
+- `./scripts/smoke-plugin-lifecycle.sh`
+- `./CLI_PLUGIN_LIFECYCLE_AUDIT.md`
+- `./scripts/smoke-session-advanced.sh`
+- `./CLI_SESSION_ADVANCED_AUDIT.md`
+- `./scripts/smoke-integrations-repl.sh`
+- `./CLI_INTEGRATIONS_REPL_AUDIT.md`
+- `./scripts/smoke-permission-mode.sh`
+- `./CLI_PERMISSION_MODE_AUDIT.md`
+- `./scripts/deep-repl-regression.sh`
+- `./CLI_REPL_DEEP_AUDIT.md`
 
 这个脚本用于守住正式入口的最小不退化基线，覆盖：
 
@@ -207,7 +207,7 @@
 
 ## 切换约束
 
-在 `/Users/yanluohao/开发/cc-local/CLI_COMPATIBILITY_CHECKLIST.md` 未全部清空之前：
+在 `./CLI_COMPATIBILITY_CHECKLIST.md` 未全部清空之前：
 
 - 不允许把 `packages/cli` 设为正式入口
 - 不允许让全局 `cclocal` 指向 `packages/cli/dist/index.js`

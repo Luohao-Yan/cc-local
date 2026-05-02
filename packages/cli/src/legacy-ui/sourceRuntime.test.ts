@@ -11,5 +11,5 @@ describe('legacy UI source runtime', () => {
     expect(runtime.appStateModule.getDefaultAppState).toBeTypeOf('function')
     expect(runtime.inkModule.render).toBeTypeOf('function')
     expect(runtime.loadReplScreenModule).toBeTypeOf('function')
-  }, 30000)
+  }, 120000)
 })

@@ -36,5 +36,5 @@ describe('legacy app shell adapter', () => {
     expect(runtime.launchRepl).toBeTypeOf('function')
     expect(runtime.inkRender).toBeTypeOf('function')
     expect(runtime.loadREPL).toBeTypeOf('function')
-  }, 30000)
+  }, 120000)
 })

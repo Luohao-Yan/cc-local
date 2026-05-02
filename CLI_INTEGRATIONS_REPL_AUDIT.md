@@ -3,7 +3,7 @@
 审计对象：
 
 - 正式 CLI：`bun run start`
-- 正式构建物：`/Users/yanluohao/开发/cc-local/dist/cli.js`
+- 正式构建物：`./dist/cli.js`
 - REPL 与部分环境集成选项
 
 审计日期：
@@ -128,12 +128,12 @@ claude --worktree smoke --tmux --print "say ok"
 
 本轮新增：
 
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-integrations-repl.sh`
-- `/Users/yanluohao/开发/cc-local/scripts/deep-repl-regression.sh`
+- `./scripts/smoke-integrations-repl.sh`
+- `./scripts/deep-repl-regression.sh`
 
 以及深度补充文档：
 
-- `/Users/yanluohao/开发/cc-local/CLI_REPL_DEEP_AUDIT.md`
+- `./CLI_REPL_DEEP_AUDIT.md`
 
 ## 当前结论
 

@@ -278,9 +278,9 @@ mcp reset-project-choices
 
 当前已形成两层 MCP 审计脚本：
 
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-mcp-config.sh`
+- `./scripts/smoke-mcp-config.sh`
   负责基础 `add/list/get/remove`
-- `/Users/yanluohao/开发/cc-local/scripts/deep-mcp-config.sh`
+- `./scripts/deep-mcp-config.sh`
   负责 `add-json`、headers/oauth、多 scope remove、`reset-project-choices`
 
 ## 下一步建议

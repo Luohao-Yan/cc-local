@@ -135,8 +135,7 @@ function renderList(items) {
 }
 
 const IGNORED_STATIC_SLASH_MATCHES = new Set([
-  '\n        placeholder=',
-  ' placeholder=',
+  'placeholder=',
   'copy${fileExtension(block_0.lang)}',
   'Default',
   'Local',
@@ -148,7 +147,10 @@ const IGNORED_STATIC_SLASH_MATCHES = new Set([
 ])
 
 function withoutIgnoredSlashMatches(items) {
-  return items.filter((item) => !IGNORED_STATIC_SLASH_MATCHES.has(item))
+  return items.filter((item) => {
+    const trimmed = item.trim()
+    return !IGNORED_STATIC_SLASH_MATCHES.has(trimmed) && !IGNORED_STATIC_SLASH_MATCHES.has(item)
+  })
 }
 
 const oldTopLevelCommands = extractOldTopLevelCommands()

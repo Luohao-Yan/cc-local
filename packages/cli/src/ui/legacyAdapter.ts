@@ -15,6 +15,7 @@ const PACKAGE_ONLY_OPTIONS_WITH_VALUE = new Set([
 const PACKAGE_ONLY_BOOLEAN_OPTIONS = new Set([
   '--server-embedded',
   '--legacy',
+  '--native',
 ])
 
 const LEGACY_UI_OPTIONS_WITH_VALUE = new Set([
@@ -145,6 +146,15 @@ export function shouldUseLegacyUi(args: string[]): boolean {
     return true
   }
 
+  if (args.some((arg) => arg === '--native' || arg.startsWith('--native='))) {
+    return false
+  }
+
+  // cclocal-next entry point: default to native unless --legacy is explicit
+  if (process.env.CCLOCAL_DEFAULT_NATIVE === '1') {
+    return false
+  }
+
   if (args.some((arg) => arg === '--server' || arg === '-s' || arg.startsWith('--server=') || arg === '--token' || arg === '-t' || arg.startsWith('--token='))) {
     return false
   }
@@ -167,6 +177,8 @@ export function shouldUseLegacyUi(args: string[]): boolean {
     return true
   }
 
+  // Default to legacy Ink UI (original behavior)
+  // Use --native to use the new packages-native REPL
   return true
 }
 
@@ -177,12 +189,7 @@ export function findLegacyRepoRoot(): string {
       current = dirname(current)
       continue
     }
-    // New monorepo layout
     if (existsSync(join(current, 'packages', 'cli', 'src', 'entrypoints', 'cli.tsx'))) {
-      return current
-    }
-    // Old flat layout (src/ at repo root)
-    if (existsSync(join(current, 'src', 'entrypoints', 'cli.tsx'))) {
       return current
     }
     current = dirname(current)
@@ -191,16 +198,15 @@ export function findLegacyRepoRoot(): string {
 }
 
 export function resolveLegacyUiEntrypoint(repoRoot = findLegacyRepoRoot()): { entrypoint: string; cwd: string } {
-  // New monorepo layout
+  // Prefer compiled legacy-cli.js from dist (faster startup)
+  const distEntrypoint = join(repoRoot, 'dist', 'legacy-cli.js')
+  if (existsSync(distEntrypoint)) {
+    return { entrypoint: distEntrypoint, cwd: repoRoot }
+  }
+
   const monorepoEntrypoint = join(repoRoot, 'packages', 'cli', 'src', 'entrypoints', 'cli.tsx')
   if (existsSync(monorepoEntrypoint)) {
     return { entrypoint: monorepoEntrypoint, cwd: repoRoot }
-  }
-
-  // Old flat layout
-  const sourceEntrypoint = join(repoRoot, 'src', 'entrypoints', 'cli.tsx')
-  if (existsSync(sourceEntrypoint)) {
-    return { entrypoint: sourceEntrypoint, cwd: repoRoot }
   }
 
   return {
@@ -212,10 +218,17 @@ export function resolveLegacyUiEntrypoint(repoRoot = findLegacyRepoRoot()): { en
 export function delegateToLegacyUi(args: string[]): never {
   const legacyArgs = stripPackageOnlyArgs(args)
   const { entrypoint, cwd } = resolveLegacyUiEntrypoint()
-  const result = spawnSync('bun', [entrypoint, ...legacyArgs], {
+
+  // Use process.execPath (current bun executable) instead of 'bun'
+  // to ensure we find bun even when running as a global command
+  const result = spawnSync(process.execPath, [entrypoint, ...legacyArgs], {
     cwd,
     stdio: 'inherit',
-    env: process.env,
+    env: {
+      ...process.env,
+      CCLOCAL_SKIP_STDIN: '1', // Skip stdin reading in spawned process
+      CCLOCAL_FORCE_INTERACTIVE: '1', // Force interactive mode (TTY is false on Windows spawnSync)
+    },
   })
 
   if (result.error) {

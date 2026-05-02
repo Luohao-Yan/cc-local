@@ -234,6 +234,36 @@ describe('MCPManager', () => {
     expect(disconnected.status).toBe('disconnected')
   })
 
+  it('supports ws config validation and connection lifecycle', async () => {
+    const manager = new MCPManager({
+      connectionFactory: async () => ({
+        async listTools() {
+          return [{ name: 'openDiff', description: 'Open diff tab' }]
+        },
+        async callTool(name) {
+          return { content: `called:${name}` }
+        },
+        async close() {},
+      }),
+    })
+
+    manager.registerServer({
+      name: 'ide',
+      config: {
+        type: 'ws',
+        url: 'ws://127.0.0.1:12345',
+        authToken: 'test-token',
+      },
+    })
+
+    const connected = await manager.connectServer('ide')
+    expect(connected.status).toBe('connected')
+    expect(connected.tools.map((tool) => tool.name)).toEqual(['openDiff'])
+
+    const disconnected = await manager.disconnectServer('ide')
+    expect(disconnected.status).toBe('disconnected')
+  })
+
   it('supports MCP resources when the connector exposes them', async () => {
     const manager = new MCPManager({
       connectionFactory: async () => ({

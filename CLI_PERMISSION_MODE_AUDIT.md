@@ -3,7 +3,7 @@
 审计对象：
 
 - 正式 CLI：`bun run start`
-- 正式构建物：`/Users/yanluohao/开发/cc-local/dist/cli.js`
+- 正式构建物：`./dist/cli.js`
 - 主 CLI 的 `--permission-mode`
 
 审计日期：
@@ -56,7 +56,7 @@
 - 在临时目录下执行：
 
 ```bash
-bun /Users/yanluohao/开发/cc-local/dist/cli.js \
+bun ./dist/cli.js \
   --print "create a file named note.txt in the current directory with exact content hi" \
   --permission-mode acceptEdits \
   --output-format stream-json \
@@ -96,7 +96,7 @@ bun /Users/yanluohao/开发/cc-local/dist/cli.js \
 
 本轮新增：
 
-- `/Users/yanluohao/开发/cc-local/scripts/smoke-permission-mode.sh`
+- `./scripts/smoke-permission-mode.sh`
 
 它覆盖：
 

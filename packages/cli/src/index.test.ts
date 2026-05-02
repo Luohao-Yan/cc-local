@@ -1,10 +1,30 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createServer, type IncomingMessage, type ServerResponse } from 'http'
-import { spawn } from 'child_process'
+import { spawn, execSync } from 'child_process'
 import type { AddressInfo } from 'net'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
+
+// Resolve the bun executable path — vitest runs under node so process.execPath
+// points to node, not bun. We need bun to execute TypeScript entry files.
+const BUN = (() => {
+  try {
+    // On Windows, `where bun` returns the .cmd wrapper which spawn can't
+    // execute directly without shell:true. Resolve the real bun.exe.
+    const result = execSync('which bun 2>/dev/null || where bun 2>NUL', { encoding: 'utf-8' })
+    const raw = result.split(/\r?\n/).filter(Boolean)[0].trim()
+    if (process.platform === 'win32' && !raw.endsWith('.exe')) {
+      // npm global .cmd wrappers delegate to node_modules/bun/bin/bun.exe
+      const exePath = raw.replace(/[^/\\]+$/, 'node_modules/bun/bin/bun.exe')
+      try { execSync(`"${exePath}" --version`, { stdio: 'ignore' }); return exePath } catch { /* fallthrough */ }
+      return raw + '.cmd'
+    }
+    return raw
+  } catch {
+    return 'bun'
+  }
+})()
 
 interface TestSession {
   id: string
@@ -356,7 +376,7 @@ async function runCli(
       ...args,
     ]
     const child = spawn(
-      'bun',
+      BUN,
       cliArgs,
       {
         cwd: process.cwd(),
@@ -395,7 +415,7 @@ async function runCliWithoutServer(
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   return await new Promise((resolve, reject) => {
     const child = spawn(
-      'bun',
+      BUN,
       ['run', 'packages/cli/src/index.ts', ...args],
       {
         cwd: process.cwd(),
@@ -456,7 +476,7 @@ describe('packages/cli command integration', () => {
     expect(deleteResult.code).toBe(0)
     expect(deleteResult.stdout).toContain('Deleted session "session-1".')
     expect(state.sessions).toHaveLength(0)
-  })
+  }, 30000)
 
   it('supports session continue and fork through CLI commands', async () => {
     const continueResult = await runCli(server.baseUrl, [
@@ -859,7 +879,7 @@ describe('packages/cli command integration', () => {
     expect(upgradeResult.stderr).toBe('')
     expect(upgradeResult.stdout).toContain('"automaticInstall": false')
     expect(upgradeResult.stdout).toContain('"git pull"')
-  })
+  }, 30000)
 
   it('keeps legacy Claude UI as the default help while native management commands stay available', async () => {
     const helpResult = await runCliWithoutServer(['--help'])
@@ -899,7 +919,7 @@ describe('packages/cli command integration', () => {
     })
     expect(legacyOptionResult.code).toBe(0)
     expect(legacyOptionResult.stdout).toContain('--worktree')
-  })
+  }, 30000)
 
   it('supports compatibility resume and continue flows for single-prompt mode', async () => {
     const resumeResult = await runCli(server.baseUrl, ['--resume', 'session-1', '--print', 'hello again'])

@@ -73,7 +73,7 @@
 
 ### Phase 2：Ink/runtime 搬迁
 
-状态：已启动。
+状态：已完成。
 
 目标：让 packages 能直接 import 旧 Ink renderer 与 App shell。
 
@@ -88,8 +88,8 @@
 - [x] 将旧 `packages/cli/src/main.tsx` 的 normal、continue、resume 调用点接入 packages facade
 - [x] 建立 `packages/cli/src/ink/**`、`packages/cli/src/components/App.tsx`、`packages/cli/src/state/**` 的 packages lazy surface loader
 - [x] 建立 slash commands、tool registry、permission UI、MCP UI、message/tool rendering 的 packages lazy surface loader
-- [ ] 将 lazy surface loader 收敛为逐模块 packages-owned re-export 或物理搬迁文件。
-- [ ] 保留 import alias，避免一次性改 500+ 个相对路径。
+- [x] 将 lazy surface loader 收敛为逐模块 packages-owned re-export 或物理搬迁文件。
+- [x] 保留 import alias，避免一次性改 500+ 个相对路径。
 
 验收：
 
@@ -100,12 +100,29 @@
 
 ### Phase 3：REPL 主屏迁移
 
+状态：已启动。
+
 目标：迁入 `packages/cli/src/screens/REPL.tsx`，并让它使用 packages QueryEngine/SessionManager/MCPManager。
 
-- 替换 query loop 数据源为 `packages/core`。
-- 替换 session persistence 为 `packages/server`/`packages/core` 会话层。
-- 接入 dynamic MCP tools。
-- 接入 permission policy。
+- [x] 创建 native REPL 入口 `packages/cli/src/repl/nativeRepl.ts`，直接使用 QueryEngine + SessionStore
+- [x] 在 `replRenderer.ts` 中增加 nativeMode 路由分支
+- [x] 在 `index.ts` 中注册 `--native` 标志，绕过旧 Ink UI 委托
+- [x] native REPL 支持流式文本、thinking 块、tool_call 事件渲染
+- [x] native REPL 接入 SessionStore 进行消息持久化
+- [x] native REPL 接入 MCPManager 进行工具同步
+- [x] native REPL 接入 PermissionPolicy 进行权限检查
+- [x] cclocal-next 交互式会话通过 legacy bridge 加载旧版 Ink/React UI（Phase 7.1）
+- [x] cclocal-next 通过 CCLOCAL_USE_QUERY_ENGINE=1 切换 QueryEngine 数据源（Phase 7.2）
+- [x] legacyBridgeRenderer 传递 core ToolRegistry 和 CommandRegistry 的真实工具/命令（Phase 7.2）
+- [x] --resume / --continue / --fork-session 在 native/bridge 路径可用（Phase 7.3）
+- [x] SessionStore 新增 findSessionByCwd 和 forkSession 方法（Phase 7.3）
+- [x] sessionResolver 工具：统一解析会话标志，替代 CCLocalClient REST（Phase 7.3）
+- [x] 替换 session persistence 为 `packages/core` 会话层（Phase 7.3：native/bridge 均已使用 SessionStore）
+- [x] 接入 dynamic MCP tools（Phase 7.4：MCPBridgeAdapter 同步 core MCPManager 状态到 AppState.mcp）
+- [x] 接入 permission policy（已接入 decideToolPermission，需端到端验证）
+- [x] 外部集成通过 bridge 可用（Phase 7.5：--ide/--chrome/--worktree/--tmux 均已接入 bridge renderer）
+- [ ] 替换 session persistence 为 `packages/server`/`packages/core` 会话层（当前 native REPL 已使用 SessionStore，但 CCLocalClient 路径仍走 server REST）
+- [x] --resume / --continue / --fork-session 在 native 路径已实现（Phase 7.3）
 
 验收：
 
@@ -114,11 +131,16 @@
 
 ### Phase 4：slash commands 与工具 UI
 
+状态：已完成。
+
 目标：迁移旧 slash command 运行时和工具展示。
 
-- 搬迁 `packages/cli/src/commands/**` registry。
-- 搬迁 tool permission/dialog/render components。
-- 将旧工具 registry 与 packages ToolRegistry 统一。
+- [x] 将 5 个 placeholder bridge adapters 替换为真实 lazy-load 实现
+- [x] native REPL 和 nativeSinglePrompt 启动时注册 bridge adapters
+- [x] 搬迁 commands registry 到 packages/core（CommandRegistry + registerDefaults）
+- [x] 统一旧工具 registry 与 packages ToolRegistry（移除重复 bridge adapters，保留 core 原生实现）
+- [x] stream-json 事件格式对齐 Anthropic SSE 兼容格式（message_start, content_block_delta, message_stop）
+- [ ] 搬迁 tool permission/dialog/render components（需 Ink UI 层，保留至 Phase 5+）
 
 验收：
 

@@ -54,7 +54,7 @@ env['ANTHROPIC_API_KEY'] = 'dummy-key'
 try:
     proc = subprocess.run(
         ['bun', 'run', 'start', '--', 'auth', 'logout'],
-        cwd='/Users/yanluohao/开发/cc-local',
+        cwd=os.environ.get('CCLOCAL_ROOT', os.getcwd()),
         env=env,
         capture_output=True,
         text=True,
@@ -96,7 +96,7 @@ update_output="$(
 import subprocess
 cmd=['bun','run','start','--','update']
 try:
-    p=subprocess.run(cmd,cwd='/Users/yanluohao/开发/cc-local',capture_output=True,text=True,timeout=12)
+    p=subprocess.run(cmd,cwd=os.environ.get('CCLOCAL_ROOT', os.getcwd()),capture_output=True,text=True,timeout=12)
     print(p.stdout)
     print(p.stderr)
 except subprocess.TimeoutExpired as e:

@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "bin": {
-    "cclocal": "./dist/cli.js"
+    "cclocal": "./dist/cli.js",
+    "cclocal-next": "./dist/next-cli.js"
   },
   "workspaces": [
     "packages/*"
@@ -13,6 +14,7 @@
     "start": "bun run packages/cli/src/index.ts --server-embedded",
     "start:packages-cli": "bun run packages/cli/src/index.ts --server-embedded",
     "start:legacy": "bun run packages/cli/src/entrypoints/cli.tsx",
+    "start:next": "bun run packages/cli/src/entrypoints/next.ts --server-embedded",
     "build": "bun run scripts/build-external.ts",
     "build:legacy": "CCLOCAL_BUILD_LEGACY=1 bun run scripts/build-external.ts",
     "build:packages": "bun run --filter '*' build",

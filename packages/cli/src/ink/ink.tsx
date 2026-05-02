@@ -37,7 +37,7 @@ import { SYNC_OUTPUT_SUPPORTED, supportsExtendedKeys, type Terminal, writeDiffTo
 import { CURSOR_HOME, cursorMove, cursorPosition, DISABLE_KITTY_KEYBOARD, DISABLE_MODIFY_OTHER_KEYS, ENABLE_KITTY_KEYBOARD, ENABLE_MODIFY_OTHER_KEYS, ERASE_SCREEN } from './termio/csi.js';
 import { DBP, DFE, DISABLE_MOUSE_TRACKING, ENABLE_MOUSE_TRACKING, ENTER_ALT_SCREEN, EXIT_ALT_SCREEN, SHOW_CURSOR } from './termio/dec.js';
 import { CLEAR_ITERM2_PROGRESS, CLEAR_TAB_STATUS, setClipboard, supportsTabStatus, wrapForMultiplexer } from './termio/osc.js';
-import { TerminalWriteProvider } from './useTerminalNotification.js';
+import { TerminalWriteProvider, TerminalWriteContext, TERMINAL_WRITE_CONTEXT_ID } from './useTerminalNotification.js';
 
 // Alt-screen: renderer.ts sets cursor.visible = !isTTY || screen.height===0,
 // which is always false in alt-screen (TTY + content fills screen).
@@ -177,8 +177,13 @@ export default class Ink {
     x: number;
     y: number;
   } | null = null;
-  constructor(private readonly options: Options) {
-    autoBind(this);
+  constructor(options: Options) {
+    this.options = options;
+    try {
+      autoBind(this);
+    } catch (e) {
+      throw e;
+    }
     if (this.options.patchConsole) {
       this.restoreConsole = this.patchConsole();
       this.restoreStderr = this.patchStderr();

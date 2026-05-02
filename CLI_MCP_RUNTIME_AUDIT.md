@@ -3,7 +3,7 @@
 审计对象：
 
 - 正式 CLI：`bun run start`
-- 正式构建物：`/Users/yanluohao/开发/cc-local/dist/cli.js`
+- 正式构建物：`./dist/cli.js`
 - 旧主线 MCP 运行态与 transport 闭环
 
 审计日期：
@@ -33,7 +33,7 @@
 - 在隔离项目中执行：
 
 ```bash
-claude mcp add -s project official_stdio -- bun /Users/yanluohao/开发/cc-local/dist/cli.js mcp serve
+claude mcp add -s project official_stdio -- bun ./dist/cli.js mcp serve
 claude mcp get official_stdio
 ```
 
@@ -54,7 +54,7 @@ claude mcp get official_stdio
 
 验证方式：
 
-- 用本仓库新增脚本 `/Users/yanluohao/开发/cc-local/scripts/test-mcp-http-server.mjs` 启动本地测试 server
+- 用本仓库新增脚本 `./scripts/test-mcp-http-server.mjs` 启动本地测试 server
 - 在隔离项目中执行：
 
 ```bash
@@ -76,7 +76,7 @@ claude mcp get runtime_http
 
 验证方式：
 
-- 用本仓库新增脚本 `/Users/yanluohao/开发/cc-local/scripts/test-mcp-sse-server.mjs` 启动本地测试 server
+- 用本仓库新增脚本 `./scripts/test-mcp-sse-server.mjs` 启动本地测试 server
 - 在隔离项目中执行：
 
 ```bash
@@ -121,9 +121,9 @@ claude mcp get shadowed
 
 本轮新增：
 
-- `/Users/yanluohao/开发/cc-local/scripts/test-mcp-http-server.mjs`
-- `/Users/yanluohao/开发/cc-local/scripts/test-mcp-sse-server.mjs`
-- `/Users/yanluohao/开发/cc-local/scripts/deep-mcp-runtime.sh`
+- `./scripts/test-mcp-http-server.mjs`
+- `./scripts/test-mcp-sse-server.mjs`
+- `./scripts/deep-mcp-runtime.sh`
 
 其中：
 

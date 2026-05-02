@@ -8,9 +8,10 @@ cd "$ROOT_DIR"
 echo "[smoke-session-advanced] fork-session + stream-json flags"
 python3 - <<'PY'
 import json
+import os
 import subprocess
 
-root = '/Users/yanluohao/开发/cc-local'
+root = os.environ.get('CCLOCAL_ROOT', os.getcwd())
 
 def ensure(cond, msg):
     if not cond:

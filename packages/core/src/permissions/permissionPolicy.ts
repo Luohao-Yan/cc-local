@@ -13,13 +13,13 @@ export interface PermissionDecision {
   reason?: string
 }
 
-const HIGH_RISK_TOOLS = new Set([
+export const HIGH_RISK_TOOLS = new Set([
   'bash',
   'file_write',
   'file_edit',
 ])
 
-const EDIT_TOOLS = new Set([
+export const EDIT_TOOLS = new Set([
   'file_write',
   'file_edit',
 ])

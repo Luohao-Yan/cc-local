@@ -108,6 +108,27 @@ fi
 
 info "Global command created: $CMD_PATH"
 
+# Create cclocal-next global launcher (grayscale candidate)
+NEXT_CMD_NAME="cclocal-next"
+if [[ "$CMD_NAME" != "$NEXT_CMD_NAME" ]]; then
+    NEXT_CMD_PATH="$INSTALL_DIR/$NEXT_CMD_NAME"
+    NEXT_TMPFILE="$(mktemp)"
+    cat > "$NEXT_TMPFILE" << EOF
+#!/bin/bash
+exec bun "$PROJECT_DIR/dist/next-cli.js" "\$@"
+EOF
+    chmod +x "$NEXT_TMPFILE"
+
+    if [ -w "$INSTALL_DIR" ]; then
+        mv "$NEXT_TMPFILE" "$NEXT_CMD_PATH"
+    else
+        sudo mv "$NEXT_TMPFILE" "$NEXT_CMD_PATH"
+        sudo chmod +x "$NEXT_CMD_PATH"
+    fi
+
+    info "Grayscale command created: $NEXT_CMD_PATH"
+fi
+
 # ===== Migrate .env to ~/.claude/models.json =====
 MODELS_JSON="$CLAUDE_DIR/models.json"
 

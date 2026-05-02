@@ -175,6 +175,8 @@ async function buildEntrypoint(source: string, destination: string): Promise<voi
       ".md": "text",
     },
     external: [
+      "react",
+      "react-reconciler",
       "@anthropic-ai/bedrock-sdk",
       "@anthropic-ai/foundry-sdk",
       "@anthropic-ai/vertex-sdk",
@@ -238,6 +240,8 @@ async function buildEntrypoint(source: string, destination: string): Promise<voi
 
 // 统一发布入口为 dist/cli.js，使全局安装和 package.json bin 不随入口文件名变化。
 await buildEntrypoint(entrypoint, "./dist/cli.js");
+// 灰度候选入口：默认走 native 路径，供 cclocal-next 全局命令使用
+await buildEntrypoint("./packages/cli/src/entrypoints/next.ts", "./dist/next-cli.js");
 if (!buildLegacy) {
   await buildEntrypoint("./packages/server/src/index.ts", "./dist/server.js");
   await buildEntrypoint("./packages/cli/src/entrypoints/cli.tsx", "./dist/legacy-cli.js");
@@ -251,8 +255,9 @@ const publishPkg = {
   type: "module",
   bin: {
     "cclocal": "./cli.js",
+    "cclocal-next": "./next-cli.js",
   },
-  files: ["cli.js", "server.js", "legacy-cli.js"],
+  files: ["cli.js", "next-cli.js", "server.js", "legacy-cli.js"],
   engines: {
     bun: ">=1.1.0",
   },

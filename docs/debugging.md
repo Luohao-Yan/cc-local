@@ -136,7 +136,7 @@ rm -rf node_modules bun.lock
 bun install
 
 # 4. 检查 preload 是否工作
-bun run src/entrypoints/cli.tsx --version
+bun run packages/cli/src/entrypoints/cli.tsx --version
 
 # 5. 查看详细错误
 NODE_DEBUG=* bun run start
@@ -331,7 +331,7 @@ bun pm ls
 bunx tsc --noEmit
 
 # 运行单个文件
-bun run src/my-file.ts
+bun run packages/cli/src/my-file.ts
 ```
 
 ### 2. REPL 调试命令

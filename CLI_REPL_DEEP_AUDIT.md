@@ -2,7 +2,7 @@
 
 审计对象：
 
-- 正式构建物：`/Users/yanluohao/开发/cc-local/dist/cli.js`
+- 正式构建物：`./dist/cli.js`
 - 交互式 REPL 深层行为
 
 审计日期：
@@ -86,7 +86,7 @@ run bash command pwd and answer only done
 
 本轮新增：
 
-- `/Users/yanluohao/开发/cc-local/scripts/deep-repl-regression.sh`
+- `./scripts/deep-repl-regression.sh`
 
 它覆盖：
 
