@@ -41,6 +41,7 @@ export class AnthropicClient {
     } = {}
   ): AsyncGenerator<
     | { type: 'text'; text: string }
+    | { type: 'thinking'; thinking: string }
     | { type: 'tool_use'; name: string; input: unknown; id: string }
     | { type: 'error'; error: string }
     | { type: 'usage'; inputTokens: number; outputTokens: number }
@@ -77,11 +78,20 @@ export class AnthropicClient {
                 id: event.content_block.id,
               }
             }
+            if (event.content_block.type === 'thinking') {
+              // Yield thinking block start with initial text if present
+              if ('thinking' in event.content_block && event.content_block.thinking) {
+                yield { type: 'thinking', thinking: event.content_block.thinking }
+              }
+            }
             break
 
           case 'content_block_delta':
             if (event.delta.type === 'text_delta') {
               yield { type: 'text', text: event.delta.text }
+            }
+            if (event.delta.type === 'thinking_delta') {
+              yield { type: 'thinking', thinking: event.delta.thinking }
             }
             break
 

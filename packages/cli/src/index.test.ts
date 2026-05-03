@@ -369,7 +369,7 @@ async function runCli(
   return await new Promise((resolve, reject) => {
     const cliArgs = [
       'run',
-      'packages/cli/src/index.ts',
+      'packages/cli/src/start.ts',
       '--server',
       baseUrl,
       ...(options.includeToken === false ? [] : ['--token', 'test-token']),
@@ -416,7 +416,7 @@ async function runCliWithoutServer(
   return await new Promise((resolve, reject) => {
     const child = spawn(
       BUN,
-      ['run', 'packages/cli/src/index.ts', ...args],
+      ['run', 'packages/cli/src/start.ts', ...args],
       {
         cwd: process.cwd(),
         env: {

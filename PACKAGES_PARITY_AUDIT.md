@@ -11,7 +11,7 @@ Compatibility note: `packages/cli` keeps an explicit `--legacy` escape hatch. To
 | Area | Legacy count | Native packages count | Legacy bridge count | Remaining native gap count |
 |---|---:|---:|---:|---:|
 | Top-level commands | 21 | 30 | 0 | 0 |
-| Top-level options | 127 | 148 | 0 | 0 |
+| Top-level options | 127 | 147 | 0 | 0 |
 | Slash commands | 107 | 121 | 0 | 0 |
 | Tools | 11 | 41 | 0 | 0 |
 
@@ -177,7 +177,6 @@ These are parser noise from compiler output, examples, labels, or template strin
 - `--model`
 - `--name`
 - `--namespace`
-- `--native`
 - `--no-chrome`
 - `--no-session-persistence`
 - `--no-sync-tools`

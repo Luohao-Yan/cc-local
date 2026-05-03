@@ -7,8 +7,10 @@ import { randomUUID } from 'crypto'
 import type {
   Message,
   AssistantMessage,
+  MessageContent,
   Tool,
   ToolContext,
+  ToolResult,
   StreamEvent,
 } from '@cclocal/shared'
 import { AnthropicClient } from './anthropicClient.js'
@@ -46,6 +48,7 @@ export interface QueryResult {
     inputTokens: number
     outputTokens: number
   }
+  costUsd?: number
 }
 
 export class QueryEngine {
@@ -133,6 +136,8 @@ export class QueryEngine {
   ): Promise<QueryResult> {
     let currentMessages = [...messages]
     let fullResponse = ''
+    let fullThinking = ''
+    const contentBlocks: MessageContent[] = []
     let inputTokens = 0
     let outputTokens = 0
     let maxIterations = Math.max(1, opts.maxTurns ?? 10) // 防止无限循环
@@ -167,8 +172,27 @@ export class QueryEngine {
             })
             break
 
+          case 'thinking':
+            fullThinking += event.thinking
+            opts.onStream?.({
+              type: 'stream_delta',
+              messageId,
+              delta: {
+                type: 'thinking',
+                thinking: event.thinking,
+              },
+            })
+            break
+
           case 'tool_use':
             toolCalls.push({
+              name: event.name,
+              input: event.input,
+              id: event.id,
+            })
+            // Record tool_use in content blocks for the final message
+            contentBlocks.push({
+              type: 'tool_use',
               name: event.name,
               input: event.input,
               id: event.id,
@@ -198,90 +222,132 @@ export class QueryEngine {
         break
       }
 
-      // 执行工具调用
-      const toolResults: Message[] = []
-      for (const toolCall of toolCalls) {
-        const tool = opts.tools?.find((t) => t.name === toolCall.name)
-        if (!tool) {
-          toolResults.push({
-            id: randomUUID(),
-            role: 'user',
-            content: [{
-              type: 'tool_result',
-              tool_use_id: toolCall.id,
-              content: `Tool "${toolCall.name}" not found`,
-              is_error: true,
-            }],
-            timestamp: Date.now(),
-          })
-          continue
-        }
-
-        const decision = decideToolPermission(tool.name, opts.permissionPolicy)
-        let allowed = decision.allowed
-
-        // In default mode, high-risk tools need user confirmation via callback
-        if (allowed && opts.onPermissionCheck && opts.permissionPolicy?.mode !== 'bypassPermissions') {
-          const isHighRisk = HIGH_RISK_TOOLS.has(tool.name.toLowerCase()) ||
-            EDIT_TOOLS.has(tool.name.toLowerCase())
-          if (isHighRisk) {
-            allowed = await opts.onPermissionCheck(tool.name, toolCall.input, decision.reason)
+      // 并行执行所有工具调用
+      const toolResultEntries = await Promise.all(
+        toolCalls.map(async (toolCall) => {
+          const tool = opts.tools?.find((t) => t.name === toolCall.name)
+          if (!tool) {
+            return {
+              toolCall,
+              result: {
+                content: `Tool "${toolCall.name}" not found`,
+                is_error: true,
+              } satisfies ToolResult,
+            }
           }
-        }
 
-        if (!allowed) {
-          toolResults.push({
-            id: randomUUID(),
-            role: 'user',
-            content: [{
-              type: 'tool_result',
-              tool_use_id: toolCall.id,
-              content: decision.reason || `Tool "${toolCall.name}" denied by policy`,
-              is_error: true,
-            }],
-            timestamp: Date.now(),
-          })
-          continue
-        }
+          const decision = decideToolPermission(tool.name, opts.permissionPolicy)
+          let allowed = decision.allowed
 
-        // 执行工具
-        const context: ToolContext = {
-          sessionId: messageId,
-          cwd: process.cwd(),
-          abortSignal: this.abortController?.signal,
-        }
+          // In default mode, high-risk tools need user confirmation via callback
+          if (allowed && opts.onPermissionCheck && opts.permissionPolicy?.mode !== 'bypassPermissions') {
+            const isHighRisk = HIGH_RISK_TOOLS.has(tool.name.toLowerCase()) ||
+              EDIT_TOOLS.has(tool.name.toLowerCase())
+            if (isHighRisk) {
+              allowed = await opts.onPermissionCheck(tool.name, toolCall.input, decision.reason)
+            }
+          }
 
-        const result = await this.executeTool(tool, toolCall.input, context)
+          if (!allowed) {
+            return {
+              toolCall,
+              result: {
+                content: decision.reason || `Tool "${toolCall.name}" denied by policy`,
+                is_error: true,
+              } satisfies ToolResult,
+            }
+          }
 
-        // Normalize tool result content to string for the API
+          // 执行工具
+          const context: ToolContext = {
+            sessionId: messageId,
+            cwd: process.cwd(),
+            abortSignal: this.abortController?.signal,
+            onProgress: opts.onStream ? (progress) => {
+              opts.onStream!({
+                type: 'stream_delta',
+                messageId,
+                delta: {
+                  type: 'text',
+                  text: progress.message,
+                },
+              })
+            } : undefined,
+          }
+
+          const result = await this.executeTool(tool, toolCall.input, context)
+          return { toolCall, result }
+        })
+      )
+
+      // Build tool result messages with proper content format for the API
+      const toolResultContents: Array<{ type: 'tool_result'; tool_use_id: string; content: string; is_error?: boolean }> = []
+      const toolResultMessages: Message[] = []
+
+      for (const { toolCall, result } of toolResultEntries) {
         const normalizedContent = typeof result.content === 'string'
           ? result.content
           : Array.isArray(result.content)
-            ? result.content.map((c: any) => c.text ?? JSON.stringify(c)).join('\n')
+            ? result.content.map((c) => c.text ?? JSON.stringify(c)).join('\n')
             : String(result.content)
 
-        toolResults.push({
-          id: randomUUID(),
-          role: 'user',
-          content: [{
-            type: 'tool_result',
-            tool_use_id: toolCall.id,
-            content: normalizedContent,
-            is_error: result.is_error,
-          }],
-          timestamp: Date.now(),
+        toolResultContents.push({
+          type: 'tool_result',
+          tool_use_id: toolCall.id,
+          content: normalizedContent,
+          is_error: result.is_error,
+        })
+
+        // Also record tool_result in contentBlocks for the final message
+        contentBlocks.push({
+          type: 'tool_result',
+          tool_use_id: toolCall.id,
+          content: normalizedContent,
+          is_error: result.is_error,
         })
       }
 
+      // Send tool results as a single user message (Anthropic API convention)
+      toolResultMessages.push({
+        id: randomUUID(),
+        role: 'user',
+        content: toolResultContents,
+        timestamp: Date.now(),
+      })
+
       // 更新消息列表继续循环
-      currentMessages = [...currentMessages, ...toolResults]
+      currentMessages = [...currentMessages, ...toolResultMessages]
     }
 
-    // 构建助手消息
+    // 构建助手消息 — 包含 thinking 和 text 内容
+    const finalContentBlocks: MessageContent[] = []
+
+    // Add thinking block if present
+    if (fullThinking.trim()) {
+      finalContentBlocks.push({ type: 'thinking', thinking: fullThinking.trim() })
+    }
+
+    // Add text content
+    if (fullResponse.trim()) {
+      finalContentBlocks.push({ type: 'text', text: fullResponse.trim() })
+    }
+
+    // Add tool_use/tool_result blocks from the conversation
+    for (const block of contentBlocks) {
+      if (block.type === 'tool_use' || block.type === 'tool_result') {
+        finalContentBlocks.push(block)
+      }
+    }
+
+    // Fallback: if no content at all, add empty text
+    if (finalContentBlocks.length === 0) {
+      finalContentBlocks.push({ type: 'text', text: '' })
+    }
+
     const assistantMessage: AssistantMessage = {
       id: messageId,
       role: 'assistant',
-      content: [{ type: 'text', text: fullResponse.trim() }],
+      content: finalContentBlocks,
       timestamp: Date.now(),
     } as AssistantMessage
 
@@ -303,10 +369,9 @@ export class QueryEngine {
     tool: Tool,
     input: unknown,
     context: ToolContext
-  ): Promise<{ content: string; is_error?: boolean }> {
+  ): Promise<ToolResult> {
     try {
-      const result = await tool.execute(input, context)
-      return result
+      return await tool.execute(input, context)
     } catch (error) {
       return {
         content: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`,

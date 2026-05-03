@@ -11,8 +11,9 @@
     "packages/*"
   ],
   "scripts": {
-    "start": "bun run packages/cli/src/index.ts --server-embedded",
-    "start:packages-cli": "bun run packages/cli/src/index.ts --server-embedded",
+    "start": "bun run build && bun dist/cli.js",
+    "start:dev": "bun run packages/cli/src/start.ts --server-embedded",
+    "start:built": "bun dist/cli.js",
     "start:legacy": "bun run packages/cli/src/entrypoints/cli.tsx",
     "start:next": "bun run packages/cli/src/entrypoints/next.ts --server-embedded",
     "build": "bun run scripts/build-external.ts",

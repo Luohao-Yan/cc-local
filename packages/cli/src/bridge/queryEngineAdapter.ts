@@ -169,7 +169,21 @@ function translateStreamEvent(event: StreamEvent): Record<string, unknown> | nul
       if (event.delta?.type === 'thinking') {
         return {
           type: 'content_block_delta',
-          delta: { type: 'thinking_delta', thinking: event.delta.text },
+          delta: { type: 'thinking_delta', thinking: event.delta.thinking },
+        }
+      }
+      if (event.delta?.type === 'tool_result') {
+        return {
+          type: 'content_block_delta',
+          delta: {
+            type: 'input_json_delta',
+            partial_json: JSON.stringify({
+              type: 'tool_result',
+              tool_use_id: event.delta.tool_use_id,
+              content: event.delta.content,
+              is_error: event.delta.is_error,
+            }),
+          },
         }
       }
       return null

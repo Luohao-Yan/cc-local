@@ -158,7 +158,7 @@ function findEmbeddedServerEntrypoint(): string {
 function httpGetOk(url: string): Promise<boolean> {
   return new Promise((resolve) => {
     const child = spawnSync(
-      process.execPath,
+      'bun',
       ['-e', `const { get } = require('http'); get('${url}', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))`],
       {
         env: { ...process.env, NO_PROXY: '127.0.0.1,localhost' },
@@ -209,7 +209,7 @@ async function ensureEmbeddedServer(options: { server?: string; token?: string; 
   const { spawn } = await import('child_process')
   const serverPath = findEmbeddedServerEntrypoint()
 
-  embeddedServerProcess = spawn(process.execPath, [serverPath], {
+  embeddedServerProcess = spawn('bun', [serverPath], {
     stdio: 'pipe',
     detached: false,
     env: {
@@ -379,7 +379,6 @@ program
   .option('--session <id>', 'Reuse an existing session')
   .option('--server-embedded', 'Auto-start embedded server (default for bun run start)', false)
   .option('--legacy', 'Run the legacy CLI implementation directly', false)
-  .option('--native', 'Force native packages REPL (--print now uses it by default)', false)
   .option('--text <prompt>', 'Compatibility alias for --print prompt text')
   .option('--description <text>', 'Compatibility description metadata')
   .option('--subject <text>', 'Compatibility subject metadata')
@@ -435,123 +434,10 @@ program
   .option('--sparse', 'Compatibility sparse metadata', false)
   .option('--sso', 'Compatibility SSO metadata', false)
   .option('--status', 'Compatibility status metadata', false)
-    .action(async (options) => {
-    const isNative = rawUserArgs.some((arg) => arg === '--native')
-    // When --print is used without explicit --server, default to QueryEngine
-    // (native path). Interactive REPL and explicit --server still use CCLocalClient.
-    const hasExplicitServer = rawUserArgs.some((arg) => arg === '--server' || arg === '-s' || arg.startsWith('--server='))
-    const isPrintMode = rawUserArgs.some((arg) => arg === '--print' || arg === '-p' || arg.startsWith('--print=') || arg.startsWith('-p='))
-    const preferLegacyBridge = process.env.CCLOCAL_PREFER_LEGACY_BRIDGE === '1'
-    const useNativePath = isNative || (isPrintMode && !hasExplicitServer)
-
+  .action(async (options) => {
     try {
       const effectiveOptions = buildEffectiveRootOptions(options, rawUserArgs)
       const localConfig = readLocalConfig()
-
-      // ─── Tmux + Worktree fast-path ───
-      // When both --tmux and --worktree are set, exec into tmux before loading any REPL.
-      // This mirrors the fast-path in entrypoints/cli.tsx.
-      // On Windows, tmux is not available so skip the fast-path and let flags pass as metadata.
-      if (options.tmux && options.worktree && process.platform !== 'win32') {
-        const { handleTmuxWorktree } = await import('./repl/tmuxIntegration.js')
-        const tmuxResult = await handleTmuxWorktree(rawUserArgs, options.tmux, options.worktree)
-        if (tmuxResult.handled) {
-          return
-        }
-        if (tmuxResult.error) {
-          console.error(tmuxResult.error)
-          process.exit(1)
-        }
-        // Not handled — fall through to normal path
-      }
-
-      // ─── Native 路径：不连接 CCLocalClient，直接用 QueryEngine ───
-      if (useNativePath) {
-        const { handleNativeSinglePrompt } = await import('./repl/nativeSinglePrompt.js')
-        const { launchNativeRepl } = await import('./repl/nativeRepl.js')
-        const { resolveSession } = await import('./utils/sessionResolver.js')
-        const singlePromptContext = buildSinglePromptLaunchContext(effectiveOptions)
-
-        // Resolve session for native/bridge paths (--resume, --continue, --fork-session)
-        const resolved = await resolveSession({
-          sessionId: effectiveOptions.sessionId,
-          resume: options.resume,
-          continue: options.continue,
-          forkSession: options.forkSession,
-          cwd: effectiveOptions.cwd,
-          model: effectiveOptions.model ?? process.env.CCLOCAL_MODEL ?? 'claude-sonnet-4-6',
-        })
-
-        if (singlePromptContext) {
-          const result = await handleNativeSinglePrompt({
-            prompt: singlePromptContext.prompt,
-            model: singlePromptContext.model ?? effectiveOptions.model ?? process.env.CCLOCAL_MODEL ?? 'claude-sonnet-4-6',
-            outputFormat: singlePromptContext.outputFormat,
-            cwd: singlePromptContext.cwd,
-            systemPrompt: buildSystemPromptOption(effectiveOptions),
-            permissionPolicy: buildPermissionPolicy(effectiveOptions),
-            maxTurns: effectiveOptions.maxTurns,
-            maxThinkingTokens: effectiveOptions.maxThinkingTokens,
-            sessionId: resolved.sessionId,
-            sessionName: singlePromptContext.ephemeral ? undefined : resolved.session.name,
-            noSessionPersistence: singlePromptContext.ephemeral,
-            includePartialMessages: singlePromptContext.includePartialMessages,
-            replayUserMessages: singlePromptContext.replayUserMessages,
-            apiKey: process.env.ANTHROPIC_API_KEY,
-            baseUrl: process.env.ANTHROPIC_BASE_URL,
-            ide: options.ide,
-            chrome: options.chrome,
-          })
-
-          if (singlePromptContext.shouldPrintJsonResult) {
-            console.log(JSON.stringify({
-              type: 'result',
-              sessionId: effectiveOptions.sessionId,
-              messageId: result.messageId,
-              text: result.text,
-            }, null, 2))
-          }
-        } else {
-          // ─── cclocal-next: interactive REPL ───
-          // When CCLOCAL_PREFER_LEGACY_BRIDGE is set (by the cclocal-next entrypoint),
-          // load the old Ink/React UI in-process via the bridge renderer so users see
-          // the exact same terminal experience as the legacy cclocal.
-          if (preferLegacyBridge) {
-            const { renderLegacyBridgeRepl } = await import('./runtime/legacyBridgeRenderer.js')
-            await renderLegacyBridgeRepl({
-              sessionId: resolved.sessionId,
-              resumeData: resolved.messages.length > 0
-                ? { initialState: {}, messages: resolved.messages }
-                : undefined,
-              ide: options.ide,
-              chrome: options.chrome,
-              worktree: options.worktree,
-              tmux: options.tmux,
-            })
-            return
-          }
-          await launchNativeRepl({
-            model: effectiveOptions.model ?? process.env.CCLOCAL_MODEL ?? 'claude-sonnet-4-6',
-            cwd: effectiveOptions.cwd,
-            prefill: effectiveOptions.prefill,
-            systemPrompt: buildSystemPromptOption(effectiveOptions),
-            permissionMode: buildPermissionPolicy(effectiveOptions).mode,
-            sessionId: resolved.sessionId,
-            sessionName: resolved.session.name,
-            apiKey: process.env.ANTHROPIC_API_KEY,
-            baseUrl: process.env.ANTHROPIC_BASE_URL,
-            maxTurns: effectiveOptions.maxTurns,
-            maxTokens: effectiveOptions.maxThinkingTokens,
-            ide: options.ide,
-            chrome: options.chrome,
-            worktree: options.worktree,
-            tmux: options.tmux,
-          })
-        }
-        return
-      }
-
-      // ─── 常规路径：CCLocalClient REST/SSE ───
       const client = new CCLocalClient({
         serverUrl: options.server,
         authToken: options.token || effectiveOptions.authToken || embeddedServerToken || localConfig.apiToken,
@@ -599,7 +485,6 @@ program
         await renderInteractiveRepl(client, {
           ...buildLaunchReplOptions(effectiveOptions, interactiveContext),
           legacyBridgeMode: rawUserArgs.some((arg) => arg === '--legacy-bridge'),
-          nativeMode: rawUserArgs.some((arg) => arg === '--native'),
         })
       }
     } catch (error) {
@@ -1569,7 +1454,7 @@ serverCommand
       CCLOCAL_IDLE_TIMEOUT: String(options.idleTimeout),
       CCLOCAL_MAX_SESSIONS: String(options.maxSessions),
     }
-    const result = spawnSync(process.execPath, ['run', 'packages/server/src/index.ts'], {
+    const result = spawnSync('bun', ['run', 'packages/server/src/index.ts'], {
       cwd: repoRoot,
       stdio: 'inherit',
       env,
@@ -1782,7 +1667,7 @@ sshCommand
         ...(options.permissionMode ? ['--permission-mode', options.permissionMode] : []),
         ...(options.dangerouslySkipPermissions ? ['--dangerously-skip-permissions'] : []),
       ]
-      const result = spawnSync(process.execPath, args, {
+      const result = spawnSync('bun', args, {
         cwd: findRepoRoot(),
         stdio: 'inherit',
         env: process.env,

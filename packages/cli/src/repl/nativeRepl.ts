@@ -573,8 +573,8 @@ export async function launchNativeRepl(
         // Update token usage if available
         if (result.usage) {
           modeManager.addTokens(result.usage.inputTokens + result.usage.outputTokens)
-          if (result.usage.costUsd != null) {
-            modeManager.addCost(result.usage.costUsd)
+          if ((result as any).costUsd != null) {
+            modeManager.addCost((result as any).costUsd)
           }
         }
       } catch (error) {

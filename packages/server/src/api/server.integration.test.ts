@@ -536,6 +536,9 @@ describe('Server REST API integration', () => {
 
     const savedSession = ctx.sessionManager.getSession(session.id)
     expect(savedSession?.messages).toHaveLength(2)
-    expect(savedSession?.messages[1]?.content).toEqual([{ type: 'text', text: 'MCP tool completed' }])
+    // The assistant message now includes tool_use and tool_result blocks alongside text
+    const assistantContent = savedSession?.messages[1]?.content ?? []
+    const textBlocks = assistantContent.filter((c: any) => c.type === 'text')
+    expect(textBlocks.some((c: any) => c.text === 'MCP tool completed')).toBe(true)
   })
 })

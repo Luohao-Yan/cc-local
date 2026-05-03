@@ -204,7 +204,6 @@ import { checkOutTeleportedSessionBranch, processMessagesForTeleportResume, tele
 import { shouldEnableThinkingByDefault, type ThinkingConfig } from './utils/thinking.js';
 import { initUser, resetUserCache } from './utils/user.js';
 import { getTmuxInstallInstructions, isTmuxAvailable, parsePRReference } from './utils/worktree.js';
-import { launchLegacyNormalSession, launchLegacyResumeSession } from './legacy-ui/sessionLaunchFacade.js';
 
 // eslint-disable-next-line custom-rules/no-top-level-side-effects
 profileCheckpoint('main_tsx_imports_loaded');
@@ -3143,23 +3142,19 @@ async function run(): Promise<CommanderCommand> {
           resume_duration_ms: Math.round(performance.now() - resumeStart)
         });
         resumeSucceeded = true;
-        await launchLegacyResumeSession({
-          root,
-          renderAndRun,
+        await launchRepl(root, {
           getFpsMetrics,
           stats,
-          replBase: sessionConfig,
-          fallbackMainThreadAgentDefinition: mainThreadAgentDefinition,
-          resumeData: {
-            initialState: loaded.initialState,
-            messages: loaded.messages,
-            fileHistorySnapshots: loaded.fileHistorySnapshots,
-            contentReplacements: loaded.contentReplacements,
-            agentName: loaded.agentName,
-            agentColor: loaded.agentColor,
-            restoredAgentDef: loaded.restoredAgentDef
-          }
-        });
+          initialState: loaded.initialState
+        }, {
+          ...sessionConfig,
+          mainThreadAgentDefinition: loaded.restoredAgentDef ?? mainThreadAgentDefinition,
+          initialMessages: loaded.messages,
+          initialFileHistorySnapshots: loaded.fileHistorySnapshots,
+          initialContentReplacements: loaded.contentReplacements,
+          initialAgentName: loaded.agentName,
+          initialAgentColor: loaded.agentColor
+        }, renderAndRun);
       } catch (error) {
         if (!resumeSucceeded) {
           logEvent('tengu_continue', {
@@ -3746,23 +3741,19 @@ async function run(): Promise<CommanderCommand> {
       if (resumeData) {
         maybeActivateProactive(options);
         maybeActivateBrief(options);
-        await launchLegacyResumeSession({
-          root,
-          renderAndRun,
+        await launchRepl(root, {
           getFpsMetrics,
           stats,
-          replBase: sessionConfig,
-          fallbackMainThreadAgentDefinition: mainThreadAgentDefinition,
-          resumeData: {
-            initialState: resumeData.initialState,
-            messages: resumeData.messages,
-            fileHistorySnapshots: resumeData.fileHistorySnapshots,
-            contentReplacements: resumeData.contentReplacements,
-            agentName: resumeData.agentName,
-            agentColor: resumeData.agentColor,
-            restoredAgentDef: resumeData.restoredAgentDef
-          }
-        });
+          initialState: resumeData.initialState
+        }, {
+          ...sessionConfig,
+          mainThreadAgentDefinition: resumeData.restoredAgentDef ?? mainThreadAgentDefinition,
+          initialMessages: resumeData.messages,
+          initialFileHistorySnapshots: resumeData.fileHistorySnapshots,
+          initialContentReplacements: resumeData.contentReplacements,
+          initialAgentName: resumeData.agentName,
+          initialAgentColor: resumeData.agentColor
+        }, renderAndRun);
       } else {
         // Show interactive selector (includes same-repo worktrees)
         // Note: ResumeConversation loads logs internally to ensure proper GC after selection
@@ -3814,17 +3805,16 @@ async function run(): Promise<CommanderCommand> {
           deepLinkBanner = createSystemMessage('Launched with a pre-filled prompt — review it before pressing Enter.', 'warning');
         }
       }
-      await launchLegacyNormalSession({
-        root,
-        renderAndRun,
+      const initialMessages = deepLinkBanner ? [deepLinkBanner, ...hookMessages] : hookMessages.length > 0 ? hookMessages : undefined;
+      await launchRepl(root, {
         getFpsMetrics,
         stats,
-        initialState,
-        replBase: sessionConfig,
-        hookMessages,
-        hooksPromise,
-        deepLinkBanner
-      });
+        initialState
+      }, {
+        ...sessionConfig,
+        initialMessages,
+        pendingHookMessages
+      }, renderAndRun);
     }
   }).version(`${MACRO.VERSION} (Claude Code)`, '-v, --version', 'Output the version number');
 

@@ -215,19 +215,43 @@ export function resolveLegacyUiEntrypoint(repoRoot = findLegacyRepoRoot()): { en
   }
 }
 
+export async function runLegacyUiInProcess(args: string[]): Promise<void> {
+  const legacyArgs = stripPackageOnlyArgs(args)
+  const { entrypoint } = resolveLegacyUiEntrypoint()
+
+  // Set CCLOCAL_FORCE_INTERACTIVE for interactive mode detection
+  process.env.CCLOCAL_FORCE_INTERACTIVE = '1'
+
+  // Set CCLOCAL_IMPORTED to prevent cli.tsx from auto-executing main() at import time
+  // We will call main() explicitly after import
+  process.env.CCLOCAL_IMPORTED = '1'
+
+  // Update process.argv with the legacy args
+  process.argv = [process.argv[0]!, entrypoint, ...legacyArgs]
+
+  // Dynamic import the legacy entrypoint and run it
+  // This preserves TTY/stdin in the same process
+  const entrypointModule = await import(entrypoint)
+
+  // The cli.tsx entrypoint exports a `main` function
+  if (typeof entrypointModule.main === 'function') {
+    await entrypointModule.main()
+  }
+}
+
 export function delegateToLegacyUi(args: string[]): never {
   const legacyArgs = stripPackageOnlyArgs(args)
   const { entrypoint, cwd } = resolveLegacyUiEntrypoint()
 
-  // Use process.execPath (current bun executable) instead of 'bun'
-  // to ensure we find bun even when running as a global command
+  // Use spawnSync to delegate to legacy UI.
+  // TTY inheritance should work when stdio: 'inherit' is used.
+  // If stdin doesn't work on Windows, user can try --legacy-bridge for in-process mode.
   const result = spawnSync(process.execPath, [entrypoint, ...legacyArgs], {
     cwd,
     stdio: 'inherit',
     env: {
       ...process.env,
-      CCLOCAL_SKIP_STDIN: '1', // Skip stdin reading in spawned process
-      CCLOCAL_FORCE_INTERACTIVE: '1', // Force interactive mode (TTY is false on Windows spawnSync)
+      CCLOCAL_FORCE_INTERACTIVE: '1',
     },
   })
 

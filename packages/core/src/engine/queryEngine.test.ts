@@ -69,7 +69,14 @@ describe('QueryEngine', () => {
       timestamp: 1,
     }])
 
-    expect(result.message.content).toEqual([{ type: 'text', text: 'final answer' }])
+    // The final message should contain text and tool_use/tool_result blocks
+    const textBlocks = result.message.content.filter((c: any) => c.type === 'text')
+    const toolUseBlocks = result.message.content.filter((c: any) => c.type === 'tool_use')
+    const toolResultBlocks = result.message.content.filter((c: any) => c.type === 'tool_result')
+
+    expect(textBlocks.some((c: any) => c.text === 'final answer')).toBe(true)
+    expect(toolUseBlocks).toHaveLength(1)
+    expect(toolResultBlocks).toHaveLength(1)
     expect(result.usage).toEqual({
       inputTokens: 12,
       outputTokens: 8,
@@ -161,7 +168,8 @@ describe('QueryEngine', () => {
     }])
 
     expect(seenToolSets[0]?.some((tool) => tool.name === 'mcp__filesystem__read_file')).toBe(true)
-    expect(result.message.content).toEqual([{ type: 'text', text: 'done' }])
+    const textBlocks = result.message.content.filter((c: any) => c.type === 'text')
+    expect(textBlocks.some((c: any) => c.text === 'done')).toBe(true)
 
     await manager.removeServer('filesystem')
   })
@@ -239,6 +247,7 @@ describe('QueryEngine', () => {
 
     expect(seenToolSets[0]?.map((tool) => tool.name)).toEqual(['file_read'])
     expect(executed).toEqual([])
-    expect(result.message.content).toEqual([{ type: 'text', text: 'permission handled' }])
+    const textBlocks = result.message.content.filter((c: any) => c.type === 'text')
+    expect(textBlocks.some((c: any) => c.text === 'permission handled')).toBe(true)
   })
 })

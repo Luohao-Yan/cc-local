@@ -302,30 +302,62 @@ export class CCLocalClient {
       case 'stream_start':
         event = {
           type: 'stream_start',
-          messageId: (payload as { messageId?: string }).messageId || randomUUID(),
+          messageId: payload.messageId || randomUUID(),
         }
         break
       case 'delta':
+        if (payload.type === 'thinking') {
+          event = {
+            type: 'stream_delta',
+            messageId: payload.messageId || '',
+            delta: {
+              type: 'thinking',
+              thinking: payload.thinking || '',
+            },
+          }
+        } else if (payload.type === 'tool_result') {
+          event = {
+            type: 'stream_delta',
+            messageId: payload.messageId || '',
+            delta: {
+              type: 'tool_result',
+              tool_use_id: payload.tool_use_id || '',
+              content: payload.content || '',
+              is_error: payload.is_error,
+            },
+          }
+        } else {
+          event = {
+            type: 'stream_delta',
+            messageId: payload.messageId || '',
+            delta: {
+              type: 'text',
+              text: payload.text || '',
+            },
+          }
+        }
+        break
+      case 'tool_call':
         event = {
-          type: 'stream_delta',
-          messageId: '',
-          delta: {
-            type: 'text',
-            text: (payload as { text?: string }).text || '',
+          type: 'tool_call',
+          messageId: payload.messageId || randomUUID(),
+          toolCall: {
+            name: payload.name || '',
+            input: payload.input,
           },
         }
         break
       case 'stream_end':
         event = {
           type: 'stream_end',
-          messageId: '',
+          messageId: payload.messageId || '',
         }
         break
       case 'error':
         event = {
           type: 'error',
-          messageId: '',
-          error: (payload as { error?: string }).error || 'Unknown server error',
+          messageId: payload.messageId || '',
+          error: payload.error || 'Unknown server error',
         }
         break
       default:

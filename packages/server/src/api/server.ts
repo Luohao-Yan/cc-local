@@ -51,13 +51,25 @@ export class Server {
       port: this.options.port,
       hostname: this.options.host,
 
+      websocket: {
+        open: (socket) => wsManager.onOpen(socket),
+        message: (socket, message) => wsManager.onMessage(socket, message),
+        close: (socket) => wsManager.onClose(socket),
+      },
+
       fetch: async (request, server) => {
         const url = new URL(request.url)
         const origin = request.headers.get('Origin')
 
         // WebSocket 升级
         if (url.pathname === '/ws') {
-          const success = wsManager.handleUpgrade(request, server)
+          const token = url.searchParams.get('token')
+          if (!token || !authManager.verifyToken(token)) {
+            return new Response('Unauthorized', { status: 401 })
+          }
+          const success = server.upgrade(request, {
+            data: { token },
+          })
           if (success) {
             return undefined as any // WebSocket 已处理
           }
