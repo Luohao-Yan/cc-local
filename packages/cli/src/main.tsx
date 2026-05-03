@@ -2035,14 +2035,7 @@ async function run(): Promise<CommanderCommand> {
     const commandsStart = Date.now();
     // Join the promises kicked before setup() (or start fresh if
     // worktreeEnabled gated the early kick). Both memoized by cwd.
-    let commands, agentDefinitionsResult;
-    try {
-      const cmdPromise = commandsPromise ?? getCommands(currentCwd);
-      const agPromise = agentDefsPromise ?? getAgentDefinitionsWithOverrides(currentCwd);
-      [commands, agentDefinitionsResult] = await Promise.all([cmdPromise, agPromise]);
-    } catch (e) {
-      throw e;
-    }
+    const [commands, agentDefinitionsResult] = await Promise.all([commandsPromise ?? getCommands(currentCwd), agentDefsPromise ?? getAgentDefinitionsWithOverrides(currentCwd)]);
     logForDebugging(`[STARTUP] Commands and agents loaded in ${Date.now() - commandsStart}ms`);
     profileCheckpoint('action_commands_loaded');
 
@@ -2242,8 +2235,9 @@ async function run(): Promise<CommanderCommand> {
       if ("external" === 'ant') {
         installAsciicastRecorder();
       }
-      const inkModule = await import('./ink.js');
-      const createRoot = inkModule.createRoot;
+      const {
+        createRoot
+      } = await import('./ink.js');
       root = await createRoot(ctx.renderOptions);
 
       // Log startup time now, before any blocking dialog renders. Logging

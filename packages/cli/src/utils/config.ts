@@ -48,7 +48,18 @@ import { jsonParse, jsonStringify } from './slowOperations.js'
 // Re-entrancy guard: prevents getConfig → logEvent → getGlobalConfig → getConfig
 // infinite recursion when the config file is corrupted. logEvent's sampling check
 // reads GrowthBook features from the global config, which calls getConfig again.
-let insideGetConfig = false
+// Use globalThis to ensure the same guard is shared across all module instantiations.
+const INSIDE_GET_CONFIG_KEY = Symbol.for('cclocal.insideGetConfig')
+
+function getInsideGetConfig(): boolean {
+  // @ts-expect-error: globalThis access for cross-module-instance sharing
+  return globalThis[INSIDE_GET_CONFIG_KEY] ?? false
+}
+
+function setInsideGetConfig(value: boolean): void {
+  // @ts-expect-error: globalThis access for cross-module-instance sharing
+  globalThis[INSIDE_GET_CONFIG_KEY] = value
+}
 
 // Image dimension info for coordinate mapping (only set when image was resized)
 export type PastedContent = {
@@ -688,10 +699,21 @@ export type ProjectConfigKey = (typeof PROJECT_CONFIG_KEYS)[number]
  *
  * @returns Whether the trust dialog has been accepted (i.e. "should not be shown")
  */
-let _trustAccepted = false
+// Use globalThis to ensure the same flag is shared across all module instantiations
+const TRUST_ACCEPTED_KEY = Symbol.for('cclocal.trustAccepted')
+
+function getTrustAccepted(): boolean {
+  // @ts-expect-error: globalThis access for cross-module-instance sharing
+  return globalThis[TRUST_ACCEPTED_KEY] ?? false
+}
+
+function setTrustAccepted(value: boolean): void {
+  // @ts-expect-error: globalThis access for cross-module-instance sharing
+  globalThis[TRUST_ACCEPTED_KEY] = value
+}
 
 export function resetTrustDialogAcceptedCacheForTesting(): void {
-  _trustAccepted = false
+  setTrustAccepted(false)
 }
 
 export function checkHasTrustDialogAccepted(): boolean {
@@ -699,7 +721,10 @@ export function checkHasTrustDialogAccepted(): boolean {
   // so once true we can latch it. false is not cached — it gets re-checked
   // on every call so that trust dialog acceptance is picked up mid-session.
   // (lodash memoize doesn't fit here because it would also cache false.)
-  return (_trustAccepted ||= computeTrustDialogAccepted())
+  if (getTrustAccepted()) return true
+  const result = computeTrustDialogAccepted()
+  if (result) setTrustAccepted(true)
+  return result
 }
 
 function computeTrustDialogAccepted(): boolean {
@@ -784,7 +809,7 @@ function wouldLoseAuthState(fresh: {
   oauthAccount?: unknown
   hasCompletedOnboarding?: boolean
 }): boolean {
-  const cached = globalConfigCache.config
+  const cached = getGlobalConfigCache().config
   if (!cached) return false
   const lostOauth =
     cached.oauthAccount !== undefined && fresh.oauthAccount === undefined
@@ -866,9 +891,22 @@ export function saveGlobalConfig(
 }
 
 // Cache for global config
-let globalConfigCache: { config: GlobalConfig | null; mtime: number } = {
-  config: null,
-  mtime: 0,
+// Use globalThis to ensure the same cache is shared across all module instantiations
+const GLOBAL_CONFIG_CACHE_KEY = Symbol.for('cclocal.globalConfigCache')
+
+function getGlobalConfigCache(): { config: GlobalConfig | null; mtime: number } {
+  // @ts-expect-error: globalThis access for cross-module-instance sharing
+  if (!globalThis[GLOBAL_CONFIG_CACHE_KEY]) {
+    // @ts-expect-error: globalThis access for cross-module-instance sharing
+    globalThis[GLOBAL_CONFIG_CACHE_KEY] = { config: null, mtime: 0 }
+  }
+  // @ts-expect-error: globalThis access for cross-module-instance sharing
+  return globalThis[GLOBAL_CONFIG_CACHE_KEY]
+}
+
+function setGlobalConfigCache(cache: { config: GlobalConfig | null; mtime: number }): void {
+  // @ts-expect-error: globalThis access for cross-module-instance sharing
+  globalThis[GLOBAL_CONFIG_CACHE_KEY] = cache
 }
 
 // Tracking for config file operations (telemetry)
@@ -990,13 +1028,24 @@ function removeProjectHistory(
 
 // fs.watchFile poll interval for detecting writes from other instances (ms)
 const CONFIG_FRESHNESS_POLL_MS = 1000
-let freshnessWatcherStarted = false
+// Use globalThis to ensure the same flag is shared across all module instantiations
+const FRESHNESS_WATCHER_STARTED_KEY = Symbol.for('cclocal.freshnessWatcherStarted')
+
+function getFreshnessWatcherStarted(): boolean {
+  // @ts-expect-error: globalThis access for cross-module-instance sharing
+  return globalThis[FRESHNESS_WATCHER_STARTED_KEY] ?? false
+}
+
+function setFreshnessWatcherStarted(value: boolean): void {
+  // @ts-expect-error: globalThis access for cross-module-instance sharing
+  globalThis[FRESHNESS_WATCHER_STARTED_KEY] = value
+}
 
 // fs.watchFile polls stat on the libuv threadpool and only calls us when mtime
 // changed — a stalled stat never blocks the main thread.
 function startGlobalConfigFreshnessWatcher(): void {
-  if (freshnessWatcherStarted || process.env.NODE_ENV === 'test') return
-  freshnessWatcherStarted = true
+  if (getFreshnessWatcherStarted() || process.env.NODE_ENV === 'test') return
+  setFreshnessWatcherStarted(true)
   const file = getGlobalClaudeFile()
   watchFile(
     file,
@@ -1006,22 +1055,22 @@ function startGlobalConfigFreshnessWatcher(): void {
       // overshoot makes cache.mtime > file mtime, so we skip the re-read.
       // Bun/Node also fire with curr.mtimeMs=0 when the file doesn't exist
       // (initial callback or deletion) — the <= handles that too.
-      if (curr.mtimeMs <= globalConfigCache.mtime) return
+      if (curr.mtimeMs <= getGlobalConfigCache().mtime) return
       void getFsImplementation()
         .readFile(file, { encoding: 'utf-8' })
         .then(content => {
           // A write-through may have advanced the cache while we were reading;
           // don't regress to the stale snapshot watchFile stat'd.
-          if (curr.mtimeMs <= globalConfigCache.mtime) return
+          if (curr.mtimeMs <= getGlobalConfigCache().mtime) return
           const parsed = safeParseJSON(stripBOM(content))
           if (parsed === null || typeof parsed !== 'object') return
-          globalConfigCache = {
+          setGlobalConfigCache({
             config: migrateConfigFields({
               ...createDefaultGlobalConfig(),
               ...(parsed as Partial<GlobalConfig>),
             }),
             mtime: curr.mtimeMs,
-          }
+          })
           lastReadFileStats = { mtime: curr.mtimeMs, size: curr.size }
         })
         .catch(() => {})
@@ -1029,7 +1078,7 @@ function startGlobalConfigFreshnessWatcher(): void {
   )
   registerCleanup(async () => {
     unwatchFile(file)
-    freshnessWatcherStarted = false
+    setFreshnessWatcherStarted(false)
   })
 }
 
@@ -1037,7 +1086,7 @@ function startGlobalConfigFreshnessWatcher(): void {
 // the file's real mtime (Date.now() is recorded after the write) so the
 // freshness watcher skips re-reading our own write on its next tick.
 function writeThroughGlobalConfigCache(config: GlobalConfig): void {
-  globalConfigCache = { config, mtime: Date.now() }
+  setGlobalConfigCache({ config, mtime: Date.now() })
   lastReadFileStats = null
 }
 
@@ -1049,9 +1098,9 @@ export function getGlobalConfig(): GlobalConfig {
   // Fast path: pure memory read. After startup, this always hits — our own
   // writes go write-through and other instances' writes are picked up by the
   // background freshness watcher (never blocks this path).
-  if (globalConfigCache.config) {
+  if (getGlobalConfigCache().config) {
     configCacheHits++
-    return globalConfigCache.config
+    return getGlobalConfigCache().config
   }
 
   // Slow path: startup load. Sync I/O here is acceptable because it runs
@@ -1068,10 +1117,10 @@ export function getGlobalConfig(): GlobalConfig {
     const config = migrateConfigFields(
       getConfig(getGlobalClaudeFile(), createDefaultGlobalConfig),
     )
-    globalConfigCache = {
+    setGlobalConfigCache({
       config,
       mtime: stats?.mtimeMs ?? Date.now(),
-    }
+    })
     lastReadFileStats = stats
       ? { mtime: stats.mtimeMs, size: stats.size }
       : null
@@ -1329,10 +1378,22 @@ function saveConfigWithLock<A extends object>(
 }
 
 // Flag to track if config reading is allowed
-let configReadingAllowed = false
+// Use globalThis to ensure the same flag is shared across all module instantiations
+// (bundle + source-loaded modules may instantiate config.ts twice)
+const CONFIG_READING_ALLOWED_KEY = Symbol.for('cclocal.configReadingAllowed')
+
+function getConfigReadingAllowed(): boolean {
+  // @ts-expect-error: globalThis access for cross-module-instance sharing
+  return globalThis[CONFIG_READING_ALLOWED_KEY] ?? false
+}
+
+function setConfigReadingAllowed(value: boolean): void {
+  // @ts-expect-error: globalThis access for cross-module-instance sharing
+  globalThis[CONFIG_READING_ALLOWED_KEY] = value
+}
 
 export function enableConfigs(): void {
-  if (configReadingAllowed) {
+  if (getConfigReadingAllowed()) {
     // Ensure this is idempotent
     return
   }
@@ -1342,7 +1403,7 @@ export function enableConfigs(): void {
 
   // Any reads to configuration before this flag is set show an console warning
   // to prevent us from adding config reading during module initialization
-  configReadingAllowed = true
+  setConfigReadingAllowed(true)
   // We only check the global config because currently all the configs share a file
   getConfig(
     getGlobalClaudeFile(),
@@ -1424,7 +1485,7 @@ function getConfig<A>(
   throwOnInvalid?: boolean,
 ): A {
   // Log a warning if config is accessed before it's allowed
-  if (!configReadingAllowed && process.env.NODE_ENV !== 'test') {
+  if (!getConfigReadingAllowed() && process.env.NODE_ENV !== 'test') {
     throw new Error('Config accessed before allowed.')
   }
 
@@ -1478,8 +1539,8 @@ function getConfig<A>(
       // causes infinite recursion when the config file is corrupted, because
       // the sampling check reads a GrowthBook feature from global config.
       // Only log analytics on the outermost call.
-      if (!insideGetConfig) {
-        insideGetConfig = true
+      if (!getInsideGetConfig()) {
+        setInsideGetConfig(true)
         try {
           // Log the error for monitoring
           logError(error)
@@ -1496,7 +1557,7 @@ function getConfig<A>(
             has_backup: hasBackup,
           })
         } finally {
-          insideGetConfig = false
+          setInsideGetConfig(false)
         }
       }
 
@@ -1812,6 +1873,7 @@ export const _wouldLoseAuthStateForTesting = wouldLoseAuthState
 export function _setGlobalConfigCacheForTesting(
   config: GlobalConfig | null,
 ): void {
-  globalConfigCache.config = config
-  globalConfigCache.mtime = config ? Date.now() : 0
+  const cache = getGlobalConfigCache()
+  cache.config = config
+  cache.mtime = config ? Date.now() : 0
 }

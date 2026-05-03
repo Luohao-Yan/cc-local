@@ -177,13 +177,8 @@ export default class Ink {
     x: number;
     y: number;
   } | null = null;
-  constructor(options: Options) {
-    this.options = options;
-    try {
-      autoBind(this);
-    } catch (e) {
-      throw e;
-    }
+  constructor(private readonly options: Options) {
+    autoBind(this);
     if (this.options.patchConsole) {
       this.restoreConsole = this.patchConsole();
       this.restoreStderr = this.patchStderr();
