@@ -36,10 +36,11 @@ This is a Bun workspaces monorepo. All code lives under `packages/`:
 | Command | Purpose |
 |---|---|
 | `bun install` | Install dependencies |
-| `bun run start` | Launch CLI (default: delegates to legacy UI via spawnSync) |
+| `bun run start` | Launch CLI (default: delegates to Ink UI via spawnSync) |
 | `bun run start -- --help` | Show CLI flags/subcommands |
 | `bun run start -- --print "prompt"` | One-shot prompt mode |
-| `bun run start -- --legacy-bridge` | Use in-process bridge instead of spawnSync |
+| `bun run start -- --ink-bridge` | Use in-process Ink bridge instead of spawnSync |
+| `bun run start -- --legacy-bridge` | Same as --ink-bridge (backward compatibility) |
 | `bun run build` | Build all 3 targets: cli.js, server.js, legacy-cli.js |
 | `bun run build:legacy` | Legacy-only build (CCLOCAL_BUILD_LEGACY=1) |
 | `bun run typecheck` | Run TypeScript type checking |
@@ -78,7 +79,7 @@ A 3-layer shim system handles this:
 3. **TypeScript**: `packages/cli/src/types/react-compiler-runtime.d.ts` + `tsconfig.json` path mapping
 
 ### Entrypoint Flow
-1. **`packages/cli/src/index.ts`** - Unified routing entry: delegates to legacy UI (spawnSync) or packages-native commands
+1. **`packages/cli/src/index.ts`** - Unified routing entry: delegates to Ink UI (spawnSync) or packages-native commands
 2. **`packages/cli/src/entrypoints/cli.tsx`** - Legacy bootstrap entry with fast-path handling
 3. **`packages/cli/src/main.tsx`** - Commander CLI setup, REPL launch
 4. **`packages/cli/src/screens/REPL.tsx`** - Interactive terminal UI
@@ -109,7 +110,7 @@ A 3-layer shim system handles this:
 | `packages/core/src/db/sessionStore.ts` | SQLite session persistence (bun:sqlite) |
 | `packages/cli/src/bridge/queryEngineAdapter.ts` | AsyncGenerator adapter for new engine |
 | `packages/cli/src/bridge/toolAdapters.ts` | Legacy tool → new Tool interface adapters |
-| `packages/cli/src/legacy-ui/` | In-process bridge to legacy Ink UI |
+| `packages/cli/src/runtime/inkBridgeRenderer.ts` | Bridge renderer for REPL |
 | `packages/cli/src/runtime/legacyBridgeRenderer.ts` | Bridge renderer for REPL |
 
 ### Feature Flags

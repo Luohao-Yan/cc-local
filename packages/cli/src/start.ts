@@ -23,7 +23,7 @@ if (httpProxy && !process.env.CCLOCAL_NO_PROXY_SET) {
 // 路由判断逻辑（内联，避免任何导入）
 // ============================================================================
 
-const LEGACY_CHECK_OPTIONS = new Set(['--legacy'])
+const INK_CHECK_OPTIONS = new Set(['--ink', '--legacy'])
 const NATIVE_CHECK_OPTIONS = new Set(['--native', '--server', '-s', '--token', '-t'])
 const PACKAGES_MANAGEMENT_COMMANDS = new Set([
   'models', 'sessions', 'config', 'context', 'env', 'stats', 'cost', 'permissions', 'model', 'setup-token',
@@ -36,8 +36,8 @@ function getFirstCommand(args: string[]): string | undefined {
   return undefined
 }
 
-function shouldUseLegacyUi(args: string[]): boolean {
-  if (args.some((arg) => LEGACY_CHECK_OPTIONS.has(arg) || arg.startsWith('--legacy='))) {
+function shouldUseInkUi(args: string[]): boolean {
+  if (args.some((arg) => INK_CHECK_OPTIONS.has(arg) || arg.startsWith('--ink=') || arg.startsWith('--legacy='))) {
     return true
   }
   if (args.some((arg) => NATIVE_CHECK_OPTIONS.has(arg) || arg.startsWith('--native='))) {
@@ -57,23 +57,23 @@ function stripPackagesOnlyOptions(args: string[]): string[] {
   return args.filter((arg) => !PACKAGES_ONLY_OPTIONS.has(arg))
 }
 
-// 判断路由
+// Determine routing
 const userArgs = process.argv.slice(2).filter((arg) => arg !== '--')
-const useLegacy = shouldUseLegacyUi(userArgs)
+const useInk = shouldUseInkUi(userArgs)
 
 // ============================================================================
 // 主入口逻辑
 // ============================================================================
 
 async function main(): Promise<void> {
-  if (useLegacy) {
-    await runLegacyUi()
+  if (useInk) {
+    await runInkUi()
   } else {
     await runPackagesNative()
   }
 }
 
-async function runLegacyUi(): Promise<void> {
+async function runInkUi(): Promise<void> {
   // 动态导入
   const { existsSync } = await import('fs')
   const { join, dirname } = await import('path')
@@ -103,14 +103,14 @@ async function runLegacyUi(): Promise<void> {
   } else if (existsSync(distEntrypoint)) {
     entrypoint = distEntrypoint
   } else {
-    console.error('Cannot find legacy UI entrypoint')
+    console.error('Cannot find Ink UI entrypoint')
     process.exit(1)
     return
   }
 
   // Prepare args and environment
-  const legacyArgs = stripPackagesOnlyOptions(userArgs)
-  process.argv = [process.argv[0]!, entrypoint, ...legacyArgs]
+  const inkArgs = stripPackagesOnlyOptions(userArgs)
+  process.argv = [process.argv[0]!, entrypoint, ...inkArgs]
   process.env.CCLOCAL_FORCE_INTERACTIVE = '1'
 
   // Dynamic import - cli.tsx will auto-execute via void main()

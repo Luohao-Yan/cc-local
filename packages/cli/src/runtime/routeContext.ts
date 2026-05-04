@@ -31,12 +31,16 @@ export function hasExplicitServerArg(args: string[]): boolean {
   return args.some((arg) => arg === '--server' || arg === '-s' || arg.startsWith('--server='))
 }
 
+export function hasInkFlag(args: string[]): boolean {
+  return args.some((arg) => arg === '--ink' || arg.startsWith('--ink=') || arg === '--legacy' || arg.startsWith('--legacy='))
+}
+
 export function hasLegacyFlag(args: string[]): boolean {
-  return args.some((arg) => arg === '--legacy' || arg.startsWith('--legacy='))
+  return hasInkFlag(args) // backward compatibility alias
 }
 
 export function shouldAutoStartEmbeddedServer(args: string[]): boolean {
-  return !hasExplicitServerArg(args) && !hasLegacyFlag(args)
+  return !hasExplicitServerArg(args) && !hasInkFlag(args)
 }
 
 export function getCommandPath(command: Command): string[] {

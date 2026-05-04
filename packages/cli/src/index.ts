@@ -41,7 +41,7 @@ import {
   hasExplicitServerArg,
   shouldAutoStartEmbeddedServer,
 } from './runtime/routeContext.js'
-import { delegateToLegacyUi, getUserArgs, shouldUseLegacyUi } from './ui/legacyAdapter.js'
+import { delegateToInkUi, getUserArgs, shouldUseInkUi } from './ui/inkAdapter.js'
 import type { Message, MessageOptions, Session, StreamEvent } from '@cclocal/shared'
 
 let embeddedServerProcess: any = null
@@ -293,11 +293,11 @@ async function findAvailablePort(): Promise<number> {
 }
 
 const rawUserArgs = getUserArgs(process.argv)
-const useLegacyUi = shouldUseLegacyUi(rawUserArgs)
+const useInkUi = shouldUseInkUi(rawUserArgs)
 
 // Check for packages-native mode
 const useNativeMode = rawUserArgs.includes('--native') || rawUserArgs.includes('--packages-native')
-if (useNativeMode && !rawUserArgs.includes('--legacy-bridge')) {
+if (useNativeMode && !rawUserArgs.includes('--ink-bridge') && !rawUserArgs.includes('--legacy-bridge')) {
   // Dynamic import to avoid loading native module in legacy mode
   const { runNative } = await import('./entrypoints/native.js')
   await runNative()
@@ -305,8 +305,8 @@ if (useNativeMode && !rawUserArgs.includes('--legacy-bridge')) {
   process.exit(0)
 }
 
-if (useLegacyUi && !rawUserArgs.some((arg) => arg === '--legacy-bridge')) {
-  delegateToLegacyUi(rawUserArgs)
+if (useInkUi && !rawUserArgs.some((arg) => arg === '--ink-bridge' || arg === '--legacy-bridge')) {
+  delegateToInkUi(rawUserArgs)
 }
 
 const program = new Command()
@@ -389,7 +389,8 @@ program
   .option('--cwd <cwd>', 'Working directory', process.cwd())
   .option('--session <id>', 'Reuse an existing session')
   .option('--server-embedded', 'Auto-start embedded server (default for bun run start)', false)
-  .option('--legacy', 'Run the legacy CLI implementation directly', false)
+  .option('--ink', 'Run the Ink terminal UI directly', false)
+  .option('--legacy', 'Run the Ink terminal UI directly (alias for --ink)', false)
   .option('--text <prompt>', 'Compatibility alias for --print prompt text')
   .option('--description <text>', 'Compatibility description metadata')
   .option('--subject <text>', 'Compatibility subject metadata')
@@ -495,7 +496,7 @@ program
         })
         await renderInteractiveRepl(client, {
           ...buildLaunchReplOptions(effectiveOptions, interactiveContext),
-          legacyBridgeMode: rawUserArgs.some((arg) => arg === '--legacy-bridge'),
+          inkBridgeMode: rawUserArgs.some((arg) => arg === '--ink-bridge' || arg === '--legacy-bridge'),
         })
       }
     } catch (error) {
@@ -565,17 +566,17 @@ function registerLegacyCompatibilityCommands(rootProgram: Command): void {
       .argument('[args...]')
       .action(async () => {
         const args = getUserArgs(process.argv)
-        // 默认走 spawnSync（稳定），--legacy-bridge 才走 in-process bridge
-        if (!args.some((arg) => arg === '--legacy-bridge')) {
-          delegateToLegacyUi(args)
+        // Default: use spawnSync (stable), --ink-bridge for in-process bridge
+        if (!args.some((arg) => arg === '--ink-bridge' || arg === '--legacy-bridge')) {
+          delegateToInkUi(args)
           return
         }
         try {
-          const { renderLegacyBridgeRepl } = await import('./runtime/legacyBridgeRenderer.js')
-          await renderLegacyBridgeRepl({})
+          const { renderInkBridgeRepl } = await import('./runtime/inkBridgeRenderer.js')
+          await renderInkBridgeRepl({})
         } catch (error) {
-          console.error('Failed to launch legacy bridge:', error)
-          delegateToLegacyUi(args)
+          console.error('Failed to launch ink bridge:', error)
+          delegateToInkUi(args)
         }
       })
   }

@@ -1,13 +1,13 @@
 /**
- * Legacy Bridge 渲染器
- * 在 packages-native 模式下桥接到 legacy UI
+ * Ink Bridge Renderer
+ * Bridges to the Ink UI in packages-native mode
  */
 
 import React from 'react'
 import type { RootLaunchOptions } from './launchOptions.js'
 import type { Root } from '../ink.js'
 
-export interface LegacyBridgeOptions {
+export interface InkBridgeOptions {
   rootOptions: RootLaunchOptions
   serverUrl?: string
   authToken?: string
@@ -51,24 +51,24 @@ async function initializeMcpServers(): Promise<void> {
 }
 
 /**
- * 渲染 Legacy Bridge REPL
- * 启动 legacy UI 但通过 bridge 与后端通信
+ * Render Ink Bridge REPL
+ * Starts the Ink UI and communicates with backend via bridge
  */
-export async function renderLegacyBridgeRepl(
+export async function renderInkBridgeRepl(
   root: Root,
-  options: LegacyBridgeOptions
+  options: InkBridgeOptions
 ): Promise<void> {
   const { rootOptions, serverUrl, authToken } = options
 
   // Initialize MCP servers for Bridge mode
   await initializeMcpServers()
 
-  // 动态导入 legacy UI 组件
+  // Dynamically import Ink UI components
   const { App } = await import('../components/App.js')
   const { REPL } = await import('../screens/REPL.js')
   const { renderAndRun } = await import('../ink.js')
 
-  // 构建 bridge 客户端（如果提供了服务器地址）
+  // Build bridge client (if server URL provided)
   let bridgeClient: any = undefined
   if (serverUrl) {
     try {
@@ -81,11 +81,11 @@ export async function renderLegacyBridgeRepl(
       console.log(`   Connected to server: ${serverUrl}`)
     } catch (error) {
       console.error('Failed to connect to server:', error)
-      // 继续使用本地模式
+      // Continue with local mode
     }
   }
 
-  // 构建 REPL props
+  // Build REPL props
   const replProps = {
     model: rootOptions.model,
     cwd: rootOptions.cwd || process.cwd(),
@@ -96,34 +96,34 @@ export async function renderLegacyBridgeRepl(
     bridgeClient,
   }
 
-  // 构建 App props
+  // Build App props
   const appProps = {
     getFpsMetrics: () => undefined,
     stats: undefined,
     initialState: undefined,
   }
 
-  // 渲染 legacy UI
+  // Render Ink UI
   await renderAndRun(
     root,
     React.createElement(App, appProps, React.createElement(REPL, replProps))
   )
 
-  // 清理 bridge 客户端
+  // Cleanup bridge client
   if (bridgeClient) {
     await bridgeClient.disconnect()
   }
 }
 
 /**
- * 检查是否应该使用 legacy bridge 模式
+ * Check if Ink bridge mode should be used
  */
-export function shouldUseLegacyBridge(args: string[]): boolean {
-  return args.includes('--legacy-bridge') || args.includes('--legacy')
+export function shouldUseInkBridge(args: string[]): boolean {
+  return args.includes('--ink-bridge') || args.includes('--legacy-bridge') || args.includes('--ink') || args.includes('--legacy')
 }
 
 /**
- * 获取 bridge 服务器地址
+ * Get bridge server URL
  */
 export function getBridgeServerUrl(args: string[]): string | undefined {
   const serverIndex = args.indexOf('--server')
@@ -131,6 +131,6 @@ export function getBridgeServerUrl(args: string[]): string | undefined {
     return args[serverIndex + 1]
   }
 
-  // 默认本地服务器地址
+  // Default local server address
   return 'http://127.0.0.1:5678'
 }

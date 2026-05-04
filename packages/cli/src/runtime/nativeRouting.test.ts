@@ -2,7 +2,7 @@
  * Tests for packages-native mode routing
  *
  * These tests verify the routing logic that decides between:
- * 1. Legacy mode (delegateToLegacyUi)
+ * 1. Ink UI mode (delegateToInkUi)
  * 2. Packages-native REST API mode (CCLocalClient)
  * 3. Packages-native local engine mode (QueryEngine)
  */

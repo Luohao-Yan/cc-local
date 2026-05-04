@@ -23,7 +23,8 @@ describe('route context', () => {
   it('auto-starts embedded server only for local packages routes', () => {
     expect(shouldAutoStartEmbeddedServer(['models', 'list'])).toBe(true)
     expect(shouldAutoStartEmbeddedServer(['--server', 'http://127.0.0.1:5678', 'models', 'list'])).toBe(false)
-    expect(shouldAutoStartEmbeddedServer(['--legacy', '--help'])).toBe(false)
+    expect(shouldAutoStartEmbeddedServer(['--ink', '--help'])).toBe(false)
+    expect(shouldAutoStartEmbeddedServer(['--legacy', '--help'])).toBe(false) // backward compatibility
   })
 
   it('detects REST-backed command trees', () => {

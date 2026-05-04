@@ -5,7 +5,7 @@
  * and which native sub-mode to use (REST or local engine).
  */
 
-import { shouldUseLegacyUi, getUserArgs } from '../ui/legacyAdapter.js'
+import { shouldUseInkUi, getUserArgs } from '../ui/inkAdapter.js'
 import {
   hasExplicitServerArg,
   hasLegacyFlag,
@@ -56,8 +56,8 @@ export function shouldUseNativeMode(args: string[]): boolean {
     return false
   }
 
-  // Check legacy UI decision
-  if (shouldUseLegacyUi(args)) {
+  // Check Ink UI decision
+  if (shouldUseInkUi(args)) {
     return false
   }
 

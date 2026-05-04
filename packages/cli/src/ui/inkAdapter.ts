@@ -14,11 +14,12 @@ const PACKAGE_ONLY_OPTIONS_WITH_VALUE = new Set([
 
 const PACKAGE_ONLY_BOOLEAN_OPTIONS = new Set([
   '--server-embedded',
-  '--legacy',
+  '--ink',
+  '--legacy', // backward compatibility
   '--native',
 ])
 
-const LEGACY_UI_OPTIONS_WITH_VALUE = new Set([
+const INK_UI_OPTIONS_WITH_VALUE = new Set([
   '--print',
   '-p',
   '--resume',
@@ -75,7 +76,7 @@ const PACKAGES_MANAGEMENT_COMMANDS = new Set([
   'setup-token',
 ])
 
-const LEGACY_COMPATIBILITY_COMMANDS = new Set([
+const INK_COMPATIBILITY_COMMANDS = new Set([
   'agents',
   'assistant',
   'auto-mode',
@@ -100,7 +101,7 @@ const LEGACY_COMPATIBILITY_COMMANDS = new Set([
   'up',
 ])
 
-const LEGACY_ONLY_OPTIONS: Set<string> = new Set([])
+const INK_ONLY_OPTIONS: Set<string> = new Set([])
 
 export function getUserArgs(argv: string[]): string[] {
   return argv.slice(2).filter((arg) => arg !== '--')
@@ -131,7 +132,7 @@ export function getFirstCommand(args: string[]): string | undefined {
     const arg = stripped[index]
     if (arg.startsWith('-')) {
       const option = arg.split('=')[0]
-      if (!arg.includes('=') && LEGACY_UI_OPTIONS_WITH_VALUE.has(option)) {
+      if (!arg.includes('=') && INK_UI_OPTIONS_WITH_VALUE.has(option)) {
         index += 1
       }
       continue
@@ -141,8 +142,8 @@ export function getFirstCommand(args: string[]): string | undefined {
   return undefined
 }
 
-export function shouldUseLegacyUi(args: string[]): boolean {
-  if (args.some((arg) => arg === '--legacy' || arg.startsWith('--legacy='))) {
+export function shouldUseInkUi(args: string[]): boolean {
+  if (args.some((arg) => arg === '--ink' || arg.startsWith('--ink=') || arg === '--legacy' || arg.startsWith('--legacy='))) {
     return true
   }
 
@@ -150,7 +151,7 @@ export function shouldUseLegacyUi(args: string[]): boolean {
     return false
   }
 
-  // cclocal-next entry point: default to native unless --legacy is explicit
+  // cclocal-next entry point: default to native unless --ink is explicit
   if (process.env.CCLOCAL_DEFAULT_NATIVE === '1') {
     return false
   }
@@ -166,23 +167,23 @@ export function shouldUseLegacyUi(args: string[]): boolean {
     return false
   }
 
-  if (firstCommand && LEGACY_COMPATIBILITY_COMMANDS.has(firstCommand)) {
+  if (firstCommand && INK_COMPATIBILITY_COMMANDS.has(firstCommand)) {
     return true
   }
 
   if (stripped.some((arg) => {
     const option = arg.split('=')[0]
-    return LEGACY_ONLY_OPTIONS.has(option)
+    return INK_ONLY_OPTIONS.has(option)
   })) {
     return true
   }
 
-  // Default to legacy Ink UI (original behavior)
+  // Default to Ink UI (original behavior)
   // Use --native to use the new packages-native REPL
   return true
 }
 
-export function findLegacyRepoRoot(): string {
+export function findInkRepoRoot(): string {
   let current = dirname(fileURLToPath(import.meta.url))
   for (let depth = 0; depth < 8; depth += 1) {
     if (!existsSync(join(current, 'package.json'))) {
@@ -197,7 +198,7 @@ export function findLegacyRepoRoot(): string {
   return process.cwd()
 }
 
-export function resolveLegacyUiEntrypoint(repoRoot = findLegacyRepoRoot()): { entrypoint: string; cwd: string } {
+export function resolveInkUiEntrypoint(repoRoot = findInkRepoRoot()): { entrypoint: string; cwd: string } {
   // Prefer compiled legacy-cli.js from dist (faster startup)
   const distEntrypoint = join(repoRoot, 'dist', 'legacy-cli.js')
   if (existsSync(distEntrypoint)) {
@@ -215,9 +216,9 @@ export function resolveLegacyUiEntrypoint(repoRoot = findLegacyRepoRoot()): { en
   }
 }
 
-export async function runLegacyUiInProcess(args: string[]): Promise<void> {
-  const legacyArgs = stripPackageOnlyArgs(args)
-  const { entrypoint } = resolveLegacyUiEntrypoint()
+export async function runInkUiInProcess(args: string[]): Promise<void> {
+  const inkArgs = stripPackageOnlyArgs(args)
+  const { entrypoint } = resolveInkUiEntrypoint()
 
   // Set CCLOCAL_FORCE_INTERACTIVE for interactive mode detection
   process.env.CCLOCAL_FORCE_INTERACTIVE = '1'
@@ -226,10 +227,10 @@ export async function runLegacyUiInProcess(args: string[]): Promise<void> {
   // We will call main() explicitly after import
   process.env.CCLOCAL_IMPORTED = '1'
 
-  // Update process.argv with the legacy args
-  process.argv = [process.argv[0]!, entrypoint, ...legacyArgs]
+  // Update process.argv with the Ink args
+  process.argv = [process.argv[0]!, entrypoint, ...inkArgs]
 
-  // Dynamic import the legacy entrypoint and run it
+  // Dynamic import the Ink entrypoint and run it
   // This preserves TTY/stdin in the same process
   const entrypointModule = await import(entrypoint)
 
@@ -239,14 +240,14 @@ export async function runLegacyUiInProcess(args: string[]): Promise<void> {
   }
 }
 
-export function delegateToLegacyUi(args: string[]): never {
-  const legacyArgs = stripPackageOnlyArgs(args)
-  const { entrypoint, cwd } = resolveLegacyUiEntrypoint()
+export function delegateToInkUi(args: string[]): never {
+  const inkArgs = stripPackageOnlyArgs(args)
+  const { entrypoint, cwd } = resolveInkUiEntrypoint()
 
-  // Use spawnSync to delegate to legacy UI.
+  // Use spawnSync to delegate to Ink UI.
   // TTY inheritance should work when stdio: 'inherit' is used.
-  // If stdin doesn't work on Windows, user can try --legacy-bridge for in-process mode.
-  const result = spawnSync(process.execPath, [entrypoint, ...legacyArgs], {
+  // If stdin doesn't work on Windows, user can try --ink-bridge for in-process mode.
+  const result = spawnSync(process.execPath, [entrypoint, ...inkArgs], {
     cwd,
     stdio: 'inherit',
     env: {
@@ -256,7 +257,7 @@ export function delegateToLegacyUi(args: string[]): never {
   })
 
   if (result.error) {
-    console.error(`Failed to delegate to legacy UI: ${result.error.message}`)
+    console.error(`Failed to delegate to Ink UI: ${result.error.message}`)
     process.exit(1)
   }
   process.exit(result.status ?? 0)
