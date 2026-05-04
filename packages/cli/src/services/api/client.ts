@@ -298,6 +298,8 @@ export async function getAnthropicClient({
   }
 
   // Determine authentication method based on available tokens
+  // Support custom base URL for third-party API providers (set by model add)
+  const customBaseUrl = process.env.ANTHROPIC_BASE_URL
   const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
     apiKey: isClaudeAISubscriber() ? null : apiKey || getAnthropicApiKey(),
     authToken: isClaudeAISubscriber()
@@ -307,7 +309,9 @@ export async function getAnthropicClient({
     ...(process.env.USER_TYPE === 'ant' &&
     isEnvTruthy(process.env.USE_STAGING_OAUTH)
       ? { baseURL: getOauthConfig().BASE_API_URL }
-      : {}),
+      : customBaseUrl
+        ? { baseURL: customBaseUrl }
+        : {}),
     ...ARGS,
     ...(isDebugToStdErr() && { logger: createStderrLogger() }),
   }
