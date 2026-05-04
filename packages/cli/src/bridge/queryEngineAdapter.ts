@@ -15,6 +15,7 @@
 
 import type { Message, StreamEvent, Tool } from '@cclocal/shared'
 import { QueryEngine, type QueryEngineOptions, type QueryResult } from '@cclocal/core'
+import { getSessionStore } from '@cclocal/core'
 import { ALL_TOOL_ADAPTERS } from './toolAdapters.js'
 
 // Legacy event types that REPL.tsx's handleMessageFromStream expects
@@ -37,6 +38,10 @@ export interface LegacyQueryParams {
   baseUrl?: string
   onStream?: (event: StreamEvent) => void
   abortSignal?: AbortSignal
+  /** Session ID for persistence and resume */
+  sessionId?: string
+  /** Called when a tool needs user approval. Return true to allow, false to deny. */
+  onPermissionCheck?: (toolName: string, input: unknown, reason?: string) => Promise<boolean>
 }
 
 /**
@@ -89,6 +94,19 @@ export async function* createQueryEngineAdapter(
   const { toolRegistry } = await import('@cclocal/core')
   toolRegistry.registerBridgeAdapters(ALL_TOOL_ADAPTERS)
 
+  // Load existing messages if sessionId provided and session exists
+  let messages = params.messages
+  if (params.sessionId) {
+    const sessionStore = getSessionStore()
+    if (sessionStore.hasSession(params.sessionId)) {
+      const existingMessages = sessionStore.getMessages(params.sessionId)
+      // Prepend existing messages, but avoid duplicates
+      const existingIds = new Set(existingMessages.map(m => m.id))
+      const newMessages = params.messages.filter(m => !existingIds.has(m.id))
+      messages = [...existingMessages, ...newMessages]
+    }
+  }
+
   const options: QueryEngineOptions = {
     model: params.model ?? 'claude-sonnet-4-20250514',
     systemPrompt: buildSystemPrompt(params),
@@ -96,6 +114,7 @@ export async function* createQueryEngineAdapter(
     enabledTools: params.enabledTools,
     apiKey: params.apiKey,
     baseUrl: params.baseUrl,
+    onPermissionCheck: params.onPermissionCheck,
   }
 
   const eventQueue = new EventQueue<LegacyQueryEvent>()
@@ -106,7 +125,7 @@ export async function* createQueryEngineAdapter(
   const engine = new QueryEngine(options)
 
   // Start the query in the background; push stream events into the queue
-  const queryPromise = engine.query(params.messages, {
+  const queryPromise = engine.query(messages, {
     onStream: (event: StreamEvent) => {
       const legacyEvent = translateStreamEvent(event)
       if (legacyEvent) {
@@ -129,6 +148,19 @@ export async function* createQueryEngineAdapter(
       }
       eventQueue.push({ type: 'message', message: assistantMessage })
       eventQueue.close()
+
+      // Persist messages to session store
+      if (params.sessionId) {
+        const sessionStore = getSessionStore()
+        // Persist user messages that were part of this query
+        for (const msg of params.messages) {
+          if (msg.role === 'user') {
+            sessionStore.addMessage(msg, params.sessionId)
+          }
+        }
+        // Persist assistant message
+        sessionStore.addMessage(assistantMessage, params.sessionId)
+      }
     },
     (error) => {
       eventQueue.push({

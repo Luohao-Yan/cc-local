@@ -14,6 +14,43 @@ export interface LegacyBridgeOptions {
 }
 
 /**
+ * Initialize MCP servers from config for Bridge mode.
+ * The core MCPManager will be used by QueryEngine for tool calls.
+ */
+async function initializeMcpServers(): Promise<void> {
+  try {
+    const { getMCPManager } = await import('@cclocal/core')
+    const { getAllMcpConfigs } = await import('../services/mcp/config.js')
+
+    const mcpManager = getMCPManager()
+    const { servers } = await getAllMcpConfigs()
+
+    // Register servers with the core MCPManager
+    for (const [name, config] of Object.entries(servers)) {
+      try {
+        mcpManager.registerServer(name, config)
+      } catch {
+        // Server might already be registered
+      }
+    }
+
+    // Connect all registered servers
+    for (const server of mcpManager.listServers()) {
+      if (server.status === 'registered' || server.status === 'disconnected') {
+        try {
+          await mcpManager.connectServer(server.name)
+        } catch {
+          // Connection failures are recorded in server record
+        }
+      }
+    }
+  } catch (error) {
+    // MCP initialization failure shouldn't block the REPL
+    console.error('MCP initialization failed:', error)
+  }
+}
+
+/**
  * 渲染 Legacy Bridge REPL
  * 启动 legacy UI 但通过 bridge 与后端通信
  */
@@ -22,6 +59,9 @@ export async function renderLegacyBridgeRepl(
   options: LegacyBridgeOptions
 ): Promise<void> {
   const { rootOptions, serverUrl, authToken } = options
+
+  // Initialize MCP servers for Bridge mode
+  await initializeMcpServers()
 
   // 动态导入 legacy UI 组件
   const { App } = await import('../components/App.js')
