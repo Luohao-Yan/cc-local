@@ -55,7 +55,8 @@ export function shouldEnablePromptSuggestion(): boolean {
   }
 
   // Keep default in sync with Config.tsx (settings toggle visibility)
-  if (!getFeatureValue_CACHED_MAY_BE_STALE('tengu_chomp_inflection', false)) {
+  // Modified: default enabled for cc-local fork
+  if (!getFeatureValue_CACHED_MAY_BE_STALE('tengu_chomp_inflection', true)) {
     logEvent('tengu_prompt_suggestion_init', {
       enabled: false,
       source:

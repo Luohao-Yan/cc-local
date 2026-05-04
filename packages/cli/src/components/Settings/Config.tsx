@@ -379,7 +379,7 @@ export function Config({
         }));
       }
     }
-  }] : []), ...(getFeatureValue_CACHED_MAY_BE_STALE('tengu_chomp_inflection', false) ? [{
+  }] : []), ...(getFeatureValue_CACHED_MAY_BE_STALE('tengu_chomp_inflection', true) ? [{
     id: 'promptSuggestionEnabled',
     label: 'Prompt suggestions',
     value: promptSuggestionEnabled,
