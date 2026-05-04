@@ -55,7 +55,6 @@ const EXTERNAL_DISABLED_FEATURES = [
   "OVERFLOW_TEST_TOOL",
   "PERFETTO_TRACING",
   "POWERSHELL_AUTO_MODE",
-  "PROACTIVE",
   "PROMPT_CACHE_BREAK_DETECTION",
   "QUICK_SEARCH",
   "REACTIVE_COMPACT",
@@ -94,6 +93,7 @@ const ENABLED_FEATURES = [
   "BUILTIN_EXPLORE_PLAN_AGENTS",
   "TRANSCRIPT_CLASSIFIER",
   "BASH_CLASSIFIER",
+  "PROACTIVE",
 ] as const;
 
 const ENABLED_SET = new Set<string>(ENABLED_FEATURES);
@@ -141,7 +141,7 @@ const bunBundlePlugin = {
 };
 
 const buildLegacy = process.env.CCLOCAL_BUILD_LEGACY === "1";
-const entrypoint = "./packages/cli/src/entrypoints/cli.tsx";
+const entrypoint = "./packages/cli/src/index.ts";
 
 async function buildEntrypoint(source: string, destination: string): Promise<void> {
   const buildName = basename(destination, ".js");

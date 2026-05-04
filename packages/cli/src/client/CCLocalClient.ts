@@ -240,8 +240,15 @@ export class CCLocalClient {
     return await this.parseJson<ModelInfo[]>(response)
   }
 
-  onMessage(handler: (event: StreamEvent) => void): void {
+  onMessage(handler: (event: StreamEvent) => void): () => void {
     this.messageHandlers.push(handler)
+    // Return unsubscribe function
+    return () => {
+      const index = this.messageHandlers.indexOf(handler)
+      if (index > -1) {
+        this.messageHandlers.splice(index, 1)
+      }
+    }
   }
 
   removeMessageHandler(handler: (event: StreamEvent) => void): void {

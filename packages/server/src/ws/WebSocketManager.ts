@@ -1,5 +1,6 @@
 /**
  * WebSocket 管理器
+ * 支持连接限制、心跳检测、空闲超时清理
  */
 
 import type { AuthManager } from '../auth/AuthManager.js'
@@ -14,16 +15,122 @@ interface WSClient {
   token: string
   clientType?: 'cli' | 'vscode'
   sessionId?: string
+  lastActivity: number
+  id: string
+}
+
+export interface WebSocketManagerOptions {
+  authManager: AuthManager
+  sessionManager: SessionManager
+  /** 最大连接数限制 */
+  maxConnections?: number
+  /** 空闲超时时间（毫秒），默认 5 分钟 */
+  idleTimeout?: number
+  /** 心跳检测间隔（毫秒），默认 1 分钟 */
+  heartbeatInterval?: number
+}
+
+export interface WebSocketManagerStats {
+  totalConnections: number
+  activeConnections: number
+  maxConnectionsLimit: number
+  connectionsByType: { cli: number; vscode: number; unknown: number }
 }
 
 export class WebSocketManager {
   private clients = new Map<string, WSClient>()
-  private authManager: AuthManager
-  private sessionManager: SessionManager
+  private readonly authManager: AuthManager
+  private readonly sessionManager: SessionManager
+  private readonly maxConnections: number
+  private readonly idleTimeout: number
+  private readonly heartbeatInterval: number
+  private heartbeatTimer?: ReturnType<typeof setInterval>
+  private closed = false
 
-  constructor(options: { authManager: AuthManager; sessionManager: SessionManager }) {
+  // 反向映射：socket -> clientId，用于快速查找
+  private socketToClientId = new Map<ClientSocket, string>()
+
+  constructor(options: WebSocketManagerOptions) {
     this.authManager = options.authManager
     this.sessionManager = options.sessionManager
+    this.maxConnections = options.maxConnections ?? 500
+    this.idleTimeout = options.idleTimeout ?? 5 * 60 * 1000 // 默认 5 分钟
+    this.heartbeatInterval = options.heartbeatInterval ?? 60 * 1000 // 默认 1 分钟
+
+    // 启动心跳检测
+    this.startHeartbeat()
+  }
+
+  /**
+   * 关闭管理器，停止心跳检测
+   */
+  close(): void {
+    this.closed = true
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer)
+      this.heartbeatTimer = undefined
+    }
+  }
+
+  /**
+   * 获取连接统计信息
+   */
+  getStats(): WebSocketManagerStats {
+    let cli = 0
+    let vscode = 0
+    let unknown = 0
+
+    for (const client of this.clients.values()) {
+      if (client.clientType === 'cli') cli++
+      else if (client.clientType === 'vscode') vscode++
+      else unknown++
+    }
+
+    return {
+      totalConnections: this.clients.size,
+      activeConnections: this.clients.size,
+      maxConnectionsLimit: this.maxConnections,
+      connectionsByType: { cli, vscode, unknown },
+    }
+  }
+
+  /**
+   * 启动心跳检测定时器
+   */
+  private startHeartbeat(): void {
+    this.heartbeatTimer = setInterval(() => {
+      this.checkIdleConnections()
+    }, this.heartbeatInterval)
+  }
+
+  /**
+   * 检查并关闭空闲连接
+   */
+  private checkIdleConnections(): void {
+    if (this.closed) return
+
+    const now = Date.now()
+    const toClose: string[] = []
+
+    for (const [clientId, client] of this.clients) {
+      if (now - client.lastActivity > this.idleTimeout) {
+        toClose.push(clientId)
+      }
+    }
+
+    for (const clientId of toClose) {
+      const client = this.clients.get(clientId)
+      if (client) {
+        console.log(`   WebSocket client idle timeout: ${clientId}`)
+        try {
+          client.socket.close(1001, 'Connection timeout')
+        } catch {
+          // Socket might already be closed
+        }
+        this.clients.delete(clientId)
+        this.socketToClientId.delete(client.socket)
+      }
+    }
   }
 
   handleUpgrade(request: Request, server: BunServer): boolean {
@@ -31,6 +138,12 @@ export class WebSocketManager {
     const token = url.searchParams.get('token')
 
     if (!token || !this.authManager.verifyToken(token)) {
+      return false
+    }
+
+    // 检查连接数限制
+    if (this.clients.size >= this.maxConnections) {
+      // 发送服务器繁忙响应
       return false
     }
 
@@ -42,17 +155,26 @@ export class WebSocketManager {
   }
 
   onOpen(socket: ClientSocket): void {
+    // 再次检查连接数限制（竞态条件）
+    if (this.clients.size >= this.maxConnections) {
+      socket.close(1013, 'Server busy')
+      return
+    }
+
     const clientId = this.generateClientId()
     const token = (socket.data as { token: string }).token
 
     const client: WSClient = {
       socket,
       token,
+      id: clientId,
+      lastActivity: Date.now(),
     }
 
     this.clients.set(clientId, client)
+    this.socketToClientId.set(socket, clientId)
 
-    console.log(`   WebSocket client connected: ${clientId}`)
+    console.log(`   WebSocket client connected: ${clientId} (${this.clients.size}/${this.maxConnections})`)
 
     // 发送连接成功消息
     this.sendToClient(clientId, {
@@ -65,6 +187,9 @@ export class WebSocketManager {
   onMessage(socket: ClientSocket, message: string | Buffer): void {
     const client = this.findClientBySocket(socket)
     if (!client) return
+
+    // 更新活动时间
+    client.lastActivity = Date.now()
 
     try {
       const data = JSON.parse(message.toString())
@@ -82,8 +207,9 @@ export class WebSocketManager {
   onClose(socket: ClientSocket): void {
     const clientId = this.findClientIdBySocket(socket)
     if (clientId) {
-      console.log(`   WebSocket client disconnected: ${clientId}`)
+      console.log(`   WebSocket client disconnected: ${clientId} (${this.clients.size - 1}/${this.maxConnections})`)
       this.clients.delete(clientId)
+      this.socketToClientId.delete(socket)
     }
   }
 
@@ -94,6 +220,8 @@ export class WebSocketManager {
         break
 
       case 'ping':
+        // 更新活动时间
+        client.lastActivity = Date.now()
         this.sendToClient(client.socket, {
           type: 'pong',
           timestamp: Date.now(),
@@ -242,21 +370,15 @@ export class WebSocketManager {
   }
 
   private findClientBySocket(socket: ClientSocket): WSClient | undefined {
-    for (const client of this.clients.values()) {
-      if (client.socket === socket) {
-        return client
-      }
+    const clientId = this.socketToClientId.get(socket)
+    if (clientId) {
+      return this.clients.get(clientId)
     }
     return undefined
   }
 
   private findClientIdBySocket(socket: ClientSocket): string | undefined {
-    for (const [id, client] of this.clients.entries()) {
-      if (client.socket === socket) {
-        return id
-      }
-    }
-    return undefined
+    return this.socketToClientId.get(socket)
   }
 
   // 广播消息到所有连接的客户端

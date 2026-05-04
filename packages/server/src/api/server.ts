@@ -27,6 +27,8 @@ import {
   toolRegistry,
 } from '@cclocal/core'
 
+type WebSocketData = { token: string }
+
 interface ServerOptions {
   port: number
   host: string
@@ -47,7 +49,7 @@ export class Server {
   async start(): Promise<void> {
     const { authManager, sessionManager, wsManager } = this.options
 
-    this.server = Bun.serve({
+    this.server = Bun.serve<WebSocketData>({
       port: this.options.port,
       hostname: this.options.host,
 

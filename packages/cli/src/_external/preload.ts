@@ -20,6 +20,7 @@ const ENABLED_FEATURES = new Set([
   "BUILTIN_EXPLORE_PLAN_AGENTS",
   "TRANSCRIPT_CLASSIFIER",
   "BASH_CLASSIFIER",
+  "PROACTIVE",
 ]);
 
 // Shim for react/compiler-runtime - this is a no-op since we're using the compiled output

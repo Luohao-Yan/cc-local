@@ -36,7 +36,7 @@ export const skillTool: Tool = {
     // Try to find the skill as a registered tool
     const skillTool = toolRegistry.get(input.skill_name)
     if (skillTool) {
-      return await skillTool.call({ prompt: input.input ?? '' }, context)
+      return await skillTool.execute({ prompt: input.input ?? '' }, context)
     }
 
     return {

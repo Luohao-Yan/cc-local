@@ -294,6 +294,17 @@ async function findAvailablePort(): Promise<number> {
 
 const rawUserArgs = getUserArgs(process.argv)
 const useLegacyUi = shouldUseLegacyUi(rawUserArgs)
+
+// Check for packages-native mode
+const useNativeMode = rawUserArgs.includes('--native') || rawUserArgs.includes('--packages-native')
+if (useNativeMode && !rawUserArgs.includes('--legacy-bridge')) {
+  // Dynamic import to avoid loading native module in legacy mode
+  const { runNative } = await import('./entrypoints/native.js')
+  await runNative()
+  await stopEmbeddedServer()
+  process.exit(0)
+}
+
 if (useLegacyUi && !rawUserArgs.some((arg) => arg === '--legacy-bridge')) {
   delegateToLegacyUi(rawUserArgs)
 }

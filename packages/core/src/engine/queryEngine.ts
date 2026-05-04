@@ -23,6 +23,73 @@ import {
   type PermissionPolicy,
 } from '../permissions/permissionPolicy.js'
 
+/**
+ * 最大并行工具执行数
+ * 默认 10，与原版 Claude Code 一致
+ * 可通过环境变量 CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY 配置
+ */
+function getMaxToolUseConcurrency(): number {
+  return parseInt(process.env.CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY || '', 10) || 10
+}
+
+/**
+ * 只读工具集合 - 这些工具可以安全并发执行
+ */
+const READ_ONLY_TOOLS = new Set([
+  'file_read',
+  'grep',
+  'glob',
+  'list_directory',
+  'web_search',
+  'web_fetch',
+  'query_progress',
+  'view_project',
+  'search_code',
+])
+
+/**
+ * 检查工具是否并发安全
+ * 只读工具可以并行执行，写入工具必须串行
+ */
+function isToolConcurrencySafe(toolName: string): boolean {
+  return READ_ONLY_TOOLS.has(toolName.toLowerCase())
+}
+
+/**
+ * 工具调用批次
+ */
+interface ToolBatch {
+  tools: Array<{ name: string; input: unknown; id: string }>
+  isConcurrencySafe: boolean
+}
+
+/**
+ * 将工具调用分区为批次
+ * 并发安全的工具可以合并到同一批次
+ * 非并发安全的工具单独成批
+ */
+function partitionToolCalls(toolCalls: Array<{ name: string; input: unknown; id: string }>): ToolBatch[] {
+  const batches: ToolBatch[] = []
+
+  for (const toolCall of toolCalls) {
+    const isSafe = isToolConcurrencySafe(toolCall.name)
+    const lastBatch = batches[batches.length - 1]
+
+    // 如果上一批次也是并发安全的，合并
+    if (lastBatch && lastBatch.isConcurrencySafe && isSafe) {
+      lastBatch.tools.push(toolCall)
+    } else {
+      // 否则创建新批次
+      batches.push({
+        tools: [toolCall],
+        isConcurrencySafe: isSafe,
+      })
+    }
+  }
+
+  return batches
+}
+
 export interface QueryEngineOptions {
   model: string
   systemPrompt?: string
@@ -222,63 +289,45 @@ export class QueryEngine {
         break
       }
 
-      // 并行执行所有工具调用
-      const toolResultEntries = await Promise.all(
-        toolCalls.map(async (toolCall) => {
-          const tool = opts.tools?.find((t) => t.name === toolCall.name)
-          if (!tool) {
-            return {
-              toolCall,
-              result: {
-                content: `Tool "${toolCall.name}" not found`,
-                is_error: true,
-              } satisfies ToolResult,
+      // 分批执行工具调用
+      // 并发安全的工具可以并行，非安全工具串行
+      const batches = partitionToolCalls(toolCalls)
+      const toolResultEntries: Array<{ toolCall: { name: string; input: unknown; id: string }; result: ToolResult }> = []
+
+      for (const batch of batches) {
+        // 检查是否被取消
+        if (this.abortController?.signal.aborted) {
+          throw new Error('Query aborted')
+        }
+
+        if (batch.isConcurrencySafe) {
+          // 并发安全批次：并行执行，受最大并发数限制
+          const maxConcurrency = getMaxToolUseConcurrency()
+          const chunks = this.chunk(batch.tools, maxConcurrency)
+
+          for (const chunk of chunks) {
+            if (this.abortController?.signal.aborted) {
+              throw new Error('Query aborted')
             }
-          }
 
-          const decision = decideToolPermission(tool.name, opts.permissionPolicy)
-          let allowed = decision.allowed
-
-          // In default mode, high-risk tools need user confirmation via callback
-          if (allowed && opts.onPermissionCheck && opts.permissionPolicy?.mode !== 'bypassPermissions') {
-            const isHighRisk = HIGH_RISK_TOOLS.has(tool.name.toLowerCase()) ||
-              EDIT_TOOLS.has(tool.name.toLowerCase())
-            if (isHighRisk) {
-              allowed = await opts.onPermissionCheck(tool.name, toolCall.input, decision.reason)
-            }
-          }
-
-          if (!allowed) {
-            return {
-              toolCall,
-              result: {
-                content: decision.reason || `Tool "${toolCall.name}" denied by policy`,
-                is_error: true,
-              } satisfies ToolResult,
-            }
-          }
-
-          // 执行工具
-          const context: ToolContext = {
-            sessionId: messageId,
-            cwd: process.cwd(),
-            abortSignal: this.abortController?.signal,
-            onProgress: opts.onStream ? (progress) => {
-              opts.onStream!({
-                type: 'stream_delta',
-                messageId,
-                delta: {
-                  type: 'text',
-                  text: progress.message,
-                },
+            const chunkResults = await Promise.all(
+              chunk.map(async (toolCall) => {
+                return await this.executeToolCall(toolCall, opts, messageId)
               })
-            } : undefined,
+            )
+            toolResultEntries.push(...chunkResults)
           }
-
-          const result = await this.executeTool(tool, toolCall.input, context)
-          return { toolCall, result }
-        })
-      )
+        } else {
+          // 非并发安全批次：串行执行
+          for (const toolCall of batch.tools) {
+            if (this.abortController?.signal.aborted) {
+              throw new Error('Query aborted')
+            }
+            const result = await this.executeToolCall(toolCall, opts, messageId)
+            toolResultEntries.push(result)
+          }
+        }
+      }
 
       // Build tool result messages with proper content format for the API
       const toolResultContents: Array<{ type: 'tool_result'; tool_use_id: string; content: string; is_error?: boolean }> = []
@@ -378,6 +427,79 @@ export class QueryEngine {
         is_error: true,
       }
     }
+  }
+
+  /**
+   * 执行单个工具调用
+   */
+  private async executeToolCall(
+    toolCall: { name: string; input: unknown; id: string },
+    opts: QueryOptions,
+    messageId: string
+  ): Promise<{ toolCall: { name: string; input: unknown; id: string }; result: ToolResult }> {
+    const tool = opts.tools?.find((t) => t.name === toolCall.name)
+    if (!tool) {
+      return {
+        toolCall,
+        result: {
+          content: `Tool "${toolCall.name}" not found`,
+          is_error: true,
+        } satisfies ToolResult,
+      }
+    }
+
+    const decision = decideToolPermission(tool.name, opts.permissionPolicy)
+    let allowed = decision.allowed
+
+    // In default mode, high-risk tools need user confirmation via callback
+    if (allowed && opts.onPermissionCheck && opts.permissionPolicy?.mode !== 'bypassPermissions') {
+      const isHighRisk = HIGH_RISK_TOOLS.has(tool.name.toLowerCase()) ||
+        EDIT_TOOLS.has(tool.name.toLowerCase())
+      if (isHighRisk) {
+        allowed = await opts.onPermissionCheck(tool.name, toolCall.input, decision.reason)
+      }
+    }
+
+    if (!allowed) {
+      return {
+        toolCall,
+        result: {
+          content: decision.reason || `Tool "${toolCall.name}" denied by policy`,
+          is_error: true,
+        } satisfies ToolResult,
+      }
+    }
+
+    // 执行工具
+    const context: ToolContext = {
+      sessionId: messageId,
+      cwd: process.cwd(),
+      abortSignal: this.abortController?.signal,
+      onProgress: opts.onStream ? (progress) => {
+        opts.onStream!({
+          type: 'stream_delta',
+          messageId,
+          delta: {
+            type: 'text',
+            text: progress.message,
+          },
+        })
+      } : undefined,
+    }
+
+    const result = await this.executeTool(tool, toolCall.input, context)
+    return { toolCall, result }
+  }
+
+  /**
+   * 将数组分割成指定大小的块
+   */
+  private chunk<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = []
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size))
+    }
+    return chunks
   }
 }
 

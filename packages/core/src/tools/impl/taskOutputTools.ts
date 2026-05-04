@@ -29,8 +29,7 @@ export const taskOutputTool: Tool = {
   async execute(input: TaskOutputInput, context: ToolContext): Promise<ToolResult> {
     // In the native architecture, task output is retrieved from the session store
     try {
-      const { getSessionStore } = await import('../../db/index.js')
-      const store = await getSessionStore(context.sessionId ?? 'default')
+      const store = getSessionStore()
       const session = await store.getSession(input.taskId)
 
       if (!session) {

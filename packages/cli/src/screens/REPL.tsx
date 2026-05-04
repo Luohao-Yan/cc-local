@@ -570,6 +570,8 @@ export type Props = {
   sshSession?: SSHSession;
   // Thinking configuration to use when thinking is enabled
   thinkingConfig: ThinkingConfig;
+  // Native adapter for packages-native mode (alternative backend)
+  nativeAdapter?: import('../types/nativeAdapter.js').INativeAdapter;
 };
 export type Screen = 'prompt' | 'transcript';
 export function REPL({
@@ -597,7 +599,8 @@ export function REPL({
   remoteSessionConfig,
   directConnectConfig,
   sshSession,
-  thinkingConfig
+  thinkingConfig,
+  nativeAdapter,
 }: Props): React.ReactNode {
   const isRemoteSession = !!remoteSessionConfig;
 

@@ -1,5 +1,6 @@
 /**
  * 会话管理器
+ * 支持请求队列，串行处理同一会话的请求
  */
 
 import { randomUUID } from 'crypto'
@@ -7,8 +8,24 @@ import { QueryEngine, getSessionStore, toolRegistry } from '@cclocal/core'
 import type { Session, Message, MessageOptions, StreamEvent } from '@cclocal/shared'
 import type { SessionStore } from '@cclocal/core'
 
+/**
+ * 排队的请求
+ */
+interface QueuedRequest {
+  id: string
+  execute: () => Promise<void>
+  resolve: (value: void) => void
+  reject: (error: Error) => void
+  abortController: AbortController
+}
+
+/**
+ * 会话运行时状态
+ */
 interface SessionRuntime {
   abortController?: AbortController
+  requestQueue: QueuedRequest[]
+  isProcessing: boolean
 }
 
 interface SessionManagerOptions {
@@ -80,6 +97,49 @@ export class SessionManager {
     return this.store.getSession(nextSession.id) as Session
   }
 
+  /**
+   * 分叉会话
+   * 创建一个新会话，复制原会话的所有消息
+   */
+  async forkSession(
+    sessionId: string,
+    options?: { name?: string }
+  ): Promise<Session> {
+    const original = this.store.getSession(sessionId)
+    if (!original) {
+      throw new Error(`Session not found: ${sessionId}`)
+    }
+
+    // 获取原会话的所有消息
+    const messages = this.store.getMessages(sessionId)
+
+    // 创建新会话
+    const forked = await this.createSession({
+      name: options?.name || `${original.name}-fork`,
+      cwd: original.cwd,
+      model: original.model,
+    })
+
+    // 复制所有消息到新会话
+    for (const msg of messages) {
+      const clonedMsg = {
+        ...msg,
+        id: randomUUID(),
+      }
+      this.store.addMessage(clonedMsg, forked.id)
+    }
+
+    // 复制运行时状态
+    const originalRuntime = this.runtime.get(sessionId)
+    if (originalRuntime) {
+      const forkedRuntime = this.getOrCreateRuntime(forked.id)
+      forkedRuntime.abortController = new AbortController()
+      // 注意：不复制请求队列，只复制基本状态
+    }
+
+    return forked
+  }
+
   getSession(id: string): Session | undefined {
     return this.store.getSession(id)
   }
@@ -90,8 +150,16 @@ export class SessionManager {
 
   deleteSession(id: string): void {
     const runtime = this.runtime.get(id)
-    if (runtime?.abortController) {
-      runtime.abortController.abort()
+    if (runtime) {
+      // 取消当前正在处理的请求
+      if (runtime.abortController) {
+        runtime.abortController.abort()
+      }
+      // 取消所有队列中的请求
+      for (const request of runtime.requestQueue) {
+        request.abortController.abort()
+        request.reject(new Error('Session deleted'))
+      }
     }
     this.runtime.delete(id)
     this.store.deleteSession(id)
@@ -110,9 +178,63 @@ export class SessionManager {
       return
     }
 
-    // 创建新的 AbortController
+    // 获取或创建运行时状态
+    const runtime = this.getOrCreateRuntime(sessionId)
+    const abortController = new AbortController()
+
+    return new Promise((resolve, reject) => {
+      const request: QueuedRequest = {
+        id: randomUUID(),
+        abortController,
+        resolve,
+        reject,
+        execute: async () => {
+          await this._executeMessageStream(
+            sessionId,
+            content,
+            options,
+            controller,
+            abortController.signal
+          )
+        },
+      }
+
+      // 加入队列
+      runtime.requestQueue.push(request)
+
+      // 如果没有正在处理的请求，开始处理队列
+      if (!runtime.isProcessing) {
+        this._processQueue(sessionId)
+      }
+    })
+  }
+
+  /**
+   * 执行消息流处理（内部方法，由队列调用）
+   */
+  private async _executeMessageStream(
+    sessionId: string,
+    content: string,
+    options: MessageOptions,
+    controller: ReadableStreamDefaultController,
+    abortSignal: AbortSignal
+  ): Promise<void> {
+    const session = this.store.getSession(sessionId)
+    if (!session) {
+      controller.enqueue(new TextEncoder().encode('event: error\ndata: Session not found\n\n'))
+      controller.close()
+      return
+    }
+
     const runtime = this.getOrCreateRuntime(sessionId)
     runtime.abortController = new AbortController()
+
+    // 关联外部取消信号
+    if (abortSignal.aborted) {
+      runtime.abortController.abort()
+    }
+    const onAbort = () => runtime.abortController?.abort()
+    abortSignal.addEventListener('abort', onAbort)
 
     try {
       // 添加用户消息
@@ -181,6 +303,7 @@ export class SessionManager {
         )
       }
     } finally {
+      abortSignal.removeEventListener('abort', onAbort)
       runtime.abortController = undefined
       controller.close()
     }
@@ -244,8 +367,59 @@ export class SessionManager {
 
   async cancelGeneration(sessionId: string): Promise<void> {
     const runtime = this.runtime.get(sessionId)
-    if (runtime?.abortController) {
+    if (!runtime) return
+
+    // 取消当前正在处理的请求
+    if (runtime.abortController) {
       runtime.abortController.abort()
+    }
+
+    // 取消队列中所有等待的请求
+    for (const request of runtime.requestQueue) {
+      request.abortController.abort()
+      request.reject(new Error('Session cancelled'))
+    }
+    runtime.requestQueue = []
+  }
+
+  /**
+   * 取消特定请求
+   * @param sessionId 会话ID
+   * @param requestId 请求ID（可选，不提供则取消所有）
+   */
+  async cancelRequest(sessionId: string, requestId?: string): Promise<boolean> {
+    const runtime = this.runtime.get(sessionId)
+    if (!runtime) return false
+
+    if (!requestId) {
+      // 取消所有请求
+      return this.cancelGeneration(sessionId).then(() => true)
+    }
+
+    // 查找并取消特定请求
+    const index = runtime.requestQueue.findIndex((r) => r.id === requestId)
+    if (index !== -1) {
+      const request = runtime.requestQueue[index]!
+      request.abortController.abort()
+      request.reject(new Error('Request cancelled'))
+      runtime.requestQueue.splice(index, 1)
+      return true
+    }
+
+    // 检查是否是当前正在处理的请求
+    // 当前请求无法从队列中移除，只能等待其完成
+    return false
+  }
+
+  /**
+   * 获取会话的请求队列状态
+   */
+  getQueueStatus(sessionId: string): { queueLength: number; isProcessing: boolean } | undefined {
+    const runtime = this.runtime.get(sessionId)
+    if (!runtime) return undefined
+    return {
+      queueLength: runtime.requestQueue.length,
+      isProcessing: runtime.isProcessing,
     }
   }
 
@@ -311,7 +485,7 @@ export class SessionManager {
 
     // Normalize content blocks to string for the API response
     if (typeof result.content === 'string') {
-      return result
+      return { content: result.content, is_error: result.is_error }
     }
     if (Array.isArray(result.content)) {
       const text = result.content.map((c: any) => c.text ?? JSON.stringify(c)).join('\n')
@@ -323,9 +497,44 @@ export class SessionManager {
   private getOrCreateRuntime(sessionId: string): SessionRuntime {
     let runtime = this.runtime.get(sessionId)
     if (!runtime) {
-      runtime = {}
+      runtime = {
+        requestQueue: [],
+        isProcessing: false,
+      }
       this.runtime.set(sessionId, runtime)
     }
     return runtime
+  }
+
+  /**
+   * 处理会话的请求队列
+   */
+  private async _processQueue(sessionId: string): Promise<void> {
+    const runtime = this.runtime.get(sessionId)
+    if (!runtime) return
+
+    runtime.isProcessing = true
+
+    try {
+      while (runtime.requestQueue.length > 0) {
+        const request = runtime.requestQueue.shift()
+        if (!request) break
+
+        // 检查是否已取消
+        if (request.abortController.signal.aborted) {
+          request.reject(new Error('Request cancelled'))
+          continue
+        }
+
+        try {
+          await request.execute()
+          request.resolve()
+        } catch (error) {
+          request.reject(error instanceof Error ? error : new Error(String(error)))
+        }
+      }
+    } finally {
+      runtime.isProcessing = false
+    }
   }
 }

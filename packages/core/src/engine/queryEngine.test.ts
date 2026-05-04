@@ -250,4 +250,77 @@ describe('QueryEngine', () => {
     const textBlocks = result.message.content.filter((c: any) => c.type === 'text')
     expect(textBlocks.some((c: any) => c.text === 'permission handled')).toBe(true)
   })
+
+  it('uses environment variable for max concurrency', async () => {
+    const originalEnv = process.env.CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY
+    process.env.CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY = '3'
+
+    try {
+      let maxConcurrent = 0
+      let currentConcurrent = 0
+
+      const tools = Array.from({ length: 10 }, (_, i) => ({
+        name: `file_read_${i}`,
+        description: `Read file ${i}`,
+        input_schema: { type: 'object', properties: {} },
+        async execute() {
+          currentConcurrent++
+          maxConcurrent = Math.max(maxConcurrent, currentConcurrent)
+          await new Promise((resolve) => setTimeout(resolve, 20))
+          currentConcurrent--
+          return { content: `read_${i}` }
+        },
+      }))
+
+      let callCount = 0
+
+      const engine = new QueryEngine({
+        model: 'test-model',
+        client: {
+          async *streamQuery() {
+            if (callCount === 0) {
+              callCount += 1
+              for (let i = 0; i < 10; i++) {
+                yield {
+                  type: 'tool_use' as const,
+                  name: `file_read_${i}`,
+                  input: {},
+                  id: `read-${i}`,
+                }
+              }
+              return
+            }
+
+            yield {
+              type: 'text' as const,
+              text: 'done',
+            }
+            yield {
+              type: 'usage' as const,
+              inputTokens: 1,
+              outputTokens: 1,
+            }
+          },
+        },
+        tools,
+      })
+
+      await engine.query([{
+        id: 'user-1',
+        role: 'user',
+        content: [{ type: 'text', text: 'run all' }],
+        timestamp: 1,
+      }])
+
+      // Should respect the env var limit of 3
+      expect(maxConcurrent).toBeLessThanOrEqual(3)
+    } finally {
+      // Restore env
+      if (originalEnv !== undefined) {
+        process.env.CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY = originalEnv
+      } else {
+        delete process.env.CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY
+      }
+    }
+  })
 })
