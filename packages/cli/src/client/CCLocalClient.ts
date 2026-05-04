@@ -240,6 +240,44 @@ export class CCLocalClient {
     return await this.parseJson<ModelInfo[]>(response)
   }
 
+  /** Get token statistics for a session */
+  async getTokenStats(sessionId?: string): Promise<{ inputTokens: number; outputTokens: number; total: number; budget: number; remaining: number }> {
+    const id = sessionId || this.sessionId
+    if (!id) {
+      return { inputTokens: 0, outputTokens: 0, total: 0, budget: 200000, remaining: 200000 }
+    }
+
+    try {
+      const response = await this.request(`/api/v1/sessions/${encodeURIComponent(id)}/stats`)
+      return await this.parseJson<{ inputTokens: number; outputTokens: number; total: number; budget: number; remaining: number }>(response)
+    } catch {
+      // Fallback if endpoint doesn't exist
+      return { inputTokens: 0, outputTokens: 0, total: 0, budget: 200000, remaining: 200000 }
+    }
+  }
+
+  /** Get background tasks for a session */
+  async getTasks(sessionId?: string): Promise<Array<{ id: string; sessionId: string; type: string; status: string; progress: number; message?: string; error?: string }>> {
+    const id = sessionId || this.sessionId
+    if (!id) {
+      return []
+    }
+
+    try {
+      const response = await this.request(`/api/v1/sessions/${encodeURIComponent(id)}/tasks`)
+      return await this.parseJson<Array<{ id: string; sessionId: string; type: string; status: string; progress: number; message?: string; error?: string }>>(response)
+    } catch {
+      return []
+    }
+  }
+
+  /** Cancel a background task */
+  async cancelTask(taskId: string): Promise<void> {
+    await this.request(`/api/v1/tasks/${encodeURIComponent(taskId)}/cancel`, {
+      method: 'POST',
+    })
+  }
+
   onMessage(handler: (event: StreamEvent) => void): () => void {
     this.messageHandlers.push(handler)
     // Return unsubscribe function

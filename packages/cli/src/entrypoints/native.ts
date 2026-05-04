@@ -522,8 +522,13 @@ Examples:
 `)
 }
 
-// Run
-runNative().catch((error) => {
-  console.error('Fatal error:', error)
-  process.exit(1)
-})
+// Run - only when executed directly, not when imported
+if (import.meta.main) {
+  runNative().catch((error) => {
+    console.error('Fatal error:', error)
+    process.exit(1)
+  })
+}
+
+// Export for programmatic use
+export { runNative }
