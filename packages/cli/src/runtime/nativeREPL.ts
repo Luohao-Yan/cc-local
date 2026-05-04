@@ -73,6 +73,8 @@ export class NativeREPL {
   private config: NativeConfig
   private vimMode: boolean
   private debug: boolean
+  /** 退出回调 */
+  private exitResolve?: () => void
 
   constructor(props: NativeREPLProps) {
     this.adapter = props.adapter
@@ -116,6 +118,11 @@ export class NativeREPL {
     await this.showTokenBudgetIfNeeded()
 
     this.prompt()
+
+    // 保持运行直到退出
+    return new Promise((resolve) => {
+      this.exitResolve = resolve
+    })
   }
 
   /**
@@ -1025,7 +1032,7 @@ export class NativeREPL {
   exit(): void {
     console.log('\n👋 Goodbye!\n')
     this.cleanup()
-    process.exit(0)
+    this.exitResolve?.()
   }
 }
 
