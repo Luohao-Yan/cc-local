@@ -799,7 +799,7 @@ export async function main() {
   const hasPrintFlag = cliArgs.includes('-p') || cliArgs.includes('--print');
   const hasInitOnlyFlag = cliArgs.includes('--init-only');
   const hasSdkUrl = cliArgs.some(arg => arg.startsWith('--sdk-url'));
-  // When spawned via delegateToLegacyUi, TTY is false on Windows, so check for force interactive flag
+  // When spawned via delegateToInkUi, TTY is false on Windows, so check for force interactive flag
   const forceInteractive = process.env.CCLOCAL_FORCE_INTERACTIVE === '1';
   const isNonInteractive = hasPrintFlag || hasInitOnlyFlag || hasSdkUrl || (!process.stdout.isTTY && !forceInteractive);
 
@@ -856,7 +856,7 @@ export async function main() {
   profileCheckpoint('main_after_run');
 }
 async function getInputPrompt(prompt: string, inputFormat: 'text' | 'stream-json'): Promise<string | AsyncIterable<string>> {
-  // Skip stdin reading when running as a spawned child process (e.g., delegateToLegacyUi)
+  // Skip stdin reading when running as a spawned child process (e.g., delegateToInkUi)
   // On Windows, spawnSync may not properly inherit stdin, causing 3s timeout
   if (process.env.CCLOCAL_SKIP_STDIN === '1') {
     return prompt;
