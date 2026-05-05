@@ -96,7 +96,7 @@ export class NativeREPL {
   constructor(props: NativeREPLProps) {
     this.adapter = props.adapter
     this.vimMode = props.vimMode ?? false
-    this.debug = props.debug ?? false
+    this.debug = props.debug ?? true  // Default to true for troubleshooting
     this.config = {
       model: props.model,
       maxTurns: props.maxTurns,
@@ -512,88 +512,103 @@ export class NativeREPL {
       let codeBlockContent = ''
 
       // 流式处理响应
+      let eventCount = 0
       for await (const event of this.adapter.query(options)) {
+        eventCount++
+        if (this.debug) {
+          console.log(`[DEBUG] Event ${eventCount}:`, JSON.stringify(event).slice(0, 200))
+        }
+
         if (this.state.abortController?.signal.aborted) {
           break
         }
 
-        // 处理事件并渲染
+        // 处理事件并渲染 - LegacyQueryEvent 类型
         switch (event.type) {
-          case 'stream_delta':
-            if (event.delta?.type === 'text' && event.delta.text) {
-              const text = event.delta.text
+          case 'stream_event': {
+            // 从 stream_event 中提取内部事件
+            const innerEvent = (event as { event: Record<string, unknown> }).event
+            const eventType = innerEvent?.type as string
 
-              // 检测代码块
-              if (text.includes('```')) {
-                const parts = text.split('```')
-                for (let i = 0; i < parts.length; i++) {
-                  if (i % 2 === 0) {
-                    // 普通文本
-                    if (inCodeBlock) {
-                      codeBlockContent += parts[i]
+            if (eventType === 'content_block_delta') {
+              const delta = innerEvent?.delta as Record<string, unknown> | undefined
+              if (delta?.type === 'text_delta') {
+                const text = (delta as { text?: string }).text || ''
+                // 检测代码块
+                if (text.includes('```')) {
+                  const parts = text.split('```')
+                  for (let i = 0; i < parts.length; i++) {
+                    if (i % 2 === 0) {
+                      // 普通文本
+                      if (inCodeBlock) {
+                        codeBlockContent += parts[i] || ''
+                      } else {
+                        process.stdout.write(parts[i] || '')
+                      }
                     } else {
-                      process.stdout.write(parts[i])
-                    }
-                  } else {
-                    // 代码块标记
-                    if (!inCodeBlock) {
-                      inCodeBlock = true
-                      codeBlockLang = parts[i].trim().split('\n')[0] || ''
-                      codeBlockContent = ''
-                    } else {
-                      inCodeBlock = false
-                      // 渲染代码块
-                      console.log(renderCodeBlock(codeBlockContent, codeBlockLang))
-                      codeBlockContent = ''
-                      codeBlockLang = ''
+                      // 代码块标记
+                      if (!inCodeBlock) {
+                        inCodeBlock = true
+                        codeBlockLang = (parts[i] || '').trim().split('\n')[0] || ''
+                        codeBlockContent = ''
+                      } else {
+                        inCodeBlock = false
+                        // 渲染代码块
+                        console.log(renderCodeBlock(codeBlockContent, codeBlockLang))
+                        codeBlockContent = ''
+                        codeBlockLang = ''
+                      }
                     }
                   }
+                } else if (inCodeBlock) {
+                  codeBlockContent += text
+                } else {
+                  process.stdout.write(text)
                 }
-              } else if (inCodeBlock) {
-                codeBlockContent += text
-              } else {
-                process.stdout.write(text)
+              } else if (delta?.type === 'thinking_delta') {
+                // 思考内容（淡色显示）
+                const thinking = (delta as { thinking?: string }).thinking || ''
+                process.stdout.write(chalk.dim(thinking))
               }
+            } else if (eventType === 'content_block_start') {
+              const contentBlock = innerEvent?.content_block as Record<string, unknown> | undefined
+              if (contentBlock?.type === 'tool_use') {
+                console.log(renderToolUse(
+                  (contentBlock as { name?: string }).name || 'unknown',
+                  (contentBlock as { input?: unknown }).input
+                ))
+              }
+            } else if (eventType === 'error') {
+              const error = (innerEvent as { error?: string }).error
+              console.log(`\n   ❌ Error: ${error}`)
             }
             break
+          }
 
-          case 'stream_end':
-            // 确保结束代码块
+          case 'message': {
+            // 最终消息 - 确保结束代码块
             if (inCodeBlock && codeBlockContent) {
               console.log(renderCodeBlock(codeBlockContent, codeBlockLang))
+              inCodeBlock = false
             }
             console.log()
-
-            // 显示状态栏
-            console.log(renderStatusLine({
-              model: this.config.model,
-              mode: this.modeManager.getMode(),
-              tokenPercent: this.state.tokenStats?.percent,
-              costUsd: this.state.tokenStats?.costUsd,
-              cwd: this.state.cwd,
-            }))
             break
+          }
 
-          case 'tool_use':
-            if (event.name) {
-              console.log(renderToolUse(event.name, event.input))
-            }
+          case 'error': {
+            const errorMsg = (event as { error?: string }).error
+            console.log(`\n   ❌ Error: ${errorMsg}`)
             break
-
-          case 'tool_result':
-            if (event.result) {
-              console.log(renderToolResult(event.name, event.result))
-            }
-            break
-
-          case 'error':
-            console.log(`\n   ❌ Error: ${event.error}`)
-            break
+          }
         }
       }
 
       // 更新 Token 统计
       await this.updateTokenStats()
+
+      if (this.debug) {
+        console.log(`[DEBUG] Total events received: ${eventCount}`)
+      }
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {

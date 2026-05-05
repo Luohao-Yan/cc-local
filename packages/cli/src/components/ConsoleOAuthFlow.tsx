@@ -17,6 +17,7 @@ import { Select } from './CustomSelect/select.js';
 import { KeyboardShortcutHint } from './design-system/KeyboardShortcutHint.js';
 import { Spinner } from './Spinner.js';
 import TextInput from './TextInput.js';
+import { CustomProviderSetup } from './CustomProviderSetup.js';
 type Props = {
   onDone(): void;
   startingMessage?: string;
@@ -29,6 +30,9 @@ type OAuthStatus = {
 | {
   state: 'platform_setup';
 } // Show platform setup info (Bedrock/Vertex/Foundry)
+| {
+  state: 'custom_setup';
+} // Show custom provider setup (OpenAI-compatible APIs)
 | {
   state: 'ready_to_start';
 } // Flow started, waiting for browser to open
@@ -405,6 +409,9 @@ function OAuthStatusMessage(t0) {
           t6 = [t4, t5, {
             label: <Text>3rd-party platform ·{" "}<Text dimColor={true}>Amazon Bedrock, Microsoft Foundry, or Vertex AI</Text>{"\n"}</Text>,
             value: "platform"
+          }, {
+            label: <Text>Custom provider ·{" "}<Text dimColor={true}>Configure any API (OpenAI, Anthropic, DeepSeek, Ollama, etc.)</Text></Text>,
+            value: "custom"
           }];
           $[5] = t6;
         } else {
@@ -417,6 +424,11 @@ function OAuthStatusMessage(t0) {
                 logEvent("tengu_oauth_platform_selected", {});
                 setOAuthStatus({
                   state: "platform_setup"
+                });
+              } else if (value_0 === "custom") {
+                logEvent("tengu_oauth_custom_selected", {});
+                setOAuthStatus({
+                  state: "custom_setup"
                 });
               } else {
                 setOAuthStatus({
@@ -504,6 +516,17 @@ function OAuthStatusMessage(t0) {
           t8 = $[19];
         }
         return t8;
+      }
+    case "custom_setup":
+      {
+        return <CustomProviderSetup
+          onComplete={() => {
+            setOAuthStatus({ state: "success" });
+          }}
+          onCancel={() => {
+            setOAuthStatus({ state: "idle" });
+          }}
+        />;
       }
     case "waiting_for_login":
       {

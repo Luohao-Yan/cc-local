@@ -123,6 +123,7 @@
       "name": "@cclocal/cli",
       "version": "1.0.0",
       "dependencies": {
+        "@azure/identity": "^4.13.1",
         "@cclocal/core": "workspace:*",
         "@cclocal/shared": "workspace:*",
         "chalk": "^5.4.0",
