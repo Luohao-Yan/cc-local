@@ -18,12 +18,24 @@
 import * as readline from 'readline'
 import * as fs from 'fs/promises'
 import * as path from 'path'
-import { marked } from 'marked'
 import chalk from 'chalk'
 import { diffLines } from 'diff'
 import { NativeBridgeAdapter, type NativeQueryOptions } from '../bridge/nativeBridgeAdapter.js'
 import { handleSlashCommandSimple, type SlashCommandResult } from '../runtime/slashCommands.js'
 import { loadNativeConfig, saveNativeConfig, type NativeConfig } from '../runtime/configLoader.js'
+// Rich renderer modules for native REPL
+import {
+  renderMarkdown,
+  renderCodeBlock,
+  renderDiff,
+  renderStatusLine,
+  spinnerFrame,
+} from '../repl/native/renderer.js'
+import { renderToolUse, renderToolResult } from '../repl/native/toolRenderer.js'
+import { askPermissionEnhanced } from '../repl/native/permissionDialog.js'
+import { enableBracketedPaste, disableBracketedPaste } from '../repl/native/multilineInput.js'
+import { createCompleter } from '../repl/native/completer.js'
+import { createModeManager } from '../repl/native/modeManager.js'
 import {
   getNativeCommandCompletions,
   getModelCompletions,
@@ -75,6 +87,11 @@ export class NativeREPL {
   private debug: boolean
   /** 退出回调 */
   private exitResolve?: () => void
+  /** Spinner 动画 */
+  private spinnerTick = 0
+  private spinnerInterval?: ReturnType<typeof setInterval>
+  /** 模式管理器 */
+  private modeManager = createModeManager()
 
   constructor(props: NativeREPLProps) {
     this.adapter = props.adapter
@@ -103,6 +120,9 @@ export class NativeREPL {
    * 启动 REPL
    */
   async start(): Promise<void> {
+    // 启用括号粘贴模式，支持多行粘贴
+    enableBracketedPaste()
+
     console.log('\n🚀 CCLocal Native REPL')
     console.log('   Type /help for commands, Ctrl+C to exit\n')
 
@@ -461,6 +481,12 @@ export class NativeREPL {
     this.state.isProcessing = true
     this.state.abortController = new AbortController()
 
+    // 启动 spinner 动画
+    this.spinnerTick = 0
+    this.spinnerInterval = setInterval(() => {
+      process.stdout.write(`\r${spinnerFrame(this.spinnerTick++)} Processing...`)
+    }, 100)
+
     // 添加到历史
     this.addToHistory(content)
 
@@ -517,7 +543,7 @@ export class NativeREPL {
                     } else {
                       inCodeBlock = false
                       // 渲染代码块
-                      this.renderCodeBlock(codeBlockContent, codeBlockLang)
+                      console.log(renderCodeBlock(codeBlockContent, codeBlockLang))
                       codeBlockContent = ''
                       codeBlockLang = ''
                     }
@@ -534,23 +560,29 @@ export class NativeREPL {
           case 'stream_end':
             // 确保结束代码块
             if (inCodeBlock && codeBlockContent) {
-              this.renderCodeBlock(codeBlockContent, codeBlockLang)
+              console.log(renderCodeBlock(codeBlockContent, codeBlockLang))
             }
             console.log()
+
+            // 显示状态栏
+            console.log(renderStatusLine({
+              model: this.config.model,
+              mode: this.modeManager.getMode(),
+              tokenPercent: this.state.tokenStats?.percent,
+              costUsd: this.state.tokenStats?.costUsd,
+              cwd: this.state.cwd,
+            }))
             break
 
           case 'tool_use':
             if (event.name) {
-              console.log(`\n   🔧 Tool: ${event.name}`)
+              console.log(renderToolUse(event.name, event.input))
             }
             break
 
           case 'tool_result':
-            if (event.result?.content) {
-              const preview = typeof event.result.content === 'string'
-                ? event.result.content.slice(0, 100)
-                : JSON.stringify(event.result.content).slice(0, 100)
-              console.log(`   📎 Result: ${preview}${preview.length >= 100 ? '...' : ''}`)
+            if (event.result) {
+              console.log(renderToolResult(event.name, event.result))
             }
             break
 
@@ -570,6 +602,12 @@ export class NativeREPL {
         console.log(`\n   ❌ Error: ${error instanceof Error ? error.message : String(error)}`)
       }
     } finally {
+      // 停止 spinner 动画
+      if (this.spinnerInterval) {
+        clearInterval(this.spinnerInterval)
+        this.spinnerInterval = undefined
+      }
+
       this.state.isProcessing = false
       this.state.abortController = undefined
       this.prompt()
@@ -618,7 +656,7 @@ export class NativeREPL {
 
           case 'code':
             const code = token as { lang?: string; text: string }
-            this.renderCodeBlock(code.text, code.lang)
+            console.log(renderCodeBlock(code.text, code.lang))
             break
 
           case 'list':
@@ -827,11 +865,11 @@ export class NativeREPL {
         const content1 = await fs.readFile(filePath1, 'utf-8')
         const content2 = await fs.readFile(filePath2, 'utf-8')
 
-        this.renderTerminalDiff(content1, content2, `${file1} vs ${file2}`)
+        console.log(renderDiff(content1, content2, `${file1} vs ${file2}`))
       } else {
         // 显示单个文件的差异（与 git HEAD 或空比较）
         const content = await fs.readFile(filePath1, 'utf-8')
-        this.renderTerminalDiff('', content, file1)
+        console.log(renderDiff('', content, file1))
       }
     } catch (error) {
       console.log(`Failed to show diff: ${error instanceof Error ? error.message : String(error)}`)
@@ -921,7 +959,7 @@ export class NativeREPL {
   }
 
   /**
-   * 处理权限请求
+   * 处理权限请求 - 使用增强的权限对话框
    */
   async handlePermissionRequest(
     tool: string,
@@ -936,40 +974,25 @@ export class NativeREPL {
       return false
     }
 
-    // 交互式权限确认
-    return new Promise((resolve) => {
-      console.log(`\n⚠️  Permission Required`)
-      console.log(`   Tool: ${chalk.yellow(tool)}`)
+    // 使用增强的权限对话框
+    const result = await askPermissionEnhanced(
+      this.rl!,
+      tool,
+      input,
+      reason
+    )
 
-      if (reason) {
-        console.log(`   Reason: ${reason}`)
-      }
+    // 处理 "allow all" 和 "deny all" 模式
+    if (result === 'allow-all') {
+      this.state.permissionMode = 'allow-all'
+      return true
+    }
+    if (result === 'deny-all') {
+      this.state.permissionMode = 'deny-all'
+      return false
+    }
 
-      if (typeof input === 'object' && input !== null) {
-        const preview = JSON.stringify(input, null, 2).slice(0, 200)
-        console.log(`   Input: ${preview}${preview.length >= 200 ? '...' : ''}`)
-      }
-
-      this.rl!.question('\n   Allow? [y/N/a(all)/d(deny all)]: ', (answer) => {
-        const lower = answer.toLowerCase().trim()
-
-        if (lower === 'a' || lower === 'all') {
-          this.state.permissionMode = 'allow-all'
-          console.log('   ✅ All future permissions auto-allowed\n')
-          resolve(true)
-        } else if (lower === 'd' || lower === 'deny') {
-          this.state.permissionMode = 'deny-all'
-          console.log('   ❌ All future permissions auto-denied\n')
-          resolve(false)
-        } else if (lower === 'y' || lower === 'yes') {
-          console.log('   ✅ Allowed\n')
-          resolve(true)
-        } else {
-          console.log('   ❌ Denied\n')
-          resolve(false)
-        }
-      })
-    })
+    return result === 'allow'
   }
 
   /**
@@ -1020,6 +1043,9 @@ export class NativeREPL {
    * 清理资源
    */
   private cleanup(): void {
+    // 禁用括号粘贴模式
+    disableBracketedPaste()
+
     if (this.rl) {
       this.rl.close()
       this.rl = null
