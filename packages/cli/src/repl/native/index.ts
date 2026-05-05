@@ -28,3 +28,6 @@ export * from './messages/index.js'
 
 // Input system (Phase 3)
 export * from './input/index.js'
+
+// Dialog system (Phase 4)
+export * from './dialog/index.js'
