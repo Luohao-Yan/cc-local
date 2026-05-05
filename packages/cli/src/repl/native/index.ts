@@ -31,3 +31,9 @@ export * from './input/index.js'
 
 // Dialog system (Phase 4)
 export * from './dialog/index.js'
+
+// Keybind system (Phase 5)
+export * from './keybind/index.js'
+
+// Notification system (Phase 5)
+export * from './notifications/index.js'
