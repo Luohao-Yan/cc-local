@@ -16,6 +16,10 @@
 import { getModelConfig, resolveEnvReference } from './modelConfig.js'
 import { detectAliasConflicts } from './modelConfigValidator.js'
 import { logForDebugging } from '../debug.js'
+import type { APIFormat, APIProvider } from './providers.js'
+import { detectProviderFromUrl, getDefaultAPIFormat } from './providers.js'
+import type { ModelCapabilities } from './modelConfig.js'
+import { setActiveModel } from './activeModelContext.js'
 
 // ===== 类型定义 =====
 
@@ -45,6 +49,12 @@ export interface ResolvedModel {
   aliases: string[]
   /** 自定义请求头 */
   headers?: Record<string, string>
+  /** API format: 'anthropic' or 'openai' */
+  apiFormat: APIFormat
+  /** Effective provider type for capability gates */
+  providerType: APIProvider
+  /** Per-model capability overrides */
+  capabilities?: ModelCapabilities
 }
 
 // ===== 内部状态 =====
@@ -122,6 +132,12 @@ export function getConfiguredModels(): ResolvedModel[] {
     const baseUrl = provider.baseUrl
 
     for (const [modelKey, model] of Object.entries(provider.models)) {
+      // Resolve API format: per-model override > per-provider > auto-detect from baseUrl
+      const detectedProvider = provider.providerType
+        ? (provider.providerType as APIProvider)
+        : detectProviderFromUrl(baseUrl)
+      const apiFormat: APIFormat = model.apiFormat ?? provider.apiFormat ?? getDefaultAPIFormat(detectedProvider)
+
       models.push({
         providerKey,
         providerName: provider.name,
@@ -131,6 +147,9 @@ export function getConfiguredModels(): ResolvedModel[] {
         apiKey: resolvedApiKey,
         aliases: Array.isArray(model.alias) ? model.alias : [],
         headers: provider.headers,
+        apiFormat,
+        providerType: detectedProvider,
+        capabilities: model.capabilities,
       })
     }
   }
@@ -208,13 +227,7 @@ export function resolveMultiModelConfig(modelInput: string): string | null {
  * @param resolved - 已解析的模型信息
  */
 export function activateModel(resolved: ResolvedModel): void {
-  process.env.ANTHROPIC_BASE_URL = resolved.baseUrl
-
-  if (resolved.apiKey !== null) {
-    process.env.ANTHROPIC_API_KEY = resolved.apiKey
-  } else {
-    process.env.ANTHROPIC_API_KEY = 'local-no-key'
-  }
+  setActiveModel(resolved)
 }
 
 /**

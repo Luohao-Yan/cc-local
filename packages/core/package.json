@@ -16,6 +16,7 @@
     "axios": "^1.7.0",
     "glob": "^13.0.6",
     "lodash-es": "^4.17.21",
+    "openai": "^6.36.0",
     "zod": "^3.25.0"
   },
   "devDependencies": {

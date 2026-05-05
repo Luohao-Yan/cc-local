@@ -1,5 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import type { BetaToolUnion } from '@anthropic-ai/sdk/resources/beta/messages.js'
+import type OpenAI from 'openai'
 import {
   getLastApiCompletionTimestamp,
   setLastApiCompletionTimestamp,
@@ -17,6 +18,9 @@ import { getAnthropicClient } from '../services/api/client.js'
 import { getModelBetas, modelSupportsStructuredOutputs } from './betas.js'
 import { computeFingerprint } from './fingerprint.js'
 import { normalizeModelStringForAPI } from './model/model.js'
+import { getActiveAPIFormat, getActiveResolvedModel } from './model/activeModelContext.js'
+import { convertAnthropicToOpenAI, convertOpenAIToAnthropic } from './model/formatConverter.js'
+import { createOpenAIChatCompletion } from '../services/api/openaiClient.js'
 
 type MessageParam = Anthropic.MessageParam
 type TextBlockParam = Anthropic.TextBlockParam
@@ -178,6 +182,35 @@ export async function sideQuery(opts: SideQueryOptions): Promise<BetaMessage> {
 
   const normalizedModel = normalizeModelStringForAPI(model)
   const start = Date.now()
+
+  // Format-aware routing: use OpenAI-compatible client when active format is 'openai'
+  const activeFormat = getActiveAPIFormat()
+  if (activeFormat === 'openai') {
+    const activeResolved = getActiveResolvedModel()
+    const anthropicParams = {
+      model: normalizedModel,
+      max_tokens,
+      system: systemBlocks,
+      messages,
+      ...(tools && { tools }),
+      ...(tool_choice && { tool_choice }),
+      ...(output_format && { output_config: { format: output_format } }),
+      ...(temperature !== undefined && { temperature }),
+      ...(stop_sequences && { stop_sequences }),
+      ...(thinkingConfig && { thinking: thinkingConfig }),
+      metadata: getAPIMetadata(),
+    }
+    const openAIParams = convertAnthropicToOpenAI(anthropicParams) as OpenAI.ChatCompletionCreateParamsNonStreaming
+    const openAIResponse = await createOpenAIChatCompletion(openAIParams, {
+      baseUrl: activeResolved?.baseUrl ?? '',
+      apiKey: activeResolved?.apiKey ?? null,
+      headers: activeResolved?.headers,
+      maxRetries,
+      timeout: 600_000,
+    }, signal)
+    return convertOpenAIToAnthropic(openAIResponse as any, normalizedModel) as any
+  }
+
   // biome-ignore lint/plugin: this IS the wrapper that handles OAuth attribution
   const response = await client.beta.messages.create(
     {

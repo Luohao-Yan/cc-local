@@ -20,10 +20,15 @@ import type {
 import type { TextBlockParam } from '@anthropic-ai/sdk/resources/index.mjs'
 import type { Stream } from '@anthropic-ai/sdk/streaming.mjs'
 import { randomUUID } from 'crypto'
+import type OpenAI from 'openai'
 import {
   getAPIProvider,
   isFirstPartyAnthropicBaseUrl,
 } from '../../utils/model/providers.js'
+import { getActiveAPIFormat, getActiveResolvedModel } from '../../utils/model/activeModelContext.js'
+import { convertAnthropicToOpenAI } from '../../utils/model/formatConverter.js'
+import { createOpenAIChatCompletionStream, isOpenAIThinkingEnabled } from './openaiClient.js'
+import { adaptOpenAIStreamToAnthropic } from './openaiStreamAdapter.js'
 import {
   getAttributionHeader,
   getCLISyspromptPrefix,
@@ -1814,6 +1819,33 @@ async function* queryModel(
           getAPIProvider() === 'firstParty' && isFirstPartyAnthropicBaseUrl()
             ? randomUUID()
             : undefined
+
+        // === Format-aware routing ===
+        // When the active model uses OpenAI-compatible API format, bypass the
+        // Anthropic SDK entirely and use the OpenAI SDK client + stream adapter.
+        const activeFormat = getActiveAPIFormat()
+        if (activeFormat === 'openai') {
+          const activeResolved = getActiveResolvedModel()
+          const openAIParams = convertAnthropicToOpenAI(params) as OpenAI.ChatCompletionCreateParamsStreaming
+
+          const streamGen = createOpenAIChatCompletionStream(openAIParams, {
+            baseUrl: activeResolved?.baseUrl ?? '',
+            apiKey: activeResolved?.apiKey ?? null,
+            headers: activeResolved?.headers,
+            maxRetries: 0,
+            timeout: 600_000,
+          }, signal)
+
+          // Adapt and return — the downstream pipeline expects
+          // AsyncIterable<BetaRawMessageStreamEvent>
+          const adaptedStream = adaptOpenAIStreamToAnthropic(streamGen, params.model)
+          // Wrap into an array iterator since the downstream code expects a specific Stream type
+          // The yield* pattern in the retry loop will handle consumption
+          return (async function* () {
+            yield* adaptedStream
+          })() as any
+        }
+        // === End format-aware routing ===
 
         // Use raw stream instead of BetaMessageStream to avoid O(n²) partial JSON parsing
         // BetaMessageStream calls partialParse() on every input_json_delta, which we don't need

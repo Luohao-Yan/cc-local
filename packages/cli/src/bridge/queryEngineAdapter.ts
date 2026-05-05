@@ -17,17 +17,13 @@ import type { Message, StreamEvent, Tool } from '@cclocal/shared'
 import { QueryEngine, type QueryEngineOptions, type QueryResult } from '@cclocal/core'
 import { getSessionStore } from '@cclocal/core'
 import { ALL_TOOL_ADAPTERS } from './toolAdapters.js'
+import { EventQueue } from './eventQueue.js'
+import { toLegacyStreamEvent, type LegacyQueryEvent } from './streamTranslator.js'
+import { buildSystemPrompt } from './systemPromptBuilder.js'
 import type { CanUseToolFn } from '../hooks/useCanUseTool.js'
 import type { ToolUseContext, Tool as ToolType } from '../Tool.js'
 import type { SystemPrompt } from '../utils/systemPromptType.js'
-
-// Legacy event types that REPL.tsx's handleMessageFromStream expects
-export type LegacyQueryEvent =
-  | { type: 'stream_request_start' }
-  | { type: 'stream_event'; event: Record<string, unknown> }
-  | { type: 'message'; message: Message }
-  | { type: 'tombstone'; message: Message }
-  | { type: 'tool_use_summary'; message: Message }
+import { getProxyFetchOptions } from '../utils/proxy.js'
 
 /**
  * Params compatible with REPL.tsx's query() call signature.
@@ -54,45 +50,6 @@ export interface BridgeQueryParams {
   apiFormat?: 'anthropic' | 'openai'
   /** Custom headers per provider */
   headers?: Record<string, string>
-}
-
-/**
- * Async push queue — bridges callback-based onStream to generator yield.
- */
-class EventQueue<T> {
-  private queue: T[] = []
-  private waiting: ((value: IteratorResult<T>) => void)[] = []
-  private done = false
-
-  push(item: T): void {
-    if (this.done) return
-    if (this.waiting.length > 0) {
-      const resolve = this.waiting.shift()!
-      resolve({ value: item, done: false })
-    } else {
-      this.queue.push(item)
-    }
-  }
-
-  close(): void {
-    this.done = true
-    for (const resolve of this.waiting) {
-      resolve({ value: undefined, done: true } as IteratorResult<T>)
-    }
-    this.waiting.length = 0
-  }
-
-  async next(): Promise<IteratorResult<T>> {
-    if (this.queue.length > 0) {
-      return { value: this.queue.shift()!, done: false }
-    }
-    if (this.done) {
-      return { value: undefined, done: true } as IteratorResult<T>
-    }
-    return new Promise<IteratorResult<T>>((resolve) => {
-      this.waiting.push(resolve)
-    })
-  }
 }
 
 /**
@@ -132,18 +89,14 @@ export async function* createQueryEngineAdapter(
     baseUrl: params.baseUrl,
     onPermissionCheck: params.canUseTool
       ? async (toolName: string, input: unknown, reason?: string) => {
-          // Bridge to the Ink UI's canUseTool permission flow.
-          // The canUseTool function handles UI dialog + user decision.
           try {
             const result = await params.canUseTool!(
-              // Create a minimal Tool object for the permission check
               { name: toolName } as ToolType,
               input as Record<string, unknown>,
               params.toolUseContext ?? ({} as ToolUseContext),
-              {} as any, // assistantMessage — not needed for permission check
-              `bridge_${Date.now()}`, // toolUseID
+              {} as any,
+              `bridge_${Date.now()}`,
             )
-            // canUseTool returns a PermissionDecision; extract allowed boolean
             return result.behavior === 'allow'
           } catch {
             return false
@@ -152,6 +105,9 @@ export async function* createQueryEngineAdapter(
       : undefined,
     apiFormat: params.apiFormat,
     headers: params.headers,
+    // Inject proxy/mTLS/TLS config from CLI layer so the OpenAI SDK
+    // can route through corporate proxies and respect NO_PROXY.
+    fetchOptions: getProxyFetchOptions({ forAnthropicAPI: false }) as Record<string, unknown>,
   }
 
   const eventQueue = new EventQueue<LegacyQueryEvent>()
@@ -164,9 +120,9 @@ export async function* createQueryEngineAdapter(
   // Start the query in the background; push stream events into the queue
   const queryPromise = engine.query(messages, {
     onStream: (event: StreamEvent) => {
-      const legacyEvent = translateStreamEvent(event)
+      const legacyEvent = toLegacyStreamEvent(event)
       if (legacyEvent) {
-        eventQueue.push({ type: 'stream_event', event: legacyEvent })
+        eventQueue.push(legacyEvent)
       }
       // Also forward raw events to the caller's onStream if provided
       params.onStream?.(event)
@@ -214,108 +170,6 @@ export async function* createQueryEngineAdapter(
     if (result.done) break
     yield result.value
   }
-}
-
-/**
- * Translate new StreamEvent types into legacy-compatible events
- * for the Ink UI rendering pipeline.
- *
- * The Ink UI's handleMessageFromStream expects:
- * - message_start / message_stop — lifecycle markers
- * - content_block_start — with content_block.type = 'tool_use' | 'text' | 'thinking'
- * - content_block_delta — with delta.type = 'text_delta' | 'thinking_delta' | 'input_json_delta'
- * - message_delta — usage info at end of message
- *
- * These map directly to the Anthropic SSE streaming spec.
- * StreamEvent from @cclocal/shared only has: stream_start, stream_delta, stream_end, error, tool_call.
- * We translate those into the richer protocol the Ink UI expects.
- */
-function translateStreamEvent(event: StreamEvent): Record<string, unknown> | null {
-  switch (event.type) {
-    case 'stream_start':
-      return { type: 'message_start' }
-
-    case 'stream_delta':
-      if (event.delta?.type === 'text') {
-        return {
-          type: 'content_block_delta',
-          delta: { type: 'text_delta', text: event.delta.text },
-        }
-      }
-      if (event.delta?.type === 'thinking') {
-        return {
-          type: 'content_block_delta',
-          delta: { type: 'thinking_delta', thinking: event.delta.thinking },
-        }
-      }
-      if (event.delta?.type === 'tool_result') {
-        // Tool results come back as user content blocks.
-        // The Ink UI handles these via the tool_use lifecycle
-        // (content_block_start → input_json_delta → content_block_stop).
-        return {
-          type: 'content_block_delta',
-          delta: {
-            type: 'input_json_delta',
-            partial_json: JSON.stringify({
-              type: 'tool_result',
-              tool_use_id: (event.delta as { tool_use_id?: string }).tool_use_id,
-              content: (event.delta as { content?: string }).content,
-              is_error: (event.delta as { is_error?: boolean }).is_error,
-            }),
-          },
-        }
-      }
-      return null
-
-    case 'tool_call':
-      return {
-        type: 'content_block_start',
-        index: 0,
-        content_block: {
-          type: 'tool_use',
-          id: event.messageId ?? `toolu_${Date.now()}`,
-          name: event.toolCall?.name ?? 'unknown',
-          input: {},
-        },
-      }
-
-    case 'stream_end':
-      return { type: 'message_stop' }
-
-    case 'error':
-      return { type: 'error', error: event.error }
-
-    default:
-      return null
-  }
-}
-
-function buildSystemPrompt(params: BridgeQueryParams): string {
-  const parts: string[] = []
-
-  // SystemPrompt may be a string or a structured object
-  const sp = params.systemPrompt
-  if (typeof sp === 'string' && sp) {
-    parts.push(sp)
-  } else if (sp && typeof sp === 'object' && 'prompt' in sp) {
-    parts.push((sp as { prompt: string }).prompt)
-  }
-
-  if (params.userContext && Object.keys(params.userContext).length > 0) {
-    const contextEntries = Object.entries(params.userContext)
-      .map(([k, v]) => `${k}: ${v}`)
-      .join('\n')
-    parts.push(`User context:\n${contextEntries}`)
-  }
-
-  if (params.systemContext && Object.keys(params.systemContext).length > 0) {
-    const sysEntries = Object.entries(params.systemContext)
-      .map(([k, v]) => `${k}: ${v}`)
-      .join('\n')
-    parts.push(`System context:\n${sysEntries}`)
-  }
-
-  return parts.join('\n\n')
 }
 
 /**

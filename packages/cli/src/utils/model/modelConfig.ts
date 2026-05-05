@@ -23,8 +23,22 @@ export interface ModelEntry {
   name: string
   /** 可选别名数组 */
   alias?: string[]
+  /** Per-model API format override (rare: needed when one provider hosts both formats) */
+  apiFormat?: 'anthropic' | 'openai'
+  /** Per-model capability overrides */
+  capabilities?: ModelCapabilities
   /** 允许未知额外字段，确保前向兼容 */
   [key: string]: unknown
+}
+
+/** Per-model capability flags for third-party models */
+export interface ModelCapabilities {
+  thinking?: boolean
+  structuredOutputs?: boolean
+  interleavedThinking?: boolean
+  effort?: boolean
+  contextWindow?: number
+  maxOutputTokens?: number
 }
 
 /** 单个 Provider 配置 */
@@ -37,6 +51,12 @@ export interface ProviderEntry {
   apiKey?: string
   /** 可选自定义请求头 */
   headers?: Record<string, string>
+  /** API format: 'anthropic' (Messages API) or 'openai' (Chat Completions API). Default: 'anthropic' */
+  apiFormat?: 'anthropic' | 'openai'
+  /** Provider type override for capability gates. Default: auto-detected from baseUrl */
+  providerType?: string
+  /** Maximum output tokens for models under this provider (override) */
+  maxOutputTokens?: number
   /** 该 Provider 下的模型列表，key 为模型 ID */
   models: Record<string, ModelEntry>
   /** 允许未知额外字段，确保前向兼容 */

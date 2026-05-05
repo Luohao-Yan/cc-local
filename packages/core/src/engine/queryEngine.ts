@@ -13,7 +13,7 @@ import type {
   ToolResult,
   StreamEvent,
 } from '@cclocal/shared'
-import { AnthropicClient } from './anthropicClient.js'
+import { AnthropicClient, OpenAICompatibleClient } from './anthropicClient.js'
 import { toolRegistry } from '../tools/registry.js'
 import {
   decideToolPermission,
@@ -105,6 +105,14 @@ export interface QueryEngineOptions {
   permissionPolicy?: PermissionPolicy
   /** Called when a tool needs user approval (default permission mode). Return true to allow, false to deny. */
   onPermissionCheck?: (toolName: string, input: unknown, reason?: string) => Promise<boolean>
+  /** API format: 'anthropic' uses the Anthropic Messages API, 'openai' uses Chat Completions API */
+  apiFormat?: 'anthropic' | 'openai'
+  /** Custom headers to send with each request */
+  headers?: Record<string, string>
+  /** Proxy/TLS fetch options injected from CLI layer (getProxyFetchOptions) */
+  fetchOptions?: Record<string, unknown>
+  /** Custom fetch function (e.g., for usage tracking wrappers) */
+  fetch?: typeof fetch
 }
 
 type QueryClient = Pick<AnthropicClient, 'streamQuery'>
@@ -125,11 +133,22 @@ export class QueryEngine {
 
   constructor(options: QueryEngineOptions) {
     this.options = options
-    this.client = options.client ?? new AnthropicClient({
-      apiKey: options.apiKey,
-      baseUrl: options.baseUrl,
-      model: options.model,
-    })
+    if (options.apiFormat === 'openai') {
+      this.client = new OpenAICompatibleClient({
+        baseUrl: options.baseUrl ?? '',
+        apiKey: options.apiKey,
+        headers: options.headers,
+        model: options.model,
+        fetchOptions: options.fetchOptions as any,
+        fetch: options.fetch,
+      }) as unknown as QueryClient
+    } else {
+      this.client = options.client ?? new AnthropicClient({
+        apiKey: options.apiKey,
+        baseUrl: options.baseUrl,
+        model: options.model,
+      })
+    }
   }
 
   async query(
@@ -434,10 +453,10 @@ export class QueryEngine {
    */
   private async executeToolCall(
     toolCall: { name: string; input: unknown; id: string },
-    opts: QueryOptions,
+    opts: QueryEngineOptions,
     messageId: string
   ): Promise<{ toolCall: { name: string; input: unknown; id: string }; result: ToolResult }> {
-    const tool = opts.tools?.find((t) => t.name === toolCall.name)
+    const tool = opts.tools?.find((t: Tool) => t.name === toolCall.name)
     if (!tool) {
       return {
         toolCall,

@@ -5,6 +5,7 @@
 export * from './state/sessionState.js'
 export * from './engine/queryEngine.js'
 export * from './engine/anthropicClient.js'
+export * from './engine/thinkingUtils.js'
 export * from './tools/registry.js'
 export * from './db/index.js'
 export * from './mcp/index.js'

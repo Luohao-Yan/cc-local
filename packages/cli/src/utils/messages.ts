@@ -687,6 +687,9 @@ export function extractTag(html: string, tagName: string): string | null {
 }
 
 export function isNotEmptyMessage(message: Message): boolean {
+  // Defensive check - filter out undefined/null values
+  if (!message) return false
+
   if (
     message.type === 'progress' ||
     message.type === 'attachment' ||
@@ -818,6 +821,9 @@ export function normalizeMessages(messages: Message[]): NormalizedMessage[] {
           } as NormalizedMessage
         })
       }
+      default:
+        // Unknown message type - return empty array to filter out
+        return []
     }
   })
 }

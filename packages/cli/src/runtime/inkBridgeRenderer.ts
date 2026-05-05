@@ -48,38 +48,14 @@ export interface InkBridgeOptions {
 /**
  * Initialize MCP servers from config for Bridge mode.
  * The core MCPManager will be used by QueryEngine for tool calls.
+ *
+ * NOTE: We don't call getAllMcpConfigs() here because config reading
+ * isn't allowed yet at this point. MCP initialization will happen
+ * inside REPL.tsx's own startup flow via useMcp hooks.
  */
 async function initializeMcpServers(): Promise<void> {
-  try {
-    const coreModule = await import('@cclocal/core')
-    const { getAllMcpConfigs } = await import('../services/mcp/config.js')
-
-    const mcpManager = (coreModule as any).getMCPManager?.() ?? (coreModule as any).MCPManager?.getInstance?.()
-    const { servers } = await getAllMcpConfigs()
-
-    // Register servers with the core MCPManager
-    for (const [name, config] of Object.entries(servers)) {
-      try {
-        mcpManager.registerServer(name, config)
-      } catch {
-        // Server might already be registered
-      }
-    }
-
-    // Connect all registered servers
-    for (const server of mcpManager.listServers()) {
-      if (server.status === 'registered' || server.status === 'disconnected') {
-        try {
-          await mcpManager.connectServer(server.name)
-        } catch {
-          // Connection failures are recorded in server record
-        }
-      }
-    }
-  } catch (error) {
-    // MCP initialization failure shouldn't block the REPL
-    console.error('MCP initialization failed:', error)
-  }
+  // MCP is handled by REPL.tsx's own useMcp / useInitialMcpClients hooks.
+  // No-op here to avoid accessing config before it's ready.
 }
 
 // ── Entrypoint resolution ──────────────────────────────────────────────
@@ -100,19 +76,19 @@ function findRepoRoot(): string {
 }
 
 function resolveInkEntrypoint(repoRoot = findRepoRoot()): string {
-  // Prefer compiled dist (faster startup)
-  const distEntry = join(repoRoot, 'dist', 'legacy-cli.js')
-  if (existsSync(distEntry)) {
-    return distEntry
-  }
-
-  // Monorepo source
+  // Always use monorepo source (has CCLOCAL_USE_QUERY_ENGINE support)
   const srcEntry = join(repoRoot, 'packages', 'cli', 'src', 'entrypoints', 'cli.tsx')
   if (existsSync(srcEntry)) {
     return srcEntry
   }
 
-  // Fallback: relative to this file
+  // Fallback to compiled dist
+  const distEntry = join(repoRoot, 'dist', 'legacy-cli.js')
+  if (existsSync(distEntry)) {
+    return distEntry
+  }
+
+  // Last resort: relative to this file
   return join(dirname(fileURLToPath(import.meta.url)), '..', 'entrypoints', 'cli.tsx')
 }
 
@@ -144,18 +120,9 @@ function stripBridgeArgs(args: string[]): string[] {
  * So we just need to flip the switch.
  */
 export async function renderInkBridgeRepl(options: InkBridgeOptions = {}): Promise<void> {
-  // ── 1. Initialize MCP servers ──────────────────────────────────────
-  await initializeMcpServers()
-
-  // ── 2. Set environment flags ───────────────────────────────────────
+  // ── 1. Set environment flags ───────────────────────────────────────
   // Activate QueryEngine path in REPL.tsx
   process.env.CCLOCAL_USE_QUERY_ENGINE = '1'
-
-  // Force interactive mode
-  process.env.CCLOCAL_FORCE_INTERACTIVE = '1'
-
-  // Prevent cli.tsx from auto-executing main() at import time
-  process.env.CCLOCAL_IMPORTED = '1'
 
   // Pass through API configuration via env
   if (options.apiKey) {
@@ -165,7 +132,7 @@ export async function renderInkBridgeRepl(options: InkBridgeOptions = {}): Promi
     process.env.ANTHROPIC_BASE_URL = options.baseUrl
   }
 
-  // ── 3. Build argv for Ink UI ──────────────────────────────────────
+  // ── 2. Build argv for Ink UI ──────────────────────────────────────
   const entrypoint = resolveInkEntrypoint()
   const inkArgs: string[] = []
 
@@ -182,16 +149,21 @@ export async function renderInkBridgeRepl(options: InkBridgeOptions = {}): Promi
     inkArgs.push(...stripBridgeArgs(options.extraArgs))
   }
 
-  // Update process.argv so Ink UI entrypoint sees correct args
+  // Update process.argv so cli.tsx entrypoint sees correct args
+  // cli.tsx auto-executes main() on import, so we just need argv right
   process.argv = [process.argv[0]!, entrypoint, ...inkArgs]
 
-  // ── 4. Import and run the Ink UI entrypoint ───────────────────────
-  const entryModule = await import(entrypoint)
-
-  // cli.tsx exports a `main` function when CCLOCAL_IMPORTED=1
-  if (typeof entryModule.main === 'function') {
-    await entryModule.main()
+  // ── 3. Import cli.tsx — it auto-runs main() ───────────────────────
+  // The import triggers cli.tsx's top-level `void main()` call,
+  // which parses process.argv, detects CCLOCAL_USE_QUERY_ENGINE=1,
+  // and routes to REPL.tsx with createQueryEngineAdapter.
+  // Log the routing for debugging
+  if (process.env.CCLOCAL_DEBUG === '1') {
+    console.error(`[ink-bridge] entrypoint=${entrypoint}`)
+    console.error(`[ink-bridge] argv=${process.argv.join(' ')}`)
+    console.error(`[ink-bridge] CCLOCAL_USE_QUERY_ENGINE=${process.env.CCLOCAL_USE_QUERY_ENGINE}`)
   }
+  await import(entrypoint)
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────

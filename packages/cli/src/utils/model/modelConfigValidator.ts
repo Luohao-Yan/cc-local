@@ -126,6 +126,48 @@ export function validateModelConfig(config: unknown): ValidationError[] {
         severity: 'error',
       })
     }
+
+    // 校验可选字段 apiFormat
+    if ('apiFormat' in provider && provider.apiFormat !== undefined) {
+      if (provider.apiFormat !== 'anthropic' && provider.apiFormat !== 'openai') {
+        errors.push({
+          path: `${providerPath}.apiFormat`,
+          message: `Provider "${providerKey}" 的 apiFormat 必须是 "anthropic" 或 "openai"`,
+          severity: 'warning',
+        })
+      }
+    }
+
+    // 校验 models 下每个模型的 apiFormat 和 capabilities
+    if ('models' in provider && typeof provider.models === 'object' && provider.models !== null && !Array.isArray(provider.models)) {
+      const models = provider.models as Record<string, unknown>
+      for (const [modelKey, modelValue] of Object.entries(models)) {
+        if (typeof modelValue === 'object' && modelValue !== null && !Array.isArray(modelValue)) {
+          const model = modelValue as Record<string, unknown>
+          const modelPath = `${providerPath}.models.${modelKey}`
+
+          if ('apiFormat' in model && model.apiFormat !== undefined) {
+            if (model.apiFormat !== 'anthropic' && model.apiFormat !== 'openai') {
+              errors.push({
+                path: `${modelPath}.apiFormat`,
+                message: `Model "${modelKey}" 的 apiFormat 必须是 "anthropic" 或 "openai"`,
+                severity: 'warning',
+              })
+            }
+          }
+
+          if ('capabilities' in model && model.capabilities !== undefined) {
+            if (typeof model.capabilities !== 'object' || model.capabilities === null || Array.isArray(model.capabilities)) {
+              errors.push({
+                path: `${modelPath}.capabilities`,
+                message: `Model "${modelKey}" 的 capabilities 必须是一个对象`,
+                severity: 'warning',
+              })
+            }
+          }
+        }
+      }
+    }
   }
 
   return errors

@@ -28,7 +28,7 @@ import { LIGHTNING_BOLT } from '../../constants/figures.js'
 import { isModelAllowed } from './modelAllowlist.js'
 import { type ModelAlias, isModelAlias } from './aliases.js'
 import { capitalize } from '../stringUtils.js'
-import { resolveMultiModelConfig } from './multiModel.js'
+import { resolveMultiModelConfig, getConfiguredModels, activateModel } from './multiModel.js'
 import { getModelConfig } from './modelConfig.js'
 
 export type ModelShortName = string
@@ -50,21 +50,32 @@ export function getSmallFastModel(): ModelName {
     return process.env.ANTHROPIC_SMALL_FAST_MODEL
   }
 
-  // 3. 第三方兼容 API：网关不认识 Anthropic 官方模型名（如 claude-haiku-4-5），
-  //    回退到用户配置的主模型，避免因模型名不匹配导致 403
-  //    注意：当 models.json 有 providers 配置时，忽略 ANTHROPIC_MODEL 环境变量，
-  //    与 getUserSpecifiedModelSetting 保持一致，避免旧版系统变量干扰。
+  // 3. 检查是否配置了第三方 API providers
+  //    当 models.json 有 providers 配置时，说明用户使用第三方 API
+  //    第三方网关通常不认识 Anthropic 官方模型名（如 claude-haiku-4-5），
+  //    所以应该回退到用户配置的主模型，避免因模型名不匹配导致 403
+  const hasJsonProviders = Object.keys(config.providers ?? {}).length > 0
+  if (hasJsonProviders) {
+    // 使用 defaultModel 或当前主循环模型作为 smallFastModel
+    // 重要：resolveMultiModelConfig 会调用 activateModel 设置环境变量
+    const mainModel = getMainLoopModel()
+    // 尝试激活模型（设置 ANTHROPIC_BASE_URL 等）
+    resolveMultiModelConfig(mainModel)
+    return mainModel
+  }
+
+  // 4. 传统环境变量方式：检查 ANTHROPIC_BASE_URL 是否指向第三方 API
   if (
     process.env.ANTHROPIC_BASE_URL &&
     !process.env.ANTHROPIC_BASE_URL.includes('anthropic.com')
   ) {
-    const hasJsonProviders =
-      Object.keys(getModelConfig().providers ?? {}).length > 0
-    const envModel = hasJsonProviders ? undefined : process.env.ANTHROPIC_MODEL
-    return envModel || getMainLoopModel()
+    // 第三方 API 但没有通过 models.json 配置
+    const envModel = process.env.ANTHROPIC_MODEL
+    if (envModel) return envModel
+    return getMainLoopModel()
   }
 
-  // 4. 默认 Haiku 模型
+  // 5. 默认 Haiku 模型（仅限 Anthropic 官方 API）
   return getDefaultHaikuModel()
 }
 
@@ -122,7 +133,8 @@ export function getUserSpecifiedModelSetting(): ModelSetting | undefined {
  * 3. ANTHROPIC_MODEL 环境变量
  * 4. 用户保存的 settings
  * 5. JSON 配置中的 defaultModel
- * 6. 内置默认模型
+ * 6. JSON 配置中的第一个可用模型（第三方 API 场景）
+ * 7. 内置默认模型
  *
  * @returns 解析后的模型名称
  */
@@ -142,7 +154,18 @@ export function getMainLoopModel(): ModelName {
     }
   }
 
-  // 优先级 6：内置默认模型
+  // 优先级 6：如果配置了第三方 API providers，使用第一个可用模型
+  // 重要：第三方 API 网关通常不认识 Anthropic 官方模型名，
+  // 所以必须使用用户配置的模型，而不是内置默认模型
+  const configuredModels = getConfiguredModels()
+  if (configuredModels.length > 0) {
+    const firstModel = configuredModels[0]!
+    // 激活模型（设置 ANTHROPIC_BASE_URL 等）
+    activateModel(firstModel)
+    return firstModel.modelKey
+  }
+
+  // 优先级 7：内置默认模型
   return getDefaultMainLoopModel()
 }
 

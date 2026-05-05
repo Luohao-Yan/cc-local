@@ -9,52 +9,12 @@
 
 import type { Message, StreamEvent, Session, Tool, MessageContent } from '@cclocal/shared'
 import { CCLocalClient } from '../client/CCLocalClient.js'
-import { createQueryEngineAdapter, type LegacyQueryEvent } from './queryEngineAdapter.js'
+import { createQueryEngineAdapter } from './queryEngineAdapter.js'
+import { EventQueue } from './eventQueue.js'
+import { toLegacyStreamEvent, type LegacyQueryEvent } from './streamTranslator.js'
 import type { QueryEngineOptions } from '@cclocal/core'
 import type { TokenBudgetStats, Task, TaskStatus, TaskType } from '../types/nativeAdapter.js'
 import { randomUUID } from 'crypto'
-
-/**
- * EventQueue - Bridges callback-based onStream to AsyncGenerator yield.
- *
- * This is the same pattern used in queryEngineAdapter.ts.
- * It allows real-time streaming from SSE callbacks to generator yields.
- */
-class EventQueue<T> {
-  private queue: T[] = []
-  private waiting: ((value: IteratorResult<T>) => void)[] = []
-  private done = false
-
-  push(item: T): void {
-    if (this.done) return
-    if (this.waiting.length > 0) {
-      const resolve = this.waiting.shift()!
-      resolve({ value: item, done: false })
-    } else {
-      this.queue.push(item)
-    }
-  }
-
-  close(): void {
-    this.done = true
-    for (const resolve of this.waiting) {
-      resolve({ value: undefined, done: true } as IteratorResult<T>)
-    }
-    this.waiting.length = 0
-  }
-
-  async next(): Promise<IteratorResult<T>> {
-    if (this.queue.length > 0) {
-      return { value: this.queue.shift()!, done: false }
-    }
-    if (this.done) {
-      return { value: undefined, done: true } as IteratorResult<T>
-    }
-    return new Promise((resolve) => {
-      this.waiting.push(resolve)
-    })
-  }
-}
 
 /**
  * Native bridge mode
@@ -332,7 +292,6 @@ export class NativeBridgeAdapter {
       throw new Error('Client not initialized')
     }
 
-    const messageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
     const eventQueue = new EventQueue<LegacyQueryEvent>()
     let streamEnded = false
 
@@ -342,7 +301,7 @@ export class NativeBridgeAdapter {
     // Register message handler BEFORE calling sendMessage
     // This ensures we don't miss any events
     const unsubscribe = this.client.onMessage((event: StreamEvent) => {
-      const legacyEvent = this.convertToLegacyEvent(event, messageId)
+      const legacyEvent = toLegacyStreamEvent(event)
       if (legacyEvent) {
         eventQueue.push(legacyEvent)
       }
@@ -421,52 +380,6 @@ export class NativeBridgeAdapter {
       return textBlock?.text || ''
     }
     return ''
-  }
-
-  /**
-   * Convert StreamEvent to LegacyQueryEvent
-   */
-  private convertToLegacyEvent(event: StreamEvent, messageId: string): LegacyQueryEvent | null {
-    switch (event.type) {
-      case 'stream_start':
-        return {
-          type: 'stream_event',
-          event: { type: 'message_start', message: { id: messageId, role: 'assistant' } },
-        }
-
-      case 'stream_delta':
-        return {
-          type: 'stream_event',
-          event: {
-            type: 'content_block_delta',
-            delta: event.delta,
-          },
-        }
-
-      case 'tool_call':
-        return {
-          type: 'stream_event',
-          event: {
-            type: 'content_block_start',
-            content_block: { type: 'tool_use', name: event.toolCall?.name, id: messageId },
-          },
-        }
-
-      case 'stream_end':
-        return {
-          type: 'stream_event',
-          event: { type: 'message_stop' },
-        }
-
-      case 'error':
-        return {
-          type: 'stream_event',
-          event: { type: 'error', error: event.error },
-        }
-
-      default:
-        return null
-    }
   }
 
   /**

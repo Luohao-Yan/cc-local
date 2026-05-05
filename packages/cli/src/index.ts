@@ -318,7 +318,6 @@ if (useInkBridge) {
     maxTurns: rawUserArgs.includes('--max-turns') ? parseInt(rawUserArgs[rawUserArgs.indexOf('--max-turns') + 1]!, 10) : undefined,
     serverUrl: getBridgeServerUrl(rawUserArgs),
     authToken: getBridgeAuthToken(rawUserArgs),
-    extraArgs: rawUserArgs,
   })
   await stopEmbeddedServer()
   process.exit(0)

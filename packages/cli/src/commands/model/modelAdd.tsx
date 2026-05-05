@@ -16,11 +16,13 @@ import {
   saveGlobalModelConfig,
 } from '../../utils/model/modelConfig.js'
 import { activateModel, type ResolvedModel } from '../../utils/model/multiModel.js'
+import { detectProviderFromUrl, getDefaultAPIFormat, type APIFormat } from '../../utils/model/providers.js'
 import { sideQuery } from '../../utils/sideQuery.js'
 import type { CommandResultDisplay, LocalJSXCommandCall, LocalJSXCommandOnDone } from '../../types/command.js'
 
 type AddStep =
   | 'input-url'
+  | 'input-format'
   | 'input-key'
   | 'input-model'
   | 'input-alias'
@@ -41,16 +43,22 @@ export function ModelAdd({
   const [existingProviderKey, setExistingProviderKey] = React.useState<string | null>(null)
   const [verifyError, setVerifyError] = React.useState('')
   const [alias, setAlias] = React.useState('')
+  const [apiFormat, setApiFormat] = React.useState<APIFormat>('openai')
 
   const handleCancel = React.useCallback(() => {
     onDone('Add model cancelled.', { display: 'system' })
   }, [onDone])
 
-  // baseUrl input
+  // baseUrl input → format selection (or confirm-append)
   const handleUrlSubmit = React.useCallback((value: string) => {
     const url = value.trim()
     if (!url) return
     setBaseUrl(url)
+    // Auto-detect API format from URL
+    const detectedProvider = detectProviderFromUrl(url)
+    const detectedFormat = getDefaultAPIFormat(detectedProvider)
+    setApiFormat(detectedFormat)
+
     const config = getGlobalModelConfig()
     const matchedKey = Object.keys(config.providers).find(
       (key) => config.providers[key]!.baseUrl === url,
@@ -59,7 +67,7 @@ export function ModelAdd({
       setExistingProviderKey(matchedKey)
       setStep('confirm-append')
     } else {
-      setStep('input-key')
+      setStep('input-format')
     }
   }, [])
 
@@ -101,16 +109,20 @@ export function ModelAdd({
       const tempResolved: ResolvedModel = {
         providerKey: 'custom', providerName: 'Custom', modelKey: modelName,
         modelName, baseUrl, apiKey: apiKey || null, aliases: resolvedAlias ? [resolvedAlias] : [],
+        apiFormat, providerType: detectProviderFromUrl(baseUrl), headers: undefined,
       }
       activateModel(tempResolved)
+
+      // 检查是否是第一个模型（在保存之前）
+      const isFirstModel = Object.keys(getGlobalModelConfig().providers).length === 0
 
       sideQuery({
         querySource: 'model_validation', model: modelName, max_tokens: 1,
         messages: [{ role: 'user', content: 'Hi' }],
       })
         .then(() => {
-          saveConfig(baseUrl, apiKey, modelName, resolvedAlias, existingProviderKey)
-          finishAdd(baseUrl, modelName, resolvedAlias, onDone)
+          saveConfig(baseUrl, apiKey, modelName, resolvedAlias, existingProviderKey, apiFormat)
+          finishAdd(baseUrl, modelName, resolvedAlias, apiFormat, onDone, isFirstModel)
           setStep('done')
         })
         .catch((err: unknown) => {
@@ -124,9 +136,12 @@ export function ModelAdd({
   // Verify failed options
   const handleVerifyFailChoice = React.useCallback(
     (value: string) => {
+      // 检查是否是第一个模型（在保存之前）
+      const isFirstModel = Object.keys(getGlobalModelConfig().providers).length === 0
+
       if (value === 'save') {
-        saveConfig(baseUrl, apiKey, modelName, alias, existingProviderKey)
-        finishAdd(baseUrl, modelName, alias, onDone)
+        saveConfig(baseUrl, apiKey, modelName, alias, existingProviderKey, apiFormat)
+        finishAdd(baseUrl, modelName, alias, apiFormat, onDone, isFirstModel)
         setStep('done')
       } else if (value === 'retry-url') {
         // 从头重试：清空所有状态
@@ -148,13 +163,19 @@ export function ModelAdd({
     [baseUrl, apiKey, modelName, alias, existingProviderKey, onDone],
   )
 
+  // Format selection → input-key
+  const handleFormatSelect = React.useCallback((value: string) => {
+    setApiFormat(value as APIFormat)
+    setStep('input-key')
+  }, [])
+
   // Render steps
   if (step === 'input-url') {
     return (
       <InputStep
-        title="Step 1/4 · API Endpoint"
+        title="Step 1/5 · API Endpoint"
         hint={[
-          'The base URL of the OpenAI-compatible API.',
+          'The base URL of the API endpoint.',
           'Examples:',
           '  Doubao  : https://ark.cn-beijing.volces.com/api/v3',
           '  DeepSeek: https://api.deepseek.com/v1',
@@ -168,13 +189,40 @@ export function ModelAdd({
       />
     )
   }
+  if (step === 'input-format') {
+    const detectedLabel = apiFormat === 'openai' ? 'OpenAI Chat Completions' : 'Anthropic Messages'
+    return (
+      <Box flexDirection="column">
+        <Text bold>Step 2/5 · API Format</Text>
+        <Text> </Text>
+        <Text dimColor>Detected: {detectedLabel} (auto-detected from URL)</Text>
+        <Text dimColor>You can override if the detection is incorrect.</Text>
+        <Text> </Text>
+        <Select
+          options={[
+            {
+              label: 'OpenAI Chat Completions (/v1/chat/completions)',
+              value: 'openai',
+              description: 'Standard format used by OpenAI, DeepSeek, Doubao, Ollama, etc.',
+            },
+            {
+              label: 'Anthropic Messages (/v1/messages)',
+              value: 'anthropic',
+              description: 'Native Anthropic format — for proxies that replicate the Messages API',
+            },
+          ]}
+          onChange={handleFormatSelect} onCancel={handleCancel}
+        />
+      </Box>
+    )
+  }
   if (step === 'confirm-append') {
     const config = getGlobalModelConfig()
     const providerName = existingProviderKey ? config.providers[existingProviderKey]?.name || existingProviderKey : ''
     const existingKey = existingProviderKey ? config.providers[existingProviderKey]?.apiKey : null
     return (
       <Box flexDirection="column">
-        <Text bold>Step 2/4 · Provider Already Exists</Text>
+        <Text bold>Provider Already Exists</Text>
         <Text> </Text>
         <Text bold>Provider: "{providerName}"</Text>
         <Text> </Text>
@@ -201,7 +249,7 @@ export function ModelAdd({
   if (step === 'input-key') {
     return (
       <InputStep
-        title="Step 2/4 · API Key"
+        title="Step 3/5 · API Key"
         hint={[
           'The secret key used to authenticate with the provider.',
           'Find it in your provider\'s console / dashboard.',
@@ -217,7 +265,7 @@ export function ModelAdd({
   if (step === 'input-model') {
     return (
       <InputStep
-        title="Step 3/4 · Model Name"
+        title="Step 4/5 · Model Name"
         hint={[
           'The exact model ID as required by the API.',
           'Examples:',
@@ -236,7 +284,7 @@ export function ModelAdd({
   if (step === 'input-alias') {
     return (
       <InputStep
-        title="Step 4/4 · Alias (optional)"
+        title="Step 5/5 · Alias (optional)"
         hint={[
           'A short name to quickly switch to this model.',
           'Example: type "doubao" to use instead of the full model ID.',
@@ -317,38 +365,60 @@ function deriveProviderKey(baseUrl: string, existingKeys?: string[]): string {
   return `${base}-${i}`
 }
 
-function saveConfig(baseUrl: string, apiKey: string, modelName: string, alias: string, existingProviderKey: string | null): void {
+function saveConfig(baseUrl: string, apiKey: string, modelName: string, alias: string, existingProviderKey: string | null, format: APIFormat): void {
   if (existingProviderKey) {
     saveGlobalModelConfig((current) => {
       const provider = current.providers[existingProviderKey]
       if (!provider) return current
-      return { ...current, providers: { ...current.providers, [existingProviderKey]: {
-        ...provider, models: { ...provider.models, [modelName]: {
+      // When appending to existing provider, update apiFormat at provider level
+      // if it differs from the current setting (rare but possible)
+      const updatedProvider = {
+        ...provider,
+        // Update apiFormat if the user selected a different one
+        ...(provider.apiFormat !== format && format !== 'anthropic' ? { apiFormat: format } : {}),
+        models: { ...provider.models, [modelName]: {
           name: modelName, ...(alias ? { alias: [alias] } : {}),
         }},
-      }}}
+      }
+      return { ...current, providers: { ...current.providers, [existingProviderKey]: updatedProvider } }
     })
   } else {
     saveGlobalModelConfig((current) => {
       const providerKey = deriveProviderKey(baseUrl, Object.keys(current.providers))
-      return { ...current, providers: { ...current.providers, [providerKey]: {
-        name: providerKey.charAt(0).toUpperCase() + providerKey.slice(1),
-        baseUrl, ...(apiKey ? { apiKey } : {}),
-        models: { [modelName]: { name: modelName, ...(alias ? { alias: [alias] } : {}) } },
-      }}}
+      const isFirstModel = Object.keys(current.providers).length === 0
+      const modelRef = alias || modelName
+      return {
+        ...current,
+        // 如果是第一个添加的模型，自动设置为 defaultModel 和 smallFastModel
+        ...(isFirstModel ? { defaultModel: modelRef, smallFastModel: modelRef } : {}),
+        providers: { ...current.providers, [providerKey]: {
+          name: providerKey.charAt(0).toUpperCase() + providerKey.slice(1),
+          baseUrl, ...(apiKey ? { apiKey } : {}),
+          // Persist apiFormat only when it's not the default ('anthropic')
+          // so existing configs without this field remain backward-compatible
+          ...(format !== 'anthropic' ? { apiFormat: format } : {}),
+          models: { [modelName]: { name: modelName, ...(alias ? { alias: [alias] } : {}) } },
+        }},
+      }
     })
   }
 }
 
-function finishAdd(baseUrl: string, modelName: string, alias: string, onDone: LocalJSXCommandOnDone): void {
+function finishAdd(baseUrl: string, modelName: string, alias: string, format: APIFormat, onDone: LocalJSXCommandOnDone, isFirstModel: boolean = false): void {
   const switchCmd = alias ? `/model ${alias}` : `/model ${modelName}`
+  const formatLabel = format === 'openai' ? 'OpenAI Chat Completions' : 'Anthropic Messages'
   const lines = [
     'Model added successfully!',
     `  Model   : ${modelName}`,
     alias ? `  Alias   : ${alias}` : '',
     `  Endpoint: ${baseUrl}`,
+    `  Format  : ${formatLabel}`,
     '',
+    isFirstModel
+      ? 'This is your first model — automatically set as default.'
+      : '',
     `Next: /model list to view all  ·  ${switchCmd} to switch`,
+    isFirstModel ? '       /model add to add more models' : '',
   ].filter(Boolean).join('\n')
   onDone(lines, { display: 'system' as CommandResultDisplay })
 }

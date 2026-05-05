@@ -83,13 +83,14 @@ function buildModelTable(): string {
       alias: m.aliases.length > 0 ? m.aliases.join(', ') : '-',
       provider: m.providerName,
       host: maskBaseUrl(m.baseUrl),
+      format: m.apiFormat,
       source: getSource(m.providerKey, projectConfig),
       isActive,
     }
   })
 
   // Column headers
-  const h = { marker: ' ', model: 'Model', alias: 'Alias', provider: 'Provider', host: 'Host', source: 'Source' }
+  const h = { marker: ' ', model: 'Model', alias: 'Alias', provider: 'Provider', host: 'Host', format: 'Format', source: 'Source' }
 
   // Column widths
   const w = {
@@ -98,17 +99,18 @@ function buildModelTable(): string {
     alias: Math.max(h.alias.length, ...rows.map(r => r.alias.length)),
     provider: Math.max(h.provider.length, ...rows.map(r => r.provider.length)),
     host: Math.max(h.host.length, ...rows.map(r => r.host.length)),
+    format: Math.max(h.format.length, ...rows.map(r => r.format.length)),
     source: Math.max(h.source.length, ...rows.map(r => r.source.length)),
   }
 
-  const fmtRow = (marker: string, model: string, alias: string, provider: string, host: string, source: string) =>
-    `${pad(marker, w.marker)} ${pad(model, w.model)}  ${pad(alias, w.alias)}  ${pad(provider, w.provider)}  ${pad(host, w.host)}  ${source}`
+  const fmtRow = (marker: string, model: string, alias: string, provider: string, host: string, format: string, source: string) =>
+    `${pad(marker, w.marker)} ${pad(model, w.model)}  ${pad(alias, w.alias)}  ${pad(provider, w.provider)}  ${pad(host, w.host)}  ${pad(format, w.format)}  ${source}`
 
-  const headerRow = fmtRow(h.marker, h.model, h.alias, h.provider, h.host, h.source)
+  const headerRow = fmtRow(h.marker, h.model, h.alias, h.provider, h.host, h.format, h.source)
   const separator = '-'.repeat(headerRow.length)
 
   const dataRows = rows.map(r => {
-    const line = fmtRow(r.marker, r.model, r.alias, r.provider, r.host, r.source)
+    const line = fmtRow(r.marker, r.model, r.alias, r.provider, r.host, r.format, r.source)
     return r.isActive ? chalk.green(line) : line
   })
 

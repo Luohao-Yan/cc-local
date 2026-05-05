@@ -28,6 +28,7 @@ import { isEnvDefinedFalsy, isEnvTruthy } from './envUtils.js'
 import { getCanonicalName } from './model/model.js'
 import { get3PModelCapabilityOverride } from './model/modelSupportOverrides.js'
 import { getAPIProvider } from './model/providers.js'
+import { getActiveAPIFormat } from './model/activeModelContext.js'
 import { getInitialSettings } from './settings/settings.js'
 
 /**
@@ -90,6 +91,10 @@ export function filterAllowedSdkBetas(
 // however out of an abundance of caution, we do not enable any which are behind an experiment
 
 export function modelSupportsISP(model: string): boolean {
+  // OpenAI-compatible endpoints don't support interleaved thinking
+  if (getActiveAPIFormat() === 'openai') {
+    return false
+  }
   const supported3P = get3PModelCapabilityOverride(
     model,
     'interleaved_thinking',
@@ -123,6 +128,10 @@ function vertexModelSupportsWebSearch(model: string): boolean {
 
 // Context management is supported on Claude 4+ models
 export function modelSupportsContextManagement(model: string): boolean {
+  // OpenAI-compatible endpoints don't support Anthropic context management
+  if (getActiveAPIFormat() === 'openai') {
+    return false
+  }
   const canonical = getCanonicalName(model)
   const provider = getAPIProvider()
   if (provider === 'foundry') {
@@ -140,6 +149,10 @@ export function modelSupportsContextManagement(model: string): boolean {
 
 // @[MODEL LAUNCH]: Add the new model ID to this list if it supports structured outputs.
 export function modelSupportsStructuredOutputs(model: string): boolean {
+  // OpenAI-compatible endpoints don't support Anthropic structured outputs
+  if (getActiveAPIFormat() === 'openai') {
+    return false
+  }
   const canonical = getCanonicalName(model)
   const provider = getAPIProvider()
   // Structured outputs only supported on firstParty and Foundry (not Bedrock/Vertex yet)
@@ -221,6 +234,7 @@ export function getToolSearchBetaHeader(): string {
  */
 export function shouldIncludeFirstPartyOnlyBetas(): boolean {
   return (
+    getActiveAPIFormat() === 'anthropic' &&
     (getAPIProvider() === 'firstParty' || getAPIProvider() === 'foundry') &&
     !isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS)
   )
@@ -376,6 +390,10 @@ export const getAllModelBetas = memoize((model: string): string[] => {
 })
 
 export const getModelBetas = memoize((model: string): string[] => {
+  // OpenAI-compatible endpoints don't support Anthropic beta headers
+  if (getActiveAPIFormat() === 'openai') {
+    return []
+  }
   const modelBetas = getAllModelBetas(model)
   if (getAPIProvider() === 'bedrock') {
     return modelBetas.filter(b => !BEDROCK_EXTRA_PARAMS_HEADERS.has(b))
