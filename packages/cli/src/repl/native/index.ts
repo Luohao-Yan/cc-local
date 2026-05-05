@@ -22,3 +22,6 @@ export { ScreenBuffer, createScreenBuffer, type BufferMessage, type ScreenBuffer
 
 // Event system (Phase 1)
 export { EventEmitter, createEventEmitter, parseKeyEvent, formatKeyEvent, keyMatches, type KeyEvent, type ResizeEvent, type NativeReplEvents } from './EventEmitter.js'
+
+// Message system (Phase 2)
+export * from './messages/index.js'
