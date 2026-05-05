@@ -75,8 +75,11 @@ export function getSmallFastModel(): ModelName {
     return getMainLoopModel()
   }
 
-  // 5. 默认 Haiku 模型（仅限 Anthropic 官方 API）
-  return getDefaultHaikuModel()
+  // 4. 最终保障：使用主循环模型（/model、--model、config defaultModel 等）
+  //    动态兜底，而非硬编码 Haiku 模型名。
+  //    硬编码的 claude-haiku-4-5-20251001 仅适用于 Anthropic 官方 API，
+  //    第三方 API 不识别该模型名会导致 400 错误。
+  return getMainLoopModel()
 }
 
 export function isNonCustomOpusModel(model: ModelName): boolean {
