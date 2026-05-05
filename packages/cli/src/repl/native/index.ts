@@ -25,3 +25,6 @@ export { EventEmitter, createEventEmitter, parseKeyEvent, formatKeyEvent, keyMat
 
 // Message system (Phase 2)
 export * from './messages/index.js'
+
+// Input system (Phase 3)
+export * from './input/index.js'
