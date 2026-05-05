@@ -5,6 +5,8 @@
  * Match by alias, model ID (key), or display name (case-insensitive).
  * Requires user confirmation before removal.
  * If the model is the only one in a Provider, removes the entire Provider.
+ * Also clears defaultModel / smallFastModel references if the removed model
+ * matches, and warns the user to set new defaults.
  */
 
 import * as React from 'react'
@@ -28,25 +30,63 @@ function findModel(input: string): ResolvedModel | null {
   )
 }
 
-function removeModelFromConfig(model: ResolvedModel): void {
+function isModelReferenced(model: ResolvedModel, ref: string | undefined): boolean {
+  if (!ref) return false
+  const refLower = ref.toLowerCase()
+  return (
+    model.modelKey.toLowerCase() === refLower ||
+    model.aliases.some(a => a.toLowerCase() === refLower)
+  )
+}
+
+function removeModelFromConfig(model: ResolvedModel): {
+  wasDefault: boolean
+  wasSmallFast: boolean
+} {
+  let wasDefault = false
+  let wasSmallFast = false
+
   saveGlobalModelConfig((current) => {
+    // Check if the removed model matches defaultModel or smallFastModel
+    if (isModelReferenced(model, current.defaultModel)) {
+      wasDefault = true
+    }
+    if (isModelReferenced(model, current.smallFastModel)) {
+      wasSmallFast = true
+    }
+
     const provider = current.providers[model.providerKey]
     if (!provider) return current
 
+    let next = current
+
+    // Remove the model from the provider, or remove the entire provider
     if (Object.keys(provider.models).length <= 1) {
       const { [model.providerKey]: _, ...restProviders } = current.providers
-      return { ...current, providers: restProviders }
+      next = { ...current, providers: restProviders }
+    } else {
+      const { [model.modelKey]: _, ...restModels } = provider.models
+      next = {
+        ...current,
+        providers: {
+          ...current.providers,
+          [model.providerKey]: { ...provider, models: restModels },
+        },
+      }
     }
 
-    const { [model.modelKey]: _, ...restModels } = provider.models
-    return {
-      ...current,
-      providers: {
-        ...current.providers,
-        [model.providerKey]: { ...provider, models: restModels },
-      },
+    // Clear stale defaultModel / smallFastModel references
+    if (wasDefault) {
+      next = { ...next, defaultModel: undefined }
     }
+    if (wasSmallFast) {
+      next = { ...next, smallFastModel: undefined }
+    }
+
+    return next
   })
+
+  return { wasDefault, wasSmallFast }
 }
 
 export function ModelRemove({
@@ -62,7 +102,6 @@ export function ModelRemove({
     onDone('Remove cancelled.', { display: 'system' })
   }, [onDone])
 
-  // useEffect 必须在顶层调用，不能放在条件分支里（React Hooks 规则）
   React.useEffect(() => {
     if (!matched) {
       onDone(`Model "${modelInput}" not found. Run /model list to see configured models.`, {
@@ -74,14 +113,26 @@ export function ModelRemove({
   const handleConfirm = React.useCallback(
     (value: string) => {
       if (value === 'yes' && matched) {
-        removeModelFromConfig(matched)
+        const { wasDefault, wasSmallFast } = removeModelFromConfig(matched)
         const aliasInfo = matched.aliases.length > 0
           ? ` (alias: ${matched.aliases.join(', ')})`
           : ''
-        onDone(
-          `Removed model "${matched.modelKey}"${aliasInfo}, provider: ${matched.providerName}`,
-          { display: 'system' },
-        )
+
+        let message = `Removed model "${matched.modelKey}"${aliasInfo}, provider: ${matched.providerName}`
+
+        // Warn user about stale default references
+        if (wasDefault && wasSmallFast) {
+          message +=
+            ' ⚠ This model was the defaultModel AND smallFastModel. Please set new defaults via /model add or edit models.json'
+        } else if (wasDefault) {
+          message +=
+            ' ⚠ This model was the defaultModel. Please set a new default via /model add or edit models.json'
+        } else if (wasSmallFast) {
+          message +=
+            ' ⚠ This model was the smallFastModel. Companion/buddy reactions will fall back to the main model'
+        }
+
+        onDone(message, { display: 'system' })
       } else {
         onDone('Remove cancelled.', { display: 'system' })
       }
@@ -104,6 +155,9 @@ export function ModelRemove({
     ? Object.keys(provider.models).length <= 1
     : false
 
+  const isDefault = isModelReferenced(matched, config.defaultModel)
+  const isSmallFast = isModelReferenced(matched, config.smallFastModel)
+
   return (
     <Box flexDirection="column">
       <Text>Remove this model?</Text>
@@ -113,6 +167,12 @@ export function ModelRemove({
       <Text>  Provider: {matched.providerName}</Text>
       {willRemoveProvider && (
         <Text color="yellow">  Warning: only model in this provider, entire provider will be removed</Text>
+      )}
+      {isDefault && (
+        <Text color="yellow">  Warning: this model is currently set as defaultModel</Text>
+      )}
+      {isSmallFast && (
+        <Text color="yellow">  Warning: this model is currently set as smallFastModel (used for companion/buddy)</Text>
       )}
       <Text> </Text>
       <Select
@@ -130,7 +190,6 @@ export function ModelRemove({
 export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
   const modelInput = (args || '').trim()
   if (!modelInput) {
-    // No argument — show model picker
     return <RemovePicker onDone={onDone} />
   }
   return <ModelRemove onDone={onDone} modelInput={modelInput} />
