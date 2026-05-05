@@ -37,3 +37,6 @@ export * from './keybind/index.js'
 
 // Notification system (Phase 5)
 export * from './notifications/index.js'
+
+// Companion and special features (Phase 6)
+export * from './companion/index.js'
