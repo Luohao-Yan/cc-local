@@ -297,7 +297,8 @@ const useInkUi = shouldUseInkUi(rawUserArgs)
 
 // Check for packages-native mode
 const useNativeMode = rawUserArgs.includes('--native') || rawUserArgs.includes('--packages-native')
-if (useNativeMode && !rawUserArgs.includes('--ink-bridge') && !rawUserArgs.includes('--legacy-bridge')) {
+const useInkBridge = rawUserArgs.includes('--ink-bridge') || rawUserArgs.includes('--legacy-bridge') || rawUserArgs.includes('--ink')
+if (useNativeMode && !useInkBridge) {
   // Dynamic import to avoid loading native module in legacy mode
   const { runNative } = await import('./entrypoints/native.js')
   await runNative()
@@ -305,7 +306,25 @@ if (useNativeMode && !rawUserArgs.includes('--ink-bridge') && !rawUserArgs.inclu
   process.exit(0)
 }
 
-if (useInkUi && !rawUserArgs.some((arg) => arg === '--ink-bridge' || arg === '--legacy-bridge')) {
+// Bridge mode: packages-core QueryEngine + Ink UI (same process)
+if (useInkBridge) {
+  const { renderInkBridgeRepl, getBridgeServerUrl, getBridgeAuthToken } = await import('./runtime/inkBridgeRenderer.js')
+  await renderInkBridgeRepl({
+    model: rawUserArgs.includes('--model') ? rawUserArgs[rawUserArgs.indexOf('--model') + 1] : undefined,
+    cwd: rawUserArgs.includes('--cwd') ? rawUserArgs[rawUserArgs.indexOf('--cwd') + 1] : undefined,
+    sessionId: rawUserArgs.includes('--resume') ? (rawUserArgs[rawUserArgs.indexOf('--resume') + 1] || 'latest') : undefined,
+    print: rawUserArgs.includes('--print') ? rawUserArgs[rawUserArgs.indexOf('--print') + 1] : undefined,
+    outputFormat: rawUserArgs.includes('--output-format') ? rawUserArgs[rawUserArgs.indexOf('--output-format') + 1] : undefined,
+    maxTurns: rawUserArgs.includes('--max-turns') ? parseInt(rawUserArgs[rawUserArgs.indexOf('--max-turns') + 1]!, 10) : undefined,
+    serverUrl: getBridgeServerUrl(rawUserArgs),
+    authToken: getBridgeAuthToken(rawUserArgs),
+    extraArgs: rawUserArgs,
+  })
+  await stopEmbeddedServer()
+  process.exit(0)
+}
+
+if (useInkUi) {
   delegateToInkUi(rawUserArgs)
 }
 

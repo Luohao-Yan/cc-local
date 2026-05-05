@@ -17,6 +17,9 @@ import type { Message, StreamEvent, Tool } from '@cclocal/shared'
 import { QueryEngine, type QueryEngineOptions, type QueryResult } from '@cclocal/core'
 import { getSessionStore } from '@cclocal/core'
 import { ALL_TOOL_ADAPTERS } from './toolAdapters.js'
+import type { CanUseToolFn } from '../hooks/useCanUseTool.js'
+import type { ToolUseContext, Tool as ToolType } from '../Tool.js'
+import type { SystemPrompt } from '../utils/systemPromptType.js'
 
 // Legacy event types that REPL.tsx's handleMessageFromStream expects
 export type LegacyQueryEvent =
@@ -26,11 +29,18 @@ export type LegacyQueryEvent =
   | { type: 'tombstone'; message: Message }
   | { type: 'tool_use_summary'; message: Message }
 
-export interface LegacyQueryParams {
+/**
+ * Params compatible with REPL.tsx's query() call signature.
+ * This mirrors QueryParams from query.ts so the same call site works
+ * for both legacy and bridge paths.
+ */
+export interface BridgeQueryParams {
   messages: Message[]
-  systemPrompt?: string
+  systemPrompt: SystemPrompt
   userContext?: Record<string, string>
   systemContext?: Record<string, string>
+  canUseTool?: CanUseToolFn
+  toolUseContext?: ToolUseContext
   model?: string
   maxTurns?: number
   enabledTools?: string[]
@@ -40,8 +50,10 @@ export interface LegacyQueryParams {
   abortSignal?: AbortSignal
   /** Session ID for persistence and resume */
   sessionId?: string
-  /** Called when a tool needs user approval. Return true to allow, false to deny. */
-  onPermissionCheck?: (toolName: string, input: unknown, reason?: string) => Promise<boolean>
+  /** API format: 'anthropic' or 'openai' */
+  apiFormat?: 'anthropic' | 'openai'
+  /** Custom headers per provider */
+  headers?: Record<string, string>
 }
 
 /**
@@ -86,9 +98,13 @@ class EventQueue<T> {
 /**
  * Create an AsyncGenerator that wraps QueryEngine.query() and yields
  * legacy-compatible events for the Ink UI to consume.
+ *
+ * This function has the same call signature as query() from query.ts,
+ * so REPL.tsx can swap it in via:
+ *   const query = shouldUseQueryEngine() ? createQueryEngineAdapter : legacyQuery
  */
 export async function* createQueryEngineAdapter(
-  params: LegacyQueryParams
+  params: BridgeQueryParams
 ): AsyncGenerator<LegacyQueryEvent> {
   // Register bridge tool adapters with the core registry
   const { toolRegistry } = await import('@cclocal/core')
@@ -114,7 +130,28 @@ export async function* createQueryEngineAdapter(
     enabledTools: params.enabledTools,
     apiKey: params.apiKey,
     baseUrl: params.baseUrl,
-    onPermissionCheck: params.onPermissionCheck,
+    onPermissionCheck: params.canUseTool
+      ? async (toolName: string, input: unknown, reason?: string) => {
+          // Bridge to the Ink UI's canUseTool permission flow.
+          // The canUseTool function handles UI dialog + user decision.
+          try {
+            const result = await params.canUseTool!(
+              // Create a minimal Tool object for the permission check
+              { name: toolName } as ToolType,
+              input as Record<string, unknown>,
+              params.toolUseContext ?? ({} as ToolUseContext),
+              {} as any, // assistantMessage — not needed for permission check
+              `bridge_${Date.now()}`, // toolUseID
+            )
+            // canUseTool returns a PermissionDecision; extract allowed boolean
+            return result.behavior === 'allow'
+          } catch {
+            return false
+          }
+        }
+      : undefined,
+    apiFormat: params.apiFormat,
+    headers: params.headers,
   }
 
   const eventQueue = new EventQueue<LegacyQueryEvent>()
@@ -136,7 +173,6 @@ export async function* createQueryEngineAdapter(
     },
   })
 
-  // Consume events from the queue while the query runs
   queryPromise.then(
     (result) => {
       // Yield final assistant message
@@ -152,13 +188,11 @@ export async function* createQueryEngineAdapter(
       // Persist messages to session store
       if (params.sessionId) {
         const sessionStore = getSessionStore()
-        // Persist user messages that were part of this query
         for (const msg of params.messages) {
           if (msg.role === 'user') {
             sessionStore.addMessage(msg, params.sessionId)
           }
         }
-        // Persist assistant message
         sessionStore.addMessage(assistantMessage, params.sessionId)
       }
     },
@@ -185,6 +219,16 @@ export async function* createQueryEngineAdapter(
 /**
  * Translate new StreamEvent types into legacy-compatible events
  * for the Ink UI rendering pipeline.
+ *
+ * The Ink UI's handleMessageFromStream expects:
+ * - message_start / message_stop — lifecycle markers
+ * - content_block_start — with content_block.type = 'tool_use' | 'text' | 'thinking'
+ * - content_block_delta — with delta.type = 'text_delta' | 'thinking_delta' | 'input_json_delta'
+ * - message_delta — usage info at end of message
+ *
+ * These map directly to the Anthropic SSE streaming spec.
+ * StreamEvent from @cclocal/shared only has: stream_start, stream_delta, stream_end, error, tool_call.
+ * We translate those into the richer protocol the Ink UI expects.
  */
 function translateStreamEvent(event: StreamEvent): Record<string, unknown> | null {
   switch (event.type) {
@@ -205,15 +249,18 @@ function translateStreamEvent(event: StreamEvent): Record<string, unknown> | nul
         }
       }
       if (event.delta?.type === 'tool_result') {
+        // Tool results come back as user content blocks.
+        // The Ink UI handles these via the tool_use lifecycle
+        // (content_block_start → input_json_delta → content_block_stop).
         return {
           type: 'content_block_delta',
           delta: {
             type: 'input_json_delta',
             partial_json: JSON.stringify({
               type: 'tool_result',
-              tool_use_id: event.delta.tool_use_id,
-              content: event.delta.content,
-              is_error: event.delta.is_error,
+              tool_use_id: (event.delta as { tool_use_id?: string }).tool_use_id,
+              content: (event.delta as { content?: string }).content,
+              is_error: (event.delta as { is_error?: boolean }).is_error,
             }),
           },
         }
@@ -223,7 +270,13 @@ function translateStreamEvent(event: StreamEvent): Record<string, unknown> | nul
     case 'tool_call':
       return {
         type: 'content_block_start',
-        content_block: { type: 'tool_use', name: event.toolCall?.name, id: event.messageId },
+        index: 0,
+        content_block: {
+          type: 'tool_use',
+          id: event.messageId ?? `toolu_${Date.now()}`,
+          name: event.toolCall?.name ?? 'unknown',
+          input: {},
+        },
       }
 
     case 'stream_end':
@@ -237,11 +290,15 @@ function translateStreamEvent(event: StreamEvent): Record<string, unknown> | nul
   }
 }
 
-function buildSystemPrompt(params: LegacyQueryParams): string {
+function buildSystemPrompt(params: BridgeQueryParams): string {
   const parts: string[] = []
 
-  if (params.systemPrompt) {
-    parts.push(params.systemPrompt)
+  // SystemPrompt may be a string or a structured object
+  const sp = params.systemPrompt
+  if (typeof sp === 'string' && sp) {
+    parts.push(sp)
+  } else if (sp && typeof sp === 'object' && 'prompt' in sp) {
+    parts.push((sp as { prompt: string }).prompt)
   }
 
   if (params.userContext && Object.keys(params.userContext).length > 0) {
