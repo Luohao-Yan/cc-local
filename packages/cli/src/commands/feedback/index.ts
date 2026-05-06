@@ -1,4 +1,5 @@
 import type { Command } from '../../commands.js'
+import { t } from '../../utils/i18n/index.js'
 import { isPolicyAllowed } from '../../services/policyLimits/index.js'
 import { isEnvTruthy } from '../../utils/envUtils.js'
 import { isEssentialTrafficOnly } from '../../utils/privacyLevel.js'
@@ -7,7 +8,7 @@ const feedback = {
   aliases: ['bug'],
   type: 'local-jsx',
   name: 'feedback',
-  description: `Submit feedback about Claude Code`,
+  description: t('command.description.feedback'),
   argumentHint: '[report]',
   isEnabled: () =>
     !(
