@@ -372,11 +372,9 @@ function saveConfig(baseUrl: string, apiKey: string, modelName: string, alias: s
       const provider = current.providers[existingProviderKey]
       if (!provider) return current
       // When appending to existing provider, update apiFormat at provider level
-      // if it differs from the current setting (rare but possible)
       const updatedProvider = {
         ...provider,
-        // Update apiFormat if the user selected a different one
-        ...(provider.apiFormat !== format && format !== 'anthropic' ? { apiFormat: format } : {}),
+        apiFormat: format,
         models: { ...provider.models, [modelName]: {
           name: modelName, ...(alias ? { alias: [alias] } : {}),
         }},
@@ -395,9 +393,8 @@ function saveConfig(baseUrl: string, apiKey: string, modelName: string, alias: s
         providers: { ...current.providers, [providerKey]: {
           name: providerKey.charAt(0).toUpperCase() + providerKey.slice(1),
           baseUrl, ...(apiKey ? { apiKey } : {}),
-          // Persist apiFormat only when it's not the default ('anthropic')
-          // so existing configs without this field remain backward-compatible
-          ...(format !== 'anthropic' ? { apiFormat: format } : {}),
+          // Always save apiFormat - the user's choice should be persisted
+          apiFormat: format,
           models: { [modelName]: { name: modelName, ...(alias ? { alias: [alias] } : {}) } },
         }},
       }
