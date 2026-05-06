@@ -196,7 +196,7 @@ export function CustomProviderSetup({
     )
   }
   if (step === 'input-format') {
-    const detectedLabel = apiFormat === 'openai' ? 'OpenAI Chat Completions' : 'Anthropic Messages'
+    const detectedLabel = apiFormat === 'openai' ? t('customProvider.formatOpenAI') : t('customProvider.formatAnthropic')
     return (
       <Box flexDirection="column">
         <Text bold>{t('customProvider.step2Title')}</Text>
@@ -239,7 +239,7 @@ export function CustomProviderSetup({
             {
               label: t('customProvider.addToExisting'),
               value: 'yes',
-              description: existingKey ? t('customProvider.addToExistingDesc', { keySuffix: existingKey.slice(-4) }) : 'No API key set',
+              description: existingKey ? t('customProvider.addToExistingDesc', { keySuffix: existingKey.slice(-4) }) : t('customProvider.noApiKey'),
             },
             {
               label: t('customProvider.createNew'),
@@ -318,7 +318,7 @@ export function CustomProviderSetup({
             { label: t('customProvider.fixApiKey'), value: 'retry-key', description: t('customProvider.fixApiKeyDesc') },
             { label: t('customProvider.fixModelName'), value: 'retry-model', description: t('customProvider.fixModelNameDesc') },
             { label: t('customProvider.startOver'), value: 'retry-url', description: t('customProvider.startOverDesc') },
-            { label: 'Cancel', value: 'cancel' },
+            { label: t('customProvider.cancel'), value: 'cancel' },
           ]}
           onChange={handleVerifyFailChoice} onCancel={handleCancel}
         />

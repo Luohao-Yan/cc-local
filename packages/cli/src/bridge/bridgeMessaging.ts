@@ -19,7 +19,12 @@ import type {
 import type { SDKResultSuccess } from '../entrypoints/sdk/coreTypes.js'
 import { logEvent } from '../services/analytics/index.js'
 import { EMPTY_USAGE } from '../services/api/emptyUsage.js'
-import type { Message } from '../types/message.js'
+import type {
+  AssistantMessage,
+  Message,
+  SystemMessage,
+  UserMessage,
+} from '../types/message.js'
 import { normalizeControlMessageKeys } from '../utils/controlMessageCompat.js'
 import { logForDebugging } from '../utils/debug.js'
 import { stripDisplayTagsAllowEmpty } from '../utils/displayTags.js'
@@ -27,6 +32,18 @@ import { errorMessage } from '../utils/errors.js'
 import type { PermissionMode } from '../utils/permissions/PermissionMode.js'
 import { jsonParse } from '../utils/slowOperations.js'
 import type { ReplBridgeTransport } from './replBridgeTransport.js'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+/**
+ * Union of message types that are eligible for bridge transport.
+ * These are the only message types that have a `uuid` property and should
+ * be forwarded to the bridge.
+ */
+export type EligibleBridgeMessage =
+  | UserMessage
+  | AssistantMessage
+  | Extract<SystemMessage, { subtype: 'local_command' }>
 
 // ─── Type guards ─────────────────────────────────────────────────────────────
 
@@ -73,8 +90,11 @@ export function isSDKControlRequest(
  * True for message types that should be forwarded to the bridge transport.
  * The server only wants user/assistant turns and slash-command system events;
  * everything else (tool_result, progress, etc.) is internal REPL chatter.
+ *
+ * Returns a type predicate so TypeScript narrows the type to EligibleBridgeMessage,
+ * which guarantees the message has a `uuid` property.
  */
-export function isEligibleBridgeMessage(m: Message): boolean {
+export function isEligibleBridgeMessage(m: Message): m is EligibleBridgeMessage {
   // Virtual messages (REPL inner calls) are display-only — bridge/SDK
   // consumers see the REPL tool_use/result which summarizes the work.
   if ((m.type === 'user' || m.type === 'assistant') && m.isVirtual) {
@@ -304,7 +324,7 @@ export function handleServerControlRequest(
       break
 
     case 'set_model':
-      onSetModel?.(request.request.model)
+      onSetModel?.(request.request.model as string | undefined)
       response = {
         type: 'control_response',
         response: {
@@ -315,7 +335,7 @@ export function handleServerControlRequest(
       break
 
     case 'set_max_thinking_tokens':
-      onSetMaxThinkingTokens?.(request.request.max_thinking_tokens)
+      onSetMaxThinkingTokens?.(request.request.max_thinking_tokens as number | null)
       response = {
         type: 'control_response',
         response: {
@@ -333,7 +353,7 @@ export function handleServerControlRequest(
       // see daemonBridge.ts), return an error verdict rather than a silent
       // false-success: the mode is never actually applied in that context,
       // so success would lie to the client.
-      const verdict = onSetPermissionMode?.(request.request.mode) ?? {
+      const verdict = onSetPermissionMode?.(request.request.mode as PermissionMode) ?? {
         ok: false,
         error:
           'set_permission_mode is not supported in this context (onSetPermissionMode callback not registered)',

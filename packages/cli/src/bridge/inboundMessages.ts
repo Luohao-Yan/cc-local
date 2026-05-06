@@ -24,7 +24,7 @@ export function extractInboundMessageFields(
   | { content: string | Array<ContentBlockParam>; uuid: UUID | undefined }
   | undefined {
   if (msg.type !== 'user') return undefined
-  const content = msg.message?.content
+  const content = msg.content as string | Array<ContentBlockParam> | undefined
   if (!content) return undefined
   if (Array.isArray(content) && content.length === 0) return undefined
 

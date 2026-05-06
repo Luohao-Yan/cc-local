@@ -1605,10 +1605,10 @@ export function Config({
               label: t('config.uiLanguage.auto'),
               value: 'auto'
             }, {
-              label: 'English',
+              label: t('config.uiLanguage.en'),
               value: 'en'
             }, {
-              label: '中文 (Chinese)',
+              label: t('config.uiLanguage.zh'),
               value: 'zh'
             }]} defaultValue={currentUILanguage ?? 'auto'} onChange={(lang: string) => {
               isDirty.current = true;

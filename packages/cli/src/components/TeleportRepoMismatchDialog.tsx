@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react';
 import { Box, Text } from '../ink.js';
 import { getDisplayPath } from '../utils/file.js';
 import { removePathFromRepo, validateRepoAtPath } from '../utils/githubRepoPathMapping.js';
+import { t } from '../utils/i18n/index.js';
 import { Select } from './CustomSelect/index.js';
 import { Dialog } from './design-system/Dialog.js';
 import { Spinner } from './Spinner.js';
@@ -57,7 +58,7 @@ export function TeleportRepoMismatchDialog(t0) {
     let t3;
     if ($[7] === Symbol.for("react.memo_cache_sentinel")) {
       t3 = {
-        label: "Cancel",
+        label: t('common.cancel'),
         value: "cancel"
       };
       $[7] = t3;

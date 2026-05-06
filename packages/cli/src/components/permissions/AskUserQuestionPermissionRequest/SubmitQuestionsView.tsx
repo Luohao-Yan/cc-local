@@ -4,6 +4,7 @@ import React from 'react';
 import { Box, Text } from '../../../ink.js';
 import type { Question } from '../../../tools/AskUserQuestionTool/AskUserQuestionTool.js';
 import type { PermissionDecision } from '../../../utils/permissions/PermissionResult.js';
+import { t } from '../../../utils/i18n/index.js';
 import { Select } from '../../CustomSelect/index.js';
 import { Divider } from '../../design-system/Divider.js';
 import { PermissionRequestTitle } from '../PermissionRequestTitle.js';
@@ -103,7 +104,7 @@ export function SubmitQuestionsView(t0) {
   if ($[15] === Symbol.for("react.memo_cache_sentinel")) {
     t9 = [t8, {
       type: "text" as const,
-      label: "Cancel",
+      label: t('common.cancel'),
       value: "cancel"
     }];
     $[15] = t9;

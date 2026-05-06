@@ -20,6 +20,7 @@ import { formatDuration, truncateToWidth } from '../../utils/format.js';
 import { toInternalMessages } from '../../utils/messages/mappers.js';
 import { EMPTY_LOOKUPS, normalizeMessages } from '../../utils/messages.js';
 import { plural } from '../../utils/stringUtils.js';
+import { t } from '../../utils/i18n/index.js';
 import { teleportResumeCodeSession } from '../../utils/teleport.js';
 import { Select } from '../CustomSelect/select.js';
 import { Byline } from '../design-system/Byline.js';
@@ -186,7 +187,7 @@ function UltraplanSessionDetail(t0) {
     let t9;
     if ($[14] === Symbol.for("react.memo_cache_sentinel")) {
       t9 = [t8, {
-        label: "Back",
+        label: t('common.back'),
         value: "back" as const
       }];
       $[14] = t9;
@@ -333,7 +334,7 @@ function UltraplanSessionDetail(t0) {
   let t21;
   if ($[51] === Symbol.for("react.memo_cache_sentinel")) {
     t21 = {
-      label: "Back",
+      label: t('common.back'),
       value: "back" as const
     };
     $[51] = t21;
@@ -567,7 +568,7 @@ function ReviewSessionDetail(t0) {
     let t6;
     if ($[7] === Symbol.for("react.memo_cache_sentinel")) {
       t6 = [t5, {
-        label: "Back",
+        label: t('common.back'),
         value: "back" as const
       }];
       $[7] = t6;
@@ -607,7 +608,7 @@ function ReviewSessionDetail(t0) {
       label: "Stop ultrareview",
       value: "stop" as const
     }] : []), {
-      label: "Back",
+      label: t('common.back'),
       value: "back"
     }];
     $[11] = completed;

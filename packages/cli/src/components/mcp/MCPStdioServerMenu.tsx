@@ -9,6 +9,7 @@ import { describeMcpConfigFilePath, filterMcpPromptsByServer } from '../../servi
 import { useAppState } from '../../state/AppState.js';
 import { errorMessage } from '../../utils/errors.js';
 import { capitalize } from '../../utils/stringUtils.js';
+import { t } from '../../utils/i18n/index.js';
 import { ConfigurableShortcutHint } from '../ConfigurableShortcutHint.js';
 import { Select } from '../CustomSelect/index.js';
 import { Byline } from '../design-system/Byline.js';
@@ -81,7 +82,7 @@ export function MCPStdioServerMenu({
   // If there are no other options, add a back option so Select handles escape
   if (menuOptions.length === 0) {
     menuOptions.push({
-      label: 'Back',
+      label: t('common.back'),
       value: 'back'
     });
   }

@@ -48,6 +48,7 @@ import {
   handleServerControlRequest,
   makeResultMessage,
   isEligibleBridgeMessage,
+  type EligibleBridgeMessage,
   extractTitleText,
   BoundedUUIDSet,
 } from './bridgeMessaging.js'
@@ -266,8 +267,10 @@ export async function initEnvLessBridgeCore(
   const initialMessageUUIDs = new Set<string>()
   if (initialMessages) {
     for (const msg of initialMessages) {
-      initialMessageUUIDs.add(msg.uuid)
-      recentPostedUUIDs.add(msg.uuid)
+      if (isEligibleBridgeMessage(msg)) {
+        initialMessageUUIDs.add(msg.uuid)
+        recentPostedUUIDs.add(msg.uuid)
+      }
     }
   }
 
@@ -277,7 +280,8 @@ export async function initEnvLessBridgeCore(
 
   // FlushGate: queue live writes while the history flush POST is in flight,
   // so the server receives [history..., live...] in order.
-  const flushGate = new FlushGate<Message>()
+  // Note: Only EligibleBridgeMessage types are enqueued (see writeMessages)
+  const flushGate = new FlushGate<EligibleBridgeMessage>()
 
   let initialFlushDone = false
   let tornDown = false
@@ -765,12 +769,15 @@ export async function initEnvLessBridgeCore(
     environmentId: '',
     sessionIngressUrl: credentials.api_base_url,
     writeMessages(messages) {
-      const filtered = messages.filter(
-        m =>
-          isEligibleBridgeMessage(m) &&
-          !initialMessageUUIDs.has(m.uuid) &&
-          !recentPostedUUIDs.has(m.uuid),
-      )
+      // First filter to eligible messages (type guard narrows type)
+      // Then filter by UUID dedup (preserves narrowed type)
+      const filtered = messages
+        .filter(isEligibleBridgeMessage)
+        .filter(
+          m =>
+            !initialMessageUUIDs.has(m.uuid) &&
+            !recentPostedUUIDs.has(m.uuid),
+        )
       if (filtered.length === 0) return
 
       // Fire onUserMessage for title derivation. Scan before the flushGate
@@ -811,12 +818,14 @@ export async function initEnvLessBridgeCore(
       void transport.writeBatch(events)
     },
     writeSdkMessages(messages: SDKMessage[]) {
-      const filtered = messages.filter(
-        m => !m.uuid || !recentPostedUUIDs.has(m.uuid),
-      )
+      const filtered = messages.filter(m => {
+        const uuid = m.uuid
+        return typeof uuid !== 'string' || !recentPostedUUIDs.has(uuid)
+      })
       if (filtered.length === 0) return
       for (const msg of filtered) {
-        if (msg.uuid) recentPostedUUIDs.add(msg.uuid)
+        const uuid = msg.uuid
+        if (typeof uuid === 'string') recentPostedUUIDs.add(uuid)
       }
       const events = filtered.map(m => ({ ...m, session_id: sessionId }))
       void transport.writeBatch(events)

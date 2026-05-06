@@ -19,6 +19,7 @@ import {
   handleServerControlRequest,
   makeResultMessage,
   isEligibleBridgeMessage,
+  type EligibleBridgeMessage,
   extractTitleText,
   BoundedUUIDSet,
 } from './bridgeMessaging.js'
@@ -450,7 +451,9 @@ export async function initBridgeCore(
     // UUIDs cause the server to kill the WebSocket.
     if (initialMessages && previouslyFlushedUUIDs) {
       for (const msg of initialMessages) {
-        previouslyFlushedUUIDs.add(msg.uuid)
+        if (isEligibleBridgeMessage(msg)) {
+          previouslyFlushedUUIDs.add(msg.uuid)
+        }
       }
     }
   } else {
@@ -497,7 +500,9 @@ export async function initBridgeCore(
   const initialMessageUUIDs = new Set<string>()
   if (initialMessages) {
     for (const msg of initialMessages) {
-      initialMessageUUIDs.add(msg.uuid)
+      if (isEligibleBridgeMessage(msg)) {
+        initialMessageUUIDs.add(msg.uuid)
+      }
     }
   }
 
@@ -571,7 +576,8 @@ export async function initBridgeCore(
   const capacitySignal = capacityWake.signal
   // Gates message writes during the initial flush to prevent ordering
   // races where new messages arrive at the server interleaved with history.
-  const flushGate = new FlushGate<Message>()
+  // Note: Only EligibleBridgeMessage types are enqueued (see writeMessages)
+  const flushGate = new FlushGate<EligibleBridgeMessage>()
 
   // Latch for onUserMessage — flips true when the callback returns true
   // (policy says "done deriving"). If no callback, skip scanning entirely
@@ -1294,8 +1300,9 @@ export async function initBridgeCore(
                   }
                   if (previouslyFlushedUUIDs) {
                     for (const sdkMsg of sdkMessages) {
-                      if (sdkMsg.uuid) {
-                        previouslyFlushedUUIDs.add(sdkMsg.uuid)
+                      const uuid = sdkMsg.uuid
+                      if (typeof uuid === 'string') {
+                        previouslyFlushedUUIDs.add(uuid)
                       }
                     }
                   }
@@ -1693,15 +1700,15 @@ export async function initBridgeCore(
     sessionIngressUrl,
     writeMessages(messages) {
       // Filter to user/assistant messages that haven't already been sent.
-      // Two layers of dedup:
-      //  - initialMessageUUIDs: messages sent as session creation events
-      //  - recentPostedUUIDs: messages recently sent via POST
-      const filtered = messages.filter(
-        m =>
-          isEligibleBridgeMessage(m) &&
-          !initialMessageUUIDs.has(m.uuid) &&
-          !recentPostedUUIDs.has(m.uuid),
-      )
+      // First filter to eligible messages (type guard narrows type)
+      // Then filter by UUID dedup (preserves narrowed type)
+      const filtered = messages
+        .filter(isEligibleBridgeMessage)
+        .filter(
+          m =>
+            !initialMessageUUIDs.has(m.uuid) &&
+            !recentPostedUUIDs.has(m.uuid),
+        )
       if (filtered.length === 0) return
 
       // Fire onUserMessage for title derivation. Scan before the flushGate
@@ -1759,9 +1766,10 @@ export async function initBridgeCore(
       // Still run echo dedup (server bounces writes back on the WS).
       // No initialMessageUUIDs filter — daemon has no initial messages.
       // No flushGate — daemon never starts it (no initial flush).
-      const filtered = messages.filter(
-        m => !m.uuid || !recentPostedUUIDs.has(m.uuid),
-      )
+      const filtered = messages.filter(m => {
+        const uuid = m.uuid
+        return typeof uuid !== 'string' || !recentPostedUUIDs.has(uuid)
+      })
       if (filtered.length === 0) return
       if (!transport) {
         logForDebugging(
@@ -1771,7 +1779,8 @@ export async function initBridgeCore(
         return
       }
       for (const msg of filtered) {
-        if (msg.uuid) recentPostedUUIDs.add(msg.uuid)
+        const uuid = msg.uuid
+        if (typeof uuid === 'string') recentPostedUUIDs.add(uuid)
       }
       const events = filtered.map(m => ({ ...m, session_id: currentSessionId }))
       void transport.writeBatch(events)

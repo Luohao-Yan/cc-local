@@ -7,6 +7,7 @@ import { Box, Text } from '../ink.js';
 import { type AutoUpdaterResult, getLatestVersion, getMaxVersion, type InstallStatus, installGlobalPackage, shouldSkipVersion } from '../utils/autoUpdater.js';
 import { getGlobalConfig, isAutoUpdaterDisabled } from '../utils/config.js';
 import { logForDebugging } from '../utils/debug.js';
+import { t } from '../utils/i18n/index.js';
 import { getCurrentInstallationType } from '../utils/doctorDiagnostic.js';
 import { installOrUpdateClaudePackage, localInstallationExists } from '../utils/localInstaller.js';
 import { removeInstalledSymlink } from '../utils/nativeInstaller/index.js';
@@ -181,11 +182,11 @@ export function AutoUpdater({
       {isUpdating ? <>
           <Box>
             <Text color="text" dimColor wrap="truncate">
-              Auto-updating…
+              {t('autoUpdater.updating')}
             </Text>
           </Box>
         </> : autoUpdaterResult?.status === 'success' && showSuccessMessage && updateSemver && <Text color="success" wrap="truncate">
-            ✓ Update installed · Restart to apply
+            {t('autoUpdater.updateInstalled')}
           </Text>}
       {(autoUpdaterResult?.status === 'install_failed' || autoUpdaterResult?.status === 'no_permissions') && <Text color="error" wrap="truncate">
           ✗ Auto-update failed &middot; Try <Text bold>claude doctor</Text> or{' '}

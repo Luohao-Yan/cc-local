@@ -4,7 +4,14 @@
 
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { MCPBridgeAdapter, type LegacyMCPClient } from './mcpBridgeAdapter.js'
-import type { MCPManager, MCPServerRecord, MCPServerConfig } from '@cclocal/core/mcp'
+import type {
+  MCPManager,
+  MCPServerRecord,
+  MCPServerConfig,
+  MCPServerRegistration,
+  MCPServerStatus,
+  MCPToolDefinition,
+} from '@cclocal/core/mcp'
 
 /**
  * Create a minimal MCPManager mock for testing
@@ -13,12 +20,12 @@ function createMockManager(): MCPManager {
   const servers = new Map<string, MCPServerRecord>()
 
   return {
-    registerServer(registration) {
+    registerServer(registration: MCPServerRegistration) {
       const record: MCPServerRecord = {
         name: registration.name,
         config: registration.config,
         status: 'registered',
-        tools: (registration.tools ?? []).map((t) => ({
+        tools: (registration.tools ?? []).map((t: MCPToolDefinition) => ({
           ...t,
           registeredName: `mcp__${registration.name}__${t.name}`,
         })),
@@ -48,14 +55,14 @@ function createMockManager(): MCPManager {
       return updated
     },
     async removeServer() { return true },
-    setServerStatus(name, status, lastError) {
+    setServerStatus(name: string, status: MCPServerStatus, lastError?: string) {
       const record = servers.get(name)
       if (!record) throw new Error(`MCP server "${name}" not found`)
       const updated: MCPServerRecord = { ...record, status, lastError, updatedAt: Date.now() }
       servers.set(name, updated)
       return updated
     },
-    setServerTools(name, tools) {
+    setServerTools(name: string, tools: MCPToolDefinition[]) {
       const record = servers.get(name)
       if (!record) throw new Error(`MCP server "${name}" not found`)
       const updated: MCPServerRecord = { ...record, tools, updatedAt: Date.now() }

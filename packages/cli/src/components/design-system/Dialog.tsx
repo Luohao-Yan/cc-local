@@ -4,6 +4,7 @@ import { type ExitState, useExitOnCtrlCDWithKeybindings } from '../../hooks/useE
 import { Box, Text } from '../../ink.js';
 import { useKeybinding } from '../../keybindings/useKeybinding.js';
 import type { Theme } from '../../utils/theme.js';
+import { t } from '../../utils/i18n/index.js';
 import { ConfigurableShortcutHint } from '../ConfigurableShortcutHint.js';
 import { Byline } from './Byline.js';
 import { KeyboardShortcutHint } from './KeyboardShortcutHint.js';
@@ -57,7 +58,7 @@ export function Dialog(t0) {
   useKeybinding("confirm:no", onCancel, t3);
   let t4;
   if ($[2] !== exitState.keyName || $[3] !== exitState.pending) {
-    t4 = exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : <Byline><KeyboardShortcutHint shortcut="Enter" action="confirm" /><ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="cancel" /></Byline>;
+    t4 = exitState.pending ? <Text>{t('dialog.pressAgainToExit', { key: exitState.keyName })}</Text> : <Byline><KeyboardShortcutHint shortcut="Enter" action="confirm" /><ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="cancel" /></Byline>;
     $[2] = exitState.keyName;
     $[3] = exitState.pending;
     $[4] = t4;

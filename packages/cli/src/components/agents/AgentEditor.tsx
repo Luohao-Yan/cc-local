@@ -10,6 +10,7 @@ import type { Tools } from '../../Tool.js';
 import { type AgentColorName, setAgentColor } from '../../tools/AgentTool/agentColorManager.js';
 import { type AgentDefinition, getActiveAgentsFromList, isCustomAgent, isPluginAgent } from '../../tools/AgentTool/loadAgentsDir.js';
 import { editFileInEditor } from '../../utils/promptEditor.js';
+import { t } from '../../utils/i18n/index.js';
 import { getActualAgentFilePath, updateAgentFile } from './agentFileUtils.js';
 import { ColorPicker } from './ColorPicker.js';
 import { ModelSelector } from './ModelSelector.js';
@@ -44,7 +45,7 @@ export function AgentEditor({
     if (result.error) {
       setError(result.error);
     } else {
-      onSaved(`Opened ${agent.agentType} in editor. If you made edits, restart to load the latest version.`);
+      onSaved(t('agentEditor.openedInEditor', { name: agent.agentType }));
     }
   }, [agent, onSaved]);
   const handleSave = useCallback(async (changes: SaveChanges = {}) => {
@@ -86,24 +87,24 @@ export function AgentEditor({
           }
         };
       });
-      onSaved(`Updated agent: ${chalk.bold(agent.agentType)}`);
+      onSaved(t('agentEditor.updated', { name: chalk.bold(agent.agentType) }));
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save agent');
+      setError(err instanceof Error ? err.message : t('agentEditor.saveFailed'));
       return false;
     }
   }, [agent, selectedColor, onSaved, setAppState]);
   const menuItems = useMemo(() => [{
-    label: 'Open in editor',
+    label: t('agentEditor.openInEditor'),
     action: handleOpenInEditor
   }, {
-    label: 'Edit tools',
+    label: t('agentEditor.editTools'),
     action: () => setEditMode('edit-tools')
   }, {
-    label: 'Edit model',
+    label: t('agentEditor.editModel'),
     action: () => setEditMode('edit-model')
   }, {
-    label: 'Edit color',
+    label: t('agentEditor.editColor'),
     action: () => setEditMode('edit-color')
   }], [handleOpenInEditor]);
   const handleEscape = useCallback(() => {
@@ -133,7 +134,7 @@ export function AgentEditor({
     context: 'Confirmation'
   });
   const renderMenu = (): React.ReactNode => <Box flexDirection="column" tabIndex={0} autoFocus onKeyDown={handleMenuKeyDown}>
-      <Text dimColor>Source: {getAgentSourceDisplayName(agent.source)}</Text>
+      <Text dimColor>{t('agentEditor.source', { source: getAgentSourceDisplayName(agent.source) })}</Text>
 
       <Box marginTop={1} flexDirection="column">
         {menuItems.map((item, index_1) => <Text key={item.label} color={index_1 === selectedMenuIndex ? 'suggestion' : undefined}>

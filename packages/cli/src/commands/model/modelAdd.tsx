@@ -47,7 +47,7 @@ export function ModelAdd({
   const [apiFormat, setApiFormat] = React.useState<APIFormat>('openai')
 
   const handleCancel = React.useCallback(() => {
-    onDone('Add model cancelled.', { display: 'system' })
+    onDone(t('modelAdd.cancel'), { display: 'system' })
   }, [onDone])
 
   // baseUrl input → format selection (or confirm-append)
@@ -158,7 +158,7 @@ export function ModelAdd({
         setStep('input-model')
         setVerifyError('')
       } else {
-        onDone('Add model cancelled.', { display: 'system' })
+        onDone(t('modelAdd.cancel'), { display: 'system' })
       }
     },
     [baseUrl, apiKey, modelName, alias, existingProviderKey, onDone],
@@ -177,11 +177,11 @@ export function ModelAdd({
         title={t('modelAdd.step1')}
         hint={[
           t('modelAdd.hintBaseUrl'),
-          'Examples:',
-          '  Doubao  : https://ark.cn-beijing.volces.com/api/v3',
-          '  DeepSeek: https://api.deepseek.com/v1',
-          '  OpenAI  : https://api.openai.com/v1',
-          '  Local   : http://localhost:11434/v1',
+          t('modelAdd.examples'),
+          `  ${t('modelAdd.exampleDoubaoUrl')}`,
+          `  ${t('modelAdd.exampleDeepSeekUrl')}`,
+          `  ${t('modelAdd.exampleOpenAIUrl')}`,
+          `  ${t('modelAdd.exampleLocalUrl')}`,
         ]}
         prompt={t('modelAdd.promptBaseUrl')}
         placeholder="e.g. https://api.openai.com/v1"
@@ -191,7 +191,7 @@ export function ModelAdd({
     )
   }
   if (step === 'input-format') {
-    const detectedLabel = apiFormat === 'openai' ? 'OpenAI Chat Completions' : 'Anthropic Messages'
+    const detectedLabel = apiFormat === 'openai' ? t('modelAdd.formatOpenAI') : t('modelAdd.formatAnthropic')
     return (
       <Box flexDirection="column">
         <Text bold>{t('modelAdd.step2')}</Text>
@@ -202,14 +202,14 @@ export function ModelAdd({
         <Select
           options={[
             {
-              label: 'OpenAI Chat Completions (/v1/chat/completions)',
+              label: t('modelAdd.formatOpenAI') + ' (/v1/chat/completions)',
               value: 'openai',
-              description: 'Standard format used by OpenAI, DeepSeek, Doubao, Ollama, etc.',
+              description: t('modelAdd.formatOpenAIDesc'),
             },
             {
-              label: 'Anthropic Messages (/v1/messages)',
+              label: t('modelAdd.formatAnthropic') + ' (/v1/messages)',
               value: 'anthropic',
-              description: 'Native Anthropic format — for proxies that replicate the Messages API',
+              description: t('modelAdd.formatAnthropicDesc'),
             },
           ]}
           onChange={handleFormatSelect} onCancel={handleCancel}
@@ -225,7 +225,7 @@ export function ModelAdd({
       <Box flexDirection="column">
         <Text bold>{t('modelAdd.providerExists')}</Text>
         <Text> </Text>
-        <Text bold>Provider: "{providerName}"</Text>
+        <Text bold>{t('modelAdd.providerLabel', { name: providerName })}</Text>
         <Text> </Text>
         <Text dimColor>{t('modelAdd.sameUrlFound')}</Text>
         <Text> </Text>
@@ -234,12 +234,12 @@ export function ModelAdd({
             {
               label: t('modelAdd.yesAddToExisting'),
               value: 'yes',
-              description: existingKey ? `Reuses existing API key (...${existingKey.slice(-4)})` : 'No API key set',
+              description: existingKey ? t('modelAdd.reusesApiKey', { keySuffix: existingKey.slice(-4) }) : t('modelAdd.noApiKey'),
             },
             {
               label: t('modelAdd.noCreateNew'),
               value: 'no',
-              description: 'Use this if you have a different key for the same endpoint',
+              description: t('modelAdd.differentKeyHint'),
             },
           ]}
           onChange={handleAppendConfirm} onCancel={handleCancel}
@@ -253,7 +253,7 @@ export function ModelAdd({
         title={t('modelAdd.step3')}
         hint={[
           t('modelAdd.hintApiKey'),
-          'Find it in your provider\'s console / dashboard.',
+          t('modelAdd.findApiKeyHint'),
           t('modelAdd.hintApiKeySkip'),
         ]}
         prompt={t('modelAdd.promptApiKey')}
@@ -269,11 +269,11 @@ export function ModelAdd({
         title={t('modelAdd.step4')}
         hint={[
           t('modelAdd.hintModelName'),
-          'Examples:',
-          '  Doubao  : doubao-seed-2.0-code',
-          '  DeepSeek: deepseek-chat',
-          '  OpenAI  : gpt-4o',
-          '  Local   : qwen3:32b',
+          t('modelAdd.examples'),
+          `  ${t('modelAdd.exampleDoubaoModel')}`,
+          `  ${t('modelAdd.exampleDeepSeekModel')}`,
+          `  ${t('modelAdd.exampleOpenAIModel')}`,
+          `  ${t('modelAdd.exampleLocalModel')}`,
         ]}
         prompt={t('modelAdd.promptModelName')}
         placeholder="gpt-4o"
@@ -288,8 +288,8 @@ export function ModelAdd({
         title={t('modelAdd.step5')}
         hint={[
           t('modelAdd.hintAlias'),
-          'Example: type "doubao" to use instead of the full model ID.',
-          'Press Enter to skip.',
+          t('modelAdd.aliasExample', { alias: 'doubao' }),
+          t('modelAdd.pressEnterSkip'),
         ]}
         prompt={t('modelAdd.promptAlias')}
         placeholder=""
@@ -313,7 +313,7 @@ export function ModelAdd({
             { label: t('modelAdd.fixApiKey'), value: 'retry-key', description: t('modelAdd.fixApiKeyDesc') },
             { label: t('modelAdd.fixModelName'), value: 'retry-model', description: t('modelAdd.fixModelNameDesc') },
             { label: t('modelAdd.startOver'), value: 'retry-url', description: t('modelAdd.startOverDesc') },
-            { label: 'Cancel', value: 'cancel' },
+            { label: t('common.cancel'), value: 'cancel' },
           ]}
           onChange={handleVerifyFailChoice} onCancel={handleCancel}
         />
@@ -407,19 +407,19 @@ function saveConfig(baseUrl: string, apiKey: string, modelName: string, alias: s
 
 function finishAdd(baseUrl: string, modelName: string, alias: string, format: APIFormat, onDone: LocalJSXCommandOnDone, isFirstModel: boolean = false): void {
   const switchCmd = alias ? `/model ${alias}` : `/model ${modelName}`
-  const formatLabel = format === 'openai' ? 'OpenAI Chat Completions' : 'Anthropic Messages'
+  const formatLabel = format === 'openai' ? t('modelAdd.formatOpenAI') : t('modelAdd.formatAnthropic')
   const lines = [
-    'Model added successfully!',
-    `  Model   : ${modelName}`,
-    alias ? `  Alias   : ${alias}` : '',
-    `  Endpoint: ${baseUrl}`,
-    `  Format  : ${formatLabel}`,
+    t('modelAdd.modelAddedSuccess'),
+    `  ${t('modelAdd.modelLabel')}   : ${modelName}`,
+    alias ? `  ${t('modelAdd.aliasLabel')}   : ${alias}` : '',
+    `  ${t('modelAdd.endpointLabel')}: ${baseUrl}`,
+    `  ${t('modelAdd.formatLabel')}  : ${formatLabel}`,
     '',
     isFirstModel
-      ? 'This is your first model — automatically set as default.'
+      ? t('modelAdd.firstModelHint')
       : '',
-    `Next: /model list to view all  ·  ${switchCmd} to switch`,
-    isFirstModel ? '       /model add to add more models' : '',
+    t('modelAdd.nextHint', { switchCmd }),
+    isFirstModel ? t('modelAdd.addMoreHint') : '',
   ].filter(Boolean).join('\n')
   onDone(lines, { display: 'system' as CommandResultDisplay })
 }

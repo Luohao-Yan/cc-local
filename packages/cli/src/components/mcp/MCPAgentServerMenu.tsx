@@ -5,6 +5,7 @@ import { Box, color, Link, Text, useTheme } from '../../ink.js';
 import { useKeybinding } from '../../keybindings/useKeybinding.js';
 import { AuthenticationCancelledError, performMCPOAuthFlow } from '../../services/mcp/auth.js';
 import { capitalize } from '../../utils/stringUtils.js';
+import { t } from '../../utils/i18n/index.js';
 import { ConfigurableShortcutHint } from '../ConfigurableShortcutHint.js';
 import { Select } from '../CustomSelect/index.js';
 import { Byline } from '../design-system/Byline.js';
@@ -112,7 +113,7 @@ export function MCPAgentServerMenu({
     });
   }
   menuOptions.push({
-    label: 'Back',
+    label: t('common.back'),
     value: 'back'
   });
   return <Dialog title={`${capitalizedServerName} MCP Server`} subtitle="agent-only" onCancel={onCancel} inputGuide={exitState => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : <Byline>

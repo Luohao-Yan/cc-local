@@ -26,6 +26,7 @@ import type { KeyboardEvent } from '../../ink/events/keyboard-event.js';
 import { Box, Text } from '../../ink.js';
 import { useKeybinding } from '../../keybindings/useKeybinding.js';
 import { count } from '../../utils/array.js';
+import { t } from '../../utils/i18n/index.js';
 import { plural } from '../../utils/stringUtils.js';
 import { Divider } from '../design-system/Divider.js';
 type Props = {
@@ -287,7 +288,7 @@ export function ToolSelector(t0) {
     }
     navigableItems.push({
       id: "bucket-all",
-      label: `${isAllSelected ? figures.checkboxOn : figures.checkboxOff} All tools`,
+      label: `${isAllSelected ? figures.checkboxOn : figures.checkboxOff} ${t('toolSelector.allTools')}`,
       action: t10
     });
     const toolBuckets_0 = getToolBuckets();
@@ -517,7 +518,7 @@ export function ToolSelector(t0) {
   } else {
     t19 = $[61];
   }
-  const t20 = isAllSelected ? "All tools selected" : `${selectedSet.size} of ${customAgentTools.length} tools selected`;
+  const t20 = isAllSelected ? t('toolSelector.allSelected', { count: customAgentTools.length }) : t('toolSelector.selected', { count: selectedSet.size, total: customAgentTools.length });
   let t21;
   if ($[62] !== t20) {
     t21 = <Box marginTop={1} flexDirection="column"><Text dimColor={true}>{t20}</Text></Box>;
