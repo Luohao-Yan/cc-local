@@ -4,6 +4,7 @@ import { getSettingsFilePathForSource } from '../../utils/settings/settings.js'
 import { enableDebugLogging, getDebugLogPath } from '../../utils/debug.js'
 import { errorMessage, isENOENT } from '../../utils/errors.js'
 import { formatFileSize } from '../../utils/format.js'
+import { t } from '../../utils/i18n/index.js'
 import { registerBundledSkill } from '../bundledSkills.js'
 
 const DEFAULT_DEBUG_LINES_READ = 20
@@ -14,8 +15,8 @@ export function registerDebugSkill(): void {
     name: 'debug',
     description:
       process.env.USER_TYPE === 'ant'
-        ? 'Debug your current Claude Code session by reading the session debug log. Includes all event logging'
-        : 'Enable debug logging for this session and help diagnose issues',
+        ? t('command.description.debug-ant')
+        : t('command.description.debug'),
     allowedTools: ['Read', 'Grep', 'Glob'],
     argumentHint: '[issue description]',
     // disableModelInvocation so that the user has to explicitly request it in
