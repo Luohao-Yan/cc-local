@@ -104,5 +104,7 @@ export const command = {
   "description.stuck": "[仅限 ANT] 调查此机器上冻结/卡住/缓慢的 Claude Code 会话，并将诊断报告发布到 #claude-code-feedback。",
   "description.keybindings-help": "当用户想要自定义键盘快捷键、重新绑定按键、添加组合键绑定或修改 ~/.claude/keybindings.json 时使用。示例："重新绑定 ctrl+s"、"添加组合快捷键"、"更改提交键"、"自定义键绑定"。",
   "description.schedule": "创建、更新、列出或运行按 cron 计划执行的预定远程代理（触发器）。",
-  "whenToUse.schedule": "当用户想要安排定期远程代理、设置自动化任务、为 Claude Code 创建 cron 作业或管理其预定的代理/触发器时使用。"
+  "whenToUse.schedule": "当用户想要安排定期远程代理、设置自动化任务、为 Claude Code 创建 cron 作业或管理其预定的代理/触发器时使用。",
+  "description.security-review": "完成对当前分支待定更改的安全审查",
+  "description.statusline": "设置 Claude Code 的状态栏 UI"
 }

@@ -104,5 +104,7 @@ export const command = {
   "description.stuck": "[ANT-ONLY] Investigate frozen/stuck/slow Claude Code sessions on this machine and post a diagnostic report to #claude-code-feedback.",
   "description.keybindings-help": "Use when the user wants to customize keyboard shortcuts, rebind keys, add chord bindings, or modify ~/.claude/keybindings.json. Examples: \"rebind ctrl+s\", \"add a chord shortcut\", \"change the submit key\", \"customize keybindings\".",
   "description.schedule": "Create, update, list, or run scheduled remote agents (triggers) that execute on a cron schedule.",
-  "whenToUse.schedule": "When the user wants to schedule a recurring remote agent, set up automated tasks, create a cron job for Claude Code, or manage their scheduled agents/triggers."
+  "whenToUse.schedule": "When the user wants to schedule a recurring remote agent, set up automated tasks, create a cron job for Claude Code, or manage their scheduled agents/triggers.",
+  "description.security-review": "Complete a security review of the pending changes on the current branch",
+  "description.statusline": "Set up Claude Code's status line UI"
 }
