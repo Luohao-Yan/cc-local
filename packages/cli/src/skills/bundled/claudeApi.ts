@@ -181,7 +181,7 @@ function buildPrompt(
 export function registerClaudeApiSkill(): void {
   registerBundledSkill({
     name: 'claude-api',
-    description: t('command.description.claude-api'),
+    description: () => t('command.description.claude-api'),
     allowedTools: ['Read', 'Grep', 'Glob', 'WebFetch'],
     userInvocable: true,
     async getPromptForCommand(args) {

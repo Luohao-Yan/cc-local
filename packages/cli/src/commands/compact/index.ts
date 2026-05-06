@@ -5,7 +5,7 @@ import { isEnvTruthy } from '../../utils/envUtils.js'
 const compact = {
   type: 'local',
   name: 'compact',
-  description: t('command.description.compact'),
+  get description() { return t('command.description.compact') },
   isEnabled: () => !isEnvTruthy(process.env.DISABLE_COMPACT),
   supportsNonInteractive: true,
   argumentHint: '<optional custom summarization instructions>',

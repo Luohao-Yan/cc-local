@@ -6,7 +6,7 @@ import { isPolicyAllowed } from '../../services/policyLimits/index.js'
 const web = {
   type: 'local-jsx',
   name: 'web-setup',
-  description: t('command.description.web-setup'),
+  get description() { return t('command.description.web-setup') },
   availability: ['claude-ai'],
   isEnabled: () =>
     getFeatureValue_CACHED_MAY_BE_STALE('tengu_cobalt_lantern', false) &&

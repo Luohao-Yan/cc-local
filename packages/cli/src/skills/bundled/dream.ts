@@ -22,8 +22,8 @@ import { registerBundledSkill } from '../bundledSkills.js'
 export function registerDreamSkill(): void {
   registerBundledSkill({
     name: 'dream',
-    description: t('command.description.dream'),
-    whenToUse: t('command.whenToUse.dream'),
+    description: () => t('command.description.dream'),
+    whenToUse: () => t('command.whenToUse.dream'),
     userInvocable: true,
     isEnabled: () => isAutoMemoryEnabled(),
     async getPromptForCommand(args) {

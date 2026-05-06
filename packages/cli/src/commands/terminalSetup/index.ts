@@ -13,10 +13,11 @@ const NATIVE_CSIU_TERMINALS: Record<string, string> = {
 const terminalSetup = {
   type: 'local-jsx',
   name: 'terminal-setup',
-  description:
-    env.terminal === 'Apple_Terminal'
+  get description() {
+    return env.terminal === 'Apple_Terminal'
       ? t('command.description.terminal-setup-apple')
-      : t('command.description.terminal-setup'),
+      : t('command.description.terminal-setup')
+  },
   isHidden: env.terminal !== null && env.terminal in NATIVE_CSIU_TERMINALS,
   load: () => import('./terminalSetup.js'),
 } satisfies Command

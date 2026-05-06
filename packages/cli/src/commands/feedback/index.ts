@@ -8,7 +8,7 @@ const feedback = {
   aliases: ['bug'],
   type: 'local-jsx',
   name: 'feedback',
-  description: t('command.description.feedback'),
+  get description() { return t('command.description.feedback') },
   argumentHint: '[report]',
   isEnabled: () =>
     !(

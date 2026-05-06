@@ -239,7 +239,7 @@ export function registerLoremIpsumSkill(): void {
 
   registerBundledSkill({
     name: 'lorem-ipsum',
-    description: t('command.description.lorem-ipsum'),
+    description: () => t('command.description.lorem-ipsum'),
     argumentHint: '[token_count]',
     userInvocable: true,
     async getPromptForCommand(args) {

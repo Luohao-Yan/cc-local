@@ -101,8 +101,8 @@ Examples:
 export function registerBatchSkill(): void {
   registerBundledSkill({
     name: 'batch',
-    description: t('command.description.batch'),
-    whenToUse: t('command.whenToUse.batch'),
+    description: () => t('command.description.batch'),
+    whenToUse: () => t('command.whenToUse.batch'),
     argumentHint: '<instruction>',
     userInvocable: true,
     disableModelInvocation: true,

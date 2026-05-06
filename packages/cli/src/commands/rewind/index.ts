@@ -2,7 +2,7 @@ import type { Command } from '../../commands.js'
 import { t } from '../../utils/i18n/index.js'
 
 const rewind = {
-  description: t('command.description.rewind'),
+  get description() { return t('command.description.rewind') },
   name: 'rewind',
   aliases: ['checkpoint'],
   argumentHint: '',

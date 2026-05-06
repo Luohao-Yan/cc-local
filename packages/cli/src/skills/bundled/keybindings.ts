@@ -293,7 +293,7 @@ const SECTION_DOCTOR = [
 export function registerKeybindingsSkill(): void {
   registerBundledSkill({
     name: 'keybindings-help',
-    description: t('command.description.keybindings-help'),
+    description: () => t('command.description.keybindings-help'),
     allowedTools: ['Read'],
     userInvocable: false,
     isEnabled: isKeybindingCustomizationEnabled,

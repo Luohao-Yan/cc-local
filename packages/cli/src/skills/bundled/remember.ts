@@ -64,8 +64,8 @@ If auto-memory is empty, say so and offer to review CLAUDE.md for cleanup.
 
   registerBundledSkill({
     name: 'remember',
-    description: t('command.description.remember'),
-    whenToUse: t('command.whenToUse.remember'),
+    description: () => t('command.description.remember'),
+    whenToUse: () => t('command.whenToUse.remember'),
     userInvocable: true,
     isEnabled: () => isAutoMemoryEnabled(),
     async getPromptForCommand(args) {

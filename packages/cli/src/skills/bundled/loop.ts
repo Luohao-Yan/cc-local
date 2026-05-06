@@ -75,8 +75,8 @@ ${args}`
 export function registerLoopSkill(): void {
   registerBundledSkill({
     name: 'loop',
-    description: t('command.description.loop'),
-    whenToUse: t('command.whenToUse.loop'),
+    description: () => t('command.description.loop'),
+    whenToUse: () => t('command.whenToUse.loop'),
     argumentHint: '[interval] <prompt>',
     userInvocable: true,
     isEnabled: isKairosCronEnabled,

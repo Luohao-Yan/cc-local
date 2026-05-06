@@ -103,13 +103,19 @@ describe('/dream 注册与静态配置', () => {
   it('description 非空', () => {
     registerDreamSkill()
     expect(capturedDefinition!.description).toBeTruthy()
-    expect(capturedDefinition!.description.length).toBeGreaterThan(0)
+    const desc = typeof capturedDefinition!.description === 'function'
+      ? capturedDefinition!.description()
+      : capturedDefinition!.description
+    expect(desc.length).toBeGreaterThan(0)
   })
 
   it('whenToUse 非空', () => {
     registerDreamSkill()
     expect(capturedDefinition!.whenToUse).toBeTruthy()
-    expect(capturedDefinition!.whenToUse!.length).toBeGreaterThan(0)
+    const whenToUse = typeof capturedDefinition!.whenToUse === 'function'
+      ? capturedDefinition!.whenToUse()
+      : capturedDefinition!.whenToUse
+    expect(whenToUse!.length).toBeGreaterThan(0)
   })
 })
 

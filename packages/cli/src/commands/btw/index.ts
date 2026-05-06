@@ -4,7 +4,7 @@ import { t } from '../../utils/i18n/index.js'
 const btw = {
   type: 'local-jsx',
   name: 'btw',
-  description: t('command.description.btw'),
+  get description() { return t('command.description.btw') },
   immediate: true,
   argumentHint: '<question>',
   load: () => import('./btw.js'),

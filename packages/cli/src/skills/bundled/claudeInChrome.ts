@@ -17,8 +17,8 @@ IMPORTANT: Start by calling mcp__claude-in-chrome__tabs_context_mcp to get infor
 export function registerClaudeInChromeSkill(): void {
   registerBundledSkill({
     name: 'claude-in-chrome',
-    description: t('command.description.claude-in-chrome'),
-    whenToUse: t('command.whenToUse.claude-in-chrome'),
+    description: () => t('command.description.claude-in-chrome'),
+    whenToUse: () => t('command.whenToUse.claude-in-chrome'),
     allowedTools: CLAUDE_IN_CHROME_MCP_TOOLS,
     userInvocable: true,
     isEnabled: () => shouldAutoEnableClaudeInChrome(),

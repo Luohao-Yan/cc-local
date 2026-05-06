@@ -13,7 +13,7 @@ const TAIL_READ_BYTES = 64 * 1024
 export function registerDebugSkill(): void {
   registerBundledSkill({
     name: 'debug',
-    description:
+    description: () =>
       process.env.USER_TYPE === 'ant'
         ? t('command.description.debug-ant')
         : t('command.description.debug'),

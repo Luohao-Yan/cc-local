@@ -4,7 +4,7 @@ import type { ToolUseContext } from '../Tool.js'
 
 type Options = {
   name: string
-  description: string
+  description: string | (() => string)
   progressMessage: string
   pluginName: string
   pluginCommand: string
@@ -30,7 +30,9 @@ export function createMovedToPluginCommand({
   return {
     type: 'prompt',
     name,
-    description,
+    get description() {
+      return typeof description === 'function' ? description() : description
+    },
     progressMessage,
     contentLength: 0, // Dynamic content
     userFacingName() {

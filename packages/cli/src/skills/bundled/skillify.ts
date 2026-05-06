@@ -163,7 +163,7 @@ export function registerSkillifySkill(): void {
 
   registerBundledSkill({
     name: 'skillify',
-    description: t('command.description.skillify'),
+    description: () => t('command.description.skillify'),
     allowedTools: [
       'Read',
       'Write',

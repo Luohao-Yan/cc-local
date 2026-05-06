@@ -56,7 +56,7 @@ When done, briefly summarize what was fixed (or confirm the code was already cle
 export function registerSimplifySkill(): void {
   registerBundledSkill({
     name: 'simplify',
-    description: t('command.description.simplify'),
+    description: () => t('command.description.simplify'),
     userInvocable: true,
     async getPromptForCommand(args) {
       let prompt = SIMPLIFY_PROMPT

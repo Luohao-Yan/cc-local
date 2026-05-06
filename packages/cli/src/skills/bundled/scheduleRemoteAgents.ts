@@ -325,8 +325,8 @@ ${userArgs ? `\n## User Request\n\nThe user said: "${userArgs}"\n\nStart by unde
 export function registerScheduleRemoteAgentsSkill(): void {
   registerBundledSkill({
     name: 'schedule',
-    description: t('command.description.schedule'),
-    whenToUse: t('command.whenToUse.schedule'),
+    description: () => t('command.description.schedule'),
+    whenToUse: () => t('command.whenToUse.schedule'),
     userInvocable: true,
     isEnabled: () =>
       getFeatureValue_CACHED_MAY_BE_STALE('tengu_surreal_dali', false) &&

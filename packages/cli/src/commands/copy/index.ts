@@ -8,7 +8,7 @@ import { t } from '../../utils/i18n/index.js'
 const copy = {
   type: 'local-jsx',
   name: 'copy',
-  description: t('command.description.copy'),
+  get description() { return t('command.description.copy') },
   load: () => import('./copy.js'),
 } satisfies Command
 

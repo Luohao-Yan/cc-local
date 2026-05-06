@@ -14,9 +14,9 @@ import type { HooksSettings } from '../utils/settings/types.js'
  */
 export type BundledSkillDefinition = {
   name: string
-  description: string
+  description: string | (() => string)
   aliases?: string[]
-  whenToUse?: string
+  whenToUse?: string | (() => string)
   argumentHint?: string
   allowedTools?: string[]
   model?: string
@@ -75,12 +75,22 @@ export function registerBundledSkill(definition: BundledSkillDefinition): void {
   const command: Command = {
     type: 'prompt',
     name: definition.name,
-    description: definition.description,
+    get description() {
+      return typeof definition.description === 'function'
+        ? definition.description()
+        : definition.description
+    },
     aliases: definition.aliases,
     hasUserSpecifiedDescription: true,
     allowedTools: definition.allowedTools ?? [],
     argumentHint: definition.argumentHint,
-    whenToUse: definition.whenToUse,
+    get whenToUse() {
+      return definition.whenToUse
+        ? typeof definition.whenToUse === 'function'
+          ? definition.whenToUse()
+          : definition.whenToUse
+        : undefined
+    },
     model: definition.model,
     disableModelInvocation: definition.disableModelInvocation ?? false,
     userInvocable: definition.userInvocable ?? true,

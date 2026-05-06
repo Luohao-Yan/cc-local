@@ -4,7 +4,7 @@ import { AGENT_TOOL_NAME } from '../tools/AgentTool/constants.js';
 import { t } from '../utils/i18n/index.js';
 const statusline = {
   type: 'prompt',
-  description: t('command.description.statusline'),
+  get description() { return t('command.description.statusline') },
   contentLength: 0,
   // Dynamic content
   aliases: [],

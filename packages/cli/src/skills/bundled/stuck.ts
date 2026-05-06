@@ -66,7 +66,7 @@ export function registerStuckSkill(): void {
 
   registerBundledSkill({
     name: 'stuck',
-    description: t('command.description.stuck'),
+    description: () => t('command.description.stuck'),
     userInvocable: true,
     async getPromptForCommand(args) {
       let prompt = STUCK_PROMPT

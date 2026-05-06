@@ -446,7 +446,7 @@ If a hook isn't running:
 export function registerUpdateConfigSkill(): void {
   registerBundledSkill({
     name: 'update-config',
-    description: t('command.description.update-config'),
+    description: () => t('command.description.update-config'),
     allowedTools: ['Read'],
     userInvocable: true,
     async getPromptForCommand(args) {

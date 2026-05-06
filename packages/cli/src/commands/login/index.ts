@@ -7,9 +7,11 @@ export default () =>
   ({
     type: 'local-jsx',
     name: 'login',
-    description: hasAnthropicApiKeyAuth()
-      ? t('command.description.login-switch')
-      : t('command.description.login'),
+    get description() {
+      return hasAnthropicApiKeyAuth()
+        ? t('command.description.login-switch')
+        : t('command.description.login')
+    },
     isEnabled: () => !isEnvTruthy(process.env.DISABLE_LOGIN_COMMAND),
     load: () => import('./login.js'),
   }) satisfies Command

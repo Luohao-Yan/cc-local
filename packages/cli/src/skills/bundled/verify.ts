@@ -5,7 +5,7 @@ import { SKILL_FILES, SKILL_MD } from './verifyContent.js'
 
 const { frontmatter, content: SKILL_BODY } = parseFrontmatter(SKILL_MD)
 
-const DESCRIPTION =
+const getDescription = () =>
   typeof frontmatter.description === 'string'
     ? frontmatter.description
     : t('command.description.verify')
@@ -17,7 +17,7 @@ export function registerVerifySkill(): void {
 
   registerBundledSkill({
     name: 'verify',
-    description: DESCRIPTION,
+    description: getDescription,
     userInvocable: true,
     files: SKILL_FILES,
     async getPromptForCommand(args) {

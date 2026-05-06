@@ -198,7 +198,7 @@ Your final reply must contain the markdown report and nothing else.`
 
 export default createMovedToPluginCommand({
   name: 'security-review',
-  description: t('command.description.security-review'),
+  description: () => t('command.description.security-review'),
   progressMessage: 'analyzing code changes for security risks',
   pluginName: 'security-review',
   pluginCommand: 'security-review',
