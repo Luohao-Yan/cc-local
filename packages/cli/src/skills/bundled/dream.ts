@@ -12,6 +12,7 @@ import {
   recordConsolidation,
 } from '../../services/autoDream/consolidationLock.js'
 import { getProjectDir } from '../../utils/sessionStorage.js'
+import { t } from '../../utils/i18n/index.js'
 import { registerBundledSkill } from '../bundledSkills.js'
 
 /**
@@ -21,10 +22,8 @@ import { registerBundledSkill } from '../bundledSkills.js'
 export function registerDreamSkill(): void {
   registerBundledSkill({
     name: 'dream',
-    description:
-      'Manually trigger memory consolidation — review recent sessions and organize your memory files.',
-    whenToUse:
-      'Use when you want to manually consolidate and organize memory files, especially after a series of sessions or when auto-dream hasn\'t run recently.',
+    description: t('command.description.dream'),
+    whenToUse: t('command.whenToUse.dream'),
     userInvocable: true,
     isEnabled: () => isAutoMemoryEnabled(),
     async getPromptForCommand(args) {
