@@ -12,7 +12,7 @@ Compatibility note: `packages/cli` keeps an explicit `--legacy` escape hatch. To
 |---|---:|---:|---:|---:|
 | Top-level commands | 21 | 30 | 0 | 0 |
 | Top-level options | 127 | 148 | 0 | 0 |
-| Slash commands | 108 | 121 | 0 | 1 |
+| Slash commands | 107 | 121 | 0 | 1 |
 | Tools | 12 | 41 | 0 | 1 |
 
 ## Bridged Top-Level Commands

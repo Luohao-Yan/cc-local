@@ -1327,15 +1327,41 @@ type AutoModeConfig = {
 }
 
 /**
+ * Detect if the API endpoint is Anthropic official.
+ * Third-party APIs may not support Claude models.
+ */
+function isAnthropicOfficialApi(): boolean {
+  const baseUrl = process.env.ANTHROPIC_BASE_URL || ''
+  // No base URL = default to Anthropic official
+  if (!baseUrl) return true
+  // Anthropic official domains
+  return baseUrl.includes('anthropic.com') || baseUrl.includes('api.anthropic.com')
+}
+
+/**
  * Get the model for the classifier.
- * Ant-only env var takes precedence, then GrowthBook JSON config override,
- * then the main loop model.
+ *
+ * Key principle: Use a model that is guaranteed to be available on the API endpoint.
+ *
+ * Priority order:
+ * 1. Explicit classifier model env var (CLAUDE_CODE_CLASSIFIER_MODEL)
+ * 2. GrowthBook config (tengu_auto_mode_config.model)
+ * 3. Ant-only env var (CLAUDE_CODE_AUTO_MODE_MODEL)
+ * 4. Auto-select based on API endpoint:
+ *    - Anthropic official API: Use claude-sonnet-4-6 (fast, reliable)
+ *    - Third-party API: Use the user's main loop model (guaranteed available)
+ *
+ * This ensures the classifier never fails due to model unavailability,
+ * without requiring any manual configuration from users.
  */
 function getClassifierModel(): string {
-  if (process.env.USER_TYPE === 'ant') {
-    const envModel = process.env.CLAUDE_CODE_AUTO_MODE_MODEL
-    if (envModel) return envModel
+  // Priority 1: Explicit classifier model for all users
+  const explicitClassifierModel = process.env.CLAUDE_CODE_CLASSIFIER_MODEL
+  if (explicitClassifierModel) {
+    return explicitClassifierModel
   }
+
+  // Priority 2: GrowthBook config
   const config = getFeatureValue_CACHED_MAY_BE_STALE(
     'tengu_auto_mode_config',
     {} as AutoModeConfig,
@@ -1343,7 +1369,53 @@ function getClassifierModel(): string {
   if (config?.model) {
     return config.model
   }
-  return getMainLoopModel()
+
+  // Priority 3: Ant-only env var (backward compatibility)
+  if (process.env.USER_TYPE === 'ant') {
+    const envModel = process.env.CLAUDE_CODE_AUTO_MODE_MODEL
+    if (envModel) return envModel
+  }
+
+  // Priority 4: Auto-select based on API endpoint
+  // For Anthropic official API, use Claude Sonnet (fast, reliable for classification)
+  // For third-party APIs, use the user's main loop model (guaranteed to be available)
+  if (isAnthropicOfficialApi()) {
+    // Use main loop model if it's an Anthropic model, otherwise default to Sonnet
+    const mainModel = getMainLoopModel()
+    if (mainModel && !isThirdPartyModel(mainModel)) {
+      return mainModel
+    }
+    return 'claude-sonnet-4-6'
+  } else {
+    // Third-party API: Use the user's configured model (guaranteed available)
+    // This is the key insight - if user configured deepseek-v4-pro as their model,
+    // it's because that's what their API endpoint supports
+    return getMainLoopModel() || 'claude-sonnet-4-6'
+  }
+}
+
+/**
+ * Check if the given model name is a third-party model.
+ * Third-party models may not be available on Anthropic's API.
+ */
+function isThirdPartyModel(model: string): boolean {
+  const thirdPartyPatterns = [
+    'deepseek',
+    'glm-',
+    'doubao',
+    'qwen',
+    'minimax',
+    'moonshot',
+    'yi-',
+    'baichuan',
+    'chatglm',
+    'gpt-',
+    'o1-',
+    'o3-',
+  ]
+
+  const lowerModel = model.toLowerCase()
+  return thirdPartyPatterns.some(pattern => lowerModel.includes(pattern))
 }
 
 /**

@@ -31,12 +31,6 @@ import {
   validatePluginTarget,
 } from './plugins/localPlugins.js'
 import {
-  buildInteractiveLaunchContext,
-  buildSinglePromptLaunchContext,
-} from './runtime/launchContext.js'
-import { buildEffectiveRootOptions } from './runtime/launchOptions.js'
-import { renderInteractiveRepl } from './runtime/replRenderer.js'
-import {
   commandUsesRestApi,
   hasExplicitServerArg,
   shouldAutoStartEmbeddedServer,
@@ -295,33 +289,6 @@ async function findAvailablePort(): Promise<number> {
 const rawUserArgs = getUserArgs(process.argv)
 const useInkUi = shouldUseInkUi(rawUserArgs)
 
-// Check for packages-native mode
-// NOTE: --native now delegates to --ink-bridge to reuse mature code
-// The native entrypoint (native.ts) is kept for special use cases
-const useNativeMode = rawUserArgs.includes('--native') || rawUserArgs.includes('--packages-native')
-const useInkBridge = rawUserArgs.includes('--ink-bridge') || rawUserArgs.includes('--legacy-bridge') || rawUserArgs.includes('--ink')
-if (useNativeMode || useInkBridge) {
-  // Use the mature QueryEngine + Ink UI path
-  try {
-    const { renderInkBridgeRepl, getBridgeServerUrl, getBridgeAuthToken } = await import('./runtime/inkBridgeRenderer.js')
-    await renderInkBridgeRepl({
-    model: rawUserArgs.includes('--model') ? rawUserArgs[rawUserArgs.indexOf('--model') + 1] : undefined,
-    cwd: rawUserArgs.includes('--cwd') ? rawUserArgs[rawUserArgs.indexOf('--cwd') + 1] : undefined,
-    sessionId: rawUserArgs.includes('--resume') ? (rawUserArgs[rawUserArgs.indexOf('--resume') + 1] || 'latest') : undefined,
-    print: rawUserArgs.includes('--print') ? rawUserArgs[rawUserArgs.indexOf('--print') + 1] : undefined,
-    outputFormat: rawUserArgs.includes('--output-format') ? rawUserArgs[rawUserArgs.indexOf('--output-format') + 1] : undefined,
-    maxTurns: rawUserArgs.includes('--max-turns') ? parseInt(rawUserArgs[rawUserArgs.indexOf('--max-turns') + 1]!, 10) : undefined,
-    serverUrl: getBridgeServerUrl(rawUserArgs),
-    authToken: getBridgeAuthToken(rawUserArgs),
-  })
-  await stopEmbeddedServer()
-  process.exit(0)
-  } catch (err) {
-    console.error('[ERROR] Bridge mode failed:', err)
-    process.exit(1)
-  }
-}
-
 if (useInkUi) {
   delegateToInkUi(rawUserArgs)
 }
@@ -464,60 +431,40 @@ program
   .option('--sso', 'Compatibility SSO metadata', false)
   .option('--status', 'Compatibility status metadata', false)
   .action(async (options) => {
+    // For interactive mode, delegate to Ink UI
+    if (!options.print) {
+      delegateToInkUi(rawUserArgs)
+      return
+    }
+
+    // For single prompt mode, handle directly
     try {
-      const effectiveOptions = buildEffectiveRootOptions(options, rawUserArgs)
       const localConfig = readLocalConfig()
       const client = new CCLocalClient({
         serverUrl: options.server,
-        authToken: options.token || effectiveOptions.authToken || embeddedServerToken || localConfig.apiToken,
+        authToken: options.token || localConfig.apiToken || embeddedServerToken,
         reconnectInterval: 1000,
         maxReconnectAttempts: 5,
       })
 
-      // 连接到服务端
       await client.connect()
-      failOnUnsupportedCompatibilityOptions(effectiveOptions)
-      normalizePermissionMode(effectiveOptions)
-      await syncMcpConfigFromOptions(client, effectiveOptions)
-      await applyLegacySessionOptions(client, effectiveOptions)
-      if (!effectiveOptions.serverEmbedded && !effectiveOptions.print) {
-        console.log('✅ Connected to CCLocal Server')
-      }
-
-      const singlePromptContext = buildSinglePromptLaunchContext(effectiveOptions)
-      if (singlePromptContext) {
-        const result = await handleSinglePrompt(
-          client,
-          singlePromptContext.prompt,
-          singlePromptContext.model,
-          singlePromptContext.outputFormat,
-          singlePromptContext.cwd,
-          singlePromptContext.includePartialMessages,
-          singlePromptContext.replayUserMessages,
-          singlePromptContext.ephemeral,
-          buildPermissionPolicy(effectiveOptions),
-          buildSystemPromptOption(effectiveOptions),
-          buildMessageCompatibilityOptions(effectiveOptions)
-        )
-        if (singlePromptContext.shouldPrintJsonResult) {
-          console.log(JSON.stringify({
-            type: 'result',
-            sessionId: client.getSessionId(),
-            messageId: result.messageId,
-            text: result.text,
-          }, null, 2))
-        }
-      } else {
-        const interactiveContext = buildInteractiveLaunchContext({
-          createSessionIfNeeded: true,
-        })
-        await renderInteractiveRepl(client, {
-          ...buildLaunchReplOptions(effectiveOptions, interactiveContext),
-          inkBridgeMode: rawUserArgs.some((arg) => arg === '--ink-bridge' || arg === '--legacy-bridge'),
-        })
-      }
+      const result = await handleSinglePrompt(
+        client,
+        options.print,
+        options.model,
+        options.outputFormat || 'text',
+        options.cwd || process.cwd(),
+        false,
+        false,
+        false,
+        buildPermissionPolicy(options),
+        buildSystemPromptOption(options),
+        {}
+      )
+      console.log(result)
+      await stopEmbeddedServer()
     } catch (error) {
-      console.error('❌ Failed to connect:', error)
+      console.error('❌ Failed:', error)
       await stopEmbeddedServer()
       process.exit(1)
     }
@@ -583,18 +530,7 @@ function registerLegacyCompatibilityCommands(rootProgram: Command): void {
       .argument('[args...]')
       .action(async () => {
         const args = getUserArgs(process.argv)
-        // Default: use spawnSync (stable), --ink-bridge for in-process bridge
-        if (!args.some((arg) => arg === '--ink-bridge' || arg === '--legacy-bridge')) {
-          delegateToInkUi(args)
-          return
-        }
-        try {
-          const { renderInkBridgeRepl } = await import('./runtime/inkBridgeRenderer.js')
-          await renderInkBridgeRepl({})
-        } catch (error) {
-          console.error('Failed to launch ink bridge:', error)
-          delegateToInkUi(args)
-        }
+        delegateToInkUi(args)
       })
   }
 }
@@ -822,10 +758,8 @@ sessionsCommand
       return
     }
 
-    await renderInteractiveRepl(client, buildLaunchReplOptions({
-      ...rootOptions,
-      model: options.model || rootOptions.model,
-    }))
+    // Delegate to Ink UI for interactive mode
+    delegateToInkUi(rawUserArgs)
   })
 
 sessionsCommand
@@ -867,11 +801,8 @@ sessionsCommand
       return
     }
 
-    await renderInteractiveRepl(client, buildLaunchReplOptions({
-      ...program.opts(),
-      model,
-      cwd,
-    }))
+    // Delegate to Ink UI for interactive mode
+    delegateToInkUi(rawUserArgs)
   })
 
 sessionsCommand
@@ -1159,10 +1090,8 @@ modelCommand
       return
     }
 
-    await renderInteractiveRepl(client, buildLaunchReplOptions({
-      ...rootOptions,
-      model: name,
-    }))
+    // Delegate to Ink UI for interactive mode
+    delegateToInkUi(rawUserArgs)
   })
 
 authCommand
@@ -1564,9 +1493,8 @@ assistantCommand
       await handleSinglePrompt(client, options.print, program.opts().model, program.opts().outputFormat, program.opts().cwd, false, false, false, buildPermissionPolicy(program.opts()), buildSystemPromptOption(program.opts()))
       return
     }
-    await renderInteractiveRepl(client, buildLaunchReplOptions(program.opts(), {
-      createSessionIfNeeded: !client.getSessionId(),
-    }))
+    // Delegate to Ink UI for interactive mode
+    delegateToInkUi(rawUserArgs)
   })
 
 autoModeCommand
