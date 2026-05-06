@@ -131,7 +131,7 @@ export function ModelAdd({
           setStep('verify-failed')
         })
     },
-    [baseUrl, apiKey, modelName, existingProviderKey, onDone],
+    [baseUrl, apiKey, modelName, existingProviderKey, apiFormat, onDone],
   )
 
   // Verify failed options
@@ -161,7 +161,7 @@ export function ModelAdd({
         onDone(t('modelAdd.cancel'), { display: 'system' })
       }
     },
-    [baseUrl, apiKey, modelName, alias, existingProviderKey, onDone],
+    [baseUrl, apiKey, modelName, alias, existingProviderKey, apiFormat, onDone],
   )
 
   // Format selection → input-key
@@ -302,9 +302,24 @@ export function ModelAdd({
     return <Box flexDirection="column"><Text>{t('modelAdd.verifying')}</Text></Box>
   }
   if (step === 'verify-failed') {
+    // Check for specific error types to provide better hints
+    const is404Error = verifyError.includes('404') || verifyError.includes('not found')
+    const formatLabel = apiFormat === 'openai' ? 'OpenAI' : 'Anthropic'
     return (
       <Box flexDirection="column">
-        <Text color="red">{t('modelAdd.verificationFailed', { error: verifyError })}</Text>
+        {is404Error ? (
+          <>
+            <Text color="red">{t('modelAdd.verificationFailed404')}</Text>
+            <Text dimColor>{t('modelAdd.verificationFailed404Hint')}</Text>
+          </>
+        ) : (
+          <>
+            <Text color="red">{t('modelAdd.verificationFailed', { error: verifyError })}</Text>
+            <Text dimColor>{t('modelAdd.verificationFailedHint')}</Text>
+          </>
+        )}
+        <Text> </Text>
+        <Text dimColor>{t('modelAdd.currentSettings', { baseUrl, format: formatLabel, model: modelName })}</Text>
         <Text> </Text>
         <Text dimColor>{t('modelAdd.whatToDo')}</Text>
         <Select

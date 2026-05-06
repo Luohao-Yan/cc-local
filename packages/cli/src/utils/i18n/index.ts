@@ -189,8 +189,6 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "chrome.requiresSubscription": "Claude in Chrome requires a claude.ai subscription.",
     "chrome.usageHint": "Usage: claude --chrome or claude --no-chrome",
 
-    // Login
-    "login.title": "Login",
     "settings.autoUpdateEnableLatest": "Enable with latest channel",
     "settings.autoUpdateEnableStable": "Enable with stable channel",
     "settings.uiLanguageTitle": "UI Language",
@@ -393,6 +391,10 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "modelAdd.noCreateNew": "No — create new provider with different API key",
     "modelAdd.verifying": "Verifying model config...",
     "modelAdd.verificationFailed": "Verification failed: {error}",
+    "modelAdd.verificationFailed404": "Verification failed: Endpoint not found (404).",
+    "modelAdd.verificationFailed404Hint": "The server may not support the selected API format. Try switching between OpenAI and Anthropic format.",
+    "modelAdd.verificationFailedHint": "Common causes: wrong URL, wrong API format, or model name not found.",
+    "modelAdd.currentSettings": "Current settings: {baseUrl} ({format}) - {model}",
     "modelAdd.whatToDo": "What would you like to do?",
     "modelAdd.saveAnyway": "Save anyway",
     "modelAdd.saveAnywayDesc": "May be a temporary network issue",
@@ -672,7 +674,6 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "agents.deleteConfirm": "Are you sure you want to delete this agent?",
     "agents.back": "Back",
     "agents.continue": "Continue",
-    "agents.noAgentsFound": "No agents found",
     "agents.agentsDialogDismissed": "Agents dialog dismissed",
     "agents.editAgentTitle": "Edit agent: {name}",
 
@@ -799,18 +800,6 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "theme.syntaxTheme": "Syntax theme: {theme}{source} ({shortcut} to disable)",
     "theme.syntaxEnabled": "Syntax highlighting enabled ({shortcut} to disable)",
 
-    // Common
-    "common.yes": "Yes",
-    "common.no": "No",
-    "common.cancel": "Cancel",
-    "common.confirm": "Confirm",
-
-    // IDE auto-connect dialog
-    "ide.autoConnectTitle": "Do you wish to enable auto-connect to IDE?",
-    "ide.autoConnectHint": "You can also configure this in /config or with the --ide flag",
-    "ide.disableAutoConnectTitle": "Do you wish to disable auto-connect to IDE?",
-    "ide.disableAutoConnectHint": "You can also configure this in /config",
-
     "ide.enableOption": "Yes",
     "ide.disableOption": "No",
 
@@ -860,22 +849,6 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "mcp.disabledCount": "Disabled {count} MCP server(s)",
     "mcp.serverEnabled": "MCP server \"{name}\" enabled",
     "mcp.serverDisabled": "MCP server \"{name}\" disabled",
-    "mcp.newServerFound": "New MCP server found in .mcp.json: {name}",
-    "mcp.useAllFuture": "Use this and all future MCP servers in this project",
-    "mcp.useThisServer": "Use this MCP server",
-    "mcp.continueWithout": "Continue without using this MCP server",
-
-    // Config Error Dialog
-    "configError.title": "Configuration Error",
-    "configError.invalidJson": "The configuration file at {path} contains invalid JSON.",
-    "configError.chooseOption": "Choose an option:",
-    "configError.exitFixManually": "Exit and fix manually",
-    "configError.resetDefault": "Reset with default configuration",
-
-    // Settings Error Dialog
-    "settingsError.title": "Settings Error",
-    "settingsError.skipHint": "Files with errors are skipped entirely, not just the invalid settings.",
-    "settingsError.continueWithout": "Continue without these settings",
 
     // Agent Editor
     "agentEditor.openInEditor": "Open in editor",
@@ -1245,10 +1218,6 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "spinner.idleFor": "空闲 {duration}",
     "spinner.pastTenseFor": "{verb} {duration}",
 
-    // Login
-    "login.title": "登录",
-    "login.subscriptionPlan": "订阅计划 (Claude Pro/Max)",
-
     // Memory
     "memory.title": "记忆",
 
@@ -1300,6 +1269,10 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "modelAdd.noCreateNew": "否 — 使用不同的 API 密钥创建新提供商",
     "modelAdd.verifying": "正在验证模型配置...",
     "modelAdd.verificationFailed": "验证失败: {error}",
+    "modelAdd.verificationFailed404": "验证失败: 端点未找到 (404)。",
+    "modelAdd.verificationFailed404Hint": "服务器可能不支持所选的 API 格式。请尝试切换 OpenAI 和 Anthropic 格式。",
+    "modelAdd.verificationFailedHint": "常见原因: URL 错误、API 格式不匹配、或模型名称未找到。",
+    "modelAdd.currentSettings": "当前设置: {baseUrl} ({format}) - {model}",
     "modelAdd.whatToDo": "您想怎么做？",
     "modelAdd.saveAnyway": "仍然保存",
     "modelAdd.saveAnywayDesc": "可能是临时网络问题",
@@ -1487,28 +1460,6 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "tasks.clear": "Clear completed",
     "tasks.back": "Back",
 
-    // Common
-    "common.cancel": "Cancel",
-    "common.continue": "Continue",
-    "common.yes": "Yes",
-    "common.no": "No",
-    "common.ok": "OK",
-    "common.confirm": "Confirm",
-    "common.save": "Save",
-    "common.delete": "Delete",
-    "common.back": "Back",
-    "common.next": "Next",
-    "common.previous": "Previous",
-    "common.loading": "Loading...",
-    "common.done": "Done",
-    "common.error": "Error",
-    "common.success": "Success",
-
-    // Welcome
-    "welcome.message": "Welcome to Claude Code",
-    "welcome.getStarted": "Get started by typing a message below",
-    "welcome.typeHelp": "Type /help for available commands",
-
     // Global Search (Chinese)
     "globalSearch.title": "全局搜索",
     "globalSearch.placeholder": "输入以搜索…",
@@ -1602,39 +1553,6 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "theme.syntaxTheme": "语法主题：{theme}{source}（{shortcut} 禁用）",
     "theme.syntaxEnabled": "语法高亮已启用（{shortcut} 禁用）",
 
-    // Common (Chinese)
-    "common.yes": "是",
-    "common.no": "否",
-    "common.cancel": "取消",
-    "common.confirm": "确认",
-
-    // IDE auto-connect dialog (Chinese)
-    "ide.autoConnectTitle": "是否启用 IDE 自动连接？",
-    "ide.autoConnectHint": "您也可以在 /config 中配置或使用 --ide 标志",
-    "ide.disableAutoConnectTitle": "是否禁用 IDE 自动连接？",
-    "ide.disableAutoConnectHint": "您也可以在 /config 中配置",
-    "ide.enableOption": "是",
-    "ide.disableOption": "否",
-
-    // MCP server approval dialog (Chinese)
-    "mcp.newServerFound": "在 .mcp.json 中发现新的 MCP 服务器：{name}",
-    "mcp.useAllFuture": "使用此服务器及此项目中的所有未来 MCP 服务器",
-    "mcp.useThisServer": "使用此 MCP 服务器",
-    "mcp.continueWithout": "不使用此 MCP 服务器继续",
-
-    // Config error dialog (Chinese)
-    "configError.title": "配置错误",
-    "configError.invalidJson": "{path} 处的配置文件包含无效的 JSON。",
-    "configError.chooseOption": "选择一个选项：",
-    "configError.exitFixManually": "退出并手动修复",
-    "configError.resetDefault": "使用默认配置重置",
-
-    // Settings error dialog (Chinese)
-    "settingsError.title": "设置错误",
-    "settingsError.skipHint": "有错误的文件将被完全跳过，而不仅仅是无效的设置。",
-    "settingsError.exitFixManually": "退出并手动修复",
-    "settingsError.continueWithout": "不使用这些设置继续",
-
     // Mobile command (Chinese)
     "mobile.tabToSwitch": "(Tab 切换，Esc 关闭)",
 
@@ -1678,10 +1596,6 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "settingsError.title": "设置错误",
     "settingsError.skipHint": "有错误的文件将被完全跳过，而不仅仅是无效的设置。",
     "settingsError.continueWithout": "继续但不使用这些设置",
-    "mcp.enabledCount": "已启用 {count} 个 MCP 服务器",
-    "mcp.disabledCount": "已禁用 {count} 个 MCP 服务器",
-    "mcp.serverEnabled": "MCP 服务器 \"{name}\" 已启用",
-    "mcp.serverDisabled": "MCP 服务器 \"{name}\" 已禁用",
 
     // Agent Editor (Chinese)
     "agentEditor.openInEditor": "在编辑器中打开",
@@ -1725,144 +1639,7 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "trust.pressAgainExit": "再按 {key} 退出",
     "trust.confirmHint": "Enter 确认 · Esc 取消",
 
-    // Agents (Chinese)
-    "agents.noAgentsFound": "未找到代理",
-    "agents.builtInAgents": "内置代理",
-    "agents.agentCount": "{count} 个代理",
-    "agents.builtInCannotModify": "内置代理是默认提供的，无法修改。",
-    "agents.createNew": "创建新代理",
-
-    // Help (Chinese)
-    "help.title": "帮助",
-    "help.tabGeneral": "常规",
-    "help.tabCommands": "命令",
-    "help.tabCustomCommands": "自定义命令",
-    "help.tabKeybindings": "快捷键",
-    "help.browseCommands": "浏览默认命令：",
-    "help.browseCustomCommands": "浏览自定义命令：",
-    "help.browseKeybindings": "浏览快捷键：",
-    "help.noCommands": "未找到命令",
-    "help.noKeybindings": "无自定义快捷键",
-    "help.dialogDismissed": "帮助对话框已关闭",
-
-    // Permissions
-    "permissions.toolUse": "Tool use",
-    "permissions.yes": "Yes",
-    "permissions.no": "No",
-    "permissions.yesAlways": "Yes, always",
-    "permissions.noAlways": "No, always",
-    "permissions.allow": "Allow",
-    "permissions.deny": "Deny",
-    "permissions.allowOnce": "Allow once",
-    "permissions.denyOnce": "Deny once",
-    "permissions.allowAll": "Allow all",
-    "permissions.denyAll": "Deny all",
-    "permissions.editFile": "Edit file",
-    "permissions.runCommand": "Run command",
-    "permissions.command": "Command:",
-    "permissions.file": "File:",
-    "permissions.directory": "Directory:",
-
-    // Shell permissions
-    "shell.yesAllowAccess": "Yes, and always allow access to {path}",
-    "shell.yesAllowAccessMultiple": "Yes, and always allow access to {paths} from this project",
-    "shell.yesAllowRead": "Yes, allow reading from {paths} from this project",
-    "shell.yesAllowCommand": "Yes, and always allow {command} in this project",
-    "shell.yesAllowCommands": "Yes, and always allow these commands in this project",
-
-    // MCP
-    "mcp.manageServers": "Manage MCP servers",
-    "mcp.dialogDismissed": "MCP dialog dismissed",
-    "mcp.serverRequestsInput": "MCP server \"{server}\" requests your input",
-    "mcp.tools": "Tools",
-    "mcp.resources": "Resources",
-    "mcp.prompts": "Prompts",
-    "mcp.noServers": "No MCP servers configured",
-    "mcp.noTools": "No tools available",
-    "mcp.noResources": "No resources available",
-    "mcp.noPrompts": "No prompts available",
-    "mcp.back": "Back",
-    "mcp.connecting": "Connecting...",
-    "mcp.connected": "Connected",
-    "mcp.disconnected": "Disconnected",
-    "mcp.error": "Error",
-
-    // MCP Elicitation
-    "mcp.requestsInput": "MCP server \"{server}\" requests your input",
-    "mcp.waitingCompletion": "MCP server \"{server}\" — waiting for completion",
-    "mcp.wantsOpenUrl": "MCP server \"{server}\" wants to open a URL",
-    "mcp.pressAgainExit": "Press {key} again to exit",
-    "mcp.allow": "Allow",
-    "mcp.deny": "Deny",
-    "mcp.cancel": "Cancel",
-    "mcp.submit": "Submit",
-    "mcp.openUrl": "打开 URL",
-
-    // Tasks (Chinese)
-    "tasks.backgroundTasks": "后台任务",
-    "tasks.noActiveTasks": "无活动的后台任务",
-    "tasks.noCompletedTasks": "无已完成的任务",
-    "tasks.running": "运行中",
-    "tasks.completed": "已完成",
-    "tasks.failed": "失败",
-    "tasks.cancelled": "已取消",
-    "tasks.pending": "待处理",
-    "tasks.details": "详情",
-    "tasks.cancel": "取消",
-    "tasks.retry": "重试",
-    "tasks.dismiss": "关闭",
-    "tasks.dismissAll": "关闭全部",
-    "tasks.clear": "清除已完成",
-    "tasks.back": "返回",
-
-    // Common (Chinese)
-    "common.cancel": "取消",
-    "common.continue": "继续",
-    "common.yes": "是",
-    "common.no": "否",
-    "common.ok": "确定",
-    "common.confirm": "确认",
-    "common.save": "保存",
-    "common.delete": "删除",
-    "common.back": "返回",
-    "common.next": "下一步",
-    "common.previous": "上一步",
-    "common.loading": "加载中...",
-    "common.done": "完成",
-    "common.error": "错误",
-    "common.success": "成功",
-    "login.apiUsageBilling": "API 用量计费 (Anthropic Console)",
-    "login.thirdPartyPlatform": "第三方平台",
-    "login.customProvider": "自定义提供商",
-    "login.customProviderDesc": "配置任意 API (OpenAI, Anthropic, DeepSeek, Ollama 等)",
-
-    // Custom Provider Setup
-    "customProvider.step1Title": "第 1/5 步 · API 端点",
-    "customProvider.step1Hint1": "API 端点的基 URL。",
-    "customProvider.step1Hint2": "示例：",
-    "customProvider.step1HintDoubao": "豆包    : https://ark.cn-beijing.volces.com/api/v3",
-    "customProvider.step1HintDeepSeek": "DeepSeek: https://api.deepseek.com/v1",
-    "customProvider.step1HintOpenAI": "OpenAI  : https://api.openai.com/v1",
-    "customProvider.step1HintLocal": "本地    : http://localhost:11434/v1",
-    "customProvider.step1Prompt": "输入 baseUrl：",
-    "customProvider.step1Placeholder": "例如 https://api.openai.com/v1",
-
-    "customProvider.step2Title": "第 2/5 步 · API 格式",
-    "customProvider.step2Detected": "检测到：{format}（从 URL 自动检测）",
-    "customProvider.step2Override": "如果检测不正确，可以手动覆盖。",
-    "customProvider.step2OpenAI": "OpenAI Chat Completions (/v1/chat/completions)",
-    "customProvider.step2OpenAIDesc": "OpenAI、DeepSeek、豆包、Ollama 等使用的标准格式",
-    "customProvider.step2Anthropic": "Anthropic Messages (/v1/messages)",
-    "customProvider.step2AnthropicDesc": "原生 Anthropic 格式 — 用于复制 Messages API 的代理",
-
-    "customProvider.step3Title": "第 3/5 步 · API 密钥",
-    "customProvider.step3Hint1": "用于提供商认证的密钥。",
-    "customProvider.step3Hint2": "在提供商的控制台/仪表板中查找。",
-    "customProvider.step3Hint3": "本地模型（如 Ollama）按 Enter 跳过。",
-    "customProvider.step3Prompt": "输入 API 密钥：",
-    "customProvider.step3Placeholder": "例如 sk-xxxxxxxx",
-
-    "customProvider.step4Title": "第 4/5 步 · 模型名称",
+    // Custom Provider Setup (Chinese)
     "customProvider.step4Hint1": "API 要求的精确模型 ID。",
     "customProvider.step4Hint2": "示例：",
     "customProvider.step4HintDoubao": "豆包    : doubao-seed-2.0-code",
@@ -2007,7 +1784,6 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "agents.deleteConfirm": "确定要删除此智能体吗？",
     "agents.back": "返回",
     "agents.continue": "继续",
-    "agents.noAgentsFound": "未找到智能体",
     "agents.agentsDialogDismissed": "智能体对话框已关闭",
     "agents.editAgentTitle": "编辑智能体：{name}",
 
