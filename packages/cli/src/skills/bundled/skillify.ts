@@ -2,6 +2,7 @@ import { getSessionMemoryContent } from '../../services/SessionMemory/sessionMem
 import type { Message } from '../../types/message.js'
 import { getMessagesAfterCompactBoundary } from '../../utils/messages.js'
 import { registerBundledSkill } from '../bundledSkills.js'
+import { t } from '../../utils/i18n/index.js'
 
 function extractUserMessages(messages: Message[]): string[] {
   return messages
@@ -162,8 +163,7 @@ export function registerSkillifySkill(): void {
 
   registerBundledSkill({
     name: 'skillify',
-    description:
-      "Capture this session's repeatable process into a skill. Call at end of the process you want to capture with an optional description.",
+    description: t('command.description.skillify'),
     allowedTools: [
       'Read',
       'Write',

@@ -1,4 +1,5 @@
 import { registerBundledSkill } from '../bundledSkills.js'
+import { t } from '../../utils/i18n/index.js'
 
 // Verified 1-token words (tested via API token counting)
 // All common English words confirmed to tokenize as single tokens
@@ -238,8 +239,7 @@ export function registerLoremIpsumSkill(): void {
 
   registerBundledSkill({
     name: 'lorem-ipsum',
-    description:
-      'Generate filler text for long context testing. Specify token count as argument (e.g., /lorem-ipsum 50000). Outputs approximately the requested number of tokens. Ant-only.',
+    description: t('command.description.lorem-ipsum'),
     argumentHint: '[token_count]',
     userInvocable: true,
     async getPromptForCommand(args) {

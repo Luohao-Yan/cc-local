@@ -88,5 +88,21 @@ export const command = {
   "description.version": "Print the version this session is running (not what autoupdate downloaded)",
   "description.upgrade": "Upgrade to Max for higher rate limits and more Opus",
   "description.release-notes": "View release notes",
-  "description.plugin": "Manage Claude Code plugins"
+  "description.plugin": "Manage Claude Code plugins",
+  "description.claude-api": "Build apps with the Claude API or Anthropic SDK. TRIGGER when: code imports `anthropic`/`@anthropic-ai/sdk`/`claude_agent_sdk`, or user asks to use Claude API, Anthropic SDKs, or Agent SDK. DO NOT TRIGGER when: code imports `openai`/other AI SDK, general programming, or ML/data-science tasks.",
+  "description.lorem-ipsum": "Generate filler text for long context testing. Specify token count as argument (e.g., /lorem-ipsum 50000). Outputs approximately the requested number of tokens. Ant-only.",
+  "description.loop": "Run a prompt or slash command on a recurring interval (e.g. /loop 5m /foo, defaults to 10m)",
+  "whenToUse.loop": "When the user wants to set up a recurring task, poll for status, or run something repeatedly on an interval (e.g. \"check the deploy every 5 minutes\", \"keep running /babysit-prs\"). Do NOT invoke for one-off tasks.",
+  "description.claude-in-chrome": "Automates your Chrome browser to interact with web pages - clicking elements, filling forms, capturing screenshots, reading console logs, and navigating sites. Opens pages in new tabs within your existing Chrome session. Requires site-level permissions before executing (configured in the extension).",
+  "whenToUse.claude-in-chrome": "When the user wants to interact with web pages, automate browser tasks, capture screenshots, read console logs, or perform any browser-based actions. Always invoke BEFORE attempting to use any mcp__claude-in-chrome__* tools.",
+  "description.verify": "Verify your codebase and environment meet all requirements for Claude Code to work correctly. Checks dependencies, configuration, and common issues.",
+  "description.remember": "Review auto-memory entries and propose promotions to CLAUDE.md, CLAUDE.local.md, or shared memory. Also detects outdated, conflicting, and duplicate entries across memory layers.",
+  "whenToUse.remember": "Use when the user wants to review, organize, or promote their auto-memory entries. Also useful for cleaning up outdated or conflicting entries across CLAUDE.md, CLAUDE.local.md, and auto-memory.",
+  "description.simplify": "Review changed code for reuse, quality, and efficiency, then fix any issues found.",
+  "description.skillify": "Capture this session's repeatable process into a skill. Call at end of the process you want to capture with an optional description.",
+  "description.update-config": "Update Claude Code configuration programmatically with validation. Examples: /update-config settings.key value",
+  "description.stuck": "[ANT-ONLY] Investigate frozen/stuck/slow Claude Code sessions on this machine and post a diagnostic report to #claude-code-feedback.",
+  "description.keybindings-help": "Use when the user wants to customize keyboard shortcuts, rebind keys, add chord bindings, or modify ~/.claude/keybindings.json. Examples: \"rebind ctrl+s\", \"add a chord shortcut\", \"change the submit key\", \"customize keybindings\".",
+  "description.schedule": "Create, update, list, or run scheduled remote agents (triggers) that execute on a cron schedule.",
+  "whenToUse.schedule": "When the user wants to schedule a recurring remote agent, set up automated tasks, create a cron job for Claude Code, or manage their scheduled agents/triggers."
 }

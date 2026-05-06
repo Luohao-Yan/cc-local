@@ -19,6 +19,7 @@ import {
   fetchEnvironments,
 } from '../../utils/teleport/environments.js'
 import { registerBundledSkill } from '../bundledSkills.js'
+import { t } from '../../utils/i18n/index.js'
 
 // Base58 alphabet (Bitcoin-style) used by the tagged ID system
 const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
@@ -324,10 +325,8 @@ ${userArgs ? `\n## User Request\n\nThe user said: "${userArgs}"\n\nStart by unde
 export function registerScheduleRemoteAgentsSkill(): void {
   registerBundledSkill({
     name: 'schedule',
-    description:
-      'Create, update, list, or run scheduled remote agents (triggers) that execute on a cron schedule.',
-    whenToUse:
-      'When the user wants to schedule a recurring remote agent, set up automated tasks, create a cron job for Claude Code, or manage their scheduled agents/triggers.',
+    description: t('command.description.schedule'),
+    whenToUse: t('command.whenToUse.schedule'),
     userInvocable: true,
     isEnabled: () =>
       getFeatureValue_CACHED_MAY_BE_STALE('tengu_surreal_dali', false) &&

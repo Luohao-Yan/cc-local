@@ -1,4 +1,5 @@
 import { registerBundledSkill } from '../bundledSkills.js'
+import { t } from '../../utils/i18n/index.js'
 
 // Prompt text contains `ps` commands as instructions for Claude to run,
 // not commands this file executes.
@@ -65,8 +66,7 @@ export function registerStuckSkill(): void {
 
   registerBundledSkill({
     name: 'stuck',
-    description:
-      '[ANT-ONLY] Investigate frozen/stuck/slow Claude Code sessions on this machine and post a diagnostic report to #claude-code-feedback.',
+    description: t('command.description.stuck'),
     userInvocable: true,
     async getPromptForCommand(args) {
       let prompt = STUCK_PROMPT

@@ -13,6 +13,7 @@ import {
 } from '../../keybindings/schema.js'
 import { jsonStringify } from '../../utils/slowOperations.js'
 import { registerBundledSkill } from '../bundledSkills.js'
+import { t } from '../../utils/i18n/index.js'
 
 /**
  * Build a markdown table of all contexts.
@@ -292,8 +293,7 @@ const SECTION_DOCTOR = [
 export function registerKeybindingsSkill(): void {
   registerBundledSkill({
     name: 'keybindings-help',
-    description:
-      'Use when the user wants to customize keyboard shortcuts, rebind keys, add chord bindings, or modify ~/.claude/keybindings.json. Examples: "rebind ctrl+s", "add a chord shortcut", "change the submit key", "customize keybindings".',
+    description: t('command.description.keybindings-help'),
     allowedTools: ['Read'],
     userInvocable: false,
     isEnabled: isKeybindingCustomizationEnabled,

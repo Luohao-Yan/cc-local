@@ -1,5 +1,6 @@
 import { AGENT_TOOL_NAME } from '../../tools/AgentTool/constants.js'
 import { registerBundledSkill } from '../bundledSkills.js'
+import { t } from '../../utils/i18n/index.js'
 
 const SIMPLIFY_PROMPT = `# Simplify: Code Review and Cleanup
 
@@ -55,8 +56,7 @@ When done, briefly summarize what was fixed (or confirm the code was already cle
 export function registerSimplifySkill(): void {
   registerBundledSkill({
     name: 'simplify',
-    description:
-      'Review changed code for reuse, quality, and efficiency, then fix any issues found.',
+    description: t('command.description.simplify'),
     userInvocable: true,
     async getPromptForCommand(args) {
       let prompt = SIMPLIFY_PROMPT
