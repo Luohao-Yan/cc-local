@@ -90,10 +90,8 @@ export async function createOpenAIChatCompletion(
     { level: 'debug' },
   )
 
-  return client.chat.completions.create(params, {
-    signal,
-    stream_options: { include_usage: true },
-  } as OpenAI.RequestOptions)
+  // Non-streaming request - no stream_options needed
+  return client.chat.completions.create(params, { signal })
 }
 
 // ===== Streaming request =====
