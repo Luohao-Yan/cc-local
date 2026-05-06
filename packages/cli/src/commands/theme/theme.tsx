@@ -5,6 +5,7 @@ import { Pane } from '../../components/design-system/Pane.js';
 import { ThemePicker } from '../../components/ThemePicker.js';
 import { useTheme } from '../../ink.js';
 import type { LocalJSXCommandCall } from '../../types/command.js';
+import { t } from '../../utils/i18n/index.js';
 type Props = {
   onDone: (result?: string, options?: {
     display?: CommandResultDisplay;
@@ -20,7 +21,7 @@ function ThemePickerCommand(t0) {
   if ($[0] !== onDone || $[1] !== setTheme) {
     t1 = setting => {
       setTheme(setting);
-      onDone(`Theme set to ${setting}`);
+      onDone(t("theme.setTo", { theme: setting }));
     };
     $[0] = onDone;
     $[1] = setTheme;
@@ -31,7 +32,7 @@ function ThemePickerCommand(t0) {
   let t2;
   if ($[3] !== onDone) {
     t2 = () => {
-      onDone("Theme picker dismissed", {
+      onDone(t("theme.pickerDismissed"), {
         display: "system"
       });
     };

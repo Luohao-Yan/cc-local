@@ -10,6 +10,7 @@ import { getMemoryScopeDisplay } from '../../tools/AgentTool/agentMemory.js';
 import { resolveAgentTools } from '../../tools/AgentTool/agentToolUtils.js';
 import { type AgentDefinition, isBuiltInAgent } from '../../tools/AgentTool/loadAgentsDir.js';
 import { getAgentModelDisplay } from '../../utils/model/agent.js';
+import { t } from '../../utils/i18n/index.js';
 import { Markdown } from '../Markdown.js';
 import { getActualRelativeAgentFilePath } from './agentFileUtils.js';
 type Props = {
@@ -70,12 +71,12 @@ export function AgentDetail(t0) {
   const handleKeyDown = t4;
   const renderToolsList = function renderToolsList() {
     if (resolvedTools.hasWildcard) {
-      return <Text>All tools</Text>;
+      return <Text>{t("agentDetail.allTools")}</Text>;
     }
     if (!agent.tools || agent.tools.length === 0) {
-      return <Text>None</Text>;
+      return <Text>{t("agentDetail.none")}</Text>;
     }
-    return <>{resolvedTools.validTools.length > 0 && <Text>{resolvedTools.validTools.join(", ")}</Text>}{resolvedTools.invalidTools.length > 0 && <Text color="warning">{figures.warning} Unrecognized:{" "}{resolvedTools.invalidTools.join(", ")}</Text>}</>;
+    return <>{resolvedTools.validTools.length > 0 && <Text>{resolvedTools.validTools.join(", ")}</Text>}{resolvedTools.invalidTools.length > 0 && <Text color="warning">{figures.warning} {t("agentDetail.unrecognized")}:{" "}{resolvedTools.invalidTools.join(", ")}</Text>}</>;
   };
   const T0 = Box;
   const t5 = "column";
@@ -92,7 +93,7 @@ export function AgentDetail(t0) {
   }
   let t10;
   if ($[9] === Symbol.for("react.memo_cache_sentinel")) {
-    t10 = <Text><Text bold={true}>Description</Text> (tells Claude when to use this agent):</Text>;
+    t10 = <Text><Text bold={true}>{t("agentDetail.description")}</Text> {t("agentDetail.descriptionHint")}</Text>;
     $[9] = t10;
   } else {
     t10 = $[9];
@@ -108,7 +109,7 @@ export function AgentDetail(t0) {
   const T1 = Box;
   let t12;
   if ($[12] === Symbol.for("react.memo_cache_sentinel")) {
-    t12 = <Text><Text bold={true}>Tools</Text>:{" "}</Text>;
+    t12 = <Text><Text bold={true}>{t("agentDetail.tools")}</Text>:{" "}</Text>;
     $[12] = t12;
   } else {
     t12 = $[12];
@@ -126,7 +127,7 @@ export function AgentDetail(t0) {
   }
   let t15;
   if ($[17] === Symbol.for("react.memo_cache_sentinel")) {
-    t15 = <Text bold={true}>Model</Text>;
+    t15 = <Text bold={true}>{t("agentDetail.model")}</Text>;
     $[17] = t15;
   } else {
     t15 = $[17];
@@ -149,7 +150,7 @@ export function AgentDetail(t0) {
   }
   let t18;
   if ($[22] !== agent.permissionMode) {
-    t18 = agent.permissionMode && <Text><Text bold={true}>Permission mode</Text>: {agent.permissionMode}</Text>;
+    t18 = agent.permissionMode && <Text><Text bold={true}>{t("agentDetail.permissionMode")}</Text>: {agent.permissionMode}</Text>;
     $[22] = agent.permissionMode;
     $[23] = t18;
   } else {
@@ -157,7 +158,7 @@ export function AgentDetail(t0) {
   }
   let t19;
   if ($[24] !== agent.memory) {
-    t19 = agent.memory && <Text><Text bold={true}>Memory</Text>: {getMemoryScopeDisplay(agent.memory)}</Text>;
+    t19 = agent.memory && <Text><Text bold={true}>{t("agentDetail.memory")}</Text>: {getMemoryScopeDisplay(agent.memory)}</Text>;
     $[24] = agent.memory;
     $[25] = t19;
   } else {
@@ -165,7 +166,7 @@ export function AgentDetail(t0) {
   }
   let t20;
   if ($[26] !== agent.hooks) {
-    t20 = agent.hooks && Object.keys(agent.hooks).length > 0 && <Text><Text bold={true}>Hooks</Text>: {Object.keys(agent.hooks).join(", ")}</Text>;
+    t20 = agent.hooks && Object.keys(agent.hooks).length > 0 && <Text><Text bold={true}>{t("agentDetail.hooks")}</Text>: {Object.keys(agent.hooks).join(", ")}</Text>;
     $[26] = agent.hooks;
     $[27] = t20;
   } else {
@@ -173,7 +174,7 @@ export function AgentDetail(t0) {
   }
   let t21;
   if ($[28] !== agent.skills) {
-    t21 = agent.skills && agent.skills.length > 0 && <Text><Text bold={true}>Skills</Text>:{" "}{agent.skills.length > 10 ? `${agent.skills.length} skills` : agent.skills.join(", ")}</Text>;
+    t21 = agent.skills && agent.skills.length > 0 && <Text><Text bold={true}>{t("agentDetail.skills")}</Text>:{" "}{agent.skills.length > 10 ? t("agentDetail.skillsCount", { count: agent.skills.length }) : agent.skills.join(", ")}</Text>;
     $[28] = agent.skills;
     $[29] = t21;
   } else {
@@ -181,7 +182,7 @@ export function AgentDetail(t0) {
   }
   let t22;
   if ($[30] !== agent.agentType || $[31] !== backgroundColor) {
-    t22 = backgroundColor && <Box><Text><Text bold={true}>Color</Text>:{" "}<Text backgroundColor={backgroundColor} color="inverseText">{" "}{agent.agentType}{" "}</Text></Text></Box>;
+    t22 = backgroundColor && <Box><Text><Text bold={true}>{t("agentDetail.color")}</Text>:{" "}<Text backgroundColor={backgroundColor} color="inverseText">{" "}{agent.agentType}{" "}</Text></Text></Box>;
     $[30] = agent.agentType;
     $[31] = backgroundColor;
     $[32] = t22;
@@ -190,7 +191,7 @@ export function AgentDetail(t0) {
   }
   let t23;
   if ($[33] !== agent) {
-    t23 = !isBuiltInAgent(agent) && <><Box><Text><Text bold={true}>System prompt</Text>:</Text></Box><Box marginLeft={2} marginRight={2}><Markdown>{agent.getSystemPrompt()}</Markdown></Box></>;
+    t23 = !isBuiltInAgent(agent) && <><Box><Text><Text bold={true}>{t("agentDetail.systemPrompt")}</Text>:</Text></Box><Box marginLeft={2} marginRight={2}><Markdown>{agent.getSystemPrompt()}</Markdown></Box></>;
     $[33] = agent;
     $[34] = t23;
   } else {

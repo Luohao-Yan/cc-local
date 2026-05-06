@@ -8,6 +8,7 @@ import { useKeybinding } from '../../keybindings/useKeybinding.js';
 import { useAppState } from '../../state/AppState.js';
 import type { LocalJSXCommandCall } from '../../types/command.js';
 import { logForDebugging } from '../../utils/debug.js';
+import { t } from '../../utils/i18n/index.js';
 type Props = {
   onDone: () => void;
 };
@@ -57,7 +58,7 @@ function SessionInfo(t0) {
   if (!remoteSessionUrl) {
     let t4;
     if ($[4] === Symbol.for("react.memo_cache_sentinel")) {
-      t4 = <Pane><Text color="warning">Not in remote mode. Start with `claude --remote` to use this command.</Text><Text dimColor={true}>(press esc to close)</Text></Pane>;
+      t4 = <Pane><Text color="warning">{t("session.notInRemoteMode")}</Text><Text dimColor={true}>{t("session.pressEscClose")}</Text></Pane>;
       $[4] = t4;
     } else {
       t4 = $[4];
@@ -72,12 +73,12 @@ function SessionInfo(t0) {
     const isLoading = lines.length === 0;
     T0 = Pane;
     if ($[9] === Symbol.for("react.memo_cache_sentinel")) {
-      t4 = <Box marginBottom={1}><Text bold={true}>Remote session</Text></Box>;
+      t4 = <Box marginBottom={1}><Text bold={true}>{t("session.remoteSession")}</Text></Box>;
       $[9] = t4;
     } else {
       t4 = $[9];
     }
-    t5 = isLoading ? <Text dimColor={true}>Generating QR code…</Text> : lines.map(_temp4);
+    t5 = isLoading ? <Text dimColor={true}>{t("session.generatingQR")}</Text> : lines.map(_temp4);
     $[5] = qrCode;
     $[6] = T0;
     $[7] = t4;
@@ -89,7 +90,7 @@ function SessionInfo(t0) {
   }
   let t6;
   if ($[10] === Symbol.for("react.memo_cache_sentinel")) {
-    t6 = <Text dimColor={true}>Open in browser: </Text>;
+    t6 = <Text dimColor={true}>{t("session.openInBrowser")}</Text>;
     $[10] = t6;
   } else {
     t6 = $[10];
@@ -104,7 +105,7 @@ function SessionInfo(t0) {
   }
   let t8;
   if ($[13] === Symbol.for("react.memo_cache_sentinel")) {
-    t8 = <Box marginTop={1}><Text dimColor={true}>(press esc to close)</Text></Box>;
+    t8 = <Box marginTop={1}><Text dimColor={true}>{t("session.pressEscClose")}</Text></Box>;
     $[13] = t8;
   } else {
     t8 = $[13];

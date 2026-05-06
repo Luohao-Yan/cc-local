@@ -7,6 +7,7 @@ import type { KeyboardEvent } from '../../ink/events/keyboard-event.js';
 import { Box, Text } from '../../ink.js';
 import { useKeybinding } from '../../keybindings/useKeybinding.js';
 import type { LocalJSXCommandOnDone } from '../../types/command.js';
+import { t } from '../../utils/i18n/index.js';
 type Platform = 'ios' | 'android';
 type Props = {
   onDone: () => void;
@@ -209,7 +210,7 @@ function MobileQRCode(t0) {
   }
   let t24;
   if ($[33] === Symbol.for("react.memo_cache_sentinel")) {
-    t24 = <Text dimColor={true}>(tab to switch, esc to close)</Text>;
+    t24 = <Text dimColor={true}>{t("mobile.tabToSwitch")}</Text>;
     $[33] = t24;
   } else {
     t24 = $[33];

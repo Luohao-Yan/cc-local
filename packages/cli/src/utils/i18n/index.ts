@@ -571,6 +571,45 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "agentWizard.confirmModel": "Model",
     "agentWizard.confirmMemory": "Memory",
 
+    // Session command
+    "session.notInRemoteMode": "Not in remote mode. Start with `claude --remote` to use this command.",
+    "session.pressEscClose": "(press esc to close)",
+    "session.remoteSession": "Remote session",
+    "session.generatingQR": "Generating QR code…",
+    "session.openInBrowser": "Open in browser: ",
+
+    // Theme command
+    "theme.setTo": "Theme set to {theme}",
+    "theme.pickerDismissed": "Theme picker dismissed",
+
+    // Mobile command
+    "mobile.tabToSwitch": "(tab to switch, esc to close)",
+
+    // Agent Detail
+    "agentDetail.allTools": "All tools",
+    "agentDetail.none": "None",
+    "agentDetail.unrecognized": "Unrecognized",
+    "agentDetail.description": "Description",
+    "agentDetail.descriptionHint": "(tells Claude when to use this agent):",
+    "agentDetail.tools": "Tools",
+    "agentDetail.model": "Model",
+    "agentDetail.permissionMode": "Permission mode",
+    "agentDetail.memory": "Memory",
+    "agentDetail.hooks": "Hooks",
+    "agentDetail.skills": "Skills",
+    "agentDetail.skillsCount": "{count} skills",
+    "agentDetail.color": "Color",
+    "agentDetail.systemPrompt": "System prompt",
+
+    // MCP command
+    "mcp.allAlreadyEnabled": "All MCP servers are already enabled",
+    "mcp.allAlreadyDisabled": "All MCP servers are already disabled",
+    "mcp.serverNotFound": "MCP server \"{name}\" not found",
+    "mcp.enabledCount": "Enabled {count} MCP server(s)",
+    "mcp.disabledCount": "Disabled {count} MCP server(s)",
+    "mcp.serverEnabled": "MCP server \"{name}\" enabled",
+    "mcp.serverDisabled": "MCP server \"{name}\" disabled",
+
     // Trust Dialog
     "trust.accessingWorkspace": "Accessing workspace:",
     "trust.safetyCheck": "Quick safety check: Is this a project you created or one you trust? (Like your own code, a well-known open source project, or work from your team). If not, take a moment to review what's in this folder first.",
@@ -1040,6 +1079,45 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "agentWizard.confirmTools": "工具",
     "agentWizard.confirmModel": "模型",
     "agentWizard.confirmMemory": "记忆",
+
+    // Session command (Chinese)
+    "session.notInRemoteMode": "不在远程模式下。请使用 `claude --remote` 启动来使用此命令。",
+    "session.pressEscClose": "(按 esc 关闭)",
+    "session.remoteSession": "远程会话",
+    "session.generatingQR": "正在生成二维码…",
+    "session.openInBrowser": "在浏览器中打开：",
+
+    // Theme command (Chinese)
+    "theme.setTo": "主题已设置为 {theme}",
+    "theme.pickerDismissed": "主题选择器已关闭",
+
+    // Mobile command (Chinese)
+    "mobile.tabToSwitch": "(Tab 切换，Esc 关闭)",
+
+    // Agent Detail (Chinese)
+    "agentDetail.allTools": "所有工具",
+    "agentDetail.none": "无",
+    "agentDetail.unrecognized": "无法识别",
+    "agentDetail.description": "描述",
+    "agentDetail.descriptionHint": "（告诉 Claude 何时使用此代理）：",
+    "agentDetail.tools": "工具",
+    "agentDetail.model": "模型",
+    "agentDetail.permissionMode": "权限模式",
+    "agentDetail.memory": "记忆",
+    "agentDetail.hooks": "钩子",
+    "agentDetail.skills": "技能",
+    "agentDetail.skillsCount": "{count} 个技能",
+    "agentDetail.color": "颜色",
+    "agentDetail.systemPrompt": "系统提示",
+
+    // MCP command (Chinese)
+    "mcp.allAlreadyEnabled": "所有 MCP 服务器已启用",
+    "mcp.allAlreadyDisabled": "所有 MCP 服务器已禁用",
+    "mcp.serverNotFound": "未找到 MCP 服务器 \"{name}\"",
+    "mcp.enabledCount": "已启用 {count} 个 MCP 服务器",
+    "mcp.disabledCount": "已禁用 {count} 个 MCP 服务器",
+    "mcp.serverEnabled": "MCP 服务器 \"{name}\" 已启用",
+    "mcp.serverDisabled": "MCP 服务器 \"{name}\" 已禁用",
 
     // Trust Dialog (Chinese)
     "trust.accessingWorkspace": "正在访问工作区：",
