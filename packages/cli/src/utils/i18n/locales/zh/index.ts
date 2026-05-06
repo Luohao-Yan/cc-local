@@ -1,0 +1,23 @@
+// locales/zh/index.ts
+// Re-export all Chinese translation modules
+
+export * from './common'
+export * from './welcome'
+export * from './shortcuts'
+export * from './config'
+export * from './model'
+export * from './agent'
+export * from './command'
+export * from './mcp'
+export * from './theme'
+export * from './chrome'
+export * from './dialog'
+export * from './diff'
+export * from './tools'
+export * from './permissions'
+export * from './status'
+export * from './search'
+export * from './tasks'
+export * from './errors'
+export * from './ide'
+export * from './misc'

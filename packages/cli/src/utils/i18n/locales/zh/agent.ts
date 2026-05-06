@@ -1,0 +1,107 @@
+// locales/zh/agent.ts
+export const agents = {
+  "noAgentsFound": "未找到代理",
+  "builtInAgents": "内置代理",
+  "agentCount": "{count} 个代理",
+  "builtInCannotModify": "内置代理是默认提供的，无法修改。",
+  "createNew": "Create new agent",
+  "viewAgent": "查看智能体",
+  "editAgent": "编辑智能体",
+  "deleteAgent": "删除智能体",
+  "deleteConfirm": "确定要删除此智能体吗？",
+  "back": "返回",
+  "continue": "继续",
+  "agentsDialogDismissed": "智能体对话框已关闭",
+  "editAgentTitle": "编辑智能体：{name}"
+}
+
+export const agentWizard = {
+  "typeSubtitle": "代理类型（标识符）",
+  "toolsSubtitle": "选择工具",
+  "promptSubtitle": "系统提示",
+  "modelSubtitle": "选择模型",
+  "methodSubtitle": "创建方式",
+  "memorySubtitle": "配置代理记忆",
+  "locationSubtitle": "选择位置",
+  "descriptionSubtitle": "描述（告诉 Claude 何时使用此代理）",
+  "colorSubtitle": "选择背景颜色",
+  "methodGenerate": "由 Claude 生成（推荐）",
+  "methodManual": "手动配置",
+  "typeEnterPrompt": "为您的代理输入唯一标识符：",
+  "typePlaceholder": "例如：test-runner, tech-lead 等",
+  "promptEnterPrompt": "输入代理的系统提示：",
+  "promptComprehensive": "详细描述以获得最佳效果",
+  "promptPlaceholder": "你是一个有帮助的代码审查员，...",
+  "promptRequired": "系统提示为必填项",
+  "descriptionPrompt": "Claude 应该何时使用此代理？",
+  "descriptionPlaceholder": "例如，在你完成代码编写后使用此代理...",
+  "descriptionRequired": "描述为必填项",
+  "memoryUserRecommended": "用户范围（~/.claude/agent-memory/）（推荐）",
+  "memoryNone": "无（无持久记忆）",
+  "memoryProject": "项目范围（.claude/agent-memory/）",
+  "memoryLocal": "本地范围（.claude/agent-memory-local/）",
+  "memoryProjectRecommended": "项目范围（.claude/agent-memory/）（推荐）",
+  "memoryUser": "用户范围（~/.claude/agent-memory/）",
+  "locationProject": "项目（.claude/agents/）",
+  "locationPersonal": "个人（~/.claude/agents/）",
+  "generateSubtitle": "描述此代理应该做什么以及何时使用（详细描述以获得最佳效果）",
+  "generateCancelled": "生成已取消",
+  "generatePromptRequired": "请描述代理应该做什么",
+  "generateFailed": "生成代理失败",
+  "generateGenerating": "正在根据描述生成代理...",
+  "generatePlaceholder": "例如，帮我为代码编写单元测试...",
+  "confirmSubtitle": "确认并保存",
+  "confirmPressSave": "按 {s} 或 {enter} 保存，{e} 保存并编辑",
+  "confirmDescription": "描述（告诉 Claude 何时使用此代理）：",
+  "confirmSystemPrompt": "系统提示：",
+  "confirmWarnings": "警告：",
+  "confirmErrors": "错误：",
+  "confirmAllTools": "所有工具",
+  "confirmNone": "无",
+  "confirmName": "名称",
+  "confirmLocation": "位置",
+  "confirmTools": "工具",
+  "confirmModel": "模型",
+  "confirmMemory": "记忆"
+}
+
+export const agentDetail = {
+  "allTools": "所有工具",
+  "none": "无",
+  "unrecognized": "无法识别",
+  "description": "描述",
+  "descriptionHint": "（告诉 Claude 何时使用此代理）：",
+  "tools": "工具",
+  "model": "模型",
+  "permissionMode": "权限模式",
+  "memory": "记忆",
+  "hooks": "钩子",
+  "skills": "技能",
+  "skillsCount": "{count} 个技能",
+  "color": "颜色",
+  "systemPrompt": "系统提示"
+}
+
+export const agentEditor = {
+  "openInEditor": "在编辑器中打开",
+  "editTools": "编辑工具",
+  "editModel": "编辑模型",
+  "editColor": "编辑颜色",
+  "source": "来源：{source}",
+  "openedInEditor": "已在编辑器中打开 {name}。如果进行了编辑，请重启以加载最新版本。",
+  "updated": "已更新代理：{name}",
+  "saveFailed": "保存代理失败"
+}
+
+export const agent = {
+  "runningBackground": "后台运行中",
+  "allToolsSelected": "已选择所有工具",
+  "toolsSelected": "已选择 {count}/{total} 个工具",
+  "currentModel": "当前模型（自定义 ID）",
+  "showAdvanced": "显示高级选项",
+  "hideAdvanced": "隐藏高级选项",
+  "chooseColor": "选择背景颜色",
+  "selectTools": "选择工具",
+  "agentType": "智能体类型（标识符）",
+  "descriptionRequired": "描述为必填项"
+}

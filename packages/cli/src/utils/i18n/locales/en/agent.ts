@@ -1,0 +1,107 @@
+// locales/en/agent.ts
+export const agents = {
+  "noAgentsFound": "No agents found",
+  "builtInAgents": "Built-in agents",
+  "agentCount": "{count} agents",
+  "builtInCannotModify": "Built-in agents are provided by default and cannot be modified.",
+  "createNew": "Create new agent",
+  "viewAgent": "View agent",
+  "editAgent": "Edit agent",
+  "deleteAgent": "Delete agent",
+  "deleteConfirm": "Are you sure you want to delete this agent?",
+  "back": "Back",
+  "continue": "Continue",
+  "agentsDialogDismissed": "Agents dialog dismissed",
+  "editAgentTitle": "Edit agent: {name}"
+}
+
+export const agentWizard = {
+  "typeSubtitle": "Agent type (identifier)",
+  "toolsSubtitle": "Select tools",
+  "promptSubtitle": "System prompt",
+  "modelSubtitle": "Select model",
+  "methodSubtitle": "Creation method",
+  "memorySubtitle": "Configure agent memory",
+  "locationSubtitle": "Choose location",
+  "descriptionSubtitle": "Description (tell Claude when to use this agent)",
+  "colorSubtitle": "Choose background color",
+  "methodGenerate": "Generate with Claude (recommended)",
+  "methodManual": "Manual configuration",
+  "typeEnterPrompt": "Enter a unique identifier for your agent:",
+  "typePlaceholder": "e.g., test-runner, tech-lead, etc",
+  "promptEnterPrompt": "Enter the system prompt for your agent:",
+  "promptComprehensive": "Be comprehensive for best results",
+  "promptPlaceholder": "You are a helpful code reviewer who...",
+  "promptRequired": "System prompt is required",
+  "descriptionPrompt": "When should Claude use this agent?",
+  "descriptionPlaceholder": "e.g., use this agent after you're done writing code...",
+  "descriptionRequired": "Description is required",
+  "memoryUserRecommended": "User scope (~/.claude/agent-memory/) (Recommended)",
+  "memoryNone": "None (no persistent memory)",
+  "memoryProject": "Project scope (.claude/agent-memory/)",
+  "memoryLocal": "Local scope (.claude/agent-memory-local/)",
+  "memoryProjectRecommended": "Project scope (.claude/agent-memory/) (Recommended)",
+  "memoryUser": "User scope (~/.claude/agent-memory/)",
+  "locationProject": "Project (.claude/agents/)",
+  "locationPersonal": "Personal (~/.claude/agents/)",
+  "generateSubtitle": "Describe what this agent should do and when it should be used (be comprehensive for best results)",
+  "generateCancelled": "Generation cancelled",
+  "generatePromptRequired": "Please describe what the agent should do",
+  "generateFailed": "Failed to generate agent",
+  "generateGenerating": "Generating agent from description...",
+  "generatePlaceholder": "e.g., Help me write unit tests for my code...",
+  "confirmSubtitle": "Confirm and save",
+  "confirmPressSave": "Press {s} or {enter} to save, {e} to save and edit",
+  "confirmDescription": "Description (tells Claude when to use this agent):",
+  "confirmSystemPrompt": "System prompt:",
+  "confirmWarnings": "Warnings:",
+  "confirmErrors": "Errors:",
+  "confirmAllTools": "All tools",
+  "confirmNone": "None",
+  "confirmName": "Name",
+  "confirmLocation": "Location",
+  "confirmTools": "Tools",
+  "confirmModel": "Model",
+  "confirmMemory": "Memory"
+}
+
+export const agentDetail = {
+  "allTools": "All tools",
+  "none": "None",
+  "unrecognized": "Unrecognized",
+  "description": "Description",
+  "descriptionHint": "(tells Claude when to use this agent):",
+  "tools": "Tools",
+  "model": "Model",
+  "permissionMode": "Permission mode",
+  "memory": "Memory",
+  "hooks": "Hooks",
+  "skills": "Skills",
+  "skillsCount": "{count} skills",
+  "color": "Color",
+  "systemPrompt": "System prompt"
+}
+
+export const agentEditor = {
+  "openInEditor": "Open in editor",
+  "editTools": "Edit tools",
+  "editModel": "Edit model",
+  "editColor": "Edit color",
+  "source": "Source: {source}",
+  "openedInEditor": "Opened {name} in editor. If you made edits, restart to load the latest version.",
+  "updated": "Updated agent: {name}",
+  "saveFailed": "Failed to save agent"
+}
+
+export const agent = {
+  "runningBackground": "Running in the background",
+  "allToolsSelected": "All tools selected",
+  "toolsSelected": "{count} of {total} tools selected",
+  "currentModel": "Current model (custom ID)",
+  "showAdvanced": "Show advanced options",
+  "hideAdvanced": "Hide advanced options",
+  "chooseColor": "Choose background color",
+  "selectTools": "Select tools",
+  "agentType": "Agent type (identifier)",
+  "descriptionRequired": "Description is required"
+}
