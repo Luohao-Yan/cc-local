@@ -507,6 +507,7 @@ export function configureTaskBudgetParams(
 
 export function getAPIMetadata() {
   // https://docs.google.com/document/d/1dURO9ycXXQCBS0V4Vhl4poDBRgkelFc5t2BNPoEgH5Q/edit?tab=t.0#heading=h.5g7nec5b09w5
+  // user_id must match pattern ^[a-zA-Z0-9_-]+ - use device_id directly (hex string)
   let extra: JsonObject = {}
   const extraStr = process.env.CLAUDE_CODE_EXTRA_METADATA
   if (extraStr) {
@@ -521,14 +522,22 @@ export function getAPIMetadata() {
     }
   }
 
+  const deviceId = getOrCreateUserID()
+  const accountUuid = getOauthAccountInfo()?.accountUuid ?? ''
+  const sessionId = getSessionId()
+
   return {
-    user_id: jsonStringify({
+    // user_id must be a simple string matching ^[a-zA-Z0-9_-]+
+    // device_id is a 64-char hex string (0-9, a-f) which matches the pattern
+    user_id: deviceId,
+    // Additional metadata stored separately for analytics
+    custom_metadata: {
       ...extra,
-      device_id: getOrCreateUserID(),
+      device_id: deviceId,
       // Only include OAuth account UUID when actively using OAuth authentication
-      account_uuid: getOauthAccountInfo()?.accountUuid ?? '',
-      session_id: getSessionId(),
-    }),
+      account_uuid: accountUuid,
+      session_id: sessionId,
+    },
   }
 }
 
