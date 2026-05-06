@@ -1637,6 +1637,13 @@ export function Config({
               setShowSubmenu(null);
               setTabsHidden(false);
             }} />
+            <Box flexDirection="column" marginTop={1}>
+              <Text dimColor italic>{t('settings.uiLanguageDetected')}: {(() => {
+                const { detectSystemLanguage } = require('../../utils/i18n/index.js') as typeof import('../../utils/i18n/index.js');
+                const detected = detectSystemLanguage();
+                return detected === 'zh' ? '中文 (Chinese)' : 'English';
+              })()}</Text>
+            </Box>
           </Box>
           <Text dimColor>
             <Byline>
@@ -1746,14 +1753,14 @@ export function Config({
                                       quality.
                                     </Text>}
                               </> : setting_2.id === 'theme' ? <Text color={isSelected ? 'suggestion' : undefined}>
-                                {THEME_LABELS[setting_2.value.toString()] ?? setting_2.value.toString()}
+                                {getThemeLabel(setting_2.value.toString())}
                               </Text> : setting_2.id === 'notifChannel' ? <Text color={isSelected ? 'suggestion' : undefined}>
                                 <NotifChannelLabel value={setting_2.value.toString()} />
                               </Text> : setting_2.id === 'defaultPermissionMode' ? <Text color={isSelected ? 'suggestion' : undefined}>
                                 {permissionModeTitle(setting_2.value as PermissionMode)}
                               </Text> : setting_2.id === 'autoUpdatesChannel' && autoUpdaterDisabledReason ? <Box flexDirection="column">
                                 <Text color={isSelected ? 'suggestion' : undefined}>
-                                  disabled
+                                  {t('settings.disabled')}
                                 </Text>
                                 <Text dimColor>
                                   (
@@ -1805,15 +1812,18 @@ function teammateModelDisplayString(value: string | null | undefined): string {
   if (value === null) return "Default (leader's model)";
   return modelDisplayString(value);
 }
-const THEME_LABELS: Record<string, string> = {
-  auto: 'Auto (match terminal)',
-  dark: 'Dark mode',
-  light: 'Light mode',
-  'dark-daltonized': 'Dark mode (colorblind-friendly)',
-  'light-daltonized': 'Light mode (colorblind-friendly)',
-  'dark-ansi': 'Dark mode (ANSI colors only)',
-  'light-ansi': 'Light mode (ANSI colors only)'
-};
+function getThemeLabel(value: string): string {
+  const labels: Record<string, string> = {
+    auto: t('theme.autoMatch'),
+    dark: t('theme.darkMode'),
+    light: t('theme.lightMode'),
+    'dark-daltonized': t('theme.darkColorblind'),
+    'light-daltonized': t('theme.lightColorblind'),
+    'dark-ansi': t('theme.darkAnsi'),
+    'light-ansi': t('theme.lightAnsi')
+  };
+  return labels[value] ?? value;
+}
 function NotifChannelLabel(t0: { value: string }) {
   const $ = _c(4);
   const {
@@ -1822,13 +1832,13 @@ function NotifChannelLabel(t0: { value: string }) {
   switch (value) {
     case "auto":
       {
-        return "Auto";
+        return t('settings.notifChannel.auto');
       }
     case "iterm2":
       {
         let t1;
         if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-          t1 = <Text>iTerm2 <Text dimColor={true}>(OSC 9)</Text></Text>;
+          t1 = <Text>{t('settings.notifChannel.iterm2')}</Text>;
           $[0] = t1;
         } else {
           t1 = $[0];
@@ -1839,7 +1849,7 @@ function NotifChannelLabel(t0: { value: string }) {
       {
         let t1;
         if ($[1] === Symbol.for("react.memo_cache_sentinel")) {
-          t1 = <Text>Terminal Bell <Text dimColor={true}>(\a)</Text></Text>;
+          t1 = <Text>{t('settings.notifChannel.terminal_bell')}</Text>;
           $[1] = t1;
         } else {
           t1 = $[1];
@@ -1850,7 +1860,7 @@ function NotifChannelLabel(t0: { value: string }) {
       {
         let t1;
         if ($[2] === Symbol.for("react.memo_cache_sentinel")) {
-          t1 = <Text>Kitty <Text dimColor={true}>(OSC 99)</Text></Text>;
+          t1 = <Text>{t('settings.notifChannel.kitty')}</Text>;
           $[2] = t1;
         } else {
           t1 = $[2];
@@ -1861,7 +1871,7 @@ function NotifChannelLabel(t0: { value: string }) {
       {
         let t1;
         if ($[3] === Symbol.for("react.memo_cache_sentinel")) {
-          t1 = <Text>Ghostty <Text dimColor={true}>(OSC 777)</Text></Text>;
+          t1 = <Text>{t('settings.notifChannel.ghostty')}</Text>;
           $[3] = t1;
         } else {
           t1 = $[3];
@@ -1870,11 +1880,11 @@ function NotifChannelLabel(t0: { value: string }) {
       }
     case "iterm2_with_bell":
       {
-        return "iTerm2 w/ Bell";
+        return t('settings.notifChannel.iterm2_with_bell');
       }
     case "notifications_disabled":
       {
-        return "Disabled";
+        return t('settings.notifChannel.notifications_disabled');
       }
     default:
       {

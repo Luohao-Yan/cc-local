@@ -9,6 +9,7 @@ import {
   type PermissionMode,
 } from '../../types/permissions.js'
 import { lazySchema } from '../lazySchema.js'
+import { t } from '../i18n/index.js'
 
 // Re-export for backwards compatibility
 export {
@@ -121,7 +122,13 @@ export function permissionModeFromString(str: string): PermissionMode {
 }
 
 export function permissionModeTitle(mode: PermissionMode): string {
-  return getModeConfig(mode).title
+  const key = `settings.permissionMode.${mode}` as const
+  const translated = t(key)
+  // If translation key not found, fall back to config title
+  if (translated === key) {
+    return getModeConfig(mode).title
+  }
+  return translated
 }
 
 export function isDefaultMode(mode: PermissionMode | undefined): boolean {

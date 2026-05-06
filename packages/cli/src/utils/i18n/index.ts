@@ -63,13 +63,25 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "settings.terminalProgressBar": "Terminal progress bar",
     "settings.showTurnDuration": "Show turn duration",
     "settings.defaultPermissionMode": "Default permission mode",
+    "settings.permissionMode.default": "Default",
+    "settings.permissionMode.plan": "Plan Mode",
+    "settings.permissionMode.acceptEdits": "Accept edits",
+    "settings.permissionMode.bypassPermissions": "Bypass Permissions",
     "settings.useAutoModeDuringPlan": "Use auto mode during plan",
     "settings.respectGitignore": "Respect .gitignore in file picker",
     "settings.copyFullResponse": "Always copy full response (skip /copy picker)",
     "settings.copyOnSelect": "Copy on select",
     "settings.autoUpdateChannel": "Auto-update channel",
+    "settings.disabled": "disabled",
     "settings.theme": "Theme",
     "settings.notifications": "Notifications",
+    "settings.notifChannel.auto": "Auto",
+    "settings.notifChannel.iterm2": "iTerm2 (OSC 9)",
+    "settings.notifChannel.terminal_bell": "Terminal Bell (\\a)",
+    "settings.notifChannel.kitty": "Kitty (OSC 99)",
+    "settings.notifChannel.ghostty": "Ghostty (OSC 777)",
+    "settings.notifChannel.iterm2_with_bell": "iTerm2 + Bell",
+    "settings.notifChannel.notifications_disabled": "Disabled",
     "settings.localNotifications": "Local notifications",
     "settings.pushWhenIdle": "Push when idle",
     "settings.pushWhenInputNeeded": "Push when input needed",
@@ -137,6 +149,7 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "settings.autoUpdateEnableStable": "Enable with stable channel",
     "settings.uiLanguageTitle": "UI Language",
     "settings.uiLanguageDesc": "Select the language for the user interface.",
+    "settings.uiLanguageDetected": "Detected system language",
     "settings.autoUpdatesEnvControlled": "Auto-updates are controlled by an environment variable and cannot be changed here.",
     "settings.autoUpdatesDisabledDev": "Auto-updates are disabled in development builds.",
     "settings.unsetEnvToEnable": "Unset {envVar} to re-enable auto-updates.",
@@ -806,13 +819,25 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "settings.terminalProgressBar": "终端进度条",
     "settings.showTurnDuration": "显示耗时",
     "settings.defaultPermissionMode": "默认权限模式",
+    "settings.permissionMode.default": "默认",
+    "settings.permissionMode.plan": "计划模式",
+    "settings.permissionMode.acceptEdits": "接受编辑",
+    "settings.permissionMode.bypassPermissions": "绕过权限",
     "settings.useAutoModeDuringPlan": "计划时使用自动模式",
     "settings.respectGitignore": "文件选择器遵循 .gitignore",
     "settings.copyFullResponse": "始终复制完整响应（跳过 /copy 选择器）",
     "settings.copyOnSelect": "选择即复制",
     "settings.autoUpdateChannel": "自动更新通道",
+    "settings.disabled": "已禁用",
     "settings.theme": "主题",
     "settings.notifications": "通知",
+    "settings.notifChannel.auto": "自动",
+    "settings.notifChannel.iterm2": "iTerm2 (OSC 9)",
+    "settings.notifChannel.terminal_bell": "终端响铃 (\\a)",
+    "settings.notifChannel.kitty": "Kitty (OSC 99)",
+    "settings.notifChannel.ghostty": "Ghostty (OSC 777)",
+    "settings.notifChannel.iterm2_with_bell": "iTerm2 + 响铃",
+    "settings.notifChannel.notifications_disabled": "已禁用",
     "settings.localNotifications": "本地通知",
     "settings.pushWhenIdle": "空闲时推送",
     "settings.pushWhenInputNeeded": "需要输入时推送",
@@ -880,6 +905,7 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "settings.autoUpdateEnableStable": "启用稳定通道",
     "settings.uiLanguageTitle": "界面语言",
     "settings.uiLanguageDesc": "选择用户界面的显示语言。",
+    "settings.uiLanguageDetected": "检测到的系统语言",
     "settings.autoUpdatesEnvControlled": "自动更新由环境变量控制，无法在此更改。",
     "settings.autoUpdatesDisabledDev": "开发版本中禁用了自动更新。",
     "settings.unsetEnvToEnable": "取消设置 {envVar} 以重新启用自动更新。",
@@ -1777,21 +1803,83 @@ export function t(key: TranslationKey, params?: Record<string, string | number>)
  * 2. System locale via Intl API
  * 3. Default to 'en'
  */
+/**
+ * Debug function to log locale detection details
+ * Useful for diagnosing auto-detection issues
+ */
+export function getLocaleDetectionDebugInfo(): Record<string, unknown> {
+  const info: Record<string, unknown> = {
+    platform: process.platform,
+    envVars: {
+      CLAUDE_CODE_UI_LANGUAGE: process.env.CLAUDE_CODE_UI_LANGUAGE,
+      LC_ALL: process.env.LC_ALL,
+      LC_MESSAGES: process.env.LC_MESSAGES,
+      LANG: process.env.LANG,
+      LC_CTYPE: process.env.LC_CTYPE,
+    },
+    intl: {} as Record<string, unknown>,
+  }
+
+  try {
+    info.intl = {
+      DateTimeFormat: Intl.DateTimeFormat().resolvedOptions(),
+      NumberFormat: Intl.NumberFormat().resolvedOptions(),
+      Collator: Intl.Collator().resolvedOptions(),
+    }
+  } catch (e) {
+    info.intl = { error: String(e) }
+  }
+
+  return info
+}
+
 export function detectSystemLanguage(): UILanguage {
-  // 1. Check environment variable
+  // 1. Check explicit environment variable first
   const envLang = process.env.CLAUDE_CODE_UI_LANGUAGE?.toLowerCase()
   if (envLang === 'zh' || envLang?.startsWith('zh-')) return 'zh'
   if (envLang === 'en' || envLang?.startsWith('en-')) return 'en'
 
-  // 2. Use Intl API to detect system locale
+  // 2. Check standard locale environment variables (Unix/macOS/Linux)
+  // Priority: LC_ALL > LC_MESSAGES > LANG
+  // Parse locale like "zh_CN.UTF-8", "en_US.UTF-8", "zh_TW", etc.
+  const checkLocaleEnv = (envValue: string | undefined): UILanguage | null => {
+    if (!envValue) return null
+    const langCode = envValue.split('.')[0].split('_')[0].toLowerCase()
+    if (langCode === 'zh') return 'zh'
+    if (langCode === 'en') return 'en'
+    return null
+  }
+
+  const lcAllResult = checkLocaleEnv(process.env.LC_ALL)
+  if (lcAllResult) return lcAllResult
+
+  const lcMessagesResult = checkLocaleEnv(process.env.LC_MESSAGES)
+  if (lcMessagesResult) return lcMessagesResult
+
+  const langResult = checkLocaleEnv(process.env.LANG)
+  if (langResult) return langResult
+
+  // Also check LC_CTYPE which is sometimes set on macOS
+  const lcCtypeResult = checkLocaleEnv(process.env.LC_CTYPE)
+  if (lcCtypeResult) return lcCtypeResult
+
+  // 3. Use Intl API to detect system locale (fallback for Windows/modern terminals)
   try {
-    const locale = Intl.DateTimeFormat().resolvedOptions().locale
-    if (locale.startsWith('zh')) return 'zh'
+    // Try multiple Intl formatters for better coverage
+    const dateTimeLocale = Intl.DateTimeFormat().resolvedOptions().locale
+    if (dateTimeLocale.startsWith('zh')) return 'zh'
+
+    const numberLocale = Intl.NumberFormat().resolvedOptions().locale
+    if (numberLocale.startsWith('zh')) return 'zh'
+
+    // Try Collator as well
+    const collatorLocale = Intl.Collator().resolvedOptions().locale
+    if (collatorLocale.startsWith('zh')) return 'zh'
   } catch {
     // Ignore Intl errors
   }
 
-  // 3. Default to English
+  // 4. Default to English
   return 'en'
 }
 
