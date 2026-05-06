@@ -7,6 +7,7 @@ import { Box, Text, useAnimationFrame } from '../../ink.js';
 import type { InProcessTeammateTaskState } from '../../tasks/InProcessTeammateTask/types.js';
 import { formatDuration, formatNumber } from '../../utils/format.js';
 import { toInkColor } from '../../utils/ink.js';
+import { t } from '../../utils/i18n/index.js';
 import type { Theme } from '../../utils/theme.js';
 import { Byline } from '../design-system/Byline.js';
 import { GlimmerMessage } from './GlimmerMessage.js';
@@ -213,7 +214,7 @@ export function SpinnerAnimationRow({
               {thinkingText}
             </Text>] : [])];
   const status = foregroundedTeammate && !foregroundedTeammate.isIdle ? <>
-        <Text dimColor>(esc to interrupt </Text>
+        <Text dimColor>({t('shortcut.key.esc')} {t('shortcut.to')} {t('shortcut.action.interrupt')} </Text>
         <Text color={toInkColor(foregroundedTeammate.identity.color)}>
           {foregroundedTeammate.identity.agentName}
         </Text>

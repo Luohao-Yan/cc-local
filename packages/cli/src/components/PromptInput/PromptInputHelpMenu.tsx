@@ -8,6 +8,7 @@ import { useShortcutDisplay } from '../../keybindings/useShortcutDisplay.js';
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/growthbook.js';
 import { isFastModeAvailable, isFastModeEnabled } from '../../utils/fastMode.js';
 import { getNewlineInstructions } from './utils.js';
+import { t } from '../../utils/i18n/index.js';
 
 /** Format a shortcut for display in the help menu (e.g., "ctrl+o" → "ctrl + o") */
 function formatShortcut(shortcut: string): string {
@@ -202,7 +203,7 @@ export function PromptInputHelpMenu(props) {
   }
   let t30;
   if ($[42] !== cycleModeShortcut || $[43] !== dimColor) {
-    t30 = <Box><Text dimColor={dimColor}>{cycleModeShortcut}{" "}{false ? "to cycle modes" : "to auto-accept edits"}</Text></Box>;
+    t30 = <Box><Text dimColor={dimColor}>{cycleModeShortcut}{" "}{t('shortcut.to')} {t('shortcut.action.auto-accept-edits')}</Text></Box>;
     $[42] = cycleModeShortcut;
     $[43] = dimColor;
     $[44] = t30;
@@ -211,7 +212,7 @@ export function PromptInputHelpMenu(props) {
   }
   let t31;
   if ($[45] !== dimColor || $[46] !== transcriptShortcut) {
-    t31 = <Box><Text dimColor={dimColor}>{transcriptShortcut} for verbose output</Text></Box>;
+    t31 = <Box><Text dimColor={dimColor}>{transcriptShortcut} {t('shortcut.action.for')} {t('shortcut.action.verbose-output')}</Text></Box>;
     $[45] = dimColor;
     $[46] = transcriptShortcut;
     $[47] = t31;
@@ -220,7 +221,7 @@ export function PromptInputHelpMenu(props) {
   }
   let t32;
   if ($[48] !== dimColor || $[49] !== todosShortcut) {
-    t32 = <Box><Text dimColor={dimColor}>{todosShortcut} to toggle tasks</Text></Box>;
+    t32 = <Box><Text dimColor={dimColor}>{todosShortcut} {t('shortcut.to')} {t('shortcut.action.toggle-tasks')}</Text></Box>;
     $[48] = dimColor;
     $[49] = todosShortcut;
     $[50] = t32;
@@ -258,7 +259,7 @@ export function PromptInputHelpMenu(props) {
   }
   let t36;
   if ($[62] !== dimColor || $[63] !== undoShortcut) {
-    t36 = <Box><Text dimColor={dimColor}>{undoShortcut} to undo</Text></Box>;
+    t36 = <Box><Text dimColor={dimColor}>{undoShortcut} {t('shortcut.to')} {t('shortcut.action.undo')}</Text></Box>;
     $[62] = dimColor;
     $[63] = undoShortcut;
     $[64] = t36;
@@ -267,7 +268,7 @@ export function PromptInputHelpMenu(props) {
   }
   let t37;
   if ($[65] !== dimColor) {
-    t37 = getPlatform() !== "windows" && <Box><Text dimColor={dimColor}>ctrl + z to suspend</Text></Box>;
+    t37 = getPlatform() !== "windows" && <Box><Text dimColor={dimColor}>{t('shortcut.key.ctrl')} + z {t('shortcut.to')} {t('shortcut.action.suspend')}</Text></Box>;
     $[65] = dimColor;
     $[66] = t37;
   } else {
@@ -275,7 +276,7 @@ export function PromptInputHelpMenu(props) {
   }
   let t38;
   if ($[67] !== dimColor || $[68] !== imagePasteShortcut) {
-    t38 = <Box><Text dimColor={dimColor}>{imagePasteShortcut} to paste images</Text></Box>;
+    t38 = <Box><Text dimColor={dimColor}>{imagePasteShortcut} {t('shortcut.to')} {t('shortcut.action.paste-images')}</Text></Box>;
     $[67] = dimColor;
     $[68] = imagePasteShortcut;
     $[69] = t38;

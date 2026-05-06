@@ -277,6 +277,10 @@ const translations: Record<UILanguage, Record<string, string>> = {
 
     // Keyboard shortcut action labels
     "shortcut.to": "to",
+    "shortcut.key.esc": "esc",
+    "shortcut.key.ctrl": "ctrl",
+    "shortcut.key.enter": "Enter",
+    "shortcut.key.tab": "tab",
     "shortcut.action.interrupt": "interrupt",
     "shortcut.action.stop-agents": "stop agents",
     "shortcut.action.show-tasks": "show tasks",
@@ -295,6 +299,12 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "shortcut.action.reject": "reject",
     "shortcut.action.submit": "submit",
     "shortcut.action.return-team-lead": "return to team lead",
+    "shortcut.action.undo": "undo",
+    "shortcut.action.suspend": "suspend",
+    "shortcut.action.paste-images": "paste images",
+    "shortcut.action.toggle-tasks": "toggle tasks",
+    "shortcut.action.verbose-output": "verbose output",
+    "shortcut.action.for": "for",
 
     // Common UI
     "common.cancel": "Cancel",
@@ -1094,6 +1104,10 @@ const translations: Record<UILanguage, Record<string, string>> = {
 
     // Keyboard shortcut action labels
     "shortcut.to": "来",
+    "shortcut.key.esc": "esc",
+    "shortcut.key.ctrl": "ctrl",
+    "shortcut.key.enter": "Enter",
+    "shortcut.key.tab": "tab",
     "shortcut.action.interrupt": "中断",
     "shortcut.action.stop-agents": "停止代理",
     "shortcut.action.show-tasks": "显示任务",
@@ -1112,6 +1126,12 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "shortcut.action.reject": "拒绝",
     "shortcut.action.submit": "提交",
     "shortcut.action.return-team-lead": "返回组长",
+    "shortcut.action.undo": "撤销",
+    "shortcut.action.suspend": "挂起",
+    "shortcut.action.paste-images": "粘贴图片",
+    "shortcut.action.toggle-tasks": "切换任务",
+    "shortcut.action.verbose-output": "详细输出",
+    "shortcut.action.for": "用于",
 
     // Change set messages (for handleSaveAndClose)
     "changeSet.setTo": "已将 {key} 设置为 {value}",
