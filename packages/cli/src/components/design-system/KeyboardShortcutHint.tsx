@@ -23,6 +23,10 @@ const actionKeyMap: Record<string, string> = {
   'reject': 'shortcut.action.reject',
   'submit': 'shortcut.action.submit',
   'return to team lead': 'shortcut.action.return-team-lead',
+  'return': 'shortcut.action.return',
+  'switch': 'shortcut.action.switch',
+  'tabs': 'shortcut.action.tabs',
+  'search': 'shortcut.action.search',
 };
 type Props = {
   /** The key or chord to display (e.g., "ctrl+o", "Enter", "↑/↓") */

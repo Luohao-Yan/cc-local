@@ -32,5 +32,9 @@ export const shortcut = {
   "action.paste-images": "paste images",
   "action.toggle-tasks": "toggle tasks",
   "action.verbose-output": "verbose output",
-  "action.for": "for"
+  "action.for": "for",
+  "action.tabs": "tabs",
+  "action.search": "search",
+  "action.return": "return",
+  "action.switch": "switch"
 }

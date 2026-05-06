@@ -6,14 +6,16 @@ import { formatCost } from '../../cost-tracker.js';
 import { getSubscriptionType } from '../../utils/auth.js';
 import { useTerminalSize } from '../../hooks/useTerminalSize.js';
 import { Box, Text } from '../../ink.js';
-import { useKeybinding } from '../../keybindings/useKeybinding.js';
+import { useKeybinding, useKeybindings } from '../../keybindings/useKeybinding.js';
 import { type ExtraUsage, fetchUtilization, type RateLimit, type Utilization } from '../../services/api/usage.js';
 import { formatResetText } from '../../utils/format.js';
 import { logError } from '../../utils/log.js';
 import { jsonStringify } from '../../utils/slowOperations.js';
 import { ConfigurableShortcutHint } from '../ConfigurableShortcutHint.js';
 import { Byline } from '../design-system/Byline.js';
+import { KeyboardShortcutHint } from '../design-system/KeyboardShortcutHint.js';
 import { ProgressBar } from '../design-system/ProgressBar.js';
+import { useTabHeaderFocus } from '../design-system/Tabs.js';
 import { isEligibleForOverageCreditGrant, OverageCreditUpsell } from '../LogoV2/OverageCreditUpsell.js';
 type LimitBarProps = {
   title: string;
@@ -178,8 +180,20 @@ export function Usage(): React.ReactNode {
   const {
     columns
   } = useTerminalSize();
+  const { headerFocused, focusHeader } = useTabHeaderFocus();
   const availableWidth = columns - 2; // 2 for screen padding
   const maxWidth = Math.min(availableWidth, 80);
+
+  // Handle ↑ key to focus tabs
+  useKeybindings({
+    'select:previous': () => {
+      focusHeader();
+    }
+  }, {
+    context: 'Settings',
+    isActive: !headerFocused
+  });
+
   const loadUtilization = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -213,6 +227,7 @@ export function Usage(): React.ReactNode {
         <Text color="error">Error: {error}</Text>
         <Text dimColor>
           <Byline>
+            <KeyboardShortcutHint shortcut="↑" action="tabs" />
             <ConfigurableShortcutHint action="settings:retry" context="Settings" fallback="r" description="retry" />
             <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description="cancel" />
           </Byline>
@@ -223,7 +238,10 @@ export function Usage(): React.ReactNode {
     return <Box flexDirection="column" gap={1}>
         <Text dimColor>Loading usage data…</Text>
         <Text dimColor>
-          <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description="cancel" />
+          <Byline>
+            <KeyboardShortcutHint shortcut="↑" action="tabs" />
+            <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description="cancel" />
+          </Byline>
         </Text>
       </Box>;
   }
@@ -259,7 +277,10 @@ export function Usage(): React.ReactNode {
       {isEligibleForOverageCreditGrant() && <OverageCreditUpsell maxWidth={maxWidth} />}
 
       <Text dimColor>
-        <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description="cancel" />
+        <Byline>
+          <KeyboardShortcutHint shortcut="↑" action="tabs" />
+          <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description="cancel" />
+        </Byline>
       </Text>
     </Box>;
 }

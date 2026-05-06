@@ -1390,12 +1390,9 @@ export function Config({
   useKeybindings({
     'select:previous': () => {
       if (selectedIndex === 0) {
-        // ↑ at top enters search mode so users can type-to-filter after
-        // reaching the list boundary. Wheel-up (scroll:lineUp) clamps
-        // instead — overshoot shouldn't move focus away from the list.
-        setShowThinkingWarning(false);
-        setIsSearchMode(true);
-        setScrollOffset(0);
+        // ↑ at top focuses the tab header so users can switch tabs.
+        // Search mode is available via '/' keybinding.
+        focusHeader();
       } else {
         moveSelection(-1);
       }
@@ -1798,6 +1795,7 @@ export function Config({
               <Byline>
                 <ConfigurableShortcutHint action="select:accept" context="Settings" fallback="Space" description="change" />
                 <ConfigurableShortcutHint action="settings:close" context="Settings" fallback="Enter" description="save" />
+                <KeyboardShortcutHint shortcut="↑" action="tabs" />
                 <ConfigurableShortcutHint action="settings:search" context="Settings" fallback="/" description="search" />
                 <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description="cancel" />
               </Byline>

@@ -6,6 +6,7 @@ import { getSessionId } from '../../bootstrap/state.js';
 import type { LocalJSXCommandContext } from '../../commands.js';
 import { useIsInsideModal } from '../../context/modalContext.js';
 import { Box, Text, useTheme } from '../../ink.js';
+import { useKeybindings } from '../../keybindings/useKeybinding.js';
 import { type AppState, useAppState } from '../../state/AppState.js';
 import { getCwd } from '../../utils/cwd.js';
 import { t } from '../../utils/i18n/index.js';
@@ -13,6 +14,9 @@ import { getCurrentSessionTitle } from '../../utils/sessionStorage.js';
 import { buildAccountProperties, buildAPIProviderProperties, buildIDEProperties, buildInstallationDiagnostics, buildInstallationHealthDiagnostics, buildMcpProperties, buildMemoryDiagnostics, buildSandboxProperties, buildSettingSourcesProperties, type Diagnostic, getModelDisplayLabel, type Property } from '../../utils/status.js';
 import type { ThemeName } from '../../utils/theme.js';
 import { ConfigurableShortcutHint } from '../ConfigurableShortcutHint.js';
+import { KeyboardShortcutHint } from '../design-system/KeyboardShortcutHint.js';
+import { Byline } from '../design-system/Byline.js';
+import { useTabHeaderFocus } from '../design-system/Tabs.js';
 type Props = {
   context: LocalJSXCommandContext;
   diagnosticsPromise: Promise<Diagnostic[]>;
@@ -101,7 +105,7 @@ function PropertyValue(t0) {
   return value;
 }
 export function Status(t0) {
-  const $ = _c(20);
+  const $ = _c(22);
   const {
     context,
     diagnosticsPromise
@@ -109,6 +113,18 @@ export function Status(t0) {
   const mainLoopModel = useAppState(_temp);
   const mcp = useAppState(_temp2);
   const [theme] = useTheme();
+  const { headerFocused, focusHeader } = useTabHeaderFocus();
+
+  // Handle ↑ key to focus tabs
+  useKeybindings({
+    'select:previous': () => {
+      focusHeader();
+    }
+  }, {
+    context: 'Settings',
+    isActive: !headerFocused
+  });
+
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
     t1 = buildPrimarySection();
@@ -169,20 +185,27 @@ export function Status(t0) {
     t6 = $[15];
   }
   let t7;
-  if ($[16] === Symbol.for("react.memo_cache_sentinel")) {
-    t7 = <Text dimColor={true}><ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description="cancel" /></Text>;
-    $[16] = t7;
+  if ($[16] !== headerFocused) {
+    t7 = <Text dimColor={true}>
+      <Byline>
+        <KeyboardShortcutHint shortcut="↑" action="tabs" />
+        <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description="cancel" />
+      </Byline>
+    </Text>;
+    $[16] = headerFocused;
+    $[17] = t7;
   } else {
-    t7 = $[16];
+    t7 = $[17];
   }
   let t8;
-  if ($[17] !== grow || $[18] !== t6) {
+  if ($[18] !== grow || $[19] !== t6 || $[20] !== t7) {
     t8 = <Box flexDirection="column" flexGrow={grow}>{t6}{t7}</Box>;
-    $[17] = grow;
-    $[18] = t6;
-    $[19] = t8;
+    $[18] = grow;
+    $[19] = t6;
+    $[20] = t7;
+    $[21] = t8;
   } else {
-    t8 = $[19];
+    t8 = $[21];
   }
   return t8;
 }

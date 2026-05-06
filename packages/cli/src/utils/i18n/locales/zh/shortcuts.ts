@@ -32,5 +32,9 @@ export const shortcut = {
   "action.paste-images": "粘贴图片",
   "action.toggle-tasks": "切换任务",
   "action.verbose-output": "详细输出",
-  "action.for": "用于"
+  "action.for": "用于",
+  "action.tabs": "标签页",
+  "action.search": "搜索",
+  "action.return": "返回",
+  "action.switch": "切换"
 }
