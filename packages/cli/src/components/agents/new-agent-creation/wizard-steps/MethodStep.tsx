@@ -5,6 +5,7 @@ import { ConfigurableShortcutHint } from '../../../ConfigurableShortcutHint.js';
 import { Select } from '../../../CustomSelect/select.js';
 import { Byline } from '../../../design-system/Byline.js';
 import { KeyboardShortcutHint } from '../../../design-system/KeyboardShortcutHint.js';
+import { t } from '../../../../utils/i18n/index.js';
 import { useWizard } from '../../../wizard/index.js';
 import { WizardDialogLayout } from '../../../wizard/WizardDialogLayout.js';
 import type { AgentWizardData } from '../types.js';
@@ -19,10 +20,10 @@ export function MethodStep() {
   let t0;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
     t0 = [{
-      label: "Generate with Claude (recommended)",
+      label: t("agentWizard.methodGenerate"),
       value: "generate"
     }, {
-      label: "Manual configuration",
+      label: t("agentWizard.methodManual"),
       value: "manual"
     }];
     $[0] = t0;
@@ -68,7 +69,7 @@ export function MethodStep() {
   }
   let t4;
   if ($[8] !== t2 || $[9] !== t3) {
-    t4 = <WizardDialogLayout subtitle="Creation method" footerText={t1}><Box><Select key="method-select" options={methodOptions} onChange={t2} onCancel={t3} /></Box></WizardDialogLayout>;
+    t4 = <WizardDialogLayout subtitle={t("agentWizard.methodSubtitle")} footerText={t1}><Box><Select key="method-select" options={methodOptions} onChange={t2} onCancel={t3} /></Box></WizardDialogLayout>;
     $[8] = t2;
     $[9] = t3;
     $[10] = t4;

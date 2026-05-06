@@ -21,6 +21,7 @@ import {
 import { activateModel, type ResolvedModel } from '../utils/model/multiModel.js'
 import { detectProviderFromUrl, getDefaultAPIFormat, type APIFormat } from '../utils/model/providers.js'
 import { sideQuery } from '../utils/sideQuery.js'
+import { t } from '../utils/i18n/index.js'
 
 type SetupStep =
   | 'input-url'
@@ -178,17 +179,17 @@ export function CustomProviderSetup({
   if (step === 'input-url') {
     return (
       <InputStep
-        title="Step 1/5 · API Endpoint"
+        title={t('customProvider.step1Title')}
         hint={[
-          'The base URL of the API endpoint.',
-          'Examples:',
-          '  Doubao  : https://ark.cn-beijing.volces.com/api/v3',
-          '  DeepSeek: https://api.deepseek.com/v1',
-          '  OpenAI  : https://api.openai.com/v1',
-          '  Local   : http://localhost:11434/v1',
+          t('customProvider.step1Hint1'),
+          t('customProvider.step1Hint2'),
+          `  ${t('customProvider.step1HintDoubao')}`,
+          `  ${t('customProvider.step1HintDeepSeek')}`,
+          `  ${t('customProvider.step1HintOpenAI')}`,
+          `  ${t('customProvider.step1HintLocal')}`,
         ]}
-        prompt="Enter baseUrl:"
-        placeholder="e.g. https://api.openai.com/v1"
+        prompt={t('customProvider.step1Prompt')}
+        placeholder={t('customProvider.step1Placeholder')}
         onSubmit={handleUrlSubmit}
         onCancel={handleCancel}
       />
@@ -198,22 +199,22 @@ export function CustomProviderSetup({
     const detectedLabel = apiFormat === 'openai' ? 'OpenAI Chat Completions' : 'Anthropic Messages'
     return (
       <Box flexDirection="column">
-        <Text bold>Step 2/5 · API Format</Text>
+        <Text bold>{t('customProvider.step2Title')}</Text>
         <Text> </Text>
-        <Text dimColor>Detected: {detectedLabel} (auto-detected from URL)</Text>
-        <Text dimColor>You can override if the detection is incorrect.</Text>
+        <Text dimColor>{t('customProvider.step2Detected', { format: detectedLabel })}</Text>
+        <Text dimColor>{t('customProvider.step2Override')}</Text>
         <Text> </Text>
         <Select
           options={[
             {
-              label: 'OpenAI Chat Completions (/v1/chat/completions)',
+              label: t('customProvider.step2OpenAI'),
               value: 'openai',
-              description: 'Standard format used by OpenAI, DeepSeek, Doubao, Ollama, etc.',
+              description: t('customProvider.step2OpenAIDesc'),
             },
             {
-              label: 'Anthropic Messages (/v1/messages)',
+              label: t('customProvider.step2Anthropic'),
               value: 'anthropic',
-              description: 'Native Anthropic format — for proxies that replicate the Messages API',
+              description: t('customProvider.step2AnthropicDesc'),
             },
           ]}
           onChange={handleFormatSelect} onCancel={handleCancel}
@@ -227,23 +228,23 @@ export function CustomProviderSetup({
     const existingKey = existingProviderKey ? config.providers[existingProviderKey]?.apiKey : null
     return (
       <Box flexDirection="column">
-        <Text bold>Provider Already Exists</Text>
+        <Text bold>{t('customProvider.providerExists')}</Text>
         <Text> </Text>
-        <Text bold>Provider: "{providerName}"</Text>
+        <Text bold>{t('customProvider.providerLabel', { name: providerName })}</Text>
         <Text> </Text>
-        <Text dimColor>Same baseUrl found. Choose an option:</Text>
+        <Text dimColor>{t('customProvider.sameBaseUrl')}</Text>
         <Text> </Text>
         <Select
           options={[
             {
-              label: 'Yes — add model to existing provider',
+              label: t('customProvider.addToExisting'),
               value: 'yes',
-              description: existingKey ? `Reuses existing API key (...${existingKey.slice(-4)})` : 'No API key set',
+              description: existingKey ? t('customProvider.addToExistingDesc', { keySuffix: existingKey.slice(-4) }) : 'No API key set',
             },
             {
-              label: 'No — create new provider with different API key',
+              label: t('customProvider.createNew'),
               value: 'no',
-              description: 'Use this if you have a different key for the same endpoint',
+              description: t('customProvider.createNewDesc'),
             },
           ]}
           onChange={handleAppendConfirm} onCancel={handleCancel}
@@ -254,14 +255,14 @@ export function CustomProviderSetup({
   if (step === 'input-key') {
     return (
       <InputStep
-        title="Step 3/5 · API Key"
+        title={t('customProvider.step3Title')}
         hint={[
-          'The secret key used to authenticate with the provider.',
-          'Find it in your provider\'s console / dashboard.',
-          'Press Enter to skip for local models (e.g. Ollama).',
+          t('customProvider.step3Hint1'),
+          t('customProvider.step3Hint2'),
+          t('customProvider.step3Hint3'),
         ]}
-        prompt="Enter API Key:"
-        placeholder="e.g. sk-xxxxxxxx"
+        prompt={t('customProvider.step3Prompt')}
+        placeholder={t('customProvider.step3Placeholder')}
         onSubmit={handleKeySubmit}
         onCancel={handleCancel}
       />
@@ -270,17 +271,17 @@ export function CustomProviderSetup({
   if (step === 'input-model') {
     return (
       <InputStep
-        title="Step 4/5 · Model Name"
+        title={t('customProvider.step4Title')}
         hint={[
-          'The exact model ID as required by the API.',
-          'Examples:',
-          '  Doubao  : doubao-seed-2.0-code',
-          '  DeepSeek: deepseek-chat',
-          '  OpenAI  : gpt-4o',
-          '  Local   : qwen3:32b',
+          t('customProvider.step4Hint1'),
+          t('customProvider.step4Hint2'),
+          `  ${t('customProvider.step4HintDoubao')}`,
+          `  ${t('customProvider.step4HintDeepSeek')}`,
+          `  ${t('customProvider.step4HintOpenAI')}`,
+          `  ${t('customProvider.step4HintLocal')}`,
         ]}
-        prompt="Enter model name:"
-        placeholder="gpt-4o"
+        prompt={t('customProvider.step4Prompt')}
+        placeholder={t('customProvider.step4Placeholder')}
         onSubmit={handleModelSubmit}
         onCancel={handleCancel}
       />
@@ -289,34 +290,34 @@ export function CustomProviderSetup({
   if (step === 'input-alias') {
     return (
       <InputStep
-        title="Step 5/5 · Alias (optional)"
+        title={t('customProvider.step5Title')}
         hint={[
-          'A short name to quickly switch to this model.',
-          'Example: type "doubao" to use instead of the full model ID.',
-          'Press Enter to skip.',
+          t('customProvider.step5Hint1'),
+          t('customProvider.step5Hint2'),
+          t('customProvider.step5Hint3'),
         ]}
-        prompt="Enter alias:"
-        placeholder=""
+        prompt={t('customProvider.step5Prompt')}
+        placeholder={t('customProvider.step5Placeholder')}
         onSubmit={handleAliasSubmit}
         onCancel={handleCancel}
       />
     )
   }
   if (step === 'verifying') {
-    return <Box flexDirection="column"><Text>Verifying model config...</Text></Box>
+    return <Box flexDirection="column"><Text>{t('customProvider.verifying')}</Text></Box>
   }
   if (step === 'verify-failed') {
     return (
       <Box flexDirection="column">
-        <Text color="red">Verification failed: {verifyError}</Text>
+        <Text color="red">{t('customProvider.verifyFailed', { error: verifyError })}</Text>
         <Text> </Text>
-        <Text dimColor>What would you like to do?</Text>
+        <Text dimColor>{t('customProvider.verifyFailedHint')}</Text>
         <Select
           options={[
-            { label: 'Save anyway', value: 'save', description: 'May be a temporary network issue' },
-            { label: 'Fix API Key', value: 'retry-key', description: 'Re-enter API key only' },
-            { label: 'Fix Model Name', value: 'retry-model', description: 'Re-enter model name only' },
-            { label: 'Start over', value: 'retry-url', description: 'Re-enter all fields from beginning' },
+            { label: t('customProvider.saveAnyway'), value: 'save', description: t('customProvider.saveAnywayDesc') },
+            { label: t('customProvider.fixApiKey'), value: 'retry-key', description: t('customProvider.fixApiKeyDesc') },
+            { label: t('customProvider.fixModelName'), value: 'retry-model', description: t('customProvider.fixModelNameDesc') },
+            { label: t('customProvider.startOver'), value: 'retry-url', description: t('customProvider.startOverDesc') },
             { label: 'Cancel', value: 'cancel' },
           ]}
           onChange={handleVerifyFailChoice} onCancel={handleCancel}

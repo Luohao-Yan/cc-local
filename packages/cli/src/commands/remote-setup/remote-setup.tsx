@@ -10,6 +10,7 @@ import type { LocalJSXCommandOnDone } from '../../types/command.js';
 import { openBrowser } from '../../utils/browser.js';
 import { getGhAuthStatus } from '../../utils/github/ghAuthStatus.js';
 import { createDefaultEnvironment, getCodeWebUrl, type ImportTokenError, importGithubToken, isSignedIn, RedactedGithubToken } from './api.js';
+import { t } from '../../utils/i18n/index.js';
 type CheckResult = {
   status: 'not_signed_in';
 } | {
@@ -150,13 +151,13 @@ function Web({
     onDone(`Connected as ${result.result.github_username}. Opened ${url}`);
   };
   if (step.name === 'checking') {
-    return <LoadingState message="Checking login status…" />;
+    return <LoadingState message={t('remoteSetup.checkingStatus')} />;
   }
   if (step.name === 'uploading') {
-    return <LoadingState message="Connecting GitHub to Claude…" />;
+    return <LoadingState message={t('remoteSetup.connectingGitHub')} />;
   }
   const token = step.token;
-  return <Dialog title="Connect Claude on the web to GitHub?" onCancel={handleCancel} hideInputGuide>
+  return <Dialog title={t('remoteSetup.title')} onCancel={handleCancel} hideInputGuide>
       <Box flexDirection="column">
         <Text>
           Claude on the web requires connecting to your GitHub account to clone

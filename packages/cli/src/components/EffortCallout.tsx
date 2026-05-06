@@ -7,6 +7,7 @@ import type { EffortLevel } from '../utils/effort.js';
 import { convertEffortValueToLevel, getDefaultEffortForModel, getOpusDefaultEffortConfig, toPersistableEffort } from '../utils/effort.js';
 import { parseUserSpecifiedModel } from '../utils/model/model.js';
 import { updateSettingsForSource } from '../utils/settings/settings.js';
+import { t } from '../utils/i18n/index.js';
 import type { OptionWithDescription } from './CustomSelect/select.js';
 import { Select } from './CustomSelect/select.js';
 import { effortLevelToSymbol } from './EffortIndicator.js';
@@ -104,13 +105,13 @@ export function EffortCallout(t0) {
   let t9;
   if ($[11] === Symbol.for("react.memo_cache_sentinel")) {
     t9 = [{
-      label: <EffortOptionLabel level="medium" text="Medium (recommended)" />,
+      label: <EffortOptionLabel level="medium" text={t('effortCallout.mediumRecommended')} />,
       value: "medium"
     }, {
-      label: <EffortOptionLabel level="high" text="High" />,
+      label: <EffortOptionLabel level="high" text={t('effortCallout.high')} />,
       value: "high"
     }, {
-      label: <EffortOptionLabel level="low" text="Low" />,
+      label: <EffortOptionLabel level="low" text={t('effortCallout.low')} />,
       value: "low"
     }];
     $[11] = t9;

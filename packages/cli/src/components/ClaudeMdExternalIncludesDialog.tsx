@@ -6,6 +6,7 @@ import type { ExternalClaudeMdInclude } from '../utils/claudemd.js';
 import { saveCurrentProjectConfig } from '../utils/config.js';
 import { Select } from './CustomSelect/index.js';
 import { Dialog } from './design-system/Dialog.js';
+import { t } from '../utils/i18n/index.js';
 type Props = {
   onDone(): void;
   isStandaloneDialog?: boolean;
@@ -59,14 +60,14 @@ export function ClaudeMdExternalIncludesDialog(t0) {
   const t5 = !isStandaloneDialog;
   let t6;
   if ($[5] === Symbol.for("react.memo_cache_sentinel")) {
-    t6 = <Text>This project's CLAUDE.md imports files outside the current working directory. Never allow this for third-party repositories.</Text>;
+    t6 = <Text>{t('claudeMd.externalImportWarning')}</Text>;
     $[5] = t6;
   } else {
     t6 = $[5];
   }
   let t7;
   if ($[6] !== externalIncludes) {
-    t7 = externalIncludes && externalIncludes.length > 0 && <Box flexDirection="column"><Text dimColor={true}>External imports:</Text>{externalIncludes.map(_temp4)}</Box>;
+    t7 = externalIncludes && externalIncludes.length > 0 && <Box flexDirection="column"><Text dimColor={true}>{t('claudeMd.externalImportsLabel')}</Text>{externalIncludes.map(_temp4)}</Box>;
     $[6] = externalIncludes;
     $[7] = t7;
   } else {
@@ -74,7 +75,7 @@ export function ClaudeMdExternalIncludesDialog(t0) {
   }
   let t8;
   if ($[8] === Symbol.for("react.memo_cache_sentinel")) {
-    t8 = <Text dimColor={true}>Important: Only use Claude Code with files you trust. Accessing untrusted files may pose security risks{" "}<Link url="https://code.claude.com/docs/en/security" />{" "}</Text>;
+    t8 = <Text dimColor={true}>{t('claudeMd.securityRisk')}{" "}<Link url="https://code.claude.com/docs/en/security" />{" "}</Text>;
     $[8] = t8;
   } else {
     t8 = $[8];
@@ -82,10 +83,10 @@ export function ClaudeMdExternalIncludesDialog(t0) {
   let t9;
   if ($[9] === Symbol.for("react.memo_cache_sentinel")) {
     t9 = [{
-      label: "Yes, allow external imports",
+      label: t('claudeMd.yesAllowExternal'),
       value: "yes"
     }, {
-      label: "No, disable external imports",
+      label: t('claudeMd.noDisableExternal'),
       value: "no"
     }];
     $[9] = t9;
@@ -102,7 +103,7 @@ export function ClaudeMdExternalIncludesDialog(t0) {
   }
   let t11;
   if ($[12] !== handleEscape || $[13] !== t10 || $[14] !== t4 || $[15] !== t5 || $[16] !== t7) {
-    t11 = <Dialog title="Allow external CLAUDE.md file imports?" color="warning" onCancel={handleEscape} hideBorder={t4} hideInputGuide={t5}>{t6}{t7}{t8}{t10}</Dialog>;
+    t11 = <Dialog title={t('claudeMd.externalImportTitle')} color="warning" onCancel={handleEscape} hideBorder={t4} hideInputGuide={t5}>{t6}{t7}{t8}{t10}</Dialog>;
     $[12] = handleEscape;
     $[13] = t10;
     $[14] = t4;

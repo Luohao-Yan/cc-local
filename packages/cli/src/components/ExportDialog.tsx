@@ -7,6 +7,7 @@ import { Box, Text } from '../ink.js';
 import { useKeybinding } from '../keybindings/useKeybinding.js';
 import { getCwd } from '../utils/cwd.js';
 import { writeFileSync_DEPRECATED } from '../utils/slowOperations.js';
+import { t } from '../utils/i18n/index.js';
 import { ConfigurableShortcutHint } from './ConfigurableShortcutHint.js';
 import { Select } from './CustomSelect/select.js';
 import { Byline } from './design-system/Byline.js';
@@ -47,7 +48,7 @@ export function ExportDialog({
       if (raw) process.stdout.write(raw);
       onDone({
         success: true,
-        message: 'Conversation copied to clipboard'
+        message: t('export.copiedToClipboard')
       });
     } else if (value === 'file') {
       setSelectedOption('file');
@@ -64,12 +65,12 @@ export function ExportDialog({
       });
       onDone({
         success: true,
-        message: `Conversation exported to: ${filepath}`
+        message: t('export.exportedTo', { path: filepath })
       });
     } catch (error) {
       onDone({
         success: false,
-        message: `Failed to export conversation: ${error instanceof Error ? error.message : 'Unknown error'}`
+        message: t('export.failed', { error: error instanceof Error ? error.message : 'Unknown error' })
       });
     }
   };
@@ -82,18 +83,18 @@ export function ExportDialog({
     } else {
       onDone({
         success: false,
-        message: 'Export cancelled'
+        message: t('export.cancelled')
       });
     }
   }, [showFilenameInput, handleGoBack, onDone]);
   const options = [{
-    label: 'Copy to clipboard',
+    label: t('export.copyToClipboard'),
     value: 'clipboard',
-    description: 'Copy the conversation to your system clipboard'
+    description: t('export.copyToClipboardDesc')
   }, {
-    label: 'Save to file',
+    label: t('export.saveToFile'),
     value: 'file',
-    description: 'Save the conversation to a file in the current directory'
+    description: t('export.saveToFileDesc')
   }];
 
   // Custom input guide that changes based on dialog state
@@ -115,9 +116,9 @@ export function ExportDialog({
     context: 'Settings',
     isActive: showFilenameInput
   });
-  return <Dialog title="Export Conversation" subtitle="Select export method:" color="permission" onCancel={handleCancel} inputGuide={renderInputGuide} isCancelActive={!showFilenameInput}>
+  return <Dialog title={t('dialog.exportTitle')} subtitle={t('dialog.exportSubtitle')} color="permission" onCancel={handleCancel} inputGuide={renderInputGuide} isCancelActive={!showFilenameInput}>
       {!showFilenameInput ? <Select options={options} onChange={handleSelectOption} onCancel={handleCancel} /> : <Box flexDirection="column">
-          <Text>Enter filename:</Text>
+          <Text>{t('export.enterFilename')}</Text>
           <Box flexDirection="row" gap={1} marginTop={1}>
             <Text>&gt;</Text>
             <TextInput value={filename} onChange={setFilename} onSubmit={handleFilenameSubmit} focus={true} showCursor={true} columns={columns} cursorOffset={cursorOffset} onChangeCursorOffset={setCursorOffset} />

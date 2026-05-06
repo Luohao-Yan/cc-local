@@ -427,6 +427,8 @@ export type AppState = DeepImmutable<{
   advisorModel?: string
   // Effort value
   effortValue?: EffortValue
+  // UI language (for i18n)
+  uiLanguage?: 'auto' | 'en' | 'zh'
   // Set synchronously in launchUltraplan before the detached flow starts.
   // Prevents duplicate launches during the ~5s window before
   // ultraplanSessionUrl is set by teleportToRemote. Cleared by launchDetached
@@ -565,6 +567,7 @@ export function getDefaultAppState(): AppState {
     authVersion: 0,
     initialMessage: null,
     effortValue: undefined,
+    uiLanguage: undefined,
     activeOverlays: new Set<string>(),
     fastMode: false,
   }

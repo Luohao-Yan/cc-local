@@ -7,6 +7,7 @@ import { ConfigurableShortcutHint } from '../../../ConfigurableShortcutHint.js';
 import { Byline } from '../../../design-system/Byline.js';
 import { KeyboardShortcutHint } from '../../../design-system/KeyboardShortcutHint.js';
 import TextInput from '../../../TextInput.js';
+import { t } from '../../../../utils/i18n/index.js';
 import { useWizard } from '../../../wizard/index.js';
 import { WizardDialogLayout } from '../../../wizard/WizardDialogLayout.js';
 import { validateAgentType } from '../../validateAgent.js';
@@ -66,14 +67,14 @@ export function TypeStep(_props) {
   }
   let t3;
   if ($[5] === Symbol.for("react.memo_cache_sentinel")) {
-    t3 = <Text>Enter a unique identifier for your agent:</Text>;
+    t3 = <Text>{t("agentWizard.typeEnterPrompt")}</Text>;
     $[5] = t3;
   } else {
     t3 = $[5];
   }
   let t4;
   if ($[6] !== agentType || $[7] !== cursorOffset || $[8] !== handleSubmit) {
-    t4 = <Box marginTop={1}><TextInput value={agentType} onChange={setAgentType} onSubmit={handleSubmit} placeholder="e.g., test-runner, tech-lead, etc" columns={60} cursorOffset={cursorOffset} onChangeCursorOffset={setCursorOffset} focus={true} showCursor={true} /></Box>;
+    t4 = <Box marginTop={1}><TextInput value={agentType} onChange={setAgentType} onSubmit={handleSubmit} placeholder={t("agentWizard.typePlaceholder")} columns={60} cursorOffset={cursorOffset} onChangeCursorOffset={setCursorOffset} focus={true} showCursor={true} /></Box>;
     $[6] = agentType;
     $[7] = cursorOffset;
     $[8] = handleSubmit;
@@ -91,7 +92,7 @@ export function TypeStep(_props) {
   }
   let t6;
   if ($[12] !== t4 || $[13] !== t5) {
-    t6 = <WizardDialogLayout subtitle="Agent type (identifier)" footerText={t2}><Box flexDirection="column">{t3}{t4}{t5}</Box></WizardDialogLayout>;
+    t6 = <WizardDialogLayout subtitle={t("agentWizard.typeSubtitle")} footerText={t2}><Box flexDirection="column">{t3}{t4}{t5}</Box></WizardDialogLayout>;
     $[12] = t4;
     $[13] = t5;
     $[14] = t6;

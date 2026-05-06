@@ -15,6 +15,7 @@ import { getCwd } from '../../utils/cwd.js';
 import { execFileNoThrow } from '../../utils/execFileNoThrow.js';
 import { type DetectedIDEInfo, detectIDEs, detectRunningIDEs, type IdeType, isJetBrainsIde, isSupportedJetBrainsTerminal, isSupportedTerminal, toIDEDisplayName } from '../../utils/ide.js';
 import { getCurrentWorktreeSession } from '../../utils/worktree.js';
+import { t } from '../../utils/i18n/index.js';
 type IDEScreenProps = {
   availableIDEs: DetectedIDEInfo[];
   unavailableIDEs: DetectedIDEInfo[];
@@ -128,7 +129,7 @@ function IDEScreen(t0) {
   }
   let t5;
   if ($[17] !== availableIDEs.length) {
-    t5 = availableIDEs.length === 0 && <Text dimColor={true}>{isSupportedJetBrainsTerminal() ? "No available IDEs detected. Please install the plugin and restart your IDE:\nhttps://docs.claude.com/s/claude-code-jetbrains" : "No available IDEs detected. Make sure your IDE has the Claude Code extension or plugin installed and is running."}</Text>;
+    t5 = availableIDEs.length === 0 && <Text dimColor={true}>{isSupportedJetBrainsTerminal() ? t('ide.noAvailableIDEsJetBrains') : t('ide.noAvailableIDEs')}</Text>;
     $[17] = availableIDEs.length;
     $[18] = t5;
   } else {
@@ -186,7 +187,7 @@ function IDEScreen(t0) {
   }
   let t11;
   if ($[36] !== onClose || $[37] !== t10) {
-    t11 = <Dialog title="Select IDE" subtitle="Connect to an IDE for integrated development features." onCancel={onClose} color="ide">{t10}</Dialog>;
+    t11 = <Dialog title={t('ide.selectTitle')} subtitle={t('ide.selectSubtitle')} onCancel={onClose} color="ide">{t10}</Dialog>;
     $[36] = onClose;
     $[37] = t10;
     $[38] = t11;
@@ -377,7 +378,7 @@ function RunningIDESelector(t0) {
   }
   let t6;
   if ($[12] !== handleCancel || $[13] !== t5) {
-    t6 = <Dialog title="Select IDE to install extension" onCancel={handleCancel} color="ide">{t5}</Dialog>;
+    t6 = <Dialog title={t('ide.selectToInstall')} onCancel={handleCancel} color="ide">{t5}</Dialog>;
     $[12] = handleCancel;
     $[13] = t5;
     $[14] = t6;

@@ -11,6 +11,7 @@ import { plural } from '../../utils/stringUtils.js';
 import { ConfigurableShortcutHint } from '../ConfigurableShortcutHint.js';
 import { Byline } from '../design-system/Byline.js';
 import { Dialog } from '../design-system/Dialog.js';
+import { t } from '../../utils/i18n/index.js';
 import { KeyboardShortcutHint } from '../design-system/KeyboardShortcutHint.js';
 import { McpParsingWarnings } from './McpParsingWarnings.js';
 import type { AgentMcpServerInfo, ServerInfo } from './types.js';
@@ -187,7 +188,7 @@ export function MCPListPanel(t0) {
   let t7;
   if ($[14] !== onComplete) {
     t7 = () => {
-      onComplete("MCP dialog dismissed", {
+      onComplete(t('mcp.dialogDismissed'), {
         display: "system"
       });
     };
@@ -458,7 +459,7 @@ export function MCPListPanel(t0) {
   }
   let t30;
   if ($[71] !== handleCancel || $[72] !== t21 || $[73] !== t29) {
-    t30 = <Dialog title="Manage MCP servers" subtitle={t21} onCancel={handleCancel} hideInputGuide={true}>{t29}</Dialog>;
+    t30 = <Dialog title={t('mcp.manageServers')} subtitle={t21} onCancel={handleCancel} hideInputGuide={true}>{t29}</Dialog>;
     $[71] = handleCancel;
     $[72] = t21;
     $[73] = t29;

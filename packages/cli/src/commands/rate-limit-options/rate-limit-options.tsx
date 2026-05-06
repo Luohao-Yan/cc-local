@@ -14,6 +14,7 @@ import { call as extraUsageCall } from '../extra-usage/extra-usage.js';
 import { extraUsage } from '../extra-usage/index.js';
 import upgrade from '../upgrade/index.js';
 import { call as upgradeCall } from '../upgrade/upgrade.js';
+import { t } from '../../utils/i18n/index.js';
 type RateLimitOptionsMenuOptionType = 'upgrade' | 'extra-usage' | 'cancel';
 type RateLimitOptionsMenuProps = {
   onDone: (result?: string, options?: {
@@ -63,9 +64,9 @@ function RateLimitOptionsMenu(t0) {
           const isOverageState = claudeAiLimits.overageStatus === "rejected" || claudeAiLimits.overageStatus === "allowed_warning";
           let label;
           if (needsToRequestFromAdmin) {
-            label = isOverageState ? "Request more" : "Request extra usage";
+            label = isOverageState ? t('rateLimit.requestMore') : t('rateLimit.requestExtraUsage');
           } else {
-            label = hasExtraUsageEnabled ? "Add funds to continue with extra usage" : "Switch to extra usage";
+            label = hasExtraUsageEnabled ? t('rateLimit.addFunds') : t('rateLimit.switchToExtraUsage');
           }
           let t4;
           if ($[5] !== label) {
@@ -85,7 +86,7 @@ function RateLimitOptionsMenu(t0) {
         let t4;
         if ($[7] === Symbol.for("react.memo_cache_sentinel")) {
           t4 = {
-            label: "Upgrade your plan",
+            label: t('rateLimit.upgradePlan'),
             value: "upgrade"
           };
           $[7] = t4;
@@ -103,7 +104,7 @@ function RateLimitOptionsMenu(t0) {
     let t4;
     if ($[8] === Symbol.for("react.memo_cache_sentinel")) {
       t4 = {
-        label: "Stop and wait for limit to reset",
+        label: t('rateLimit.stopAndWait'),
         value: "cancel"
       };
       $[8] = t4;
@@ -195,7 +196,7 @@ function RateLimitOptionsMenu(t0) {
   }
   let t7;
   if ($[22] !== handleCancel || $[23] !== t6) {
-    t7 = <Dialog title="What do you want to do?" onCancel={handleCancel} color="suggestion">{t6}</Dialog>;
+    t7 = <Dialog title={t('rateLimit.title')} onCancel={handleCancel} color="suggestion">{t6}</Dialog>;
     $[22] = handleCancel;
     $[23] = t6;
     $[24] = t7;

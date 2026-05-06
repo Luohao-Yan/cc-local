@@ -9,6 +9,7 @@ import { setCwd } from '../utils/Shell.js';
 import { cleanupWorktree, getCurrentWorktreeSession, keepWorktree, killTmuxSession } from '../utils/worktree.js';
 import { Select } from './CustomSelect/select.js';
 import { Dialog } from './design-system/Dialog.js';
+import { t } from '../utils/i18n/index.js';
 import { Spinner } from './Spinner.js';
 
 // Inline require breaks the cycle this file would otherwise close:
@@ -169,13 +170,13 @@ export function WorktreeExitDialog({
   if (status === 'keeping') {
     return <Box flexDirection="row" marginY={1}>
         <Spinner />
-        <Text>Keeping worktree…</Text>
+        <Text>{t('worktree.keepingProgress')}</Text>
       </Box>;
   }
   if (status === 'removing') {
     return <Box flexDirection="row" marginY={1}>
         <Spinner />
-        <Text>Removing worktree…</Text>
+        <Text>{t('worktree.removingProgress')}</Text>
       </Box>;
   }
   const branchName = worktreeSession.worktreeBranch;
@@ -203,15 +204,15 @@ export function WorktreeExitDialog({
   const removeDescription = hasUncommitted || hasCommits ? 'All changes and commits will be lost.' : 'Clean up the worktree directory.';
   const hasTmuxSession = Boolean(worktreeSession.tmuxSessionName);
   const options = hasTmuxSession ? [{
-    label: 'Keep worktree and tmux session',
+    label: t('worktree.keepBoth'),
     value: 'keep-with-tmux',
     description: `Stays at ${worktreeSession.worktreePath}. Reattach with: tmux attach -t ${worktreeSession.tmuxSessionName}`
   }, {
-    label: 'Keep worktree, kill tmux session',
+    label: t('worktree.keepWorktreeKillTmux'),
     value: 'keep-kill-tmux',
     description: `Keeps worktree at ${worktreeSession.worktreePath}, terminates tmux session.`
   }, {
-    label: 'Remove worktree and tmux session',
+    label: t('worktree.removeBoth'),
     value: 'remove-with-tmux',
     description: removeDescription
   }] : [{
@@ -224,7 +225,7 @@ export function WorktreeExitDialog({
     description: removeDescription
   }];
   const defaultValue = hasTmuxSession ? 'keep-with-tmux' : 'keep';
-  return <Dialog title="Exiting worktree session" subtitle={subtitle} onCancel={handleCancel}>
+  return <Dialog title={t('worktree.exitTitle')} subtitle={subtitle} onCancel={handleCancel}>
       <Select defaultFocusValue={defaultValue} options={options} onChange={handleSelect} />
     </Dialog>;
 }

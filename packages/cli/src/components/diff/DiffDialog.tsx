@@ -10,6 +10,7 @@ import { useKeybindings } from '../../keybindings/useKeybinding.js';
 import { useShortcutDisplay } from '../../keybindings/useShortcutDisplay.js';
 import type { Message } from '../../types/message.js';
 import { plural } from '../../utils/stringUtils.js';
+import { t } from '../../utils/i18n/index.js';
 import { Byline } from '../design-system/Byline.js';
 import { Dialog } from '../design-system/Dialog.js';
 import { DiffDetailView } from './DiffDetailView.js';
@@ -256,13 +257,13 @@ export function DiffDialog(t0) {
     t17 = $[39];
   }
   const subtitle = t17;
-  const headerTitle = currentTurn ? `Turn ${currentTurn.turnIndex}` : "Uncommitted changes";
+  const headerTitle = currentTurn ? t('diff.turn', { index: currentTurn.turnIndex }) : t('diff.uncommitted');
   const headerSubtitle = currentTurn ? currentTurn.userPromptPreview ? `"${currentTurn.userPromptPreview}"` : "" : "(git diff HEAD)";
   let t18;
   if ($[40] !== sourceIndex || $[41] !== sources) {
     t18 = sources.length > 1 ? <Box>{sourceIndex > 0 && <Text dimColor={true}>◀ </Text>}{sources.map((source, i) => {
         const isSelected = i === sourceIndex;
-        const label = source.type === "current" ? "Current" : `T${source.turn.turnIndex}`;
+        const label = source.type === "current" ? t('diff.current') : `T${source.turn.turnIndex}`;
         return <Text key={i} dimColor={!isSelected} bold={isSelected}>{i > 0 ? " \xB7 " : ""}{label}</Text>;
       })}{sourceIndex < sources.length - 1 && <Text dimColor={true}> ▶</Text>}</Box> : null;
     $[40] = sourceIndex;
@@ -276,18 +277,18 @@ export function DiffDialog(t0) {
   let t19;
   bb0: {
     if (diffData.loading) {
-      t19 = "Loading diff\u2026";
+      t19 = t('diff.loading');
       break bb0;
     }
     if (currentTurn) {
-      t19 = "No file changes in this turn";
+      t19 = t('diff.noChangesTurn');
       break bb0;
     }
     if (diffData.stats && diffData.stats.filesCount > 0 && diffData.files.length === 0) {
-      t19 = "Too many files to display details";
+      t19 = t('diff.tooManyFiles');
       break bb0;
     }
-    t19 = "Working tree is clean";
+    t19 = t('diff.cleanTree');
   }
   const emptyMessage = t19;
   let t20;
@@ -314,7 +315,7 @@ export function DiffDialog(t0) {
       if (viewMode === "detail") {
         setViewMode("list");
       } else {
-        onDone("Diff dialog dismissed", {
+        onDone(t('diff.dialogDismissed'), {
           display: "system"
         });
       }

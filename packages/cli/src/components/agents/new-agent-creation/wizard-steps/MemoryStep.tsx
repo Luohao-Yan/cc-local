@@ -8,6 +8,7 @@ import { ConfigurableShortcutHint } from '../../../ConfigurableShortcutHint.js';
 import { Select } from '../../../CustomSelect/select.js';
 import { Byline } from '../../../design-system/Byline.js';
 import { KeyboardShortcutHint } from '../../../design-system/KeyboardShortcutHint.js';
+import { t } from '../../../../utils/i18n/index.js';
 import { useWizard } from '../../../wizard/index.js';
 import { WizardDialogLayout } from '../../../wizard/WizardDialogLayout.js';
 import type { AgentWizardData } from '../types.js';
@@ -37,28 +38,28 @@ export function MemoryStep() {
   let t1;
   if ($[1] !== isUserScope) {
     t1 = isUserScope ? [{
-      label: "User scope (~/.claude/agent-memory/) (Recommended)",
+      label: t("agentWizard.memoryUserRecommended"),
       value: "user"
     }, {
-      label: "None (no persistent memory)",
+      label: t("agentWizard.memoryNone"),
       value: "none"
     }, {
-      label: "Project scope (.claude/agent-memory/)",
+      label: t("agentWizard.memoryProject"),
       value: "project"
     }, {
-      label: "Local scope (.claude/agent-memory-local/)",
+      label: t("agentWizard.memoryLocal"),
       value: "local"
     }] : [{
-      label: "Project scope (.claude/agent-memory/) (Recommended)",
+      label: t("agentWizard.memoryProjectRecommended"),
       value: "project"
     }, {
-      label: "None (no persistent memory)",
+      label: t("agentWizard.memoryNone"),
       value: "none"
     }, {
-      label: "User scope (~/.claude/agent-memory/)",
+      label: t("agentWizard.memoryUser"),
       value: "user"
     }, {
-      label: "Local scope (.claude/agent-memory-local/)",
+      label: t("agentWizard.memoryLocal"),
       value: "local"
     }];
     $[1] = isUserScope;
@@ -100,7 +101,7 @@ export function MemoryStep() {
   }
   let t4;
   if ($[9] !== goBack || $[10] !== handleSelect || $[11] !== memoryOptions) {
-    t4 = <WizardDialogLayout subtitle="Configure agent memory" footerText={t3}><Box><Select key="memory-select" options={memoryOptions} onChange={handleSelect} onCancel={goBack} /></Box></WizardDialogLayout>;
+    t4 = <WizardDialogLayout subtitle={t("agentWizard.memorySubtitle")} footerText={t3}><Box><Select key="memory-select" options={memoryOptions} onChange={handleSelect} onCancel={goBack} /></Box></WizardDialogLayout>;
     $[9] = goBack;
     $[10] = handleSelect;
     $[11] = memoryOptions;

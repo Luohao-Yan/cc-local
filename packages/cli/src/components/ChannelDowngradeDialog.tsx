@@ -3,6 +3,7 @@ import React from 'react';
 import { Text } from '../ink.js';
 import { Select } from './CustomSelect/index.js';
 import { Dialog } from './design-system/Dialog.js';
+import { t } from '../utils/i18n/index.js';
 export type ChannelDowngradeChoice = 'downgrade' | 'stay' | 'cancel';
 type Props = {
   currentVersion: string;
@@ -43,7 +44,7 @@ export function ChannelDowngradeDialog(t0) {
   const handleCancel = t2;
   let t3;
   if ($[4] !== currentVersion) {
-    t3 = <Text>The stable channel may have an older version than what you're currently running ({currentVersion}).</Text>;
+    t3 = <Text>{t('channel.olderVersionWarning', { version: currentVersion })}</Text>;
     $[4] = currentVersion;
     $[5] = t3;
   } else {
@@ -51,7 +52,7 @@ export function ChannelDowngradeDialog(t0) {
   }
   let t4;
   if ($[6] === Symbol.for("react.memo_cache_sentinel")) {
-    t4 = <Text dimColor={true}>How would you like to handle this?</Text>;
+    t4 = <Text dimColor={true}>{t('channel.howToHandle')}</Text>;
     $[6] = t4;
   } else {
     t4 = $[6];
@@ -59,14 +60,14 @@ export function ChannelDowngradeDialog(t0) {
   let t5;
   if ($[7] === Symbol.for("react.memo_cache_sentinel")) {
     t5 = {
-      label: "Allow possible downgrade to stable version",
+      label: t('channel.allowDowngrade'),
       value: "downgrade" as ChannelDowngradeChoice
     };
     $[7] = t5;
   } else {
     t5 = $[7];
   }
-  const t6 = `Stay on current version (${currentVersion}) until stable catches up`;
+  const t6 = t('channel.stayCurrent', { version: currentVersion });
   let t7;
   if ($[8] !== t6) {
     t7 = [t5, {
@@ -89,7 +90,7 @@ export function ChannelDowngradeDialog(t0) {
   }
   let t9;
   if ($[13] !== handleCancel || $[14] !== t3 || $[15] !== t8) {
-    t9 = <Dialog title="Switch to Stable Channel" onCancel={handleCancel} color="permission" hideBorder={true} hideInputGuide={true}>{t3}{t4}{t8}</Dialog>;
+    t9 = <Dialog title={t('channel.switchToStable')} onCancel={handleCancel} color="permission" hideBorder={true} hideInputGuide={true}>{t3}{t4}{t8}</Dialog>;
     $[13] = handleCancel;
     $[14] = t3;
     $[15] = t8;

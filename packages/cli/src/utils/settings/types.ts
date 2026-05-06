@@ -646,6 +646,10 @@ export const SettingsSchema = lazySchema(() =>
         .describe(
           'Preferred language for Claude responses and voice dictation (e.g., "japanese", "spanish")',
         ),
+      uiLanguage: z
+        .enum(['auto', 'en', 'zh'])
+        .optional()
+        .describe('UI display language (e.g., "auto", "en", "zh")'),
       skipWebFetchPreflight: z
         .boolean()
         .optional()

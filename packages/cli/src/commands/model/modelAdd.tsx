@@ -19,6 +19,7 @@ import { activateModel, type ResolvedModel } from '../../utils/model/multiModel.
 import { detectProviderFromUrl, getDefaultAPIFormat, type APIFormat } from '../../utils/model/providers.js'
 import { sideQuery } from '../../utils/sideQuery.js'
 import type { CommandResultDisplay, LocalJSXCommandCall, LocalJSXCommandOnDone } from '../../types/command.js'
+import { t } from '../../utils/i18n/index.js'
 
 type AddStep =
   | 'input-url'
@@ -173,16 +174,16 @@ export function ModelAdd({
   if (step === 'input-url') {
     return (
       <InputStep
-        title="Step 1/5 · API Endpoint"
+        title={t('modelAdd.step1')}
         hint={[
-          'The base URL of the API endpoint.',
+          t('modelAdd.hintBaseUrl'),
           'Examples:',
           '  Doubao  : https://ark.cn-beijing.volces.com/api/v3',
           '  DeepSeek: https://api.deepseek.com/v1',
           '  OpenAI  : https://api.openai.com/v1',
           '  Local   : http://localhost:11434/v1',
         ]}
-        prompt="Enter baseUrl:"
+        prompt={t('modelAdd.promptBaseUrl')}
         placeholder="e.g. https://api.openai.com/v1"
         onSubmit={handleUrlSubmit}
         onCancel={handleCancel}
@@ -193,10 +194,10 @@ export function ModelAdd({
     const detectedLabel = apiFormat === 'openai' ? 'OpenAI Chat Completions' : 'Anthropic Messages'
     return (
       <Box flexDirection="column">
-        <Text bold>Step 2/5 · API Format</Text>
+        <Text bold>{t('modelAdd.step2')}</Text>
         <Text> </Text>
-        <Text dimColor>Detected: {detectedLabel} (auto-detected from URL)</Text>
-        <Text dimColor>You can override if the detection is incorrect.</Text>
+        <Text dimColor>{t('modelAdd.detected', { format: detectedLabel })}</Text>
+        <Text dimColor>{t('modelAdd.detectedHint')}</Text>
         <Text> </Text>
         <Select
           options={[
@@ -222,21 +223,21 @@ export function ModelAdd({
     const existingKey = existingProviderKey ? config.providers[existingProviderKey]?.apiKey : null
     return (
       <Box flexDirection="column">
-        <Text bold>Provider Already Exists</Text>
+        <Text bold>{t('modelAdd.providerExists')}</Text>
         <Text> </Text>
         <Text bold>Provider: "{providerName}"</Text>
         <Text> </Text>
-        <Text dimColor>Same baseUrl found. Choose an option:</Text>
+        <Text dimColor>{t('modelAdd.sameUrlFound')}</Text>
         <Text> </Text>
         <Select
           options={[
             {
-              label: 'Yes — add model to existing provider',
+              label: t('modelAdd.yesAddToExisting'),
               value: 'yes',
               description: existingKey ? `Reuses existing API key (...${existingKey.slice(-4)})` : 'No API key set',
             },
             {
-              label: 'No — create new provider with different API key',
+              label: t('modelAdd.noCreateNew'),
               value: 'no',
               description: 'Use this if you have a different key for the same endpoint',
             },
@@ -249,13 +250,13 @@ export function ModelAdd({
   if (step === 'input-key') {
     return (
       <InputStep
-        title="Step 3/5 · API Key"
+        title={t('modelAdd.step3')}
         hint={[
-          'The secret key used to authenticate with the provider.',
+          t('modelAdd.hintApiKey'),
           'Find it in your provider\'s console / dashboard.',
-          'Press Enter to skip for local models (e.g. Ollama).',
+          t('modelAdd.hintApiKeySkip'),
         ]}
-        prompt="Enter API Key:"
+        prompt={t('modelAdd.promptApiKey')}
         placeholder="e.g. sk-xxxxxxxx"
         onSubmit={handleKeySubmit}
         onCancel={handleCancel}
@@ -265,16 +266,16 @@ export function ModelAdd({
   if (step === 'input-model') {
     return (
       <InputStep
-        title="Step 4/5 · Model Name"
+        title={t('modelAdd.step4')}
         hint={[
-          'The exact model ID as required by the API.',
+          t('modelAdd.hintModelName'),
           'Examples:',
           '  Doubao  : doubao-seed-2.0-code',
           '  DeepSeek: deepseek-chat',
           '  OpenAI  : gpt-4o',
           '  Local   : qwen3:32b',
         ]}
-        prompt="Enter model name:"
+        prompt={t('modelAdd.promptModelName')}
         placeholder="gpt-4o"
         onSubmit={handleModelSubmit}
         onCancel={handleCancel}
@@ -284,13 +285,13 @@ export function ModelAdd({
   if (step === 'input-alias') {
     return (
       <InputStep
-        title="Step 5/5 · Alias (optional)"
+        title={t('modelAdd.step5')}
         hint={[
-          'A short name to quickly switch to this model.',
+          t('modelAdd.hintAlias'),
           'Example: type "doubao" to use instead of the full model ID.',
           'Press Enter to skip.',
         ]}
-        prompt="Enter alias:"
+        prompt={t('modelAdd.promptAlias')}
         placeholder=""
         onSubmit={handleAliasSubmit}
         onCancel={handleCancel}
@@ -298,20 +299,20 @@ export function ModelAdd({
     )
   }
   if (step === 'verifying') {
-    return <Box flexDirection="column"><Text>Verifying model config...</Text></Box>
+    return <Box flexDirection="column"><Text>{t('modelAdd.verifying')}</Text></Box>
   }
   if (step === 'verify-failed') {
     return (
       <Box flexDirection="column">
-        <Text color="red">Verification failed: {verifyError}</Text>
+        <Text color="red">{t('modelAdd.verificationFailed', { error: verifyError })}</Text>
         <Text> </Text>
-        <Text dimColor>What would you like to do?</Text>
+        <Text dimColor>{t('modelAdd.whatToDo')}</Text>
         <Select
           options={[
-            { label: 'Save anyway', value: 'save', description: 'May be a temporary network issue' },
-            { label: 'Fix API Key', value: 'retry-key', description: 'Re-enter API key only' },
-            { label: 'Fix Model Name', value: 'retry-model', description: 'Re-enter model name only' },
-            { label: 'Start over', value: 'retry-url', description: 'Re-enter all fields from beginning' },
+            { label: t('modelAdd.saveAnyway'), value: 'save', description: t('modelAdd.saveAnywayDesc') },
+            { label: t('modelAdd.fixApiKey'), value: 'retry-key', description: t('modelAdd.fixApiKeyDesc') },
+            { label: t('modelAdd.fixModelName'), value: 'retry-model', description: t('modelAdd.fixModelNameDesc') },
+            { label: t('modelAdd.startOver'), value: 'retry-url', description: t('modelAdd.startOverDesc') },
             { label: 'Cancel', value: 'cancel' },
           ]}
           onChange={handleVerifyFailChoice} onCancel={handleCancel}

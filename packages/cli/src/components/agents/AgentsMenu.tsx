@@ -13,6 +13,7 @@ import { type ResolvedAgent, resolveAgentOverrides } from '../../tools/AgentTool
 import { type AgentDefinition, getActiveAgentsFromList } from '../../tools/AgentTool/loadAgentsDir.js';
 import { toError } from '../../utils/errors.js';
 import { logError } from '../../utils/log.js';
+import { t } from '../../utils/i18n/index.js';
 import { Select } from '../CustomSelect/select.js';
 import { Dialog } from '../design-system/Dialog.js';
 import { AgentDetail } from './AgentDetail.js';
@@ -329,7 +330,7 @@ export function AgentsMenu(t0) {
         let t14;
         if ($[60] === Symbol.for("react.memo_cache_sentinel")) {
           t14 = {
-            label: "View agent",
+            label: t('agents.viewAgent'),
             value: "view"
           };
           $[60] = t14;
@@ -339,10 +340,10 @@ export function AgentsMenu(t0) {
         let t15;
         if ($[61] !== isEditable) {
           t15 = isEditable ? [{
-            label: "Edit agent",
+            label: t('agents.editAgent'),
             value: "edit"
           }, {
-            label: "Delete agent",
+            label: t('agents.deleteAgent'),
             value: "delete"
           }] : [];
           $[61] = isEditable;
@@ -353,7 +354,7 @@ export function AgentsMenu(t0) {
         let t16;
         if ($[63] === Symbol.for("react.memo_cache_sentinel")) {
           t16 = {
-            label: "Back",
+            label: t('agents.back'),
             value: "back"
           };
           $[63] = t16;
@@ -652,7 +653,7 @@ export function AgentsMenu(t0) {
         }
         let t20;
         if ($[127] !== t14 || $[128] !== t15 || $[129] !== t16 || $[130] !== t19) {
-          t20 = <Dialog title="Delete agent" onCancel={t14} color="error">{t15}{t16}{t19}</Dialog>;
+          t20 = <Dialog title={t('agents.deleteAgent')} onCancel={t14} color="error">{t15}{t16}{t19}</Dialog>;
           $[127] = t14;
           $[128] = t15;
           $[129] = t16;
@@ -699,7 +700,7 @@ export function AgentsMenu(t0) {
         }
         const freshAgent = t13;
         const agentToEdit = freshAgent || modeState.agent;
-        const t14 = `Edit agent: ${agentToEdit.agentType}`;
+        const t14 = t('agents.editAgentTitle', { name: agentToEdit.agentType });
         let t15;
         if ($[140] !== modeState.previousMode) {
           t15 = () => setModeState(modeState.previousMode);

@@ -253,6 +253,10 @@ export class NativeBridgeAdapter {
     let inputTokens = 0
     let outputTokens = 0
 
+    // Resolve API key: explicit config > env var
+    const apiKey = this.config.engineOptions?.apiKey ?? process.env.ANTHROPIC_API_KEY
+    const baseUrl = this.config.engineOptions?.baseUrl ?? process.env.ANTHROPIC_BASE_URL
+
     for await (const event of createQueryEngineAdapter({
       messages: options.messages,
       systemPrompt: options.systemPrompt,
@@ -261,8 +265,10 @@ export class NativeBridgeAdapter {
       enabledTools: this.config.enabledTools,
       onStream: options.onStream,
       abortSignal: options.abortSignal,
-      apiKey: this.config.engineOptions?.apiKey,
-      baseUrl: this.config.engineOptions?.baseUrl,
+      apiKey,
+      baseUrl,
+      apiFormat: this.config.engineOptions?.apiFormat,
+      headers: this.config.engineOptions?.headers,
     })) {
       // Track usage from message_stop events
       if (event.type === 'stream_event') {

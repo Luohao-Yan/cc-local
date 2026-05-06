@@ -11,6 +11,7 @@ import { getClaudeConfigHomeDir } from '../../utils/envUtils.js';
 import { getErrnoCode } from '../../utils/errors.js';
 import { logError } from '../../utils/log.js';
 import { editFileInEditor } from '../../utils/promptEditor.js';
+import { t } from '../../utils/i18n/index.js';
 function MemoryCommand({
   onDone
 }: {
@@ -66,7 +67,7 @@ function MemoryCommand({
       display: 'system'
     });
   };
-  return <Dialog title="Memory" onCancel={handleCancel} color="remember">
+  return <Dialog title={t('memory.title')} onCancel={handleCancel} color="remember">
       <Box flexDirection="column">
         <React.Suspense fallback={null}>
           <MemoryFileSelector onSelect={handleSelectMemoryFile} onCancel={handleCancel} />

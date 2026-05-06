@@ -3,6 +3,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import { Select } from '../../components/CustomSelect/select.js';
 import { Dialog } from '../../components/design-system/Dialog.js';
 import { Box, Text } from '../../ink.js';
+import { t } from '../../utils/i18n/index.js';
 type Props = {
   onProceed: (signal: AbortSignal) => Promise<void>;
   onCancel: () => void;
@@ -54,7 +55,7 @@ export function UltrareviewOverageDialog(t0) {
   let t4;
   if ($[6] === Symbol.for("react.memo_cache_sentinel")) {
     t4 = [{
-      label: "Proceed with Extra Usage billing",
+      label: t('ultrareview.proceedBilling'),
       value: "proceed"
     }, {
       label: "Cancel",
@@ -67,7 +68,7 @@ export function UltrareviewOverageDialog(t0) {
   const options = t4;
   let t5;
   if ($[7] === Symbol.for("react.memo_cache_sentinel")) {
-    t5 = <Text>Your free ultrareviews for this organization are used. Further reviews bill as Extra Usage (pay-per-use).</Text>;
+    t5 = <Text>{t('ultrareview.usageExhausted')}</Text>;
     $[7] = t5;
   } else {
     t5 = $[7];
@@ -84,7 +85,7 @@ export function UltrareviewOverageDialog(t0) {
   }
   let t7;
   if ($[12] !== handleCancel || $[13] !== t6) {
-    t7 = <Dialog title="Ultrareview billing" onCancel={handleCancel} color="background">{t6}</Dialog>;
+    t7 = <Dialog title={t('ultrareview.billingTitle')} onCancel={handleCancel} color="background">{t6}</Dialog>;
     $[12] = handleCancel;
     $[13] = t6;
     $[14] = t7;

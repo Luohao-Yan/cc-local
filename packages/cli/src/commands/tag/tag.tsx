@@ -12,6 +12,7 @@ import { logEvent } from '../../services/analytics/index.js';
 import type { LocalJSXCommandOnDone } from '../../types/command.js';
 import { recursivelySanitizeUnicode } from '../../utils/sanitization.js';
 import { getCurrentSessionTag, getTranscriptPath, saveTag } from '../../utils/sessionStorage.js';
+import { t } from '../../utils/i18n/index.js';
 function ConfirmRemoveTag(t0) {
   const $ = _c(11);
   const {
@@ -39,10 +40,10 @@ function ConfirmRemoveTag(t0) {
   let t4;
   if ($[4] === Symbol.for("react.memo_cache_sentinel")) {
     t4 = [{
-      label: "Yes, remove tag",
+      label: t('tag.yesRemove'),
       value: "yes"
     }, {
-      label: "No, keep tag",
+      label: t('tag.noKeep'),
       value: "no"
     }];
     $[4] = t4;
@@ -59,7 +60,7 @@ function ConfirmRemoveTag(t0) {
   }
   let t6;
   if ($[7] !== onCancel || $[8] !== t1 || $[9] !== t5) {
-    t6 = <Dialog title="Remove tag?" subtitle={t1} onCancel={onCancel} color="warning">{t5}</Dialog>;
+    t6 = <Dialog title={t('tag.removeTitle')} subtitle={t1} onCancel={onCancel} color="warning">{t5}</Dialog>;
     $[7] = onCancel;
     $[8] = t1;
     $[9] = t5;

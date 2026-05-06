@@ -15,6 +15,7 @@ import { plural } from '../../utils/stringUtils.js';
 import { ConfigurableShortcutHint } from '../ConfigurableShortcutHint.js';
 import { Byline } from '../design-system/Byline.js';
 import { Dialog } from '../design-system/Dialog.js';
+import { t } from '../../utils/i18n/index.js';
 import { KeyboardShortcutHint } from '../design-system/KeyboardShortcutHint.js';
 import TextInput from '../TextInput.js';
 type Props = {

@@ -9,6 +9,7 @@ import { AGENT_SOURCE_GROUPS, compareAgentsByName, getOverrideSourceLabel, resol
 import type { AgentDefinition } from '../../tools/AgentTool/loadAgentsDir.js';
 import { count } from '../../utils/array.js';
 import { Dialog } from '../design-system/Dialog.js';
+import { t } from '../../utils/i18n/index.js';
 import { Divider } from '../design-system/Divider.js';
 import { getAgentSourceDisplayName } from './utils.js';
 type Props = {
@@ -43,7 +44,7 @@ export function AgentsList(t0) {
   const getOverrideInfo = _temp;
   let t2;
   if ($[2] !== isCreateNewSelected) {
-    t2 = () => <Box><Text color={isCreateNewSelected ? "suggestion" : undefined}>{isCreateNewSelected ? `${figures.pointer} ` : "  "}</Text><Text color={isCreateNewSelected ? "suggestion" : undefined}>Create new agent</Text></Box>;
+    t2 = () => <Box><Text color={isCreateNewSelected ? "suggestion" : undefined}>{isCreateNewSelected ? `${figures.pointer} ` : "  "}</Text><Text color={isCreateNewSelected ? "suggestion" : undefined}>{t('agents.createNew')}</Text></Box>;
     $[2] = isCreateNewSelected;
     $[3] = t2;
   } else {
@@ -275,7 +276,7 @@ export function AgentsList(t0) {
         }
         let t29;
         if ($[69] !== onBack || $[70] !== sourceTitle || $[71] !== t28) {
-          t29 = <Dialog title={sourceTitle} subtitle="No agents found" onCancel={onBack} hideInputGuide={true}>{t28}</Dialog>;
+          t29 = <Dialog title={sourceTitle} subtitle={t('agents.noAgentsFound')} onCancel={onBack} hideInputGuide={true}>{t28}</Dialog>;
           $[69] = onBack;
           $[70] = sourceTitle;
           $[71] = t28;

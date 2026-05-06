@@ -6,6 +6,7 @@ import { ConfigurableShortcutHint } from '../../../ConfigurableShortcutHint.js';
 import { Select } from '../../../CustomSelect/select.js';
 import { Byline } from '../../../design-system/Byline.js';
 import { KeyboardShortcutHint } from '../../../design-system/KeyboardShortcutHint.js';
+import { t } from '../../../../utils/i18n/index.js';
 import { useWizard } from '../../../wizard/index.js';
 import { WizardDialogLayout } from '../../../wizard/WizardDialogLayout.js';
 import type { AgentWizardData } from '../types.js';
@@ -19,7 +20,7 @@ export function LocationStep() {
   let t0;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
     t0 = {
-      label: "Project (.claude/agents/)",
+      label: t("agentWizard.locationProject"),
       value: "projectSettings" as SettingSource
     };
     $[0] = t0;
@@ -29,7 +30,7 @@ export function LocationStep() {
   let t1;
   if ($[1] === Symbol.for("react.memo_cache_sentinel")) {
     t1 = [t0, {
-      label: "Personal (~/.claude/agents/)",
+      label: t("agentWizard.locationPersonal"),
       value: "userSettings" as SettingSource
     }];
     $[1] = t1;
@@ -68,7 +69,7 @@ export function LocationStep() {
   }
   let t5;
   if ($[8] !== t3 || $[9] !== t4) {
-    t5 = <WizardDialogLayout subtitle="Choose location" footerText={t2}><Box><Select key="location-select" options={locationOptions} onChange={t3} onCancel={t4} /></Box></WizardDialogLayout>;
+    t5 = <WizardDialogLayout subtitle={t("agentWizard.locationSubtitle")} footerText={t2}><Box><Select key="location-select" options={locationOptions} onChange={t3} onCancel={t4} /></Box></WizardDialogLayout>;
     $[8] = t3;
     $[9] = t4;
     $[10] = t5;

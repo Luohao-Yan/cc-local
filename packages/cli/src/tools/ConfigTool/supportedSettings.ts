@@ -124,6 +124,12 @@ export const SUPPORTED_SETTINGS: Record<string, SettingConfig> = {
     description:
       'Preferred language for Claude responses and voice dictation (e.g., "japanese", "spanish")',
   },
+  uiLanguage: {
+    source: 'settings',
+    type: 'string',
+    description: 'UI display language (e.g., "auto", "en", "zh")',
+    options: ['auto', 'en', 'zh'],
+  },
   teammateMode: {
     source: 'global',
     type: 'string',

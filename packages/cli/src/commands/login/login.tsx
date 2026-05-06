@@ -16,6 +16,7 @@ import type { LocalJSXCommandOnDone } from '../../types/command.js';
 import { stripSignatureBlocks } from '../../utils/messages.js';
 import { checkAndDisableAutoModeIfNeeded, checkAndDisableBypassPermissionsIfNeeded, resetAutoModeGateCheck, resetBypassPermissionsCheck } from '../../utils/permissions/bypassPermissionsKillswitch.js';
 import { resetUserCache } from '../../utils/user.js';
+import { t } from '../../utils/i18n/index.js';
 export async function call(onDone: LocalJSXCommandOnDone, context: LocalJSXCommandContext): Promise<React.ReactNode> {
   return <Login onDone={async success => {
     context.onChangeAPIKey();
@@ -89,7 +90,7 @@ export function Login(props) {
   }
   let t3;
   if ($[9] !== t0 || $[10] !== t2) {
-    t3 = <Dialog title="Login" onCancel={t0} color="permission" inputGuide={_temp}>{t2}</Dialog>;
+    t3 = <Dialog title={t('login.title')} onCancel={t0} color="permission" inputGuide={_temp}>{t2}</Dialog>;
     $[9] = t0;
     $[10] = t2;
     $[11] = t3;

@@ -296,20 +296,15 @@ const rawUserArgs = getUserArgs(process.argv)
 const useInkUi = shouldUseInkUi(rawUserArgs)
 
 // Check for packages-native mode
+// NOTE: --native now delegates to --ink-bridge to reuse mature code
+// The native entrypoint (native.ts) is kept for special use cases
 const useNativeMode = rawUserArgs.includes('--native') || rawUserArgs.includes('--packages-native')
 const useInkBridge = rawUserArgs.includes('--ink-bridge') || rawUserArgs.includes('--legacy-bridge') || rawUserArgs.includes('--ink')
-if (useNativeMode && !useInkBridge) {
-  // Dynamic import to avoid loading native module in legacy mode
-  const { runNative } = await import('./entrypoints/native.js')
-  await runNative()
-  await stopEmbeddedServer()
-  process.exit(0)
-}
-
-// Bridge mode: packages-core QueryEngine + Ink UI (same process)
-if (useInkBridge) {
-  const { renderInkBridgeRepl, getBridgeServerUrl, getBridgeAuthToken } = await import('./runtime/inkBridgeRenderer.js')
-  await renderInkBridgeRepl({
+if (useNativeMode || useInkBridge) {
+  // Use the mature QueryEngine + Ink UI path
+  try {
+    const { renderInkBridgeRepl, getBridgeServerUrl, getBridgeAuthToken } = await import('./runtime/inkBridgeRenderer.js')
+    await renderInkBridgeRepl({
     model: rawUserArgs.includes('--model') ? rawUserArgs[rawUserArgs.indexOf('--model') + 1] : undefined,
     cwd: rawUserArgs.includes('--cwd') ? rawUserArgs[rawUserArgs.indexOf('--cwd') + 1] : undefined,
     sessionId: rawUserArgs.includes('--resume') ? (rawUserArgs[rawUserArgs.indexOf('--resume') + 1] || 'latest') : undefined,
@@ -321,6 +316,10 @@ if (useInkBridge) {
   })
   await stopEmbeddedServer()
   process.exit(0)
+  } catch (err) {
+    console.error('[ERROR] Bridge mode failed:', err)
+    process.exit(1)
+  }
 }
 
 if (useInkUi) {
