@@ -1,4 +1,5 @@
-import type { Command } from '../../commands.js'
+import type { Command } from '../commands.js'
+import { t } from '../utils/i18n/index.js'
 
 /**
  * /proactive 命令入口
@@ -14,7 +15,7 @@ import type { Command } from '../../commands.js'
 const proactive: Command = {
   type: 'local-jsx',
   name: 'proactive',
-  description: 'Toggle proactive autonomous mode · on, off, pause, status',
+  get description() { return t('command.description.proactive') },
   isEnabled: () => true,
   argumentHint: '[on|off|pause|resume|status]',
   load: () => import('./proactive/proactive.js'),

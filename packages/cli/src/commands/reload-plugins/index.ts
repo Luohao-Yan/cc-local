@@ -3,11 +3,12 @@
  * running session. Implementation lazy-loaded.
  */
 import type { Command } from '../../commands.js'
+import { t } from '../../utils/i18n/index.js'
 
 const reloadPlugins = {
   type: 'local',
   name: 'reload-plugins',
-  description: 'Activate pending plugin changes in the current session',
+  get description() { return t('command.description.reload-plugins') },
   // SDK callers use query.reloadPlugins() (control request) instead of
   // sending this as a text prompt — that returns structured data
   // (commands, agents, plugins, mcpServers) for UI updates.

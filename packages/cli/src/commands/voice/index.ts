@@ -3,11 +3,12 @@ import {
   isVoiceGrowthBookEnabled,
   isVoiceModeEnabled,
 } from '../../voice/voiceModeEnabled.js'
+import { t } from '../../utils/i18n/index.js'
 
 const voice = {
   type: 'local',
   name: 'voice',
-  description: 'Toggle voice mode',
+  get description() { return t('command.description.voice') },
   availability: ['claude-ai'],
   isEnabled: () => isVoiceGrowthBookEnabled(),
   get isHidden() {

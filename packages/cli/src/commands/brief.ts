@@ -15,6 +15,7 @@ import type {
   LocalJSXCommandOnDone,
 } from '../types/command.js'
 import { lazySchema } from '../utils/lazySchema.js'
+import { t } from '../utils/i18n/index.js'
 
 // Zod guards against fat-fingered GB pushes (same pattern as pollConfig.ts /
 // cronScheduler.ts). A malformed config falls back to DEFAULT_BRIEF_CONFIG
@@ -47,7 +48,7 @@ function getBriefConfig(): BriefConfig {
 const brief = {
   type: 'local-jsx',
   name: 'brief',
-  description: 'Toggle brief-only mode',
+  get description() { return t('command.description.brief') },
   isEnabled: () => {
     if (feature('KAIROS') || feature('KAIROS_BRIEF')) {
       return getBriefConfig().enable_slash_command

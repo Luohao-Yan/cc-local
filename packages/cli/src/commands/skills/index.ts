@@ -1,9 +1,10 @@
 import type { Command } from '../../commands.js'
+import { t } from '../../utils/i18n/index.js'
 
 const skills = {
   type: 'local-jsx',
   name: 'skills',
-  description: 'List available skills',
+  get description() { return t('command.description.skills') },
   load: () => import('./skills.js'),
 } satisfies Command
 

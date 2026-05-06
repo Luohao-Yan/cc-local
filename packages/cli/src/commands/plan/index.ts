@@ -1,9 +1,10 @@
 import type { Command } from '../../commands.js'
+import { t } from '../../utils/i18n/index.js'
 
 const plan = {
   type: 'local-jsx',
   name: 'plan',
-  description: 'Enable plan mode or view the current session plan',
+  get description() { return t('command.description.plan') },
   argumentHint: '[open|<description>]',
   load: () => import('./plan.js'),
 } satisfies Command

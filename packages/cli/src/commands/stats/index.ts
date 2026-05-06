@@ -1,9 +1,10 @@
 import type { Command } from '../../commands.js'
+import { t } from '../../utils/i18n/index.js'
 
 const stats = {
   type: 'local-jsx',
   name: 'stats',
-  description: 'Show your Claude Code usage statistics and activity',
+  get description() { return t('command.description.stats') },
   load: () => import('./stats.js'),
 } satisfies Command
 

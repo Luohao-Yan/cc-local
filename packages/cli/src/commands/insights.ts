@@ -14,6 +14,7 @@ import {
 import { tmpdir } from 'os'
 import { extname, join } from 'path'
 import type { Command } from '../commands.js'
+import { t } from '../utils/i18n/index.js'
 import { queryWithModel } from '../services/api/claude.js'
 import {
   AGENT_TOOL_NAME,
@@ -3039,7 +3040,7 @@ function safeKeys(obj: Record<string, unknown> | undefined | null): string[] {
 const usageReport: Command = {
   type: 'prompt',
   name: 'insights',
-  description: 'Generate a report analyzing your Claude Code sessions',
+  get description() { return t('command.description.insights') },
   contentLength: 0, // Dynamic content
   progressMessage: 'analyzing your sessions',
   source: 'builtin',

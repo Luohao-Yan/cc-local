@@ -9,6 +9,7 @@ import { Box, render, Text } from '../ink.js';
 import { logForDebugging } from '../utils/debug.js';
 import { env } from '../utils/env.js';
 import { errorMessage } from '../utils/errors.js';
+import { t } from '../utils/i18n/index.js';
 import { checkInstall, cleanupNpmInstallations, cleanupShellAliases, installLatest } from '../utils/nativeInstaller/index.js';
 import { getInitialSettings, updateSettingsForSource } from '../utils/settings/settings.js';
 interface InstallProps {
@@ -279,7 +280,7 @@ function Install({
 export const install = {
   type: 'local-jsx' as const,
   name: 'install',
-  description: 'Install Claude Code native build',
+  get description() { return t('command.description.install') },
   argumentHint: '[options]',
   async call(onDone: (result: string, options?: {
     display?: CommandResultDisplay;
