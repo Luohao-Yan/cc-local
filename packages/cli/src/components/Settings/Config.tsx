@@ -369,7 +369,7 @@ export function Config({
         setChanges(prev_8 => ({
           ...prev_8,
           model: getFastModeModel(),
-          'Fast mode': 'ON'
+          [t('settings.fastMode', { model: '' }).trim()]: 'ON'
         }));
       } else {
         setAppState(prev_9 => ({
@@ -378,7 +378,7 @@ export function Config({
         }));
         setChanges(prev_10 => ({
           ...prev_10,
-          'Fast mode': 'OFF'
+          [t('settings.fastMode', { model: '' }).trim()]: 'OFF'
         }));
       }
     }
@@ -575,7 +575,7 @@ export function Config({
       });
       setChanges(prev_16 => ({
         ...prev_16,
-        'Use auto mode during plan': useAutoModeDuringPlan
+        [t('settings.useAutoModeDuringPlan')]: useAutoModeDuringPlan
       }));
     }
   }] : []), {
@@ -759,7 +759,7 @@ export function Config({
       setUserMsgOptIn(nextBrief);
       setChanges(prev_19 => ({
         ...prev_19,
-        'Default view': selected
+        [t('settings.defaultView')]: selected
       }));
       logEvent('tengu_default_view_setting_changed', {
         value: (defaultView ?? 'unset') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
@@ -768,13 +768,13 @@ export function Config({
   }] : []), {
     id: 'language',
     label: t('settings.language'),
-    value: currentLanguage ?? 'Default (English)',
+    value: currentLanguage ?? t('settings.language.default'),
     type: 'managedEnum' as const,
     onChange: () => {} // handled by LanguagePicker submenu
   }, {
     id: 'uiLanguage',
     label: t('settings.uiLanguage'),
-    value: currentUILanguage === 'zh' ? '中文 (Chinese)' : currentUILanguage === 'en' ? 'English' : 'Auto (detect system)',
+    value: currentUILanguage === 'zh' ? t('config.uiLanguage.zh') : currentUILanguage === 'en' ? t('config.uiLanguage.en') : t('config.uiLanguage.auto'),
     type: 'managedEnum' as const,
     onChange: () => {} // handled by UILanguagePicker submenu
   }, {
@@ -1109,7 +1109,7 @@ export function Config({
         key: key as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
         value: value_2 as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
       });
-      return `Set ${key} to ${chalk.bold(value_2)}`;
+      return t('changeSet.setTo', { key, value: chalk.bold(value_2) });
     });
     // Check for API key changes
     // On homespace, ANTHROPIC_API_KEY is preserved in process.env for child
@@ -1118,68 +1118,68 @@ export function Config({
     const initialUsingCustomKey = Boolean(effectiveApiKey && initialConfig.current.customApiKeyResponses?.approved?.includes(normalizeApiKeyForConfig(effectiveApiKey)));
     const currentUsingCustomKey = Boolean(effectiveApiKey && globalConfig.customApiKeyResponses?.approved?.includes(normalizeApiKeyForConfig(effectiveApiKey)));
     if (initialUsingCustomKey !== currentUsingCustomKey) {
-      formattedChanges.push(`${currentUsingCustomKey ? 'Enabled' : 'Disabled'} custom API key`);
+      formattedChanges.push(currentUsingCustomKey ? t('changeSet.customApiKeyEnabled') : t('changeSet.customApiKeyDisabled'));
       logEvent('tengu_config_changed', {
         key: 'env.ANTHROPIC_API_KEY' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
         value: currentUsingCustomKey as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
       });
     }
     if (themeSetting !== initialThemeSetting.current) {
-      formattedChanges.push(`Set theme to ${chalk.bold(themeSetting)}`);
+      formattedChanges.push(t('changeSet.themeSet', { value: chalk.bold(themeSetting) }));
     }
     if (globalConfig.preferredNotifChannel !== initialConfig.current.preferredNotifChannel) {
-      formattedChanges.push(`Set notifications to ${chalk.bold(globalConfig.preferredNotifChannel)}`);
+      formattedChanges.push(t('changeSet.notificationsSet', { value: chalk.bold(globalConfig.preferredNotifChannel) }));
     }
     if (currentOutputStyle !== initialOutputStyle.current) {
-      formattedChanges.push(`Set output style to ${chalk.bold(currentOutputStyle)}`);
+      formattedChanges.push(t('changeSet.outputStyleSet', { value: chalk.bold(currentOutputStyle) }));
     }
     if (currentLanguage !== initialLanguage.current) {
-      formattedChanges.push(`Set response language to ${chalk.bold(currentLanguage ?? 'Default (English)')}`);
+      formattedChanges.push(t('changeSet.languageSet', { value: chalk.bold(currentLanguage ?? t('settings.language.default')) }));
     }
     if (globalConfig.editorMode !== initialConfig.current.editorMode) {
-      formattedChanges.push(`Set editor mode to ${chalk.bold(globalConfig.editorMode || 'emacs')}`);
+      formattedChanges.push(t('changeSet.editorModeSet', { value: chalk.bold(globalConfig.editorMode || 'emacs') }));
     }
     if (globalConfig.diffTool !== initialConfig.current.diffTool) {
-      formattedChanges.push(`Set diff tool to ${chalk.bold(globalConfig.diffTool)}`);
+      formattedChanges.push(t('changeSet.diffToolSet', { value: chalk.bold(globalConfig.diffTool) }));
     }
     if (globalConfig.autoConnectIde !== initialConfig.current.autoConnectIde) {
-      formattedChanges.push(`${globalConfig.autoConnectIde ? 'Enabled' : 'Disabled'} auto-connect to IDE`);
+      formattedChanges.push(globalConfig.autoConnectIde ? t('changeSet.autoConnectIdeEnabled') : t('changeSet.autoConnectIdeDisabled'));
     }
     if (globalConfig.autoInstallIdeExtension !== initialConfig.current.autoInstallIdeExtension) {
-      formattedChanges.push(`${globalConfig.autoInstallIdeExtension ? 'Enabled' : 'Disabled'} auto-install IDE extension`);
+      formattedChanges.push(globalConfig.autoInstallIdeExtension ? t('changeSet.autoInstallIdeExtensionEnabled') : t('changeSet.autoInstallIdeExtensionDisabled'));
     }
     if (globalConfig.autoCompactEnabled !== initialConfig.current.autoCompactEnabled) {
-      formattedChanges.push(`${globalConfig.autoCompactEnabled ? 'Enabled' : 'Disabled'} auto-compact`);
+      formattedChanges.push(globalConfig.autoCompactEnabled ? t('changeSet.autoCompactEnabled') : t('changeSet.autoCompactDisabled'));
     }
     if (globalConfig.respectGitignore !== initialConfig.current.respectGitignore) {
-      formattedChanges.push(`${globalConfig.respectGitignore ? 'Enabled' : 'Disabled'} respect .gitignore in file picker`);
+      formattedChanges.push(globalConfig.respectGitignore ? t('changeSet.respectGitignoreEnabled') : t('changeSet.respectGitignoreDisabled'));
     }
     if (globalConfig.copyFullResponse !== initialConfig.current.copyFullResponse) {
-      formattedChanges.push(`${globalConfig.copyFullResponse ? 'Enabled' : 'Disabled'} always copy full response`);
+      formattedChanges.push(globalConfig.copyFullResponse ? t('changeSet.copyFullResponseEnabled') : t('changeSet.copyFullResponseDisabled'));
     }
     if (globalConfig.copyOnSelect !== initialConfig.current.copyOnSelect) {
-      formattedChanges.push(`${globalConfig.copyOnSelect ? 'Enabled' : 'Disabled'} copy on select`);
+      formattedChanges.push(globalConfig.copyOnSelect ? t('changeSet.copyOnSelectEnabled') : t('changeSet.copyOnSelectDisabled'));
     }
     if (globalConfig.terminalProgressBarEnabled !== initialConfig.current.terminalProgressBarEnabled) {
-      formattedChanges.push(`${globalConfig.terminalProgressBarEnabled ? 'Enabled' : 'Disabled'} terminal progress bar`);
+      formattedChanges.push(globalConfig.terminalProgressBarEnabled ? t('changeSet.terminalProgressBarEnabled') : t('changeSet.terminalProgressBarDisabled'));
     }
     if (globalConfig.showStatusInTerminalTab !== initialConfig.current.showStatusInTerminalTab) {
-      formattedChanges.push(`${globalConfig.showStatusInTerminalTab ? 'Enabled' : 'Disabled'} terminal tab status`);
+      formattedChanges.push(globalConfig.showStatusInTerminalTab ? t('changeSet.terminalTabStatusEnabled') : t('changeSet.terminalTabStatusDisabled'));
     }
     if (globalConfig.showTurnDuration !== initialConfig.current.showTurnDuration) {
-      formattedChanges.push(`${globalConfig.showTurnDuration ? 'Enabled' : 'Disabled'} turn duration`);
+      formattedChanges.push(globalConfig.showTurnDuration ? t('changeSet.turnDurationEnabled') : t('changeSet.turnDurationDisabled'));
     }
     if (globalConfig.remoteControlAtStartup !== initialConfig.current.remoteControlAtStartup) {
-      const remoteLabel = globalConfig.remoteControlAtStartup === undefined ? 'Reset Remote Control to default' : `${globalConfig.remoteControlAtStartup ? 'Enabled' : 'Disabled'} Remote Control for all sessions`;
+      const remoteLabel = globalConfig.remoteControlAtStartup === undefined ? t('changeSet.remoteControlReset') : (globalConfig.remoteControlAtStartup ? t('changeSet.remoteControlEnabled') : t('changeSet.remoteControlDisabled'));
       formattedChanges.push(remoteLabel);
     }
     if (settingsData?.autoUpdatesChannel !== initialSettingsData.current?.autoUpdatesChannel) {
-      formattedChanges.push(`Set auto-update channel to ${chalk.bold(settingsData?.autoUpdatesChannel ?? 'latest')}`);
+      formattedChanges.push(t('changeSet.autoUpdateChannelSet', { value: chalk.bold(settingsData?.autoUpdatesChannel ?? 'latest') }));
     }
     if (formattedChanges.length > 0) {
       onClose(formattedChanges.join('\n'));
     } else {
-      onClose('Config dialog dismissed', {
+      onClose(t('changeSet.configDismissed'), {
         display: 'system'
       });
     }
@@ -1269,7 +1269,7 @@ export function Config({
     if (isDirty.current) {
       revertChanges();
     }
-    onClose('Config dialog dismissed', {
+    onClose(t('changeSet.configDismissed'), {
       display: 'system'
     });
   }, [showSubmenu, revertChanges, onClose]);
@@ -1641,7 +1641,7 @@ export function Config({
               <Text dimColor italic>{t('settings.uiLanguageDetected')}: {(() => {
                 const { detectSystemLanguage } = require('../../utils/i18n/index.js') as typeof import('../../utils/i18n/index.js');
                 const detected = detectSystemLanguage();
-                return detected === 'zh' ? '中文 (Chinese)' : 'English';
+                return detected === 'zh' ? t('config.uiLanguage.zh') : t('config.uiLanguage.en');
               })()}</Text>
             </Box>
           </Box>

@@ -8,6 +8,7 @@ import { useIsInsideModal } from '../../context/modalContext.js';
 import { Box, Text, useTheme } from '../../ink.js';
 import { type AppState, useAppState } from '../../state/AppState.js';
 import { getCwd } from '../../utils/cwd.js';
+import { t } from '../../utils/i18n/index.js';
 import { getCurrentSessionTitle } from '../../utils/sessionStorage.js';
 import { buildAccountProperties, buildAPIProviderProperties, buildIDEProperties, buildInstallationDiagnostics, buildInstallationHealthDiagnostics, buildMcpProperties, buildMemoryDiagnostics, buildSandboxProperties, buildSettingSourcesProperties, type Diagnostic, getModelDisplayLabel, type Property } from '../../utils/status.js';
 import type { ThemeName } from '../../utils/theme.js';
@@ -19,18 +20,18 @@ type Props = {
 function buildPrimarySection(): Property[] {
   const sessionId = getSessionId();
   const customTitle = getCurrentSessionTitle(sessionId);
-  const nameValue = customTitle ?? <Text dimColor>/rename to add a name</Text>;
+  const nameValue = customTitle ?? <Text dimColor>{t('status.renameToAddName')}</Text>;
   return [{
-    label: 'Version',
+    label: t('status.version'),
     value: MACRO.VERSION
   }, {
-    label: 'Session name',
+    label: t('status.sessionName'),
     value: nameValue
   }, {
-    label: 'Session ID',
+    label: t('status.sessionId'),
     value: sessionId
   }, {
-    label: 'cwd',
+    label: t('status.cwd'),
     value: getCwd()
   }, ...buildAccountProperties(), ...buildAPIProviderProperties()];
 }
@@ -47,7 +48,7 @@ function buildSecondarySection({
 }): Property[] {
   const modelLabel = getModelDisplayLabel(mainLoopModel);
   return [{
-    label: 'Model',
+    label: t('status.model'),
     value: modelLabel
   }, ...buildIDEProperties(mcp.clients, context.options.ideInstallationStatus, theme), ...buildMcpProperties(mcp.clients, theme), ...buildSandboxProperties(), ...buildSettingSourcesProperties()];
 }

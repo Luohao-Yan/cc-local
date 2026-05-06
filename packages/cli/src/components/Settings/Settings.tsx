@@ -11,6 +11,7 @@ import { Tabs, Tab } from '../design-system/Tabs.js';
 import { Status, buildDiagnostics } from './Status.js';
 import { Config } from './Config.js';
 import { Usage } from './Usage.js';
+import { t } from '../../utils/i18n/index.js';
 import type { LocalJSXCommandContext, CommandResultDisplay } from '../../commands.js';
 type Props = {
   onClose: (result?: string, options?: {
@@ -69,7 +70,7 @@ export function Settings(t0) {
   useKeybinding("confirm:no", handleEscape, t3);
   let t4;
   if ($[5] !== context || $[6] !== diagnosticsPromise) {
-    t4 = <Tab key="status" title="Status"><Status context={context} diagnosticsPromise={diagnosticsPromise} /></Tab>;
+    t4 = <Tab key="status" title={t('settings.tab.status')}><Status context={context} diagnosticsPromise={diagnosticsPromise} /></Tab>;
     $[5] = context;
     $[6] = diagnosticsPromise;
     $[7] = t4;
@@ -78,7 +79,7 @@ export function Settings(t0) {
   }
   let t5;
   if ($[8] !== contentHeight || $[9] !== context || $[10] !== onClose) {
-    t5 = <Tab key="config" title="Config"><Suspense fallback={null}><Config context={context} onClose={onClose} setTabsHidden={setTabsHidden} onIsSearchModeChange={setConfigOwnsEsc} contentHeight={contentHeight} /></Suspense></Tab>;
+    t5 = <Tab key="config" title={t('settings.tab.config')}><Suspense fallback={null}><Config context={context} onClose={onClose} setTabsHidden={setTabsHidden} onIsSearchModeChange={setConfigOwnsEsc} contentHeight={contentHeight} /></Suspense></Tab>;
     $[8] = contentHeight;
     $[9] = context;
     $[10] = onClose;
@@ -88,7 +89,7 @@ export function Settings(t0) {
   }
   let t6;
   if ($[12] === Symbol.for("react.memo_cache_sentinel")) {
-    t6 = <Tab key="usage" title="Usage"><Usage /></Tab>;
+    t6 = <Tab key="usage" title={t('settings.tab.usage')}><Usage /></Tab>;
     $[12] = t6;
   } else {
     t6 = $[12];
