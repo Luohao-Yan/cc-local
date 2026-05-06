@@ -4,6 +4,7 @@ import { Box, render, Text } from '../ink.js';
 import { KeybindingSetup } from '../keybindings/KeybindingProviderSetup.js';
 import { AppStateProvider } from '../state/AppState.js';
 import type { ConfigParseError } from '../utils/errors.js';
+import { t } from '../utils/i18n/index.js';
 import { getBaseRenderOptions } from '../utils/renderOptions.js';
 import { jsonStringify, writeFileSync_DEPRECATED } from '../utils/slowOperations.js';
 import type { ThemeName } from '../utils/theme.js';
@@ -48,7 +49,7 @@ function InvalidConfigDialog(t0) {
   const handleSelect = t1;
   let t2;
   if ($[3] !== filePath) {
-    t2 = <Text>The configuration file at <Text bold={true}>{filePath}</Text> contains invalid JSON.</Text>;
+    t2 = <Text>{t('configError.invalidJson', { path: filePath })}</Text>;
     $[3] = filePath;
     $[4] = t2;
   } else {
@@ -73,7 +74,7 @@ function InvalidConfigDialog(t0) {
   }
   let t5;
   if ($[10] === Symbol.for("react.memo_cache_sentinel")) {
-    t5 = <Text bold={true}>Choose an option:</Text>;
+    t5 = <Text bold={true}>{t('configError.chooseOption')}</Text>;
     $[10] = t5;
   } else {
     t5 = $[10];
@@ -81,10 +82,10 @@ function InvalidConfigDialog(t0) {
   let t6;
   if ($[11] === Symbol.for("react.memo_cache_sentinel")) {
     t6 = [{
-      label: "Exit and fix manually",
+      label: t('configError.exitFixManually'),
       value: "exit"
     }, {
-      label: "Reset with default configuration",
+      label: t('configError.resetDefault'),
       value: "reset"
     }];
     $[11] = t6;
@@ -102,7 +103,7 @@ function InvalidConfigDialog(t0) {
   }
   let t8;
   if ($[15] !== onExit || $[16] !== t4 || $[17] !== t7) {
-    t8 = <Dialog title="Configuration Error" color="error" onCancel={onExit}>{t4}{t7}</Dialog>;
+    t8 = <Dialog title={t('configError.title')} color="error" onCancel={onExit}>{t4}{t7}</Dialog>;
     $[15] = onExit;
     $[16] = t4;
     $[17] = t7;

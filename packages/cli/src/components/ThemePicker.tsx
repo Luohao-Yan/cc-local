@@ -16,6 +16,7 @@ import { Byline } from './design-system/Byline.js';
 import { KeyboardShortcutHint } from './design-system/KeyboardShortcutHint.js';
 import { getColorModuleUnavailableReason, getSyntaxTheme } from './StructuredDiff/colorDiff.js';
 import { StructuredDiff } from './StructuredDiff.js';
+import { t } from '../utils/i18n/index.js';
 export type ThemePickerProps = {
   onThemeSelect: (setting: ThemeSetting) => void;
   showIntroText?: boolean;
@@ -111,25 +112,25 @@ export function ThemePicker(t0: ThemePickerProps) {
   let t10;
   if ($[7] === Symbol.for("react.memo_cache_sentinel")) {
     t10 = [...(feature("AUTO_THEME") ? [{
-      label: "Auto (match terminal)",
+      label: t('theme.autoMatch'),
       value: "auto" as const
     }] : []), {
-      label: "Dark mode",
+      label: t('theme.darkMode'),
       value: "dark"
     }, {
-      label: "Light mode",
+      label: t('theme.lightMode'),
       value: "light"
     }, {
-      label: "Dark mode (colorblind-friendly)",
+      label: t('theme.darkColorblind'),
       value: "dark-daltonized"
     }, {
-      label: "Light mode (colorblind-friendly)",
+      label: t('theme.lightColorblind'),
       value: "light-daltonized"
     }, {
-      label: "Dark mode (ANSI colors only)",
+      label: t('theme.darkAnsi'),
       value: "dark-ansi"
     }, {
-      label: "Light mode (ANSI colors only)",
+      label: t('theme.lightAnsi'),
       value: "light-ansi"
     }];
     $[7] = t10;
@@ -139,7 +140,7 @@ export function ThemePicker(t0: ThemePickerProps) {
   const themeOptions = t10;
   let t11;
   if ($[8] !== showIntroText) {
-    t11 = showIntroText ? <Text>Let's get started.</Text> : <Text bold={true} color="permission">Theme</Text>;
+    t11 = showIntroText ? <Text>{t('theme.introText')}</Text> : <Text bold={true} color="permission">{t('theme.title')}</Text>;
     $[8] = showIntroText;
     $[9] = t11;
   } else {
@@ -147,7 +148,7 @@ export function ThemePicker(t0: ThemePickerProps) {
   }
   let t12;
   if ($[10] === Symbol.for("react.memo_cache_sentinel")) {
-    t12 = <Text bold={true}>Choose the text style that looks best with your terminal</Text>;
+    t12 = <Text bold={true}>{t('theme.chooseStyle')}</Text>;
     $[10] = t12;
   } else {
     t12 = $[10];

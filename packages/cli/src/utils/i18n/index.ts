@@ -104,6 +104,10 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "ide.noAvailableIDEsJetBrains": "No available IDEs detected. Please install the plugin and restart your IDE:\nhttps://docs.claude.com/s/claude-code-jetbrains",
     "ide.selectToInstall": "Select IDE to install extension",
     "ide.none": "None",
+    "ide.autoConnectTitle": "Do you wish to enable auto-connect to IDE?",
+    "ide.autoConnectHint": "You can also configure this in /config or with the --ide flag",
+    "ide.disableAutoConnectTitle": "Do you wish to disable auto-connect to IDE?",
+    "ide.disableAutoConnectHint": "You can also configure this in /config",
 
     // Chrome
     "chrome.title": "Claude in Chrome (Beta)",
@@ -235,6 +239,36 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "modelAdd.startOver": "Start over",
     "modelAdd.startOverDesc": "Re-enter all fields from beginning",
 
+    "modelAdd.cancel": "Add model cancelled.",
+    "modelAdd.examples": "Examples:",
+    "modelAdd.exampleDoubaoUrl": "Doubao  : https://ark.cn-beijing.volces.com/api/v3",
+    "modelAdd.exampleDeepSeekUrl": "DeepSeek: https://api.deepseek.com/v1",
+    "modelAdd.exampleOpenAIUrl": "OpenAI  : https://api.openai.com/v1",
+    "modelAdd.exampleLocalUrl": "Local   : http://localhost:11434/v1",
+    "modelAdd.exampleDoubaoModel": "Doubao  : doubao-seed-2.0-code",
+    "modelAdd.exampleDeepSeekModel": "DeepSeek: deepseek-chat",
+    "modelAdd.exampleOpenAIModel": "OpenAI  : gpt-4o",
+    "modelAdd.exampleLocalModel": "Local   : qwen3:32b",
+    "modelAdd.formatOpenAI": "OpenAI Chat Completions",
+    "modelAdd.formatAnthropic": "Anthropic Messages",
+    "modelAdd.formatOpenAIDesc": "Standard format used by OpenAI, DeepSeek, Doubao, Ollama, etc.",
+    "modelAdd.formatAnthropicDesc": "Native Anthropic format — for proxies that replicate the Messages API",
+    "modelAdd.providerLabel": "Provider: \"{name}\"",
+    "modelAdd.reusesApiKey": "Reuses existing API key (...{keySuffix})",
+    "modelAdd.noApiKey": "No API key set",
+    "modelAdd.differentKeyHint": "Use this if you have a different key for the same endpoint",
+    "modelAdd.findApiKeyHint": "Find it in your provider's console / dashboard.",
+    "modelAdd.aliasExample": "Example: type \"{alias}\" to use instead of the full model ID.",
+    "modelAdd.pressEnterSkip": "Press Enter to skip.",
+    "modelAdd.modelAddedSuccess": "Model added successfully!",
+    "modelAdd.modelLabel": "Model",
+    "modelAdd.aliasLabel": "Alias",
+    "modelAdd.endpointLabel": "Endpoint",
+    "modelAdd.formatLabel": "Format",
+    "modelAdd.firstModelHint": "This is your first model — automatically set as default.",
+    "modelAdd.nextHint": "Next: /model list to view all  ·  {switchCmd} to switch",
+    "modelAdd.addMoreHint": "       /model add to add more models",
+
     // Plugins
     "plugins.title": "Plugins",
     "plugins.installedTab": "Installed",
@@ -365,6 +399,11 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "customProvider.addToExistingDesc": "Reuses existing API key (...{keySuffix})",
     "customProvider.createNew": "No — create new provider with different API key",
     "customProvider.createNewDesc": "Use this if you have a different key for the same endpoint",
+
+    "customProvider.formatOpenAI": "OpenAI Chat Completions",
+    "customProvider.formatAnthropic": "Anthropic Messages",
+    "customProvider.noApiKey": "No API key set",
+    "customProvider.cancel": "Cancel",
 
     // Effort levels
     "effort.level": "Effort level",
@@ -581,6 +620,54 @@ const translations: Record<UILanguage, Record<string, string>> = {
     // Theme command
     "theme.setTo": "Theme set to {theme}",
     "theme.pickerDismissed": "Theme picker dismissed",
+    "theme.title": "Theme",
+    "theme.introText": "Let's get started.",
+    "theme.chooseStyle": "Choose the text style that looks best with your terminal",
+    "theme.autoMatch": "Auto (match terminal)",
+    "theme.darkMode": "Dark mode",
+    "theme.lightMode": "Light mode",
+    "theme.darkColorblind": "Dark mode (colorblind-friendly)",
+    "theme.lightColorblind": "Light mode (colorblind-friendly)",
+    "theme.darkAnsi": "Dark mode (ANSI colors only)",
+    "theme.lightAnsi": "Light mode (ANSI colors only)",
+    "theme.syntaxDisabledEnv": "Syntax highlighting disabled (via CLAUDE_CODE_SYNTAX_HIGHLIGHT={value})",
+    "theme.syntaxDisabled": "Syntax highlighting disabled ({shortcut} to enable)",
+    "theme.syntaxTheme": "Syntax theme: {theme}{source} ({shortcut} to disable)",
+    "theme.syntaxEnabled": "Syntax highlighting enabled ({shortcut} to disable)",
+
+    // Common
+    "common.yes": "Yes",
+    "common.no": "No",
+    "common.cancel": "Cancel",
+    "common.confirm": "Confirm",
+
+    // IDE auto-connect dialog
+    "ide.autoConnectTitle": "Do you wish to enable auto-connect to IDE?",
+    "ide.autoConnectHint": "You can also configure this in /config or with the --ide flag",
+    "ide.disableAutoConnectTitle": "Do you wish to disable auto-connect to IDE?",
+    "ide.disableAutoConnectHint": "You can also configure this in /config",
+
+    "ide.enableOption": "Yes",
+    "ide.disableOption": "No",
+
+    // MCP server approval dialog
+    "mcp.newServerFound": "New MCP server found in .mcp.json: {name}",
+    "mcp.useAllFuture": "Use this and all future MCP servers in this project",
+    "mcp.useThisServer": "Use this MCP server",
+    "mcp.continueWithout": "Continue without using this MCP server",
+
+    // Config error dialog
+    "configError.title": "Configuration Error",
+    "configError.invalidJson": "The configuration file at {path} contains invalid JSON.",
+    "configError.chooseOption": "Choose an option:",
+    "configError.exitFixManually": "Exit and fix manually",
+    "configError.resetDefault": "Reset with default configuration",
+
+    // Settings error dialog
+    "settingsError.title": "Settings Error",
+    "settingsError.skipHint": "Files with errors are skipped entirely, not just the invalid settings.",
+    "settingsError.exitFixManually": "Exit and fix manually",
+    "settingsError.continueWithout": "Continue without these settings",
 
     // Mobile command
     "mobile.tabToSwitch": "(tab to switch, esc to close)",
@@ -609,6 +696,54 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "mcp.disabledCount": "Disabled {count} MCP server(s)",
     "mcp.serverEnabled": "MCP server \"{name}\" enabled",
     "mcp.serverDisabled": "MCP server \"{name}\" disabled",
+    "mcp.newServerFound": "New MCP server found in .mcp.json: {name}",
+    "mcp.useAllFuture": "Use this and all future MCP servers in this project",
+    "mcp.useThisServer": "Use this MCP server",
+    "mcp.continueWithout": "Continue without using this MCP server",
+
+    // Config Error Dialog
+    "configError.title": "Configuration Error",
+    "configError.invalidJson": "The configuration file at {path} contains invalid JSON.",
+    "configError.chooseOption": "Choose an option:",
+    "configError.exitFixManually": "Exit and fix manually",
+    "configError.resetDefault": "Reset with default configuration",
+
+    // Settings Error Dialog
+    "settingsError.title": "Settings Error",
+    "settingsError.skipHint": "Files with errors are skipped entirely, not just the invalid settings.",
+    "settingsError.continueWithout": "Continue without these settings",
+
+    // Agent Editor
+    "agentEditor.openInEditor": "Open in editor",
+    "agentEditor.editTools": "Edit tools",
+    "agentEditor.editModel": "Edit model",
+    "agentEditor.editColor": "Edit color",
+    "agentEditor.source": "Source: {source}",
+    "agentEditor.openedInEditor": "Opened {name} in editor. If you made edits, restart to load the latest version.",
+    "agentEditor.updated": "Updated agent: {name}",
+    "agentEditor.saveFailed": "Failed to save agent",
+
+    // Color Picker
+    "colorPicker.automatic": "Automatic color",
+    "colorPicker.preview": "Preview: ",
+
+    // Model Selector
+    "modelSelector.currentModel": "Current model (custom ID)",
+    "modelSelector.hint": "Model determines the agent's reasoning capabilities and speed.",
+
+    // Tool Selector
+    "toolSelector.hint": "Select tools this agent can use.",
+    "toolSelector.allTools": "All tools",
+    "toolSelector.allSelected": "All {count} tools selected",
+    "toolSelector.selected": "{count}/{total} tools selected",
+
+    // Auto Updater
+    "autoUpdater.updating": "Auto-updating…",
+    "autoUpdater.updateInstalled": "✓ Update installed · Restart to apply",
+    "autoUpdater.updateFailed": "✗ Auto-update failed · Try {command} or {altCommand}",
+
+    // Dialog
+    "dialog.pressAgainToExit": "Press {key} again to exit",
 
     // Trust Dialog
     "trust.accessingWorkspace": "Accessing workspace:",
@@ -712,6 +847,10 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "ide.noAvailableIDEsJetBrains": "未检测到可用的 IDE。请安装插件并重启 IDE：\nhttps://docs.claude.com/s/claude-code-jetbrains",
     "ide.selectToInstall": "选择 IDE 安装扩展",
     "ide.none": "无",
+    "ide.autoConnectTitle": "是否启用自动连接 IDE？",
+    "ide.autoConnectHint": "您也可以在 /config 中配置或使用 --ide 参数",
+    "ide.disableAutoConnectTitle": "是否禁用自动连接 IDE？",
+    "ide.disableAutoConnectHint": "您也可以在 /config 中配置",
 
     // Chrome
     "chrome.title": "Chrome 中的 Claude (Beta)",
@@ -842,6 +981,36 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "modelAdd.fixModelNameDesc": "仅重新输入模型名称",
     "modelAdd.startOver": "重新开始",
     "modelAdd.startOverDesc": "从头重新输入所有字段",
+
+    "modelAdd.cancel": "添加模型已取消。",
+    "modelAdd.examples": "示例：",
+    "modelAdd.exampleDoubaoUrl": "Doubao  : https://ark.cn-beijing.volces.com/api/v3",
+    "modelAdd.exampleDeepSeekUrl": "DeepSeek: https://api.deepseek.com/v1",
+    "modelAdd.exampleOpenAIUrl": "OpenAI  : https://api.openai.com/v1",
+    "modelAdd.exampleLocalUrl": "Local   : http://localhost:11434/v1",
+    "modelAdd.exampleDoubaoModel": "Doubao  : doubao-seed-2.0-code",
+    "modelAdd.exampleDeepSeekModel": "DeepSeek: deepseek-chat",
+    "modelAdd.exampleOpenAIModel": "OpenAI  : gpt-4o",
+    "modelAdd.exampleLocalModel": "Local   : qwen3:32b",
+    "modelAdd.formatOpenAI": "OpenAI Chat Completions",
+    "modelAdd.formatAnthropic": "Anthropic Messages",
+    "modelAdd.formatOpenAIDesc": "OpenAI、DeepSeek、Doubao、Ollama 等使用的标准格式。",
+    "modelAdd.formatAnthropicDesc": "原生 Anthropic 格式 — 用于复制 Messages API 的代理。",
+    "modelAdd.providerLabel": "提供商：\"{name}\"",
+    "modelAdd.reusesApiKey": "复用现有 API 密钥 (...{keySuffix})",
+    "modelAdd.noApiKey": "未设置 API 密钥",
+    "modelAdd.differentKeyHint": "如果您有同一端点的不同密钥，请使用此项",
+    "modelAdd.findApiKeyHint": "在您的提供商控制台/仪表板中找到它。",
+    "modelAdd.aliasExample": "示例：输入 \"{alias}\" 代替完整模型 ID。",
+    "modelAdd.pressEnterSkip": "按 Enter 跳过。",
+    "modelAdd.modelAddedSuccess": "模型添加成功！",
+    "modelAdd.modelLabel": "模型",
+    "modelAdd.aliasLabel": "别名",
+    "modelAdd.endpointLabel": "端点",
+    "modelAdd.formatLabel": "格式",
+    "modelAdd.firstModelHint": "这是您的第一个模型 — 自动设置为默认。",
+    "modelAdd.nextHint": "下一步：/model list 查看所有模型  ·  {switchCmd} 切换",
+    "modelAdd.addMoreHint": "       /model add 添加更多模型",
 
     // Plugins
     "plugins.title": "插件",
@@ -1090,6 +1259,53 @@ const translations: Record<UILanguage, Record<string, string>> = {
     // Theme command (Chinese)
     "theme.setTo": "主题已设置为 {theme}",
     "theme.pickerDismissed": "主题选择器已关闭",
+    "theme.title": "主题",
+    "theme.introText": "让我们开始吧。",
+    "theme.chooseStyle": "选择最适合您终端的文字样式",
+    "theme.autoMatch": "自动（匹配终端）",
+    "theme.darkMode": "深色模式",
+    "theme.lightMode": "浅色模式",
+    "theme.darkColorblind": "深色模式（色盲友好）",
+    "theme.lightColorblind": "浅色模式（色盲友好）",
+    "theme.darkAnsi": "深色模式（仅 ANSI 颜色）",
+    "theme.lightAnsi": "浅色模式（仅 ANSI 颜色）",
+    "theme.syntaxDisabledEnv": "语法高亮已禁用（通过 CLAUDE_CODE_SYNTAX_HIGHLIGHT={value}）",
+    "theme.syntaxDisabled": "语法高亮已禁用（{shortcut} 启用）",
+    "theme.syntaxTheme": "语法主题：{theme}{source}（{shortcut} 禁用）",
+    "theme.syntaxEnabled": "语法高亮已启用（{shortcut} 禁用）",
+
+    // Common (Chinese)
+    "common.yes": "是",
+    "common.no": "否",
+    "common.cancel": "取消",
+    "common.confirm": "确认",
+
+    // IDE auto-connect dialog (Chinese)
+    "ide.autoConnectTitle": "是否启用 IDE 自动连接？",
+    "ide.autoConnectHint": "您也可以在 /config 中配置或使用 --ide 标志",
+    "ide.disableAutoConnectTitle": "是否禁用 IDE 自动连接？",
+    "ide.disableAutoConnectHint": "您也可以在 /config 中配置",
+    "ide.enableOption": "是",
+    "ide.disableOption": "否",
+
+    // MCP server approval dialog (Chinese)
+    "mcp.newServerFound": "在 .mcp.json 中发现新的 MCP 服务器：{name}",
+    "mcp.useAllFuture": "使用此服务器及此项目中的所有未来 MCP 服务器",
+    "mcp.useThisServer": "使用此 MCP 服务器",
+    "mcp.continueWithout": "不使用此 MCP 服务器继续",
+
+    // Config error dialog (Chinese)
+    "configError.title": "配置错误",
+    "configError.invalidJson": "{path} 处的配置文件包含无效的 JSON。",
+    "configError.chooseOption": "选择一个选项：",
+    "configError.exitFixManually": "退出并手动修复",
+    "configError.resetDefault": "使用默认配置重置",
+
+    // Settings error dialog (Chinese)
+    "settingsError.title": "设置错误",
+    "settingsError.skipHint": "有错误的文件将被完全跳过，而不仅仅是无效的设置。",
+    "settingsError.exitFixManually": "退出并手动修复",
+    "settingsError.continueWithout": "不使用这些设置继续",
 
     // Mobile command (Chinese)
     "mobile.tabToSwitch": "(Tab 切换，Esc 关闭)",
@@ -1118,6 +1334,58 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "mcp.disabledCount": "已禁用 {count} 个 MCP 服务器",
     "mcp.serverEnabled": "MCP 服务器 \"{name}\" 已启用",
     "mcp.serverDisabled": "MCP 服务器 \"{name}\" 已禁用",
+    "mcp.newServerFound": "在 .mcp.json 中发现新 MCP 服务器：{name}",
+    "mcp.useAllFuture": "使用此项目中的此服务器及所有未来 MCP 服务器",
+    "mcp.useThisServer": "使用此 MCP 服务器",
+    "mcp.continueWithout": "继续但不使用此 MCP 服务器",
+
+    // Config Error Dialog (Chinese)
+    "configError.title": "配置错误",
+    "configError.invalidJson": "配置文件 {path} 包含无效的 JSON。",
+    "configError.chooseOption": "选择一个选项：",
+    "configError.exitFixManually": "退出并手动修复",
+    "configError.resetDefault": "重置为默认配置",
+
+    // Settings Error Dialog (Chinese)
+    "settingsError.title": "设置错误",
+    "settingsError.skipHint": "有错误的文件将被完全跳过，而不仅仅是无效的设置。",
+    "settingsError.continueWithout": "继续但不使用这些设置",
+    "mcp.enabledCount": "已启用 {count} 个 MCP 服务器",
+    "mcp.disabledCount": "已禁用 {count} 个 MCP 服务器",
+    "mcp.serverEnabled": "MCP 服务器 \"{name}\" 已启用",
+    "mcp.serverDisabled": "MCP 服务器 \"{name}\" 已禁用",
+
+    // Agent Editor (Chinese)
+    "agentEditor.openInEditor": "在编辑器中打开",
+    "agentEditor.editTools": "编辑工具",
+    "agentEditor.editModel": "编辑模型",
+    "agentEditor.editColor": "编辑颜色",
+    "agentEditor.source": "来源：{source}",
+    "agentEditor.openedInEditor": "已在编辑器中打开 {name}。如果进行了编辑，请重启以加载最新版本。",
+    "agentEditor.updated": "已更新代理：{name}",
+    "agentEditor.saveFailed": "保存代理失败",
+
+    // Color Picker (Chinese)
+    "colorPicker.automatic": "自动颜色",
+    "colorPicker.preview": "预览：",
+
+    // Model Selector (Chinese)
+    "modelSelector.currentModel": "当前模型（自定义 ID）",
+    "modelSelector.hint": "模型决定代理的推理能力和速度。",
+
+    // Tool Selector (Chinese)
+    "toolSelector.hint": "选择此代理可以使用的工具。",
+    "toolSelector.allTools": "所有工具",
+    "toolSelector.allSelected": "已选择全部 {count} 个工具",
+    "toolSelector.selected": "已选择 {count}/{total} 个工具",
+
+    // Auto Updater (Chinese)
+    "autoUpdater.updating": "正在自动更新…",
+    "autoUpdater.updateInstalled": "✓ 更新已安装 · 重启以应用",
+    "autoUpdater.updateFailed": "✗ 自动更新失败 · 尝试 {command} 或 {altCommand}",
+
+    // Dialog (Chinese)
+    "dialog.pressAgainToExit": "再按 {key} 退出",
 
     // Trust Dialog (Chinese)
     "trust.accessingWorkspace": "正在访问工作区：",
@@ -1302,6 +1570,11 @@ const translations: Record<UILanguage, Record<string, string>> = {
     "customProvider.addToExistingDesc": "复用现有 API 密钥 (...{keySuffix})",
     "customProvider.createNew": "否 — 使用不同的 API 密钥创建新提供商",
     "customProvider.createNewDesc": "如果您有同一端点的不同密钥，请使用此项",
+
+    "customProvider.formatOpenAI": "OpenAI Chat Completions",
+    "customProvider.formatAnthropic": "Anthropic Messages",
+    "customProvider.noApiKey": "未设置 API 密钥",
+    "customProvider.cancel": "取消",
 
     // Effort levels
     "effort.level": "推理力度",

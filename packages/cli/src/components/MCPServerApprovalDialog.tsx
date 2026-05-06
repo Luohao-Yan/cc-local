@@ -2,6 +2,7 @@ import { c as _c } from "react/compiler-runtime";
 import React from 'react';
 import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, logEvent } from '../services/analytics/index.js';
 import { getSettings_DEPRECATED, updateSettingsForSource } from '../utils/settings/settings.js';
+import { t } from '../utils/i18n/index.js';
 import { Select } from './CustomSelect/index.js';
 import { Dialog } from './design-system/Dialog.js';
 import { MCPServerDialogCopy } from './MCPServerDialogCopy.js';
@@ -60,7 +61,7 @@ export function MCPServerApprovalDialog(t0) {
     t1 = $[2];
   }
   const onChange = t1;
-  const t2 = `New MCP server found in .mcp.json: ${serverName}`;
+  const t2 = t('mcp.newServerFound', { name: serverName });
   let t3;
   if ($[3] !== onChange) {
     t3 = () => onChange("no");
@@ -79,13 +80,13 @@ export function MCPServerApprovalDialog(t0) {
   let t5;
   if ($[6] === Symbol.for("react.memo_cache_sentinel")) {
     t5 = [{
-      label: "Use this and all future MCP servers in this project",
+      label: t('mcp.useAllFuture'),
       value: "yes_all"
     }, {
-      label: "Use this MCP server",
+      label: t('mcp.useThisServer'),
       value: "yes"
     }, {
-      label: "Continue without using this MCP server",
+      label: t('mcp.continueWithout'),
       value: "no"
     }];
     $[6] = t5;
