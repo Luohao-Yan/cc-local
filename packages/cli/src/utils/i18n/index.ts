@@ -41,8 +41,12 @@ function flattenTranslations(modules: Record<string, unknown>): Record<string, s
   for (const [moduleName, moduleObj] of Object.entries(modules)) {
     // Skip any non-object exports
     if (typeof moduleObj !== 'object' || moduleObj === null) continue
+    // Handle reserved words: export_ -> export
+    const normalizedName = moduleName.endsWith('_') && moduleName !== '_'
+      ? moduleName.slice(0, -1)
+      : moduleName
     // Start flattening with the module name as prefix
-    flatten(moduleObj, moduleName)
+    flatten(moduleObj, normalizedName)
   }
 
   return result

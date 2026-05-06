@@ -62,8 +62,8 @@ export const context = {
   "freeSpace": "Free space"
 }
 
-// Export
-export const exp = {
+// Export (using export_ since 'export' is a reserved word)
+export const export_ = {
   "copyToClipboard": "Copy to clipboard",
   "copyToClipboardDesc": "Copy the conversation to your system clipboard",
   "saveToFile": "Save to file",
