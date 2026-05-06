@@ -29,6 +29,7 @@ export function detectProviderFromUrl(baseUrl: string): APIProvider {
     const url = new URL(baseUrl)
     const host = url.hostname.toLowerCase()
     const hostWithPort = url.host.toLowerCase() // includes port
+    const path = url.pathname.toLowerCase()
 
     // Anthropic first-party (exact match or subdomain)
     if (host === 'api.anthropic.com' || host.endsWith('.anthropic.com')) return 'firstParty'
@@ -53,6 +54,29 @@ export function detectProviderFromUrl(baseUrl: string): APIProvider {
     return 'custom'
   } catch {
     return 'custom'
+  }
+}
+
+/**
+ * Detect API format from URL path.
+ * Some endpoints have /anthropic or /openai in the path to indicate format.
+ */
+export function detectAPIFormatFromUrlPath(baseUrl: string): APIFormat | null {
+  try {
+    const url = new URL(baseUrl)
+    const path = url.pathname.toLowerCase()
+
+    // Path explicitly indicates Anthropic format
+    if (path.includes('/anthropic') || path.includes('/messages')) {
+      return 'anthropic'
+    }
+    // Path explicitly indicates OpenAI format
+    if (path.includes('/openai') || path.includes('/chat/completions') || path.includes('/v1/chat')) {
+      return 'openai'
+    }
+    return null
+  } catch {
+    return null
   }
 }
 

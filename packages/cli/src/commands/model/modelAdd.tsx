@@ -16,7 +16,7 @@ import {
   saveGlobalModelConfig,
 } from '../../utils/model/modelConfig.js'
 import { activateModel, type ResolvedModel } from '../../utils/model/multiModel.js'
-import { detectProviderFromUrl, getDefaultAPIFormat, type APIFormat } from '../../utils/model/providers.js'
+import { detectProviderFromUrl, getDefaultAPIFormat, detectAPIFormatFromUrlPath, type APIFormat } from '../../utils/model/providers.js'
 import { sideQuery } from '../../utils/sideQuery.js'
 import type { CommandResultDisplay, LocalJSXCommandCall, LocalJSXCommandOnDone } from '../../types/command.js'
 import { t } from '../../utils/i18n/index.js'
@@ -56,9 +56,16 @@ export function ModelAdd({
     if (!url) return
     setBaseUrl(url)
     // Auto-detect API format from URL
-    const detectedProvider = detectProviderFromUrl(url)
-    const detectedFormat = getDefaultAPIFormat(detectedProvider)
-    setApiFormat(detectedFormat)
+    // 1. First check if URL path explicitly indicates format (e.g., /anthropic, /openai)
+    const pathFormat = detectAPIFormatFromUrlPath(url)
+    if (pathFormat) {
+      setApiFormat(pathFormat)
+    } else {
+      // 2. Fall back to host-based detection
+      const detectedProvider = detectProviderFromUrl(url)
+      const detectedFormat = getDefaultAPIFormat(detectedProvider)
+      setApiFormat(detectedFormat)
+    }
 
     const config = getGlobalModelConfig()
     const matchedKey = Object.keys(config.providers).find(
@@ -79,6 +86,8 @@ export function ModelAdd({
         const config = getGlobalModelConfig()
         const provider = existingProviderKey ? config.providers[existingProviderKey] : null
         if (provider?.apiKey) setApiKey(provider.apiKey)
+        // 从现有 provider 读取 apiFormat（关键修复）
+        if (provider?.apiFormat) setApiFormat(provider.apiFormat)
         setStep('input-model')
       } else {
         setExistingProviderKey(null)
