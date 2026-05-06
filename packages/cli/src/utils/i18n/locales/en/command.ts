@@ -85,6 +85,7 @@ export const command = {
   "description.think-back": "Your 2025 Claude Code Year in Review",
   "description.thinkback-play": "Play the thinkback animation",
   "description.ultrareview": "~10-20 min · Finds and verifies bugs in your branch. Runs in Claude Code on the web.",
+  "description.version": "Print the version this session is running (not what autoupdate downloaded)",
   "description.upgrade": "Upgrade to Max for higher rate limits and more Opus",
   "description.release-notes": "View release notes",
   "description.plugin": "Manage Claude Code plugins"

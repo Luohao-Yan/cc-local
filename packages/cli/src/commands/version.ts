@@ -1,4 +1,5 @@
 import type { Command, LocalCommandCall } from '../types/command.js'
+import { t } from '../utils/i18n/index.js'
 
 const call: LocalCommandCall = async () => {
   return {
@@ -12,8 +13,7 @@ const call: LocalCommandCall = async () => {
 const version = {
   type: 'local',
   name: 'version',
-  description:
-    'Print the version this session is running (not what autoupdate downloaded)',
+  description: t('command.description.version'),
   isEnabled: () => process.env.USER_TYPE === 'ant',
   supportsNonInteractive: true,
   load: () => Promise.resolve({ call }),

@@ -85,6 +85,7 @@ export const command = {
   "description.think-back": "您的 2025 Claude Code 年度回顾",
   "description.thinkback-play": "播放回顾动画",
   "description.ultrareview": "约 10-20 分钟 · 查找并验证分支中的错误。在 Claude Code 网页版中运行。",
+  "description.version": "打印当前会话运行的版本（不是自动更新下载的版本）",
   "description.upgrade": "升级到 Max 以获得更高的速率限制和更多 Opus",
   "description.release-notes": "查看发行说明",
   "description.plugin": "管理 Claude Code 插件"
