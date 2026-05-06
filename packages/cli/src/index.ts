@@ -1094,6 +1094,64 @@ modelCommand
     delegateToInkUi(rawUserArgs)
   })
 
+modelCommand
+  .command('buddy [model]')
+  .description('Set the model used by buddy (small fast model). Use "clear" to reset.')
+  .action(async (model) => {
+    const { getGlobalModelConfig, saveGlobalModelConfig } = await import('./utils/model/modelConfig.js')
+    const { resolveMultiModelConfig, getConfiguredModels } = await import('./utils/model/multiModel.js')
+
+    if (!model) {
+      // 没有参数时，显示当前设置
+      const currentBuddy = getGlobalModelConfig().smallFastModel
+      const models = getConfiguredModels()
+      console.log('Set Buddy Model')
+      console.log(`Current Buddy model: ${currentBuddy || 'Not set (uses current model)'}`)
+      console.log('')
+      console.log('Available models:')
+      models.slice(0, 10).forEach((m) => console.log(`  • ${m.aliases[0] || m.modelKey}`))
+      if (models.length > 10) console.log(`  ... ${models.length - 10} more`)
+      console.log('')
+      console.log('Usage: /model buddy <model-name-or-alias>')
+      console.log('       /model buddy clear  (reset to use current model)')
+      return
+    }
+
+    // 支持 "clear" 命令清空设置
+    if (model.toLowerCase() === 'clear') {
+      saveGlobalModelConfig((current) => {
+        const { smallFastModel, ...rest } = current as typeof current & { smallFastModel?: string }
+        return rest
+      })
+      console.log('Buddy model cleared. Buddy will now use the current model.')
+      return
+    }
+
+    const trimmed = model.trim()
+    if (!trimmed) {
+      console.log('Model name cannot be empty')
+      return
+    }
+
+    // 解析模型引用
+    const resolved = resolveMultiModelConfig(trimmed)
+    if (!resolved) {
+      console.log(`Model not found: ${trimmed}`)
+      return
+    }
+
+    // 保存配置
+    saveGlobalModelConfig((current) => ({
+      ...current,
+      smallFastModel: trimmed,
+    }))
+
+    console.log('Buddy model set!')
+    console.log(`  Model: ${trimmed}`)
+    console.log('')
+    console.log('Buddy will use this model for quick inference.')
+  })
+
 authCommand
   .command('status')
   .description('Show the current local auth token source')

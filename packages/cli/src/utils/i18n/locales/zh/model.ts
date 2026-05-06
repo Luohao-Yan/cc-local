@@ -128,6 +128,21 @@ export const customProvider = {
   "cancel": "取消"
 }
 
+export const modelBuddy = {
+  "title": "设置 Buddy 模型",
+  "current": "当前 Buddy 模型",
+  "notSet": "未设置",
+  "availableModels": "可用模型",
+  "andMore": "还有 {count} 个",
+  "prompt": "输入模型名称或别名:",
+  "success": "Buddy 模型已设置！",
+  "modelLabel": "模型",
+  "hint": "Buddy 将使用此模型进行快速推理。",
+  "errorEmpty": "模型名称不能为空",
+  "errorNotFound": "未找到模型: {model}",
+  "usage": "用法: /model buddy <模型名或别名>"
+}
+
 export const modelSelector = {
   "currentModel": "当前模型（自定义 ID）",
   "hint": "模型决定代理的推理能力和速度。"

@@ -86,9 +86,15 @@ export function ModelAdd({
         const config = getGlobalModelConfig()
         const provider = existingProviderKey ? config.providers[existingProviderKey] : null
         if (provider?.apiKey) setApiKey(provider.apiKey)
-        // 从现有 provider 读取 apiFormat（关键修复）
-        if (provider?.apiFormat) setApiFormat(provider.apiFormat)
-        setStep('input-model')
+        // 从现有 provider 读取 apiFormat
+        // 如果 provider 已有 apiFormat，使用它；否则进入格式选择步骤
+        if (provider?.apiFormat) {
+          setApiFormat(provider.apiFormat)
+          setStep('input-model')
+        } else {
+          // Provider 没有 apiFormat，让用户确认格式
+          setStep('input-format')
+        }
       } else {
         setExistingProviderKey(null)
         setStep('input-key')
@@ -173,11 +179,16 @@ export function ModelAdd({
     [baseUrl, apiKey, modelName, alias, existingProviderKey, apiFormat, onDone],
   )
 
-  // Format selection → input-key
+  // Format selection → input-key or input-model (depending on append flow)
   const handleFormatSelect = React.useCallback((value: string) => {
     setApiFormat(value as APIFormat)
-    setStep('input-key')
-  }, [])
+    // 如果是追加流程（已有 apiKey），直接进入模型名输入
+    if (apiKey) {
+      setStep('input-model')
+    } else {
+      setStep('input-key')
+    }
+  }, [apiKey])
 
   // Render steps
   if (step === 'input-url') {
@@ -412,8 +423,9 @@ function saveConfig(baseUrl: string, apiKey: string, modelName: string, alias: s
       const modelRef = alias || modelName
       return {
         ...current,
-        // 如果是第一个添加的模型，自动设置为 defaultModel 和 smallFastModel
-        ...(isFirstModel ? { defaultModel: modelRef, smallFastModel: modelRef } : {}),
+        // 如果是第一个添加的模型，自动设置为 defaultModel
+        // smallFastModel 不自动设置，buddy 默认使用当前模型
+        ...(isFirstModel ? { defaultModel: modelRef } : {}),
         providers: { ...current.providers, [providerKey]: {
           name: providerKey.charAt(0).toUpperCase() + providerKey.slice(1),
           baseUrl, ...(apiKey ? { apiKey } : {}),

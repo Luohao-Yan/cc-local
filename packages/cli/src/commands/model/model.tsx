@@ -22,6 +22,7 @@ import { call as modelListCall } from './modelList.js';
 import { call as modelRemoveCall } from './modelRemove.js';
 import { call as modelCheckCall } from './modelCheck.js';
 import { call as modelEditCall } from './modelEdit.js';
+import { call as modelBuddyCall } from './modelBuddy.js';
 function ModelPickerWrapper(t0) {
   const $ = _c(17);
   const {
@@ -297,6 +298,8 @@ export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
         return modelCheckCall(onDone, _context, subArgs)
       case 'edit':
         return modelEditCall(onDone, _context, subArgs)
+      case 'buddy':
+        return modelBuddyCall(onDone, _context, subArgs)
     }
   }
 

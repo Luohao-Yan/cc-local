@@ -128,6 +128,21 @@ export const customProvider = {
   "cancel": "Cancel"
 }
 
+export const modelBuddy = {
+  "title": "Set Buddy Model",
+  "current": "Current Buddy model",
+  "notSet": "Not set",
+  "availableModels": "Available models",
+  "andMore": "{count} more",
+  "prompt": "Enter model name or alias:",
+  "success": "Buddy model set!",
+  "modelLabel": "Model",
+  "hint": "Buddy will use this model for quick inference.",
+  "errorEmpty": "Model name cannot be empty",
+  "errorNotFound": "Model not found: {model}",
+  "usage": "Usage: /model buddy <model-name-or-alias>"
+}
+
 export const modelSelector = {
   "currentModel": "Current model (custom ID)",
   "hint": "Model determines the agent's reasoning capabilities and speed."

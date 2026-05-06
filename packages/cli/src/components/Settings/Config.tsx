@@ -21,7 +21,8 @@ import type { ThemeSetting } from '../../utils/theme.js';
 import type { EffortLevel } from '../../utils/effort.js';
 import { useAppState, useSetAppState, useAppStateStore } from '../../state/AppState.js';
 import { ModelPicker } from '../ModelPicker.js';
-import { modelDisplayString, isOpus1mMergeEnabled } from '../../utils/model/model.js';
+import { modelDisplayString, isOpus1mMergeEnabled, getMainLoopModel } from '../../utils/model/model.js';
+import { getModelConfig, saveGlobalModelConfig, getGlobalModelConfig } from '../../utils/model/modelConfig.js';
 import { isBilledAsExtraUsage } from '../../utils/extraUsage.js';
 import { ClaudeMdExternalIncludesDialog } from '../ClaudeMdExternalIncludesDialog.js';
 import { ChannelDowngradeDialog, type ChannelDowngradeChoice } from '../ChannelDowngradeDialog.js';
@@ -84,7 +85,7 @@ type Setting = (SettingBase & {
   onChange(value: string): void;
   type: 'managedEnum';
 });
-type SubMenu = 'Theme' | 'Model' | 'TeammateModel' | 'ExternalIncludes' | 'OutputStyle' | 'ChannelDowngrade' | 'Language' | 'UILanguage' | 'EnableAutoUpdates';
+type SubMenu = 'Theme' | 'Model' | 'TeammateModel' | 'BuddyModel' | 'ExternalIncludes' | 'OutputStyle' | 'ChannelDowngrade' | 'Language' | 'UILanguage' | 'EnableAutoUpdates';
 export function Config({
   onClose,
   context,
@@ -825,6 +826,12 @@ export function Config({
     value: mainLoopModel === null ? t('settings.defaultRecommended') : mainLoopModel,
     type: 'managedEnum' as const,
     onChange: onChangeMainModelConfig
+  }, {
+    id: 'buddyModel',
+    label: t('settings.buddyModel'),
+    value: getModelConfig().smallFastModel ?? t('settings.buddyModelDefault', { model: getMainLoopModel() }),
+    type: 'managedEnum' as const,
+    onChange() {}
   }, ...(isConnectedToIde ? [{
     id: 'diffTool',
     label: t('settings.diffTool'),
@@ -1309,7 +1316,7 @@ export function Config({
       }
       return;
     }
-    if (setting_0.id === 'theme' || setting_0.id === 'model' || setting_0.id === 'teammateDefaultModel' || setting_0.id === 'showExternalIncludesDialog' || setting_0.id === 'outputStyle' || setting_0.id === 'language' || setting_0.id === 'uiLanguage') {
+    if (setting_0.id === 'theme' || setting_0.id === 'model' || setting_0.id === 'buddyModel' || setting_0.id === 'teammateDefaultModel' || setting_0.id === 'showExternalIncludesDialog' || setting_0.id === 'outputStyle' || setting_0.id === 'language' || setting_0.id === 'uiLanguage') {
       // managedEnum items open a submenu — isDirty is set by the submenu's
       // completion callback, not here (submenu may be cancelled).
       switch (setting_0.id) {
@@ -1319,6 +1326,10 @@ export function Config({
           return;
         case 'model':
           setShowSubmenu('Model');
+          setTabsHidden(true);
+          return;
+        case 'buddyModel':
+          setShowSubmenu('BuddyModel');
           setTabsHidden(true);
           return;
         case 'teammateDefaultModel':
@@ -1526,6 +1537,37 @@ export function Config({
         setShowSubmenu(null);
         setTabsHidden(false);
       }} />
+          <Text dimColor>
+            <Byline>
+              <KeyboardShortcutHint shortcut="Enter" action="confirm" />
+              <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="cancel" />
+            </Byline>
+          </Text>
+        </> : showSubmenu === 'BuddyModel' ? <>
+          <ModelPicker
+            initial={getGlobalModelConfig().smallFastModel ?? null}
+            skipSettingsWrite
+            headerText="Model for Buddy's quick inference. Uses main model when not set."
+            onSelect={(selectedModel: string | null, _effort: EffortLevel | undefined) => {
+              setShowSubmenu(null);
+              setTabsHidden(false);
+
+              const currentSmallFastModel = getGlobalModelConfig().smallFastModel;
+              if (currentSmallFastModel === undefined && selectedModel === null) {
+                return;
+              }
+
+              isDirty.current = true;
+              saveGlobalModelConfig((current) => ({
+                ...current,
+                smallFastModel: selectedModel ?? undefined,
+              }));
+            }}
+            onCancel={() => {
+              setShowSubmenu(null);
+              setTabsHidden(false);
+            }}
+          />
           <Text dimColor>
             <Byline>
               <KeyboardShortcutHint shortcut="Enter" action="confirm" />
