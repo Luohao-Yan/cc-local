@@ -10,6 +10,7 @@ export const command = {
   "whenToUse.dream": "Use when you want to manually consolidate and organize memory files, especially after a series of sessions or when auto-dream hasn't run recently.",
   "description.clear": "Clear conversation history and free up context",
   "description.compact": "Clear conversation history but keep a summary in context. Optional: /compact [instructions for summarization]",
+  "description.copy": "Copy Claude's last response to clipboard (or /copy N for the Nth-latest)",
   "description.config": "Open config panel",
   "description.commit": "Create a git commit",
   "description.commit-push-pr": "Commit, push, and open a PR",

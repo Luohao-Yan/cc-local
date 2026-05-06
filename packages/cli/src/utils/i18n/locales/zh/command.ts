@@ -10,6 +10,7 @@ export const command = {
   "whenToUse.dream": "当您想手动整理和组织记忆文件时使用，特别是在一系列会话之后或自动整理功能近期未运行时。",
   "description.clear": "清除会话历史并释放上下文",
   "description.compact": "清除会话历史但在上下文中保留摘要。可选：/compact [摘要指令]",
+  "description.copy": "复制 Claude 的最近回复到剪贴板（或 /copy N 获取第 N 条回复）",
   "description.config": "打开配置面板",
   "description.commit": "创建 git 提交",
   "description.commit-push-pr": "提交、推送并创建 PR",
