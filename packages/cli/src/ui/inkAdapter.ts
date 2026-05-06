@@ -242,13 +242,15 @@ export async function runInkUiInProcess(args: string[]): Promise<void> {
 
 export function delegateToInkUi(args: string[]): never {
   const inkArgs = stripPackageOnlyArgs(args)
-  const { entrypoint, cwd } = resolveInkUiEntrypoint()
+  const { entrypoint } = resolveInkUiEntrypoint()
 
   // Use spawnSync to delegate to Ink UI.
   // TTY inheritance should work when stdio: 'inherit' is used.
   // If stdin doesn't work on Windows, user can try --ink-bridge for in-process mode.
+  // IMPORTANT: Use process.cwd() as the working directory, not the repo root.
+  // This ensures the CLI operates in the user's current directory.
   const result = spawnSync(process.execPath, [entrypoint, ...inkArgs], {
-    cwd,
+    cwd: process.cwd(),
     stdio: 'inherit',
     env: {
       ...process.env,
