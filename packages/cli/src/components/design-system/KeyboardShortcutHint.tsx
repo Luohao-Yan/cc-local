@@ -1,6 +1,29 @@
 import { c as _c } from "react/compiler-runtime";
 import React from 'react';
 import Text from '../../ink/components/Text.js';
+import { t } from '../../utils/i18n/index.js';
+
+// Action translation key mapping
+const actionKeyMap: Record<string, string> = {
+  'interrupt': 'shortcut.action.interrupt',
+  'stop agents': 'shortcut.action.stop-agents',
+  'show tasks': 'shortcut.action.show-tasks',
+  'hide tasks': 'shortcut.action.hide-tasks',
+  'show teammates': 'shortcut.action.show-teammates',
+  'hide': 'shortcut.action.hide',
+  'cancel': 'shortcut.action.cancel',
+  'confirm': 'shortcut.action.confirm',
+  'expand': 'shortcut.action.expand',
+  'select': 'shortcut.action.select',
+  'navigate': 'shortcut.action.navigate',
+  'toggle': 'shortcut.action.toggle',
+  'cycle modes': 'shortcut.action.cycle-modes',
+  'auto-accept edits': 'shortcut.action.auto-accept-edits',
+  'accept': 'shortcut.action.accept',
+  'reject': 'shortcut.action.reject',
+  'submit': 'shortcut.action.submit',
+  'return to team lead': 'shortcut.action.return-team-lead',
+};
 type Props = {
   /** The key or chord to display (e.g., "ctrl+o", "Enter", "↑/↓") */
   shortcut: string;
@@ -45,6 +68,8 @@ export function KeyboardShortcutHint(t0) {
   } = t0;
   const parens = t1 === undefined ? false : t1;
   const bold = t2 === undefined ? false : t2;
+  // Translate action string
+  const translatedAction = actionKeyMap[action] ? t(actionKeyMap[action]) : action;
   let t3;
   if ($[0] !== bold || $[1] !== shortcut) {
     t3 = bold ? <Text bold={true}>{shortcut}</Text> : shortcut;
@@ -57,9 +82,9 @@ export function KeyboardShortcutHint(t0) {
   const shortcutText = t3;
   if (parens) {
     let t4;
-    if ($[3] !== action || $[4] !== shortcutText) {
-      t4 = <Text>({shortcutText} to {action})</Text>;
-      $[3] = action;
+    if ($[3] !== translatedAction || $[4] !== shortcutText) {
+      t4 = <Text>({shortcutText} {t('shortcut.to')} {translatedAction})</Text>;
+      $[3] = translatedAction;
       $[4] = shortcutText;
       $[5] = t4;
     } else {
@@ -68,9 +93,9 @@ export function KeyboardShortcutHint(t0) {
     return t4;
   }
   let t4;
-  if ($[6] !== action || $[7] !== shortcutText) {
-    t4 = <Text>{shortcutText} to {action}</Text>;
-    $[6] = action;
+  if ($[6] !== translatedAction || $[7] !== shortcutText) {
+    t4 = <Text>{shortcutText} {t('shortcut.to')} {translatedAction}</Text>;
+    $[6] = translatedAction;
     $[7] = shortcutText;
     $[8] = t4;
   } else {

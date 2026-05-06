@@ -4,11 +4,12 @@
  */
 import type { Command } from '../../commands.js'
 import { isClaudeAISubscriber } from '../../utils/auth.js'
+import { t } from '../../utils/i18n/index.js'
 
 const cost = {
   type: 'local',
   name: 'cost',
-  description: 'Show the total cost and duration of the current session',
+  get description() { return t('command.description.cost') },
   get isHidden() {
     // Keep visible for Ants even if they're subscribers (they see cost breakdowns)
     if (process.env.USER_TYPE === 'ant') {

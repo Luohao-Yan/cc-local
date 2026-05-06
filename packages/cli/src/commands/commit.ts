@@ -2,6 +2,7 @@ import type { Command } from '../commands.js'
 import { getAttributionTexts } from '../utils/attribution.js'
 import { executeShellCommandsInPrompt } from '../utils/promptShellExecution.js'
 import { getUndercoverInstructions, isUndercover } from '../utils/undercover.js'
+import { t } from '../utils/i18n/index.js'
 
 const ALLOWED_TOOLS = [
   'Bash(git add:*)',
@@ -57,7 +58,7 @@ You have the capability to call multiple tools in a single response. Stage and c
 const command = {
   type: 'prompt',
   name: 'commit',
-  description: 'Create a git commit',
+  get description() { return t('command.description.commit') },
   allowedTools: ALLOWED_TOOLS,
   contentLength: 0, // Dynamic content
   progressMessage: 'creating commit',
