@@ -8,7 +8,6 @@ import {
   parseUserSpecifiedModel,
 } from './model.js'
 import { getAPIProvider } from './providers.js'
-import { getActiveAPIFormat } from './activeModelContext.js'
 
 export const AGENT_MODEL_OPTIONS = [...MODEL_ALIASES, 'inherit'] as const
 export type AgentModelAlias = (typeof AGENT_MODEL_OPTIONS)[number]
@@ -77,17 +76,6 @@ export function getAgentModel(
   }
 
   const agentModelWithExp = agentModel ?? getDefaultSubagentModel()
-
-  // For third-party API endpoints (OpenAI format), always inherit from parent
-  // to ensure model compatibility. Third-party endpoints typically don't support
-  // Claude model aliases (haiku, sonnet, opus).
-  if (getActiveAPIFormat() === 'openai') {
-    return getRuntimeMainLoopModel({
-      permissionMode: permissionMode ?? 'default',
-      mainLoopModel: parentModel,
-      exceeds200kTokens: false,
-    })
-  }
 
   if (agentModelWithExp === 'inherit') {
     // Apply runtime model resolution for inherit to get the effective model
