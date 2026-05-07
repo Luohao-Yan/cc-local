@@ -7,7 +7,7 @@ import {
   getRuntimeMainLoopModel,
   parseUserSpecifiedModel,
 } from './model.js'
-import { getAPIProvider, isFirstPartyAnthropicBaseUrl } from './providers.js'
+import { getAPIProvider } from './providers.js'
 
 export const AGENT_MODEL_OPTIONS = [...MODEL_ALIASES, 'inherit'] as const
 export type AgentModelAlias = (typeof AGENT_MODEL_OPTIONS)[number]
@@ -76,18 +76,6 @@ export function getAgentModel(
   }
 
   const agentModelWithExp = agentModel ?? getDefaultSubagentModel()
-
-  // For third-party API endpoints (non-Anthropic official), always inherit from parent
-  // to ensure model compatibility. Third-party endpoints typically don't support
-  // Claude model aliases (haiku, sonnet, opus) - they use their own model names.
-  // This covers both OpenAI-format and Anthropic-format third-party APIs.
-  if (!isFirstPartyAnthropicBaseUrl()) {
-    return getRuntimeMainLoopModel({
-      permissionMode: permissionMode ?? 'default',
-      mainLoopModel: parentModel,
-      exceeds200kTokens: false,
-    })
-  }
 
   if (agentModelWithExp === 'inherit') {
     // Apply runtime model resolution for inherit to get the effective model
