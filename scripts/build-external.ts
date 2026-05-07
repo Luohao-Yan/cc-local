@@ -108,8 +108,18 @@ export function feature(name) {
 const version = process.env.CLI_VERSION || "99.99-local";
 
 import { plugin } from "bun";
-import { rmSync } from "node:fs";
+import { rmSync, mkdirSync } from "node:fs";
 import { basename } from "node:path";
+
+// Clean dist directory before build to ensure no stale files
+const distDir = "./dist";
+try {
+  rmSync(distDir, { recursive: true, force: true });
+  mkdirSync(distDir, { recursive: true });
+  console.log(`Cleaned ${distDir}/`);
+} catch (e) {
+  console.log(`Warning: could not clean ${distDir}/: ${e}`);
+}
 
 const reactCompilerRuntimeCode = `
 export function c(size) {
