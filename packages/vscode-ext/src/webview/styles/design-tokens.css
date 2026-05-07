@@ -1,0 +1,408 @@
+/**
+ * Design Tokens for CCLocal VS Code Extension Webview
+ * Complete design system matching official Claude Code extension
+ *
+ * Usage: Include this CSS in webview HTML or build into separate file
+ */
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════════════
+   * BRAND COLORS (Claude Identity)
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  --app-claude-orange: #d97757;
+  --app-claude-ivory: #faf9f5;
+  --app-claude-slate: #141413;
+  --app-claude-cream: #f5f3ed;
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   * SPACING TOKENS
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  --app-spacing-2xs: 2px;
+  --app-spacing-xs: 4px;
+  --app-spacing-sm: 8px;
+  --app-spacing-md: 12px;
+  --app-spacing-lg: 16px;
+  --app-spacing-xl: 20px;
+  --app-spacing-2xl: 24px;
+  --app-spacing-3xl: 32px;
+  --app-spacing-4xl: 40px;
+  --app-spacing-5xl: 48px;
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   * TYPOGRAPHY TOKENS
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  --app-font-family: var(--vscode-font-family), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --app-font-family-mono: var(--vscode-editor-font-family), 'Fira Code', 'Cascadia Code', Consolas, monospace;
+
+  --app-font-size-xs: 11px;
+  --app-font-size-sm: 12px;
+  --app-font-size-base: 13px;
+  --app-font-size-lg: 14px;
+  --app-font-size-xl: 16px;
+  --app-font-size-2xl: 18px;
+  --app-font-size-3xl: 20px;
+  --app-font-size-4xl: 24px;
+  --app-font-size-5xl: 32px;
+
+  --app-font-weight-normal: 400;
+  --app-font-weight-medium: 500;
+  --app-font-weight-semibold: 600;
+  --app-font-weight-bold: 700;
+
+  --app-line-height-tight: 1.25;
+  --app-line-height-normal: 1.5;
+  --app-line-height-relaxed: 1.75;
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   * CORNER RADIUS TOKENS
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  --app-corner-radius-xs: 2px;
+  --app-corner-radius-sm: 4px;
+  --app-corner-radius-md: 6px;
+  --app-corner-radius-lg: 8px;
+  --app-corner-radius-xl: 12px;
+  --app-corner-radius-2xl: 16px;
+  --app-corner-radius-full: 9999px;
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   * SHADOW TOKENS
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  --app-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --app-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --app-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --app-shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   * ANIMATION TOKENS
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  --app-duration-fast: 100ms;
+  --app-duration-normal: 200ms;
+  --app-duration-slow: 300ms;
+  --app-duration-slower: 500ms;
+
+  --app-easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --app-easing-in: cubic-bezier(0.4, 0, 1, 1);
+  --app-easing-out: cubic-bezier(0, 0, 0.2, 1);
+  --app-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   * Z-INDEX TOKENS
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  --app-z-index-base: 0;
+  --app-z-index-dropdown: 100;
+  --app-z-index-sticky: 200;
+  --app-z-index-modal-backdrop: 300;
+  --app-z-index-modal: 400;
+  --app-z-index-popover: 500;
+  --app-z-index-tooltip: 600;
+  --app-z-index-toast: 700;
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   * VS CODE THEME VARIABLE MAPPINGS
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  /* Background Colors */
+  --app-bg-primary: var(--vscode-editor-background);
+  --app-bg-secondary: var(--vscode-sideBar-background);
+  --app-bg-tertiary: var(--vscode-panel-background);
+  --app-bg-hover: var(--vscode-list-hoverBackground);
+  --app-bg-active: var(--vscode-list-activeSelectionBackground);
+
+  /* Foreground Colors */
+  --app-fg-primary: var(--vscode-foreground);
+  --app-fg-secondary: var(--vscode-descriptionForeground);
+  --app-fg-tertiary: var(--vscode-disabledForeground);
+  --app-fg-muted: var(--vscode-textPreformat-foreground);
+
+  /* Accent Colors */
+  --app-accent-primary: var(--vscode-focusBorder);
+  --app-accent-secondary: var(--vscode-textLink-foreground);
+  --app-accent-tertiary: var(--vscode-textLink-activeForeground);
+
+  /* Border Colors */
+  --app-border-default: var(--vscode-widget-border);
+  --app-border-focus: var(--vscode-focusBorder);
+  --app-border-subtle: var(--vscode-panel-border);
+
+  /* Input Colors */
+  --app-input-bg: var(--vscode-input-background);
+  --app-input-fg: var(--vscode-input-foreground);
+  --app-input-border: var(--vscode-input-border);
+  --app-input-placeholder: var(--vscode-input-placeholderForeground);
+
+  /* Button Colors */
+  --app-button-bg: var(--vscode-button-background);
+  --app-button-fg: var(--vscode-button-foreground);
+  --app-button-bg-hover: var(--vscode-button-hoverBackground);
+  --app-button-bg-secondary: var(--vscode-button-secondaryBackground);
+  --app-button-fg-secondary: var(--vscode-button-secondaryForeground);
+
+  /* Error/Warning/Success Colors */
+  --app-error-bg: var(--vscode-inputValidation-errorBackground);
+  --app-error-fg: var(--vscode-inputValidation-errorForeground);
+  --app-error-border: var(--vscode-inputValidation-errorBorder);
+  --app-warning-bg: var(--vscode-inputValidation-warningBackground);
+  --app-warning-fg: var(--vscode-inputValidation-warningForeground);
+  --app-warning-border: var(--vscode-inputValidation-warningBorder);
+  --app-info-bg: var(--vscode-inputValidation-infoBackground);
+  --app-info-fg: var(--vscode-inputValidation-infoForeground);
+  --app-info-border: var(--vscode-inputValidation-infoBorder);
+
+  /* Chart Colors */
+  --app-charts-green: var(--vscode-testing-iconPassed, #4CAF50);
+  --app-charts-red: var(--vscode-testing-iconFailed, #f44336);
+  --app-charts-yellow: var(--vscode-editorWarning-foreground, #FF9800);
+  --app-charts-blue: var(--vscode-charts-blue, #2196F3);
+  --app-charts-orange: var(--vscode-charts-orange, #FF9800);
+  --app-charts-purple: var(--vscode-charts-purple, #9C27B0);
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   * COMPONENT-SPECIFIC TOKENS
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  /* Message Bubbles */
+  --app-message-user-bg: var(--app-accent-primary);
+  --app-message-user-fg: var(--vscode-button-foreground);
+  --app-message-assistant-bg: var(--vscode-editor-inactiveSelectionBackground, rgba(128, 128, 128, 0.1));
+  --app-message-assistant-fg: var(--vscode-foreground);
+  --app-message-system-bg: var(--vscode-editorGutter-commentRangeForeground, rgba(100, 100, 100, 0.1));
+  --app-message-system-fg: var(--vscode-descriptionForeground);
+
+  /* Code Blocks */
+  --app-code-bg: var(--vscode-textCodeBlock-background);
+  --app-code-header-bg: var(--vscode-editorGroupHeader-tabsBackground);
+  --app-code-border: var(--vscode-editor-lineHighlightBorder, transparent);
+
+  /* Tool Cards */
+  --app-tool-card-bg: var(--vscode-editorWidget-background);
+  --app-tool-card-border: var(--vscode-widget-border);
+  --app-tool-card-header-bg: var(--vscode-sideBarSectionHeader-background);
+
+  /* Input Area */
+  --app-input-area-bg: var(--vscode-editor.background);
+  --app-input-area-border: var(--vscode-widget-border);
+
+  /* Scrollbar */
+  --app-scrollbar-width: 10px;
+  --app-scrollbar-thumb: var(--vscode-scrollbarSlider-background);
+  --app-scrollbar-thumb-hover: var(--vscode-scrollbarSlider-hoverBackground);
+  --app-scrollbar-thumb-active: var(--vscode-scrollbarSlider-activeBackground);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * BASE RESET
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: var(--app-font-family);
+  font-size: var(--app-font-size-base);
+  line-height: var(--app-line-height-normal);
+  color: var(--app-fg-primary);
+  background: var(--app-bg-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * SCROLLBAR STYLING
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: var(--app-scrollbar-width);
+  height: var(--app-scrollbar-width);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--app-scrollbar-thumb);
+  border-radius: var(--app-corner-radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--app-scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--app-scrollbar-thumb-active);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * UTILITY CLASSES
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+.text-xs { font-size: var(--app-font-size-xs); }
+.text-sm { font-size: var(--app-font-size-sm); }
+.text-base { font-size: var(--app-font-size-base); }
+.text-lg { font-size: var(--app-font-size-lg); }
+.text-xl { font-size: var(--app-font-size-xl); }
+.text-2xl { font-size: var(--app-font-size-2xl); }
+.text-3xl { font-size: var(--app-font-size-3xl); }
+
+.font-normal { font-weight: var(--app-font-weight-normal); }
+.font-medium { font-weight: var(--app-font-weight-medium); }
+.font-semibold { font-weight: var(--app-font-weight-semibold); }
+.font-bold { font-weight: var(--app-font-weight-bold); }
+
+.text-primary { color: var(--app-fg-primary); }
+.text-secondary { color: var(--app-fg-secondary); }
+.text-muted { color: var(--app-fg-tertiary); }
+.text-accent { color: var(--app-accent-secondary); }
+.text-success { color: var(--app-charts-green); }
+.text-warning { color: var(--app-charts-yellow); }
+.text-error { color: var(--app-charts-red); }
+
+.bg-primary { background-color: var(--app-bg-primary); }
+.bg-secondary { background-color: var(--app-bg-secondary); }
+.bg-tertiary { background-color: var(--app-bg-tertiary); }
+.bg-hover { background-color: var(--app-bg-hover); }
+
+.rounded-xs { border-radius: var(--app-corner-radius-xs); }
+.rounded-sm { border-radius: var(--app-corner-radius-sm); }
+.rounded-md { border-radius: var(--app-corner-radius-md); }
+.rounded-lg { border-radius: var(--app-corner-radius-lg); }
+.rounded-xl { border-radius: var(--app-corner-radius-xl); }
+.rounded-full { border-radius: var(--app-corner-radius-full); }
+
+.shadow-sm { box-shadow: var(--app-shadow-sm); }
+.shadow-md { box-shadow: var(--app-shadow-md); }
+.shadow-lg { box-shadow: var(--app-shadow-lg); }
+
+.p-xs { padding: var(--app-spacing-xs); }
+.p-sm { padding: var(--app-spacing-sm); }
+.p-md { padding: var(--app-spacing-md); }
+.p-lg { padding: var(--app-spacing-lg); }
+.p-xl { padding: var(--app-spacing-xl); }
+
+.m-xs { margin: var(--app-spacing-xs); }
+.m-sm { margin: var(--app-spacing-sm); }
+.m-md { margin: var(--app-spacing-md); }
+.m-lg { margin: var(--app-spacing-lg); }
+.m-xl { margin: var(--app-spacing-xl); }
+
+.flex { display: flex; }
+.inline-flex { display: inline-flex; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-end { justify-content: flex-end; }
+.flex-1 { flex: 1; }
+.flex-auto { flex: auto; }
+.flex-none { flex: none; }
+
+.gap-xs { gap: var(--app-spacing-xs); }
+.gap-sm { gap: var(--app-spacing-sm); }
+.gap-md { gap: var(--app-spacing-md); }
+.gap-lg { gap: var(--app-spacing-lg); }
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.min-h-full { min-height: 100%; }
+.max-w-full { max-width: 100%; }
+
+.overflow-hidden { overflow: hidden; }
+.overflow-auto { overflow: auto; }
+.overflow-x-auto { overflow-x: auto; }
+.overflow-y-auto { overflow-y: auto; }
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opacity-50 { opacity: 0.5; }
+.opacity-75 { opacity: 0.75; }
+
+.cursor-pointer { cursor: pointer; }
+.cursor-not-allowed { cursor: not-allowed; }
+
+.pointer-events-none { pointer-events: none; }
+
+.select-none { user-select: none; }
+.select-all { user-select: all; }
+
+.transition-all {
+  transition: all var(--app-duration-normal) var(--app-easing-default);
+}
+
+.transition-colors {
+  transition: color var(--app-duration-normal) var(--app-easing-default),
+              background-color var(--app-duration-normal) var(--app-easing-default),
+              border-color var(--app-duration-normal) var(--app-easing-default);
+}
+
+.transition-opacity {
+  transition: opacity var(--app-duration-normal) var(--app-easing-default);
+}
+
+.transition-transform {
+  transition: transform var(--app-duration-normal) var(--app-easing-default);
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * PRINT STYLES
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+@media print {
+  * {
+    background: white !important;
+    color: black !important;
+  }
+}

@@ -20,6 +20,8 @@
 - 🛡️ 权限模式：`default` / `dontAsk` / `acceptEdits` / `bypassPermissions` 与工具 allow/block
 - 📦 可打包为可分发 CLI 产物，全局安装后在任意目录使用
 - 🇨🇳 国内网络友好，内置镜像源配置
+- 🌐 完整的国际化支持（中文/英文），界面、提示、命令描述全翻译
+- 🖥️ VS Code 扩展支持，在编辑器侧边栏直接使用
 
 ---
 
@@ -38,6 +40,8 @@
   - [并发优化特性](#并发优化特性)
 - [终端宠物伴侣](#终端宠物伴侣buddy)
 - [Auto Mode 自动模式](#auto-mode-自动模式)
+- [VS Code 扩展](#vs-code-扩展)
+- [国际化支持](#国际化支持)
 - [构建打包](#构建打包)
 - [项目结构](#项目结构)
 - [工作原理](#工作原理)
@@ -903,6 +907,86 @@ Auto Mode 的分类器支持通过 `autoMode` 配置自定义规则。在 `~/.cl
 
 ---
 
+## VS Code 扩展
+
+项目包含一个 VS Code 扩展 `@cclocal/vscode-ext`，可在 VS Code 侧边栏中直接使用 CCLocal。
+
+### 安装扩展
+
+```bash
+cd packages/vscode-ext
+npm install
+npm run build
+```
+
+然后在 VS Code 中：
+1. 打开扩展面板 (Ctrl+Shift+X)
+2. 点击 "..." 菜单 → "Install from VSIX..."
+3. 选择 `packages/vscode-ext/cclocal-1.0.0.vsix`
+
+### 扩展功能
+
+- **侧边栏聊天面板** — 在 VS Code 中直接与 AI 对话
+- **选中代码发送** — 右键发送选中的代码片段
+- **配置管理** — 通过 VS Code 设置界面配置模型、权限模式等
+- **MCP 服务器管理** — 在扩展中管理 MCP 连接
+- **Hook 系统** — 配置工具执行前后的自动化 hooks
+
+### 扩展命令
+
+| 命令 | 说明 |
+|---|---|
+| `CCLocal: 新建会话` | 开始新对话 |
+| `CCLocal: 清空聊天记录` | 清除当前会话 |
+| `CCLocal: Open Settings` | 打开扩展设置 |
+| `CCLocal: Set Model` | 切换模型 |
+| `CCLocal: Set Permission Mode` | 设置权限模式 |
+| `CCLocal: Login / Logout` | 登录/登出 |
+
+### 扩展配置
+
+扩展支持丰富的配置选项，包括：
+
+- `cclocal.forceLoginMethod` — 强制登录方式（claudeai/console/bedrock/vertex/custom）
+- `cclocal.initialPermissionMode` — 初始权限模式
+- `cclocal.hooks` — Hook 配置（PreToolUse、PostToolUse 等）
+- `cclocal.model` — 默认模型
+- `cclocal.language` — 界面语言
+
+---
+
+## 国际化支持
+
+CCLocal 支持完整的中英文国际化：
+
+### 切换语言
+
+在 `~/.claude/settings.json` 中设置：
+
+```json
+{
+  "language": "zh"
+}
+```
+
+或使用环境变量：
+
+```bash
+export CCLOCAL_LANGUAGE=zh
+cclocal
+```
+
+### 已翻译内容
+
+- 所有命令描述和帮助信息
+- UI 组件标签和提示
+- 错误消息和警告
+- 键盘快捷键提示
+- 配置面板设置项
+- 状态栏和加载提示
+
+---
+
 ## 构建打包
 
 将项目打包为可分发 JS 产物：
@@ -939,9 +1023,10 @@ bun run acceptance:complete
 │   ├── server/               # 本地 REST/SSE/WebSocket 服务端
 │   ├── core/                 # QueryEngine、ToolRegistry、MCPManager
 │   ├── shared/               # 共享类型
-│   └── vscode-ext/           # VS Code 扩展基座
+│   └── vscode-ext/           # VS Code 扩展（侧边栏聊天面板）
 ├── src/                      # 旧 Claude Code UI 与主交互体验
 │   ├── entrypoints/cli.tsx
+│   ├── i18n/                 # 国际化翻译文件
 │   └── _external/            # 构建兼容层与 shim
 ├── scripts/
 │   ├── build-external.ts     # 构建 dist/cli.js + dist/server.js + dist/legacy-cli.js
@@ -975,6 +1060,34 @@ bun run acceptance:complete
 
 - 检测到 `ANTHROPIC_BASE_URL` 指向非 Anthropic 地址时，自动跳过 OAuth 认证、preflight 连通性检查和 API Key 审批流程
 - API Key 通过 Anthropic SDK 的标准 `x-api-key` header 传递，兼容所有实现了 Anthropic Messages API 的服务
+- 支持 OpenAI SDK 集成，可通过配置使用 OpenAI 兼容的 API 端点
+
+### OpenAI SDK 集成
+
+项目支持通过 OpenAI SDK 连接多种 Provider：
+
+```json
+{
+  "providers": {
+    "openai": {
+      "name": "OpenAI",
+      "apiFormat": "openai",
+      "baseUrl": "https://api.openai.com/v1",
+      "apiKey": "sk-...",
+      "models": {
+        "gpt-4o": {
+          "name": "GPT-4o",
+          "alias": ["gpt4"]
+        }
+      }
+    }
+  }
+}
+```
+
+支持的 `apiFormat` 值：
+- `anthropic` (默认) — Anthropic Messages API 格式
+- `openai` — OpenAI Chat Completions API 格式
 
 ---
 

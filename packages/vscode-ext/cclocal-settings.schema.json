@@ -1,0 +1,608 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CCLocal Settings",
+  "description": "Configuration schema for CCLocal VS Code Extension",
+  "type": "object",
+  "properties": {
+    "forceLoginMethod": {
+      "type": "string",
+      "enum": ["", "claudeai", "console", "bedrock", "vertex", "custom"],
+      "default": "",
+      "description": "Force a specific login method. Empty means auto-detect."
+    },
+    "forceLoginOrgUUID": {
+      "type": "string",
+      "default": "",
+      "description": "OAuth organization UUID for login"
+    },
+    "disableLoginPrompt": {
+      "type": "boolean",
+      "default": false,
+      "description": "Disable the login prompt on startup"
+    },
+    "environmentVariables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Environment variable name"
+          },
+          "value": {
+            "type": "string",
+            "description": "Environment variable value"
+          }
+        },
+        "required": ["name", "value"]
+      },
+      "default": [],
+      "description": "Environment variables to pass to cclocal process"
+    },
+    "cclocalPath": {
+      "type": "string",
+      "default": "cclocal",
+      "description": "Path to cclocal executable"
+    },
+    "claudeProcessWrapper": {
+      "type": "string",
+      "default": "",
+      "description": "Custom wrapper command for cclocal process"
+    },
+    "initialPermissionMode": {
+      "type": "string",
+      "enum": ["default", "acceptEdits", "plan", "bypassPermissions"],
+      "default": "default",
+      "description": "Initial permission mode for tool execution"
+    },
+    "allowDangerouslySkipPermissions": {
+      "type": "boolean",
+      "default": false,
+      "description": "Allow dangerously skipping all permission checks"
+    },
+    "permissionRules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string",
+            "description": "Tool name or pattern"
+          },
+          "behavior": {
+            "type": "string",
+            "enum": ["allow", "deny", "ask"],
+            "description": "Permission behavior"
+          },
+          "condition": {
+            "type": "string",
+            "description": "Optional condition for the rule"
+          }
+        },
+        "required": ["tool", "behavior"]
+      },
+      "default": [],
+      "description": "Custom permission rules"
+    },
+    "respectGitIgnore": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether file picker should respect .gitignore"
+    },
+    "fileSuggestion": {
+      "type": "object",
+      "properties": {
+        "maxResults": {
+          "type": "number",
+          "default": 50,
+          "description": "Maximum number of file suggestions"
+        },
+        "includePatterns": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Glob patterns to include"
+        },
+        "excludePatterns": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Glob patterns to exclude"
+        }
+      },
+      "description": "File suggestion configuration for @ mentions"
+    },
+    "autosave": {
+      "type": "boolean",
+      "default": false,
+      "description": "Automatically save files before editing"
+    },
+    "claudeMdExcludes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Glob patterns of CLAUDE.md files to exclude"
+    },
+    "mcp": {
+      "type": "object",
+      "properties": {
+        "enableAllProjectMcpServers": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable all MCP servers from project config"
+        },
+        "enabledMcpjsonServers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "MCP servers enabled from mcp.json"
+        },
+        "disabledMcpjsonServers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "MCP servers disabled from mcp.json"
+        },
+        "allowedMcpServers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Whitelist of allowed MCP servers"
+        },
+        "deniedMcpServers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Blacklist of denied MCP servers"
+        }
+      },
+      "description": "MCP server configuration"
+    },
+    "hooks": {
+      "type": "object",
+      "properties": {
+        "PreToolUse": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "PostToolUse": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "Stop": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "Notification": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "PreCompact": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "PostCompact": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "SessionStart": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "SessionEnd": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "FileWrite": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "FileEdit": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "FileRead": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "BashExecution": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "ToolApproval": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "Error": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "Warning": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "ModelChange": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "PermissionChange": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "MCPServerStart": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "MCPServerStop": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "PluginInstall": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        },
+        "PluginUninstall": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HookDefinition" }
+        }
+      },
+      "description": "Hook definitions for various events"
+    },
+    "disableAllHooks": {
+      "type": "boolean",
+      "default": false,
+      "description": "Disable all hooks globally"
+    },
+    "allowedHttpHookUrls": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Whitelist of URLs allowed for HTTP hooks"
+    },
+    "httpHookAllowedEnvVars": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Environment variables allowed in HTTP hook headers"
+    },
+    "allowManagedHooksOnly": {
+      "type": "boolean",
+      "default": false,
+      "description": "Only allow hooks from managed settings"
+    },
+    "plugins": {
+      "type": "object",
+      "properties": {
+        "enabledPlugins": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Enabled plugins with versions"
+        },
+        "extraKnownMarketplaces": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Additional marketplace URLs"
+        },
+        "strictKnownMarketplaces": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Only allow these marketplaces"
+        },
+        "blockedMarketplaces": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Blocked marketplace URLs"
+        },
+        "pluginTrustMessage": {
+          "type": "string",
+          "description": "Custom message for plugin trust dialog"
+        }
+      },
+      "description": "Plugin configuration"
+    },
+    "enabledPlugins": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "default": {},
+      "description": "Enabled plugins with their versions"
+    },
+    "extraKnownMarketplaces": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Additional known marketplace URLs"
+    },
+    "strictKnownMarketplaces": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Strict whitelist of marketplace URLs"
+    },
+    "blockedMarketplaces": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Blocked marketplace URLs"
+    },
+    "useTerminal": {
+      "type": "boolean",
+      "default": true,
+      "description": "Use integrated terminal for bash commands"
+    },
+    "useCtrlEnterToSend": {
+      "type": "boolean",
+      "default": false,
+      "description": "Require Ctrl+Enter to send message"
+    },
+    "preferredLocation": {
+      "type": "string",
+      "enum": ["sidebar", "panel"],
+      "default": "sidebar",
+      "description": "Preferred location for CCLocal UI"
+    },
+    "hideOnboarding": {
+      "type": "boolean",
+      "default": false,
+      "description": "Hide onboarding welcome message"
+    },
+    "enableNewConversationShortcut": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable keyboard shortcut for new conversation"
+    },
+    "usePythonEnvironment": {
+      "type": "boolean",
+      "default": true,
+      "description": "Activate Python environment automatically"
+    },
+    "showTerminalBanner": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show terminal usage banner"
+    },
+    "model": {
+      "type": "string",
+      "default": "",
+      "description": "Default model to use"
+    },
+    "availableModels": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "List of available models"
+    },
+    "modelOverrides": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "default": {},
+      "description": "Model ID overrides"
+    },
+    "alwaysThinkingEnabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Always enable thinking mode"
+    },
+    "fastMode": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable fast mode"
+    },
+    "maxThinkingTokens": {
+      "type": "number",
+      "default": 16000,
+      "minimum": 0,
+      "description": "Maximum tokens for thinking"
+    },
+    "outputStyle": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["default", "compact", "detailed"],
+          "default": "default"
+        },
+        "showThinking": {
+          "type": "boolean",
+          "default": true
+        },
+        "showToolInput": {
+          "type": "boolean",
+          "default": true
+        },
+        "showTiming": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "description": "Output display style configuration"
+    },
+    "language": {
+      "type": "string",
+      "default": "en",
+      "description": "Interface language"
+    },
+    "spinnerTipsEnabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show tips in loading spinner"
+    },
+    "spinnerVerbs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Custom verbs for spinner"
+    },
+    "spinnerTipsOverride": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Override default spinner tips"
+    },
+    "syntaxHighlightingDisabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Disable syntax highlighting"
+    },
+    "terminalTitleFromRename": {
+      "type": "boolean",
+      "default": true,
+      "description": "Update terminal title from session rename"
+    },
+    "remoteConfig": {
+      "type": "object",
+      "properties": {
+        "sshConfigs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "host": { "type": "string" },
+              "port": { "type": "number", "default": 22 },
+              "user": { "type": "string" },
+              "privateKey": { "type": "string" },
+              "agentForwarding": { "type": "boolean", "default": false }
+            },
+            "required": ["name", "host", "user"]
+          }
+        },
+        "remote": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": false },
+            "defaultTarget": { "type": "string" }
+          }
+        }
+      },
+      "description": "Remote connection configuration"
+    },
+    "sshConfigs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "host": { "type": "string" },
+          "port": { "type": "number", "default": 22 },
+          "user": { "type": "string" },
+          "privateKey": { "type": "string" },
+          "agentForwarding": { "type": "boolean", "default": false }
+        },
+        "required": ["name", "host", "user"]
+      },
+      "default": [],
+      "description": "SSH connection configurations"
+    },
+    "includeCoAuthoredBy": {
+      "type": "boolean",
+      "default": true,
+      "description": "Include Co-Authored-By in commits"
+    },
+    "includeGitInstructions": {
+      "type": "boolean",
+      "default": true,
+      "description": "Include git instructions in context"
+    },
+    "sandbox": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "permissions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "description": "Sandbox configuration"
+    },
+    "skipWebFetchPreflight": {
+      "type": "boolean",
+      "default": false,
+      "description": "Skip preflight checks for WebFetch"
+    },
+    "feedbackSurveyRate": {
+      "type": "number",
+      "default": 0.1,
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Rate for feedback survey prompts"
+    },
+    "proactiveSuggestions": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable proactive suggestions"
+    },
+    "allowManagedPermissionRulesOnly": {
+      "type": "boolean",
+      "default": false,
+      "description": "Only allow permission rules from managed settings"
+    },
+    "allowManagedMcpServersOnly": {
+      "type": "boolean",
+      "default": false,
+      "description": "Only allow MCP servers from managed settings"
+    },
+    "strictPluginOnlyCustomization": {
+      "type": "boolean",
+      "default": false,
+      "description": "Strict plugin-only customization mode"
+    },
+    "bedrockRegion": {
+      "type": "string",
+      "default": "us-east-1",
+      "description": "AWS Bedrock region"
+    },
+    "vertexProjectId": {
+      "type": "string",
+      "default": "",
+      "description": "GCP Vertex AI project ID"
+    },
+    "cleanupPeriodDays": {
+      "type": "number",
+      "default": 30,
+      "minimum": 1,
+      "description": "Days before cleaning up old data"
+    },
+    "attribution": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable usage attribution"
+    }
+  },
+  "definitions": {
+    "HookDefinition": {
+      "type": "object",
+      "properties": {
+        "matcher": {
+          "type": "string",
+          "description": "Regex pattern to match tool names"
+        },
+        "hooks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["command", "http", "function"]
+              },
+              "command": {
+                "type": "string",
+                "description": "Shell command to execute"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "HTTP URL to call"
+              },
+              "timeout": {
+                "type": "number",
+                "default": 60000,
+                "description": "Timeout in milliseconds"
+              }
+            },
+            "required": ["type"]
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["hooks"]
+    }
+  }
+}

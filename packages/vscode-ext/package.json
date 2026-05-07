@@ -25,6 +25,7 @@
   "engines": {
     "vscode": "^1.85.0"
   },
+  "icon": "images/icon.svg",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -44,6 +45,12 @@
           "name": "CCLocal Chat",
           "icon": "$(comment-discussion)",
           "contextualTitle": "CCLocal"
+        },
+        {
+          "id": "cclocal.sessions",
+          "name": "Sessions",
+          "icon": "$(history)",
+          "contextualTitle": "CCLocal Sessions"
         }
       ]
     },
@@ -66,6 +73,193 @@
       {
         "command": "cclocal.sendSelectedCode",
         "title": "CCLocal: 发送选中代码到 CCLocal"
+      },
+      {
+        "command": "cclocal.openInPanel",
+        "title": "CCLocal: Open in New Tab",
+        "icon": "$(empty-window)"
+      },
+      {
+        "command": "cclocal.openInSidebar",
+        "title": "CCLocal: Open in Side Bar",
+        "icon": "$(layout-sidebar-left)"
+      },
+      {
+        "command": "cclocal.focusInput",
+        "title": "CCLocal: Focus Input"
+      },
+      {
+        "command": "cclocal.insertAtMention",
+        "title": "CCLocal: Insert @-Mention Reference"
+      },
+      {
+        "command": "cclocal.toggleDictation",
+        "title": "CCLocal: Toggle Voice Dictation"
+      },
+      {
+        "command": "cclocal.openSettings",
+        "title": "CCLocal: Open Settings"
+      },
+      {
+        "command": "cclocal.openConfigPanel",
+        "title": "CCLocal: Open Configuration Panel",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "cclocal.showLogs",
+        "title": "CCLocal: Show Logs"
+      },
+      {
+        "command": "cclocal.acceptEdit",
+        "title": "CCLocal: Accept Proposed Changes",
+        "icon": "$(check)"
+      },
+      {
+        "command": "cclocal.rejectEdit",
+        "title": "CCLocal: Reject Proposed Changes",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "cclocal.login",
+        "title": "CCLocal: Login",
+        "icon": "$(sign-in)"
+      },
+      {
+        "command": "cclocal.logout",
+        "title": "CCLocal: Logout",
+        "icon": "$(sign-out)"
+      },
+      {
+        "command": "cclocal.checkAuth",
+        "title": "CCLocal: Check Authentication Status"
+      },
+      {
+        "command": "cclocal.switchAuthMethod",
+        "title": "CCLocal: Switch Authentication Method"
+      },
+      {
+        "command": "cclocal.configureCustomProvider",
+        "title": "CCLocal: Configure Custom Provider"
+      },
+      {
+        "command": "cclocal.setModel",
+        "title": "CCLocal: Set Model"
+      },
+      {
+        "command": "cclocal.setPermissionMode",
+        "title": "CCLocal: Set Permission Mode"
+      },
+      {
+        "command": "cclocal.hooks.enable",
+        "title": "CCLocal: Enable Hooks"
+      },
+      {
+        "command": "cclocal.hooks.disable",
+        "title": "CCLocal: Disable Hooks"
+      },
+      {
+        "command": "cclocal.hooks.clear",
+        "title": "CCLocal: Clear All Hooks"
+      },
+      {
+        "command": "cclocal.hooks.stats",
+        "title": "CCLocal: Show Hook Statistics"
+      },
+      {
+        "command": "cclocal.hooks.test",
+        "title": "CCLocal: Test Hook Execution"
+      },
+      {
+        "command": "cclocal.hooks.registerFunction",
+        "title": "CCLocal: Register Function Hook"
+      },
+      {
+        "command": "cclocal.showMCPSettings",
+        "title": "CCLocal: Show MCP Server Settings",
+        "icon": "$(server)"
+      },
+      {
+        "command": "cclocal.mcp.refresh",
+        "title": "CCLocal: Refresh MCP Servers",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "cclocal.mcp.reviewPending",
+        "title": "CCLocal: Review Pending MCP Approvals"
+      },
+      {
+        "command": "cclocal.mcp.listServers",
+        "title": "CCLocal: List MCP Servers"
+      },
+      {
+        "command": "cclocal.mcp.stats",
+        "title": "CCLocal: Show MCP Statistics"
+      },
+      {
+        "command": "cclocal.mcp.openUserConfig",
+        "title": "CCLocal: Open User MCP Config"
+      },
+      {
+        "command": "cclocal.mcp.openProjectConfig",
+        "title": "CCLocal: Open Project MCP Config"
+      },
+      {
+        "command": "cclocal.showPluginSettings",
+        "title": "CCLocal: Show Plugin Settings",
+        "icon": "$(extensions)"
+      },
+      {
+        "command": "cclocal.installPlugin",
+        "title": "CCLocal: Install Plugin",
+        "icon": "$(add)"
+      },
+      {
+        "command": "cclocal.uninstallPlugin",
+        "title": "CCLocal: Uninstall Plugin"
+      },
+      {
+        "command": "cclocal.addMarketplace",
+        "title": "CCLocal: Add Plugin Marketplace"
+      },
+      {
+        "command": "cclocal.listPlugins",
+        "title": "CCLocal: List Installed Plugins"
+      },
+      {
+        "command": "cclocal.pluginStats",
+        "title": "CCLocal: Show Plugin Statistics"
+      },
+      {
+        "command": "cclocal.switchSession",
+        "title": "CCLocal: Switch to Session"
+      },
+      {
+        "command": "cclocal.renameSession",
+        "title": "CCLocal: Rename Session"
+      },
+      {
+        "command": "cclocal.deleteSession",
+        "title": "CCLocal: Delete Session"
+      },
+      {
+        "command": "cclocal.forkSession",
+        "title": "CCLocal: Fork Session"
+      },
+      {
+        "command": "cclocal.searchSessions",
+        "title": "CCLocal: Search Sessions"
+      },
+      {
+        "command": "cclocal.clearSessionSearch",
+        "title": "CCLocal: Clear Session Search"
+      },
+      {
+        "command": "cclocal.generateSessionTitle",
+        "title": "CCLocal: Generate Session Title"
+      },
+      {
+        "command": "cclocal.sessionStats",
+        "title": "CCLocal: Show Session Statistics"
       }
     ],
     "menus": {
@@ -73,12 +267,66 @@
         {
           "command": "cclocal.newSession",
           "when": "view == cclocal.chatView",
-          "group": "navigation"
+          "group": "navigation@1"
         },
         {
           "command": "cclocal.clearChat",
           "when": "view == cclocal.chatView",
-          "group": "navigation"
+          "group": "navigation@2"
+        },
+        {
+          "command": "cclocal.openInPanel",
+          "when": "view == cclocal.chatView",
+          "group": "navigation@3"
+        },
+        {
+          "command": "cclocal.newConversation",
+          "when": "view == cclocal.sessions",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cclocal.searchSessions",
+          "when": "view == cclocal.sessions",
+          "group": "navigation@2"
+        },
+        {
+          "command": "cclocal.clearSessionSearch",
+          "when": "view == cclocal.sessions",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "cclocal.renameSession",
+          "when": "view == cclocal.sessions && viewItem =~ /session/",
+          "group": "1_modify@1"
+        },
+        {
+          "command": "cclocal.forkSession",
+          "when": "view == cclocal.sessions && viewItem =~ /session/",
+          "group": "1_modify@2"
+        },
+        {
+          "command": "cclocal.generateSessionTitle",
+          "when": "view == cclocal.sessions && viewItem =~ /session/",
+          "group": "1_modify@3"
+        },
+        {
+          "command": "cclocal.deleteSession",
+          "when": "view == cclocal.sessions && viewItem =~ /session/",
+          "group": "2_danger@1"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "cclocal.acceptEdit",
+          "when": "cclocal.viewingProposedDiff",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cclocal.rejectEdit",
+          "when": "cclocal.viewingProposedDiff",
+          "group": "navigation@2"
         }
       ],
       "editor/context": [
@@ -87,39 +335,496 @@
           "when": "editorHasSelection",
           "group": "cclocal"
         }
+      ],
+      "commandPalette": [
+        {
+          "command": "cclocal.insertAtMention",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "cclocal.acceptEdit",
+          "when": "cclocal.viewingProposedDiff"
+        },
+        {
+          "command": "cclocal.rejectEdit",
+          "when": "cclocal.viewingProposedDiff"
+        }
       ]
     },
+    "keybindings": [
+      {
+        "command": "cclocal.insertAtMention",
+        "key": "alt+k",
+        "mac": "alt+k",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "cclocal.focusInput",
+        "key": "ctrl+escape",
+        "mac": "cmd+escape",
+        "when": "editorTextFocus"
+      }
+    ],
     "configuration": {
       "title": "CCLocal",
       "properties": {
-        "cclocal.cclocalPath": {
+        "cclocal.forceLoginMethod": {
           "type": "string",
           "default": "",
-          "description": "cclocal 可执行文件的绝对路径（留空则从 PATH 中自动查找）"
+          "enum": ["", "claudeai", "console", "bedrock", "vertex", "custom"],
+          "enumDescriptions": [
+            "自动检测",
+            "Claude.ai OAuth（订阅用户）",
+            "API Key（控制台）",
+            "AWS Bedrock",
+            "Google Vertex AI",
+            "第三方 API"
+          ],
+          "description": "强制使用指定的登录方式"
+        },
+        "cclocal.forceLoginOrgUUID": {
+          "type": "string",
+          "default": "",
+          "description": "OAuth 组织 UUID（可选）"
+        },
+        "cclocal.disableLoginPrompt": {
+          "type": "boolean",
+          "default": false,
+          "description": "禁用登录提示"
+        },
+        "cclocal.environmentVariables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "value": { "type": "string" }
+            }
+          },
+          "default": [],
+          "description": "传递给 cclocal 进程的环境变量"
+        },
+        "cclocal.cclocalPath": {
+          "type": "string",
+          "default": "cclocal",
+          "description": "cclocal 可执行文件的绝对路径"
+        },
+        "cclocal.claudeProcessWrapper": {
+          "type": "string",
+          "default": "",
+          "description": "cclocal 进程包装命令"
+        },
+        "cclocal.initialPermissionMode": {
+          "type": "string",
+          "default": "default",
+          "enum": ["default", "acceptEdits", "plan", "bypassPermissions"],
+          "enumDescriptions": [
+            "默认模式：危险操作需确认",
+            "自动接受文件编辑，命令需确认",
+            "计划模式：不执行任何操作",
+            "自动接受所有操作（危险）"
+          ],
+          "description": "初始权限模式"
+        },
+        "cclocal.allowDangerouslySkipPermissions": {
+          "type": "boolean",
+          "default": false,
+          "description": "允许危险地跳过所有权限检查"
+        },
+        "cclocal.permissionRules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tool": { "type": "string" },
+              "behavior": { "type": "string", "enum": ["allow", "deny", "ask"] }
+            }
+          },
+          "default": [],
+          "description": "自定义权限规则"
+        },
+        "cclocal.respectGitIgnore": {
+          "type": "boolean",
+          "default": true,
+          "description": "文件选择器是否遵循 .gitignore"
+        },
+        "cclocal.fileSuggestion": {
+          "type": "object",
+          "properties": {
+            "maxResults": { "type": "number" },
+            "includePatterns": { "type": "array", "items": { "type": "string" } },
+            "excludePatterns": { "type": "array", "items": { "type": "string" } }
+          },
+          "description": "@ 引用的文件建议配置"
+        },
+        "cclocal.autosave": {
+          "type": "boolean",
+          "default": false,
+          "description": "编辑文件前自动保存"
+        },
+        "cclocal.claudeMdExcludes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "要排除的 CLAUDE.md 文件模式"
+        },
+        "cclocal.enableAllProjectMcpServers": {
+          "type": "boolean",
+          "default": false,
+          "description": "启用所有项目级 MCP 服务器"
+        },
+        "cclocal.approvedMcpServers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "已批准的 MCP 服务器列表"
+        },
+        "cclocal.allowedMcpServers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "允许的 MCP 服务器白名单"
+        },
+        "cclocal.deniedMcpServers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "拒绝的 MCP 服务器黑名单"
+        },
+        "cclocal.disableAllHooks": {
+          "type": "boolean",
+          "default": false,
+          "description": "禁用所有 hooks"
+        },
+        "cclocal.allowedHttpHookUrls": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "允许的 HTTP hook URL 白名单"
+        },
+        "cclocal.httpHookAllowedEnvVars": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "HTTP hooks 中允许的环境变量"
+        },
+        "cclocal.allowedCommands": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "允许的命令 hook 白名单"
+        },
+        "cclocal.allowedEnvVars": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "允许传递给 hooks 的环境变量"
+        },
+        "cclocal.hooks": {
+          "type": "object",
+          "description": "Hook 配置（按类型）",
+          "properties": {
+            "PreToolUse": {
+              "type": "array",
+              "description": "工具执行前的 hooks",
+              "items": { "$ref": "#/definitions/hookDefinition" }
+            },
+            "PostToolUse": {
+              "type": "array",
+              "description": "工具执行后的 hooks",
+              "items": { "$ref": "#/definitions/hookDefinition" }
+            },
+            "SessionStart": {
+              "type": "array",
+              "description": "会话开始的 hooks",
+              "items": { "$ref": "#/definitions/hookDefinition" }
+            },
+            "SessionEnd": {
+              "type": "array",
+              "description": "会话结束的 hooks",
+              "items": { "$ref": "#/definitions/hookDefinition" }
+            },
+            "FileWrite": {
+              "type": "array",
+              "description": "文件写入的 hooks",
+              "items": { "$ref": "#/definitions/hookDefinition" }
+            },
+            "FileEdit": {
+              "type": "array",
+              "description": "文件编辑的 hooks",
+              "items": { "$ref": "#/definitions/hookDefinition" }
+            },
+            "BashExecution": {
+              "type": "array",
+              "description": "Bash 命令执行的 hooks",
+              "items": { "$ref": "#/definitions/hookDefinition" }
+            },
+            "Error": {
+              "type": "array",
+              "description": "错误发生的 hooks",
+              "items": { "$ref": "#/definitions/hookDefinition" }
+            }
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": { "$ref": "#/definitions/hookDefinition" }
+          },
+          "default": {}
+        },
+        "cclocal.enabledPlugins": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "default": {},
+          "description": "已启用的插件"
+        },
+        "cclocal.extraKnownMarketplaces": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "额外的已知市场 URL"
+        },
+        "cclocal.strictKnownMarketplaces": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "严格的市场白名单"
+        },
+        "cclocal.blockedMarketplaces": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "阻止的市场 URL"
+        },
+        "cclocal.useTerminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "使用集成终端执行 bash 命令"
+        },
+        "cclocal.useCtrlEnterToSend": {
+          "type": "boolean",
+          "default": false,
+          "description": "使用 Ctrl+Enter 发送消息"
+        },
+        "cclocal.preferredLocation": {
+          "type": "string",
+          "default": "sidebar",
+          "enum": ["sidebar", "panel"],
+          "description": "CCLocal 的默认显示位置"
+        },
+        "cclocal.hideOnboarding": {
+          "type": "boolean",
+          "default": false,
+          "description": "隐藏欢迎引导"
+        },
+        "cclocal.enableNewConversationShortcut": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用新会话快捷键"
+        },
+        "cclocal.usePythonEnvironment": {
+          "type": "boolean",
+          "default": true,
+          "description": "自动激活 Python 环境"
+        },
+        "cclocal.showTerminalBanner": {
+          "type": "boolean",
+          "default": true,
+          "description": "显示终端使用横幅"
         },
         "cclocal.model": {
           "type": "string",
           "default": "",
-          "description": "指定使用的模型（留空则使用默认模型）"
+          "description": "默认模型"
         },
-        "cclocal.mode": {
+        "cclocal.availableModels": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "可用模型列表"
+        },
+        "cclocal.modelOverrides": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "default": {},
+          "description": "模型 ID 覆盖"
+        },
+        "cclocal.alwaysThinkingEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "始终启用思考模式"
+        },
+        "cclocal.fastMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "快速模式"
+        },
+        "cclocal.maxThinkingTokens": {
+          "type": "number",
+          "default": 16000,
+          "description": "思考最大 token 数"
+        },
+        "cclocal.language": {
           "type": "string",
-          "default": "websocket",
-          "enum": ["websocket", "cli"],
-          "description": "与 CCLocal 的通信模式：websocket（连接到嵌入式服务器）或 cli（spawn cclocal --print 子进程）"
+          "default": "en",
+          "description": "界面语言"
+        },
+        "cclocal.spinnerTipsEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "显示加载提示"
+        },
+        "cclocal.syntaxHighlightingDisabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "禁用语法高亮"
+        },
+        "cclocal.terminalTitleFromRename": {
+          "type": "boolean",
+          "default": true,
+          "description": "从会话重命名更新终端标题"
+        },
+        "cclocal.includeCoAuthoredBy": {
+          "type": "boolean",
+          "default": true,
+          "description": "在提交中包含 Co-Authored-By"
+        },
+        "cclocal.includeGitInstructions": {
+          "type": "boolean",
+          "default": true,
+          "description": "在上下文中包含 git 说明"
+        },
+        "cclocal.skipWebFetchPreflight": {
+          "type": "boolean",
+          "default": false,
+          "description": "跳过 WebFetch 预检"
+        },
+        "cclocal.feedbackSurveyRate": {
+          "type": "number",
+          "default": 0.1,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "反馈调查频率"
+        },
+        "cclocal.proactiveSuggestions": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用主动建议"
+        },
+        "cclocal.bedrockRegion": {
+          "type": "string",
+          "default": "us-east-1",
+          "description": "AWS Bedrock 区域"
+        },
+        "cclocal.vertexProjectId": {
+          "type": "string",
+          "default": "",
+          "description": "GCP Vertex AI 项目 ID"
+        },
+        "cclocal.cleanupPeriodDays": {
+          "type": "number",
+          "default": 30,
+          "description": "数据清理周期（天）"
+        },
+        "cclocal.attribution": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用使用归因"
+        }
+      },
+      "definitions": {
+        "hookDefinition": {
+          "type": "object",
+          "properties": {
+            "matcher": {
+              "type": "string",
+              "description": "匹配工具名称或事件的正则表达式"
+            },
+            "hooks": {
+              "type": "array",
+              "description": "要执行的 handlers",
+              "items": { "$ref": "#/definitions/hookHandler" }
+            },
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "是否启用此 hook"
+            },
+            "description": {
+              "type": "string",
+              "description": "Hook 描述"
+            }
+          },
+          "required": ["hooks"]
+        },
+        "hookHandler": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["command", "http", "function"],
+              "description": "Handler 类型"
+            },
+            "command": {
+              "type": "string",
+              "description": "要执行的命令（type=command 时）"
+            },
+            "url": {
+              "type": "string",
+              "description": "HTTP URL（type=http 时）"
+            },
+            "method": {
+              "type": "string",
+              "enum": ["GET", "POST", "PUT", "DELETE"],
+              "default": "POST",
+              "description": "HTTP 方法"
+            },
+            "headers": {
+              "type": "object",
+              "additionalProperties": { "type": "string" },
+              "description": "HTTP 请求头"
+            },
+            "handler": {
+              "type": "string",
+              "description": "函数名称（type=function 时）"
+            },
+            "timeout": {
+              "type": "number",
+              "default": 30000,
+              "description": "超时时间（毫秒）"
+            },
+            "env": {
+              "type": "object",
+              "additionalProperties": { "type": "string" },
+              "description": "环境变量（type=command 时）"
+            }
+          },
+          "required": ["type"]
         }
       }
-    }
+    },
+    "jsonValidation": [
+      {
+        "fileMatch": "cclocal-settings.json",
+        "url": "./cclocal-settings.schema.json"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "build": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "package": "vsce package",
-    "typecheck": "tsc --noEmit"
+    "build": "npm run build:ext && npm run build:webview",
+    "build:ext": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "build:webview": "cd webview && npm run build",
+    "watch": "npm run watch:ext & npm run watch:webview",
+    "watch:ext": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --watch",
+    "watch:webview": "cd webview && npm run dev",
+    "package": "vsce package --no-dependencies",
+    "typecheck": "tsc --noEmit",
+    "dev": "npm run build:webview && npm run watch:ext",
+    "clean": "rm -rf out webview-dist"
   },
   "dependencies": {
     "@cclocal/shared": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {
@@ -127,6 +832,7 @@
     "@types/vscode": "^1.85.0",
     "@types/ws": "^8.5.0",
     "@vscode/vsce": "^2.24.0",
+    "esbuild": "^0.21.0",
     "typescript": "^5.3.0"
   }
 }
