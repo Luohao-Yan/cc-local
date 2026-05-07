@@ -16,7 +16,8 @@
     "ai",
     "assistant",
     "cclocal",
-    "llm"
+    "llm",
+    "mcp"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -25,6 +26,7 @@
   "engines": {
     "vscode": "^1.85.0"
   },
+  "icon": "images/icon.svg",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -66,6 +68,46 @@
       {
         "command": "cclocal.sendSelectedCode",
         "title": "CCLocal: 发送选中代码到 CCLocal"
+      },
+      {
+        "command": "cclocal.openInPanel",
+        "title": "CCLocal: Open in New Tab",
+        "icon": "$(empty-window)"
+      },
+      {
+        "command": "cclocal.openInSidebar",
+        "title": "CCLocal: Open in Side Bar",
+        "icon": "$(layout-sidebar-left)"
+      },
+      {
+        "command": "cclocal.focusInput",
+        "title": "CCLocal: Focus Input"
+      },
+      {
+        "command": "cclocal.insertAtMention",
+        "title": "CCLocal: Insert @-Mention Reference"
+      },
+      {
+        "command": "cclocal.toggleDictation",
+        "title": "CCLocal: Toggle Voice Dictation"
+      },
+      {
+        "command": "cclocal.openSettings",
+        "title": "CCLocal: Open Settings"
+      },
+      {
+        "command": "cclocal.showLogs",
+        "title": "CCLocal: Show Logs"
+      },
+      {
+        "command": "cclocal.acceptEdit",
+        "title": "CCLocal: Accept Proposed Changes",
+        "icon": "$(check)"
+      },
+      {
+        "command": "cclocal.rejectEdit",
+        "title": "CCLocal: Reject Proposed Changes",
+        "icon": "$(discard)"
       }
     ],
     "menus": {
@@ -73,12 +115,29 @@
         {
           "command": "cclocal.newSession",
           "when": "view == cclocal.chatView",
-          "group": "navigation"
+          "group": "navigation@1"
         },
         {
           "command": "cclocal.clearChat",
           "when": "view == cclocal.chatView",
-          "group": "navigation"
+          "group": "navigation@2"
+        },
+        {
+          "command": "cclocal.openInPanel",
+          "when": "view == cclocal.chatView",
+          "group": "navigation@3"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "cclocal.acceptEdit",
+          "when": "cclocal.viewingProposedDiff",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cclocal.rejectEdit",
+          "when": "cclocal.viewingProposedDiff",
+          "group": "navigation@2"
         }
       ],
       "editor/context": [
@@ -87,14 +146,42 @@
           "when": "editorHasSelection",
           "group": "cclocal"
         }
+      ],
+      "commandPalette": [
+        {
+          "command": "cclocal.insertAtMention",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "cclocal.acceptEdit",
+          "when": "cclocal.viewingProposedDiff"
+        },
+        {
+          "command": "cclocal.rejectEdit",
+          "when": "cclocal.viewingProposedDiff"
+        }
       ]
     },
+    "keybindings": [
+      {
+        "command": "cclocal.insertAtMention",
+        "key": "alt+k",
+        "mac": "alt+k",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "cclocal.focusInput",
+        "key": "ctrl+escape",
+        "mac": "cmd+escape",
+        "when": "editorTextFocus"
+      }
+    ],
     "configuration": {
       "title": "CCLocal",
       "properties": {
         "cclocal.cclocalPath": {
           "type": "string",
-          "default": "",
+          "default": "cclocal",
           "description": "cclocal 可执行文件的绝对路径（留空则从 PATH 中自动查找）"
         },
         "cclocal.model": {
@@ -104,22 +191,104 @@
         },
         "cclocal.mode": {
           "type": "string",
-          "default": "websocket",
-          "enum": ["websocket", "cli"],
-          "description": "与 CCLocal 的通信模式：websocket（连接到嵌入式服务器）或 cli（spawn cclocal --print 子进程）"
+          "default": "ide",
+          "enum": ["ide", "cli", "websocket"],
+          "enumDescriptions": [
+            "IDE 集成模式（lock 文件发现）",
+            "CLI 进程模式（spawn cclocal --print）",
+            "WebSocket 模式（连接到嵌入式服务器）"
+          ],
+          "description": "与 CCLocal 的通信模式"
+        },
+        "cclocal.environmentVariables": {
+          "type": "object",
+          "default": {},
+          "description": "传递给 cclocal 进程的环境变量",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "cclocal.initialPermissionMode": {
+          "type": "string",
+          "default": "default",
+          "enum": ["default", "acceptEdits", "plan", "bypassPermissions"],
+          "enumDescriptions": [
+            "默认模式：危险操作需确认",
+            "自动接受文件编辑，命令需确认",
+            "计划模式：不执行任何操作",
+            "自动接受所有操作（危险）"
+          ],
+          "description": "初始权限模式"
+        },
+        "cclocal.useTerminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "使用集成终端执行 Bash 命令"
+        },
+        "cclocal.autosave": {
+          "type": "boolean",
+          "default": false,
+          "description": "在编辑文件前自动保存"
+        },
+        "cclocal.useCtrlEnterToSend": {
+          "type": "boolean",
+          "default": false,
+          "description": "使用 Ctrl+Enter 发送消息（Enter 换行）"
+        },
+        "cclocal.preferredLocation": {
+          "type": "string",
+          "default": "sidebar",
+          "enum": ["sidebar", "panel"],
+          "enumDescriptions": [
+            "侧边栏",
+            "编辑器面板（新标签页）"
+          ],
+          "description": "CCLocal 的默认显示位置"
+        },
+        "cclocal.hideOnboarding": {
+          "type": "boolean",
+          "default": false,
+          "description": "隐藏欢迎引导"
+        },
+        "cclocal.showToolInput": {
+          "type": "boolean",
+          "default": true,
+          "description": "显示工具调用的输入参数"
+        },
+        "cclocal.maxMessageHistory": {
+          "type": "number",
+          "default": 100,
+          "description": "消息历史最大保留数量"
+        },
+        "cclocal.enableThinkingDisplay": {
+          "type": "boolean",
+          "default": true,
+          "description": "显示 AI 思考过程"
+        },
+        "cclocal.thinkingExpandedByDefault": {
+          "type": "boolean",
+          "default": false,
+          "description": "默认展开思考内容"
         }
       }
     }
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "build": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "package": "vsce package",
-    "typecheck": "tsc --noEmit"
+    "build": "npm run build:ext && npm run build:webview",
+    "build:ext": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "build:webview": "cd webview && npm run build",
+    "watch": "npm run watch:ext & npm run watch:webview",
+    "watch:ext": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --watch",
+    "watch:webview": "cd webview && npm run dev",
+    "package": "vsce package --no-dependencies",
+    "typecheck": "tsc --noEmit",
+    "dev": "npm run build:webview && npm run watch:ext",
+    "clean": "rm -rf out webview-dist"
   },
   "dependencies": {
     "@cclocal/shared": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {
@@ -127,6 +296,7 @@
     "@types/vscode": "^1.85.0",
     "@types/ws": "^8.5.0",
     "@vscode/vsce": "^2.24.0",
+    "esbuild": "^0.21.0",
     "typescript": "^5.3.0"
   }
 }
