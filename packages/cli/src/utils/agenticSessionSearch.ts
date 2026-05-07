@@ -2,7 +2,7 @@ import type { LogOption, SerializedMessage } from '../types/logs.js'
 import { count } from './array.js'
 import { logForDebugging } from './debug.js'
 import { getLogDisplayTitle, logError } from './log.js'
-import { getSmallFastModel } from './model/model.js'
+import { withSmallFastModel } from './model/model.js'
 import { isLiteLog, loadFullLog } from './sessionStorage.js'
 import { sideQuery } from './sideQuery.js'
 import { jsonParse } from './slowOperations.js'
@@ -257,8 +257,8 @@ Find the sessions that are most relevant to this query.`
     `Agentic search prompt (first 500 chars): ${userMessage.slice(0, 500)}...`,
   )
 
-  try {
-    const model = getSmallFastModel()
+  // 使用 withSmallFastModel 自动保存和恢复活动模型
+  return withSmallFastModel(async (model) => {
     logForDebugging(`Agentic search using model: ${model}`)
 
     const response = await sideQuery({
@@ -299,9 +299,5 @@ Find the sessions that are most relevant to this query.`
     )
 
     return relevantLogs
-  } catch (error) {
-    logError(error as Error)
-    logForDebugging(`Agentic search error: ${error}`)
-    return []
-  }
+  })
 }

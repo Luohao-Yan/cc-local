@@ -24,6 +24,9 @@ let savedBaseUrl: string | undefined = undefined
 let savedApiKey: string | undefined = undefined
 let hasSavedEnv = false
 
+/** Nesting level for withActiveModel calls (for concurrency safety) */
+let activeModelNestingLevel = 0
+
 // ===== Public API =====
 
 /**
@@ -31,8 +34,8 @@ let hasSavedEnv = false
  * Saves the original env vars on the first call so they can be restored later.
  */
 export function setActiveModel(model: ResolvedModel): void {
-  // Save originals on first call only
-  if (!hasSavedEnv) {
+  // Save originals on first call only (not in nested context)
+  if (!hasSavedEnv && activeModelNestingLevel === 0) {
     savedBaseUrl = process.env.ANTHROPIC_BASE_URL
     savedApiKey = process.env.ANTHROPIC_API_KEY
     hasSavedEnv = true
@@ -67,6 +70,54 @@ export function getActiveResolvedModel(): ResolvedModel | null {
 }
 
 /**
+ * Create a snapshot of the current active model state for later restoration.
+ * Returns null if no model is active, or a ResolvedModel copy if one is.
+ * Use this with restoreActiveModel for safe model switching.
+ */
+export function snapshotActiveModel(): ResolvedModel | null {
+  if (activeModel === null) return null
+  // Return a shallow copy to prevent mutation issues
+  return { ...activeModel }
+}
+
+/**
+ * Restore the active model from a snapshot.
+ * Pass null to clear the active model (restore first-party defaults).
+ */
+export function restoreActiveModel(snapshot: ResolvedModel | null): void {
+  if (snapshot === null) {
+    clearActiveModel()
+  } else {
+    setActiveModel(snapshot)
+  }
+}
+
+/**
+ * Execute a callback with a temporary active model, automatically restoring
+ * the previous state afterward. This is the safe way to temporarily switch
+ * models (e.g., for buddy/smallFastModel queries).
+ *
+ * @param model The model to temporarily activate
+ * @param callback The async function to execute with the temporary model
+ * @returns The result of the callback
+ */
+export async function withActiveModel<T>(
+  model: ResolvedModel,
+  callback: () => Promise<T>,
+): Promise<T> {
+  const snapshot = snapshotActiveModel()
+  activeModelNestingLevel++
+
+  try {
+    setActiveModel(model)
+    return await callback()
+  } finally {
+    activeModelNestingLevel--
+    restoreActiveModel(snapshot)
+  }
+}
+
+/**
  * Get the API format for the currently active model.
  * Returns 'anthropic' when no custom model is active (first-party default).
  */
@@ -89,8 +140,8 @@ export function getActiveProviderType(): APIProvider {
 export function clearActiveModel(): void {
   activeModel = null
 
-  // Restore original env vars
-  if (hasSavedEnv) {
+  // Only restore original env vars if not in a nested context
+  if (hasSavedEnv && activeModelNestingLevel === 0) {
     if (savedBaseUrl === undefined) {
       delete process.env.ANTHROPIC_BASE_URL
     } else {

@@ -28,12 +28,82 @@ import { LIGHTNING_BOLT } from '../../constants/figures.js'
 import { isModelAllowed } from './modelAllowlist.js'
 import { type ModelAlias, isModelAlias } from './aliases.js'
 import { capitalize } from '../stringUtils.js'
-import { resolveMultiModelConfig, getConfiguredModels, activateModel } from './multiModel.js'
+import {
+  resolveMultiModelConfig,
+  getConfiguredModels,
+  activateModel,
+  type ResolvedModel,
+} from './multiModel.js'
 import { getModelConfig } from './modelConfig.js'
+import {
+  getActiveResolvedModel,
+  setActiveModel,
+  clearActiveModel,
+  snapshotActiveModel,
+  restoreActiveModel,
+} from './activeModelContext.js'
 
 export type ModelShortName = string
 export type ModelName = string
 export type ModelSetting = ModelName | ModelAlias | null
+
+/**
+ * 获取 smallFastModel 的模型名，不修改环境变量。
+ *
+ * 与 getSmallFastModel() 不同，此函数只返回模型名，
+ * 不会激活模型（修改全局环境变量）。
+ * 用于需要获取模型名但不需要立即调用 API 的场景。
+ */
+export function getSmallFastModelName(): ModelName {
+  const config = getModelConfig()
+  if (config.smallFastModel) {
+    // 只解析，不激活
+    const models = getConfiguredModels()
+    const input = config.smallFastModel.trim().toLowerCase()
+
+    // 第一优先级：按别名匹配
+    let matched = models.find(m =>
+      m.aliases.some(alias => alias.toLowerCase() === input),
+    )
+
+    // 第二优先级：按模型 ID（key）匹配
+    if (!matched) {
+      matched = models.find(m => m.modelKey.toLowerCase() === input)
+    }
+
+    // 第三优先级：按模型显示名称匹配
+    if (!matched) {
+      matched = models.find(m => m.modelName.toLowerCase() === input)
+    }
+
+    if (matched) {
+      return matched.modelKey
+    }
+  }
+
+  // 回退逻辑（与 getSmallFastModel 相同，但不修改环境变量）
+  if (process.env.ANTHROPIC_SMALL_FAST_MODEL) {
+    return process.env.ANTHROPIC_SMALL_FAST_MODEL
+  }
+
+  const hasJsonProviders = Object.keys(config.providers ?? {}).length > 0
+  if (hasJsonProviders) {
+    // 使用主模型名，不激活
+    const mainModel = getMainLoopModel()
+    return mainModel
+  }
+
+  if (
+    process.env.ANTHROPIC_BASE_URL &&
+    !process.env.ANTHROPIC_BASE_URL.includes('anthropic.com')
+  ) {
+    const envModel = process.env.ANTHROPIC_MODEL
+    if (envModel) return envModel
+    return getMainLoopModel()
+  }
+
+  return getMainLoopModel()
+}
 
 export function getSmallFastModel(): ModelName {
   // 1. 从 JSON 配置读取 smallFastModel
@@ -80,6 +150,77 @@ export function getSmallFastModel(): ModelName {
   //    硬编码的 claude-haiku-4-5-20251001 仅适用于 Anthropic 官方 API，
   //    第三方 API 不识别该模型名会导致 400 错误。
   return getMainLoopModel()
+}
+
+/**
+ * 在 smallFastModel 上下文中执行回调，自动保存和恢复活动模型。
+ *
+ * 此函数解决了 getSmallFastModel() 修改全局环境变量的问题：
+ * 1. 保存当前活动模型快照
+ * 2. 激活 smallFastModel（修改环境变量）
+ * 3. 执行回调
+ * 4. 恢复之前的活动模型
+ *
+ * 使用嵌套计数器确保并发调用安全。
+ *
+ * @param callback 要执行的异步回调，接收模型名作为参数
+ * @returns 回调的返回值
+ *
+ * @example
+ * const result = await withSmallFastModel(async (model) => {
+ *   return await queryModelWithoutStreaming({ model, ... })
+ * })
+ */
+export async function withSmallFastModel<T>(
+  callback: (model: ModelName) => Promise<T>,
+): Promise<T> {
+  // 保存当前活动模型的快照（用于恢复）
+  const snapshot = snapshotActiveModel()
+
+  try {
+    // 激活 smallFastModel（会修改环境变量）
+    const model = getSmallFastModel()
+    return await callback(model)
+  } finally {
+    // 恢复之前的活动模型
+    restoreActiveModel(snapshot)
+  }
+}
+
+/**
+ * 获取 smallFastModel 对应的 ResolvedModel 对象。
+ * 用于需要访问完整模型配置（baseUrl, apiKey 等）的场景。
+ */
+export function getSmallFastModelResolved(): ResolvedModel | null {
+  const config = getModelConfig()
+  if (config.smallFastModel) {
+    const models = getConfiguredModels()
+    const input = config.smallFastModel.trim().toLowerCase()
+
+    // 第一优先级：按别名匹配
+    let matched = models.find(m =>
+      m.aliases.some(alias => alias.toLowerCase() === input),
+    )
+
+    // 第二优先级：按模型 ID（key）匹配
+    if (!matched) {
+      matched = models.find(m => m.modelKey.toLowerCase() === input)
+    }
+
+    // 第三优先级：按模型显示名称匹配
+    if (!matched) {
+      matched = models.find(m => m.modelName.toLowerCase() === input)
+    }
+
+    if (matched) {
+      return matched
+    }
+  }
+
+  // 回退：返回主模型的 ResolvedModel
+  const mainModel = getMainLoopModel()
+  const models = getConfiguredModels()
+  return models.find(m => m.modelKey === mainModel) ?? null
 }
 
 export function isNonCustomOpusModel(model: ModelName): boolean {

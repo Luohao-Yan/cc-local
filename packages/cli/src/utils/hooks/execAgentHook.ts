@@ -17,6 +17,7 @@ import { errorMessage } from '../errors.js'
 import type { HookResult } from '../hooks.js'
 import { createUserMessage, handleMessageFromStream } from '../messages.js'
 import { getSmallFastModel } from '../model/model.js'
+import { snapshotActiveModel, restoreActiveModel } from '../model/activeModelContext.js'
 import { hasPermissionsToUseTool } from '../permissions/permissions.js'
 import { getAgentTranscriptPath, getTranscriptPath } from '../sessionStorage.js'
 import type { AgentHook } from '../settings/types.js'
@@ -55,6 +56,9 @@ export async function execAgentHook(
     ? getAgentTranscriptPath(toolUseContext.agentId)
     : getTranscriptPath()
   const hookStartTime = Date.now()
+  // 保存当前活动模型，以便在 hook 执行完成后恢复
+  // 重要：getSmallFastModel() 会修改全局环境变量
+  const savedModel = snapshotActiveModel()
   try {
     // Replace $ARGUMENTS with the JSON input
     const processedPrompt = addArgumentsToPrompt(hook.prompt, jsonInput)
@@ -115,6 +119,11 @@ When done, return your result using the ${SYNTHETIC_OUTPUT_TOOL_NAME} tool with:
 - ok: false with reason if the condition is not met`,
       ])
 
+      // 保存当前活动模型，以便在 hook 执行完成后恢复
+      // 重要：getSmallFastModel() 会修改全局环境变量
+      const savedModel = snapshotActiveModel()
+
+      // 获取模型名（可能修改环境变量）
       const model = hook.model ?? getSmallFastModel()
       const MAX_AGENT_TURNS = 50
 
@@ -335,5 +344,8 @@ When done, return your result using the ${SYNTHETIC_OUTPUT_TOOL_NAME} tool with:
         exitCode: 1,
       }),
     }
+  } finally {
+    // 恢复之前的活动模型，避免污染后续 API 调用
+    restoreActiveModel(savedModel)
   }
 }

@@ -6,7 +6,7 @@ import {
   createUserMessage,
   getAssistantMessageText,
 } from '../utils/messages.js'
-import { getSmallFastModel } from '../utils/model/model.js'
+import { withSmallFastModel } from '../utils/model/model.js'
 import { asSystemPrompt } from '../utils/systemPromptType.js'
 import { queryModelWithoutStreaming } from './api/claude.js'
 import { getSessionMemoryContent } from './SessionMemory/sessionMemoryUtils.js'
@@ -34,41 +34,44 @@ export async function generateAwaySummary(
     return null
   }
 
-  try {
-    const memory = await getSessionMemoryContent()
-    const recent = messages.slice(-RECENT_MESSAGE_WINDOW)
-    recent.push(createUserMessage({ content: buildAwaySummaryPrompt(memory) }))
-    const response = await queryModelWithoutStreaming({
-      messages: recent,
-      systemPrompt: asSystemPrompt([]),
-      thinkingConfig: { type: 'disabled' },
-      tools: [],
-      signal,
-      options: {
-        getToolPermissionContext: async () => getEmptyToolPermissionContext(),
-        model: getSmallFastModel(),
-        toolChoice: undefined,
-        isNonInteractiveSession: false,
-        hasAppendSystemPrompt: false,
-        agents: [],
-        querySource: 'away_summary',
-        mcpTools: [],
-        skipCacheWrite: true,
-      },
-    })
+  // 使用 withSmallFastModel 自动保存和恢复活动模型
+  return withSmallFastModel(async (model) => {
+    try {
+      const memory = await getSessionMemoryContent()
+      const recent = messages.slice(-RECENT_MESSAGE_WINDOW)
+      recent.push(createUserMessage({ content: buildAwaySummaryPrompt(memory) }))
+      const response = await queryModelWithoutStreaming({
+        messages: recent,
+        systemPrompt: asSystemPrompt([]),
+        thinkingConfig: { type: 'disabled' },
+        tools: [],
+        signal,
+        options: {
+          getToolPermissionContext: async () => getEmptyToolPermissionContext(),
+          model,
+          toolChoice: undefined,
+          isNonInteractiveSession: false,
+          hasAppendSystemPrompt: false,
+          agents: [],
+          querySource: 'away_summary',
+          mcpTools: [],
+          skipCacheWrite: true,
+        },
+      })
 
-    if (response.isApiErrorMessage) {
-      logForDebugging(
-        `[awaySummary] API error: ${getAssistantMessageText(response)}`,
-      )
+      if (response.isApiErrorMessage) {
+        logForDebugging(
+          `[awaySummary] API error: ${getAssistantMessageText(response)}`,
+        )
+        return null
+      }
+      return getAssistantMessageText(response)
+    } catch (err) {
+      if (err instanceof APIUserAbortError || signal.aborted) {
+        return null
+      }
+      logForDebugging(`[awaySummary] generation failed: ${err}`)
       return null
     }
-    return getAssistantMessageText(response)
-  } catch (err) {
-    if (err instanceof APIUserAbortError || signal.aborted) {
-      return null
-    }
-    logForDebugging(`[awaySummary] generation failed: ${err}`)
-    return null
-  }
+  })
 }

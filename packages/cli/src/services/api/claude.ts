@@ -26,6 +26,7 @@ import {
   isFirstPartyAnthropicBaseUrl,
 } from '../../utils/model/providers.js'
 import { getActiveAPIFormat, getActiveResolvedModel } from '../../utils/model/activeModelContext.js'
+import { withSmallFastModel } from '../../utils/model/model.js'
 import { convertAnthropicToOpenAI } from '../../utils/model/formatConverter.js'
 import { createOpenAIChatCompletionStream, isOpenAIThinkingEnabled } from './openaiClient.js'
 import { adaptOpenAIStreamToAnthropic } from './openaiStreamAdapter.js'
@@ -3292,43 +3293,47 @@ export async function queryHaiku({
   signal: AbortSignal
   options: HaikuOptions
 }): Promise<AssistantMessage> {
-  const result = await withVCR(
-    [
-      createUserMessage({
-        content: systemPrompt.map(text => ({ type: 'text', text })),
-      }),
-      createUserMessage({
-        content: userPrompt,
-      }),
-    ],
-    async () => {
-      const messages = [
+  // 使用 withSmallFastModel 自动保存和恢复活动模型
+  // 重要：getSmallFastModel() 会修改全局环境变量，必须恢复
+  return withSmallFastModel(async (model) => {
+    const result = await withVCR(
+      [
+        createUserMessage({
+          content: systemPrompt.map(text => ({ type: 'text', text })),
+        }),
         createUserMessage({
           content: userPrompt,
         }),
-      ]
+      ],
+      async () => {
+        const messages = [
+          createUserMessage({
+            content: userPrompt,
+          }),
+        ]
 
-      const result = await queryModelWithoutStreaming({
-        messages,
-        systemPrompt,
-        thinkingConfig: { type: 'disabled' },
-        tools: [],
-        signal,
-        options: {
-          ...options,
-          model: getSmallFastModel(),
-          enablePromptCaching: options.enablePromptCaching ?? false,
-          outputFormat,
-          async getToolPermissionContext() {
-            return getEmptyToolPermissionContext()
+        const result = await queryModelWithoutStreaming({
+          messages,
+          systemPrompt,
+          thinkingConfig: { type: 'disabled' },
+          tools: [],
+          signal,
+          options: {
+            ...options,
+            model,
+            enablePromptCaching: options.enablePromptCaching ?? false,
+            outputFormat,
+            async getToolPermissionContext() {
+              return getEmptyToolPermissionContext()
+            },
           },
-        },
-      })
-      return [result]
-    },
-  )
-  // We don't use streaming for Haiku so this is safe
-  return result[0]! as AssistantMessage
+        })
+        return [result]
+      },
+    )
+    // We don't use streaming for Haiku so this is safe
+    return result[0]! as AssistantMessage
+  })
 }
 
 type QueryWithModelOptions = Omit<Options, 'getToolPermissionContext'>
