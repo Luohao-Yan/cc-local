@@ -1,0 +1,224 @@
+/* Design Tokens - Matching Official Extension */
+:root {
+  /* Brand Colors */
+  --app-claude-orange: #d97757;
+  --app-claude-clay-button-orange: #c6613f;
+  --app-claude-ivory: #faf9f5;
+  --app-claude-slate: #141413;
+  --app-claude-purple: #7c5cfc;
+  --app-claude-blue: #4fa3e0;
+
+  /* Spacing */
+  --app-spacing-xs: 2px;
+  --app-spacing-sm: 4px;
+  --app-spacing-md: 8px;
+  --app-spacing-lg: 12px;
+  --app-spacing-xl: 16px;
+  --app-spacing-2xl: 24px;
+
+  /* Corner Radius */
+  --app-radius-xs: 2px;
+  --app-radius-sm: 4px;
+  --app-radius-md: 6px;
+  --app-radius-lg: 8px;
+  --app-radius-xl: 10px;
+  --app-radius-full: 9999px;
+
+  /* Typography */
+  --app-font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  --app-font-size-xs: 10px;
+  --app-font-size-sm: 11px;
+  --app-font-size-md: 13px;
+  --app-font-size-lg: 14px;
+  --app-font-size-xl: 15px;
+  --app-font-weight-normal: 400;
+  --app-font-weight-medium: 500;
+  --app-font-weight-semibold: 600;
+  --app-font-weight-bold: 700;
+  --app-line-height: 1.5;
+  --app-line-height-tight: 1.3;
+
+  /* Monospace */
+  --app-monospace-font-family: var(--vscode-editor-font-family, 'Cascadia Code', 'Fira Code', Consolas, monospace);
+  --app-monospace-font-size: var(--vscode-editor-font-size, 12px);
+
+  /* Animation */
+  --app-transition-fast: 0.1s ease;
+  --app-transition-medium: 0.2s ease;
+  --app-transition-slow: 0.3s ease;
+
+  /* Z-index Layers */
+  --app-z-base: 0;
+  --app-z-dropdown: 100;
+  --app-z-sticky: 500;
+  --app-z-modal: 1000;
+  --app-z-popover: 1500;
+  --app-z-toast: 2000;
+  --app-z-tooltip: 3000;
+
+  /* Shadows */
+  --app-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15);
+  --app-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --app-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.25);
+
+  /* VS Code Mappings */
+  --app-background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  --app-foreground: var(--vscode-foreground);
+  --app-foreground-dim: var(--vscode-descriptionForeground);
+  --app-input-background: var(--vscode-input-background);
+  --app-input-foreground: var(--vscode-input-foreground);
+  --app-input-border: var(--vscode-input-border);
+  --app-input-placeholder: var(--vscode-input-placeholderForeground);
+  --app-button-background: var(--vscode-button-background);
+  --app-button-foreground: var(--vscode-button-foreground);
+  --app-button-hover-background: var(--vscode-button-hoverBackground);
+  --app-button-secondary-background: var(--vscode-button-secondaryBackground);
+  --app-button-secondary-foreground: var(--vscode-button-secondaryForeground);
+  --app-button-secondary-hover-background: var(--vscode-button-secondaryHoverBackground);
+  --app-link-foreground: var(--vscode-textLink-foreground);
+  --app-link-active-foreground: var(--vscode-textLink-activeForeground);
+  --app-code-background: var(--vscode-textCodeBlock-background, rgba(255, 255, 255, 0.05));
+  --app-border: var(--vscode-widget-border);
+  --app-focus-border: var(--vscode-focusBorder);
+  --app-error-foreground: var(--vscode-errorForeground);
+  --app-warning-foreground: var(--vscode-editorWarning-foreground);
+  --app-success-foreground: var(--vscode-testing-iconPassed, #3fb950);
+  --app-info-foreground: var(--vscode-editorInfo-foreground, #3794ff);
+
+  /* Status Colors */
+  --app-status-idle: var(--vscode-descriptionForeground);
+  --app-status-running: var(--vscode-progressBar-background, #0e70c4);
+  --app-status-connected: #3fb950;
+  --app-status-error: #f14c4c;
+  --app-status-warning: #cca700;
+  --app-status-busy: var(--vscode-list-highlightForeground, #d97757);
+  --app-status-pending: var(--vscode-list-deemphasizedForeground, #888);
+
+  /* Message Colors */
+  --app-user-message-bg: var(--vscode-button-background);
+  --app-user-message-fg: var(--vscode-button-foreground);
+  --app-assistant-message-bg: transparent;
+  --app-assistant-message-fg: var(--vscode-foreground);
+  --app-tool-card-bg: var(--vscode-editorWidget-background);
+  --app-tool-card-border: var(--vscode-widget-border);
+  --app-tool-name-fg: #c98aff;
+
+  /* Badge */
+  --app-badge-background: var(--vscode-activityBarBadge-background, #4d4d4d);
+  --app-badge-foreground: var(--vscode-activityBarBadge-foreground, #fff);
+
+  /* Banner */
+  --app-banner-tint: rgba(217, 119, 87, 0.1);
+
+  /* Diff Colors */
+  --app-diff-addition-foreground: var(--vscode-diffEditor-insertedTextForeground, #3fb950);
+  --app-diff-deletion-foreground: var(--vscode-diffEditor-removedTextForeground, #f14c4c);
+
+  /* Editor */
+  --app-editor-highlight-background: var(--vscode-editor-findMatchHighlightBackground, rgba(255, 196, 0, 0.2));
+
+  /* Ghost Button */
+  --app-ghost-button-hover-background: rgba(255, 255, 255, 0.08);
+
+  /* Header */
+  --app-header-background: var(--vscode-sideBarSectionHeader-background, rgba(0, 0, 0, 0.2));
+
+  /* Mention Chip */
+  --app-mention-chip-background: rgba(217, 119, 87, 0.15);
+  --app-mention-chip-foreground: #d97757;
+
+  /* Menu System */
+  --app-menu-background: var(--vscode-menu-background, #252526);
+  --app-menu-border: var(--vscode-menu-border, #454545);
+  --app-menu-foreground: var(--vscode-menu-foreground, #cccccc);
+  --app-menu-selection-background: var(--vscode-menu-selectionBackground, #04395e);
+  --app-menu-selection-foreground: var(--vscode-menu-selectionForeground, #fff);
+
+  /* Modal */
+  --app-modal-background: var(--vscode-editorWidget-background, #252526);
+
+  /* Progress Bar */
+  --app-progressbar-background: var(--vscode-progressBar-background, #d97757);
+  --app-progressbar-border: transparent;
+
+  /* Spinner */
+  --app-spinner-foreground: var(--vscode-foreground, #cccccc);
+
+  /* Splitter */
+  --app-splitter-background: var(--vscode-widget-border, #3a3a3a);
+  --app-splitter-hover-background: var(--vscode-focusBorder, #d97757);
+
+  /* Tool */
+  --app-tool-background: var(--vscode-textBlockQuote-background, rgba(0, 0, 0, 0.2));
+
+  /* Borders */
+  --app-transparent-inner-border: rgba(255, 255, 255, 0.08);
+  --app-widget-border: var(--vscode-widget-border, #3a3a3a);
+}
+
+/* Dark theme adjustments */
+.vscode-dark:root {
+  --app-code-background: rgba(255, 255, 255, 0.07);
+  --app-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --app-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --app-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Light theme adjustments */
+.vscode-light:root {
+  --app-code-background: rgba(0, 0, 0, 0.05);
+}
+
+/* High contrast adjustments */
+.vscode-high-contrast:root {
+  --app-border: var(--vscode-contrastBorder);
+  --app-focus-border: var(--vscode-contrastActiveBorder);
+}
+
+/* Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--app-font-family);
+  background: var(--app-background);
+  color: var(--app-foreground);
+  line-height: 1.5;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode-scrollbarSlider-hoverBackground);
+}
+
+/* Focus */
+:focus {
+  outline: 2px solid var(--app-link-foreground);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}

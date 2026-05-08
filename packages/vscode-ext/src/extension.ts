@@ -9,12 +9,14 @@
  *  - MCP server management with approval and auth
  *  - Plugin system with marketplace and trust
  *  - Complete session management with search, fork, tree view
+ *  - Remote development support with SSH and teleport
  */
 
 import * as vscode from 'vscode'
 import * as path from 'path'
 import { CliViewProvider } from './CliViewProvider.js'
 import { WsViewProvider } from './WsViewProvider.js'
+import { IdeViewProvider } from './IdeViewProvider.js'
 import { ServerManager } from './ServerManager.js'
 import { HookManager, getHookManager, disposeHookManager } from './hooks/index.js'
 import { ConfigurationManager } from './ConfigurationManager.js'
@@ -31,6 +33,22 @@ import {
   registerCommandPalette,
   type CommandDependencies,
 } from './commands/index.js'
+import {
+  RemoteSessionManager,
+  getRemoteSessionManager,
+  disposeRemoteSessionManager,
+  RemotePanelProvider,
+} from './remote/index.js'
+import { registerClaudeFS } from './ClaudeFS.js'
+import { getChannelManager, disposeChannelManager } from './ChannelManager.js'
+import { CclocalUriHandler } from './UriHandler.js'
+import { FocusManager } from './commands/FocusManager.js'
+import { EditorPanelProvider } from './EditorPanelProvider.js'
+import { WorktreeManager } from './worktree/WorktreeManager.js'
+import { ChromeMCPProvider } from './mcp/builtin/ChromeMCPProvider.js'
+import { JupyterMCPProvider } from './mcp/builtin/JupyterMCPProvider.js'
+import { checkForUpdates } from './commands/UpdateCommand.js'
+import { installPlugin } from './commands/InstallPluginCommand.js'
 
 // Global instances
 let hookManager: HookManager | undefined
@@ -39,6 +57,9 @@ let outputChannel: vscode.LogOutputChannel | undefined
 let mcpManager: MCPManager | undefined
 let pluginManager: PluginManager | undefined
 let sessionManager: SessionManager | undefined
+let remoteManager: RemoteSessionManager | undefined
+let ideViewProvider: IdeViewProvider | undefined
+let editorPanelProvider: EditorPanelProvider | undefined
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   console.log('CCLocal extension activating...')
@@ -46,6 +67,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // Create output channel for logging
   outputChannel = vscode.window.createOutputChannel('CCLocal', { log: true })
   context.subscriptions.push(outputChannel)
+
+  // Register ClaudeFS (virtual filesystem for diff editing)
+  const claudeFS = registerClaudeFS(context)
+
+  // Register URI handler (for OAuth callbacks + deep links)
+  const uriHandler = new CclocalUriHandler(outputChannel)
+  context.subscriptions.push(uriHandler)
+  context.subscriptions.push(vscode.window.registerUriHandler(uriHandler))
+
+  // Initialize focus manager
+  const focusManager = new FocusManager()
+
+  // Initialize channel manager
+  getChannelManager(outputChannel)
 
   // Initialize configuration manager
   configManager = new ConfigurationManager(context)
@@ -153,13 +188,181 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // Register plugin-related commands
   registerPluginCommands(context, pluginManager)
 
-  const config = vscode.workspace.getConfiguration('cclocal')
-  const mode: string = config.get('mode') || 'websocket'
+  // Initialize remote session manager
+  remoteManager = getRemoteSessionManager(context, outputChannel)
+  context.subscriptions.push(remoteManager)
 
-  // 统一的消息发送接口，两种模式共享 sendSelectedCode 命令
+  // Register remote-related commands
+  registerRemoteCommands(context, remoteManager)
+
+  const config = vscode.workspace.getConfiguration('cclocal')
+  const mode: string = config.get('mode') || 'ide'
+
+  // 统一的消息发送接口，三种模式共享 sendSelectedCode 命令
   let sendMessage: (text: string) => Promise<void> | void
 
-  if (mode === 'cli') {
+  if (mode === 'ide') {
+    // 官方推荐模式：IdeServer + CliProcess
+    ideViewProvider = new IdeViewProvider(context.extensionUri, outputChannel!, claudeFS.diffManager)
+
+    sendMessage = (text: string) => ideViewProvider!.sendMessage(text)
+
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(
+        IdeViewProvider.viewType,
+        ideViewProvider,
+        { webviewOptions: { retainContextWhenHidden: true } },
+      ),
+    )
+
+    // Connect focus manager to the sidebar view once resolved
+    ideViewProvider.onDidResolve((view) => focusManager.setSidebarView(view))
+
+    // 启动 IdeServer + CliProcess
+    await ideViewProvider.start()
+    ideViewProvider.registerListeners(context)
+
+    // ─── Secondary sidebar (P1-1) ────────────────────────────────────────────
+    // Re-use the same IdeViewProvider class but with a different view ID
+    // The webview content is identical — it shares the same CLI session
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(
+        'cclocal.chatViewSecondary',
+        {
+          resolveWebviewView(webviewView) {
+            webviewView.webview.options = { enableScripts: true, localResourceRoots: [context.extensionUri] }
+            // Delegate to a lightweight clone — same HTML as primary
+            const nonce = require('crypto').randomBytes(16).toString('base64')
+            const webviewDistUri = (fileName: string) =>
+              webviewView.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'webview-dist', fileName))
+            const scriptUri = webviewDistUri('index.js')
+            const styleUri = webviewDistUri('index.css')
+            webviewView.webview.html = `<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}' https:; script-src 'nonce-${nonce}'; img-src 'self' data: https:; font-src 'self' https:;"/>
+<link rel="stylesheet" type="text/css" href="${styleUri}" nonce="${nonce}"></head>
+<body><div id="root"></div><script nonce="${nonce}" src="${scriptUri}"></script></body></html>`
+            // Route messages to/from the primary provider
+            webviewView.webview.onDidReceiveMessage(msg => {
+              ideViewProvider?.handleWebviewMessage(msg)
+            })
+          },
+        },
+        { webviewOptions: { retainContextWhenHidden: true } },
+      ),
+    )
+
+    // ─── Sessions sidebar (P1-2) — Tree-based view ──────────────────────────
+    // The SessionTreeProvider is already registered above as a tree data provider.
+    // For the webview version (cclocal.sessionsList), we just show a simple list.
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(
+        'cclocal.sessionsList',
+        {
+          resolveWebviewView(webviewView) {
+            webviewView.webview.options = { enableScripts: true, localResourceRoots: [context.extensionUri] }
+            webviewView.webview.html = `<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"/>
+<style>
+  body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); padding: 8px; margin: 0; }
+  .session-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--vscode-widget-border, #3a3a3a); }
+  .session-item:hover { background: var(--vscode-list-hoverBackground); }
+  .session-title { font-weight: 600; }
+  .session-meta { font-size: 0.85em; color: var(--vscode-descriptionForeground); }
+  .empty { padding: 20px; text-align: center; color: var(--vscode-descriptionForeground); }
+  input { width: 100%; padding: 6px 8px; margin-bottom: 8px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 3px; }
+</style></head><body>
+<input type="text" id="search" placeholder="搜索会话..." />
+<div id="list"></div>
+<script>
+const vscode = acquireVsCodeApi();
+const search = document.getElementById('search');
+const list = document.getElementById('list');
+let sessions = [];
+
+window.addEventListener('message', e => {
+  const msg = e.data;
+  if (msg.type === 'sessionsList') sessions = msg.sessions || [];
+  render();
+});
+
+search.addEventListener('input', () => render());
+
+function render() {
+  const q = search.value.toLowerCase();
+  const filtered = sessions.filter(s => (s.title || '').toLowerCase().includes(q) || s.id.includes(q));
+  if (!filtered.length) { list.innerHTML = '<div class="empty">无匹配会话</div>'; return; }
+  list.innerHTML = filtered.map(s => '<div class="session-item" data-id="' + s.id + '"><div class="session-title">' + (s.title || 'Untitled') + '</div><div class="session-meta">' + new Date(s.updatedAt || s.createdAt).toLocaleString('zh-CN') + ' · ' + (s.numTurns || 0) + ' turns</div></div>').join('');
+  list.querySelectorAll('.session-item').forEach(el => {
+    el.addEventListener('click', () => {
+      vscode.postMessage({ type: 'resumeSession', sessionId: el.dataset.id });
+    });
+  });
+}
+
+vscode.postMessage({ type: 'listSessions' });
+</script></body></html>`
+            webviewView.webview.onDidReceiveMessage(msg => {
+              if (msg.type === 'listSessions') {
+                sessionManager?.listSessions().then(sessions => {
+                  webviewView.webview.postMessage({ type: 'sessionsList', sessions })
+                })
+              } else if (msg.type === 'resumeSession') {
+                sessionManager?.resumeSession(msg.sessionId)
+              }
+            })
+          },
+        },
+        { webviewOptions: { retainContextWhenHidden: true } },
+      ),
+    )
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand('cclocal.newSession', () => {
+        void vscode.commands.executeCommand('cclocal.chatView.focus')
+        ideViewProvider!.handleCommand('newSession')
+      }),
+    )
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand('cclocal.clearChat', () => {
+        ideViewProvider!.handleCommand('clearChat')
+      }),
+    )
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand('cclocal.stopGeneration', () => {
+        ideViewProvider!.handleCommand('stopGeneration')
+      }),
+    )
+
+    // ─── Editor panel (P0-1) ────────────────────────────────────────────────
+    editorPanelProvider = new EditorPanelProvider(context.extensionUri, outputChannel!)
+
+    // When editor panel is created, register its webview as a broadcast target
+    // so all CLI messages are forwarded to it alongside the sidebar
+    editorPanelProvider.setOnDidCreatePanel((webview) => {
+      ideViewProvider!.addBroadcastTarget(webview)
+    })
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand('cclocal.editor.open', () => {
+        editorPanelProvider!.openInEditorTab()
+      }),
+    )
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand('cclocal.window.open', () => {
+        editorPanelProvider!.openInNewWindow()
+      }),
+    )
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand('cclocal.primaryEditor.open', () => {
+        editorPanelProvider!.openInEditorTab()
+      }),
+    )
+  } else if (mode === 'cli') {
     const provider = new CliViewProvider(context.extensionUri)
 
     sendMessage = (text: string) => provider.sendMessage(text)
@@ -250,14 +453,177 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
   )
 
+  // ─── Focus/Blur commands (P0-5) ─────────────────────────────────────────────
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.focus', () => {
+      focusManager.focus()
+    }),
+  )
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.blur', () => {
+      focusManager.blur()
+    }),
+  )
+
+  // ─── @-mention editor command (P0-4) ────────────────────────────────────────
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.edit.insertAtMention', () => {
+      const editor = vscode.window.activeTextEditor
+      if (!editor) return
+
+      // Insert @ at cursor position in the active editor
+      const position = editor.selection.active
+      editor.edit(editBuilder => {
+        editBuilder.insert(position, '@')
+      })
+
+      // Then focus the sidebar to show suggestions
+      focusManager.focus()
+    }),
+  )
+
+  // ─── Context Keys (P1-8) ────────────────────────────────────────────────────
+  void vscode.commands.executeCommand('setContext', 'cclocal.viewingProposedDiff', false)
+  void vscode.commands.executeCommand('setContext', 'cclocal.createWorktreeEnabled', true)
+  void vscode.commands.executeCommand('setContext', 'cclocal.primaryEditorEnabled', mode !== 'ide')
+  void vscode.commands.executeCommand('setContext', 'cclocal.updateSupported', true)
+  void vscode.commands.executeCommand('setContext', 'cclocal.sideBarActive', false)
+  void vscode.commands.executeCommand('setContext', 'cclocal.sessionsListEnabled', true)
+  void vscode.commands.executeCommand('setContext', 'cclocal.enableNewConversationShortcut',
+    config.get<boolean>('enableNewConversationShortcut') ?? false)
+  // Detect secondary sidebar support
+  const supportsSecondarySidebar = !!vscode.window.registerWebviewViewProvider
+  void vscode.commands.executeCommand('setContext', 'cclocal.doesNotSupportSecondarySidebar', !supportsSecondarySidebar)
+
+  // ─── Open Last command (P0-5) ───────────────────────────────────────────────
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.editor.openLast', async () => {
+      if (!sessionManager) {
+        vscode.window.showWarningMessage('Session manager not available')
+        return
+      }
+      const sessions = await sessionManager.listSessions()
+      if (sessions.length === 0) {
+        vscode.window.showInformationMessage('No previous conversations found')
+        return
+      }
+      // Resume the most recent session
+      const latest = sessions.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0]
+      if (latest?.id) {
+        await sessionManager.resumeSession(latest.id)
+        focusManager.focus()
+      }
+    }),
+  )
+
+  // ─── Terminal mode commands (P0-5) ──────────────────────────────────────────
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.terminal.open', () => {
+      const terminal = vscode.window.createTerminal('CCLocal')
+      terminal.sendText('cclocal')
+      terminal.show()
+    }),
+  )
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.terminal.open.keyboard', () => {
+      const terminal = vscode.window.createTerminal('CCLocal')
+      terminal.sendText('cclocal')
+      terminal.show()
+    }),
+  )
+
+  // ─── Walkthrough command (P1-3 placeholder) ─────────────────────────────────
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.openWalkthrough', () => {
+      void vscode.commands.executeCommand('workbench.action.openWalkthrough', 'cclocal.cclocal-walkthrough')
+    }),
+  )
+
+  // ─── Chat new command (for keybinding) ──────────────────────────────────────
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.chat.new', () => {
+      if (ideViewProvider) {
+        void vscode.commands.executeCommand('cclocal.chatView.focus')
+        ideViewProvider.handleCommand('newSession')
+      }
+    }),
+  )
+
+  // ─── Worktree manager (P2-1) ────────────────────────────────────────────────
+  const worktreeManager = new WorktreeManager(outputChannel!)
+  context.subscriptions.push(worktreeManager)
+
+  // Replace the placeholder worktree command with the real implementation
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.createWorktree', async () => {
+      const branch = await vscode.window.showInputBox({
+        prompt: 'Branch name for worktree',
+        placeHolder: 'my-feature-branch',
+      })
+      if (!branch) return
+      await worktreeManager.createWorktree(branch)
+    }),
+  )
+
+  // ─── Built-in MCP providers (P2-2, P2-3) ───────────────────────────────────
+  const chromeMCP = new ChromeMCPProvider(outputChannel!)
+  const jupyterMCP = new JupyterMCPProvider(outputChannel!)
+  context.subscriptions.push(chromeMCP, jupyterMCP)
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.mcp.ensureChromeEnabled', () => {
+      void chromeMCP.enable()
+    }),
+  )
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.mcp.disableChrome', () => {
+      void chromeMCP.disable()
+    }),
+  )
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.mcp.enableJupyter', () => {
+      void jupyterMCP.enable()
+    }),
+  )
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.mcp.disableJupyter', () => {
+      void jupyterMCP.disable()
+    }),
+  )
+
+  // ─── Update & InstallPlugin commands (P2-5, P2-6) ───────────────────────
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.update', () => {
+      void checkForUpdates(context, outputChannel!)
+    }),
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.installPlugin', () => {
+      if (pluginManager) {
+        void installPlugin(pluginManager, outputChannel!)
+      } else {
+        vscode.window.showWarningMessage('CCLocal: Plugin manager not available')
+      }
+    }),
+  )
+
   console.log('CCLocal extension activated')
 }
 
 export function deactivate(): void {
+  // 停止 IdeViewProvider
+  ideViewProvider?.stop()
+
+  // 销毁编辑器面板
+  editorPanelProvider = undefined
+
   disposeHookManager()
   disposeMCPManager()
   disposePluginManager()
   disposeSessionManager()
+  disposeRemoteSessionManager()
+  disposeChannelManager()
   outputChannel?.dispose()
 }
 
@@ -800,6 +1166,247 @@ function registerSessionCommands(
       if (stats.newestSession) {
         lines.push(`Newest: ${new Date(stats.newestSession).toLocaleString()}`)
       }
+
+      vscode.window.showInformationMessage(lines.join('\n'), { modal: true })
+    })
+  )
+}
+
+// ─── Remote Commands Registration ────────────────────────────────────────────
+
+function registerRemoteCommands(
+  context: vscode.ExtensionContext,
+  remoteManager: RemoteSessionManager
+): void {
+  const remotePanel = new RemotePanelProvider(remoteManager)
+  context.subscriptions.push(remotePanel)
+
+  // Show remote panel
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.showRemotePanel', () => {
+      remotePanel.show()
+    })
+  )
+
+  // Add SSH configuration
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.remote.addConfig', async () => {
+      const name = await vscode.window.showInputBox({
+        prompt: 'Enter connection name',
+        placeHolder: 'My Server',
+      })
+      if (!name) return
+
+      const host = await vscode.window.showInputBox({
+        prompt: 'Enter hostname or IP address',
+        placeHolder: 'example.com',
+      })
+      if (!host) return
+
+      const portStr = await vscode.window.showInputBox({
+        prompt: 'Enter SSH port',
+        placeHolder: '22',
+        value: '22',
+      })
+      const port = parseInt(portStr || '22', 10)
+
+      const user = await vscode.window.showInputBox({
+        prompt: 'Enter username',
+        placeHolder: 'user',
+      })
+      if (!user) return
+
+      const privateKey = await vscode.window.showInputBox({
+        prompt: 'Private key path (leave empty for SSH agent)',
+        placeHolder: '~/.ssh/id_rsa',
+      })
+
+      const { SSHConfig } = await import('./remote/types.js')
+      const config: SSHConfig = {
+        id: crypto.randomUUID(),
+        name,
+        host,
+        port,
+        user,
+        privateKey: privateKey || undefined,
+        agentForwarding: true,
+      }
+
+      await remoteManager.addConfiguration(config)
+      vscode.window.showInformationMessage(`CCLocal: Added SSH configuration "${name}"`)
+    })
+  )
+
+  // Connect to remote
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.remote.connect', async () => {
+      const configs = remoteManager.getConfigurations()
+      if (configs.length === 0) {
+        vscode.window.showWarningMessage('CCLocal: No SSH configurations. Add one first.')
+        return
+      }
+
+      const selected = await vscode.window.showQuickPick(
+        configs.map(c => ({
+          label: c.name,
+          description: `${c.user}@${c.host}:${c.port}`,
+          config: c,
+        })),
+        { placeHolder: 'Select a remote to connect' }
+      )
+
+      if (selected) {
+        try {
+          await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Connecting to ${selected.label}...`,
+              cancellable: false,
+            },
+            () => remoteManager.connect({ config: selected.config })
+          )
+          vscode.window.showInformationMessage(`CCLocal: Connected to ${selected.label}`)
+        } catch (error) {
+          vscode.window.showErrorMessage(`Failed to connect: ${error}`)
+        }
+      }
+    })
+  )
+
+  // Disconnect from remote
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.remote.disconnect', async () => {
+      const sessions = remoteManager.getConnectedSessions()
+      if (sessions.length === 0) {
+        vscode.window.showInformationMessage('CCLocal: No active remote connections')
+        return
+      }
+
+      const selected = await vscode.window.showQuickPick(
+        sessions.map(s => ({
+          label: s.name,
+          description: `${s.status} | ${s.workingDirectory}`,
+          sessionId: s.id,
+        })),
+        { placeHolder: 'Select a connection to disconnect' }
+      )
+
+      if (selected) {
+        await remoteManager.disconnect(selected.sessionId)
+        vscode.window.showInformationMessage(`CCLocal: Disconnected from ${selected.label}`)
+      }
+    })
+  )
+
+  // Teleport session to remote
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.remote.teleport', async () => {
+      const remotes = remoteManager.getConnectedSessions()
+      if (remotes.length === 0) {
+        vscode.window.showWarningMessage('CCLocal: No active remote connections')
+        return
+      }
+
+      const selected = await vscode.window.showQuickPick(
+        remotes.map(r => ({
+          label: r.name,
+          description: `${r.status} | Sessions: ${r.sessionCount}`,
+          remoteId: r.id,
+        })),
+        { placeHolder: 'Select remote to teleport to' }
+      )
+
+      if (selected) {
+        const sessionId = sessionManager?.getActiveSessionId()
+        if (!sessionId) {
+          vscode.window.showWarningMessage('CCLocal: No active session to teleport')
+          return
+        }
+
+        try {
+          await remoteManager.teleport(sessionId, selected.remoteId)
+          vscode.window.showInformationMessage('CCLocal: Session teleported successfully')
+        } catch (error) {
+          vscode.window.showErrorMessage(`Teleport failed: ${error}`)
+        }
+      }
+    })
+  )
+
+  // Execute command on remote
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.remote.execute', async () => {
+      const sessions = remoteManager.getConnectedSessions()
+      if (sessions.length === 0) {
+        vscode.window.showWarningMessage('CCLocal: No active remote connections')
+        return
+      }
+
+      const selected = await vscode.window.showQuickPick(
+        sessions.map(s => ({
+          label: s.name,
+          sessionId: s.id,
+        })),
+        { placeHolder: 'Select remote' }
+      )
+
+      if (selected) {
+        const command = await vscode.window.showInputBox({
+          prompt: 'Enter command to execute',
+          placeHolder: 'ls -la',
+        })
+
+        if (command) {
+          try {
+            const result = await remoteManager.executeCommand(selected.sessionId, command)
+            if (result.exitCode === 0) {
+              outputChannel?.info(`Command output:\n${result.stdout}`)
+              vscode.window.showInformationMessage('Command executed successfully')
+            } else {
+              vscode.window.showWarningMessage(`Command exited with code ${result.exitCode}`)
+            }
+          } catch (error) {
+            vscode.window.showErrorMessage(`Command failed: ${error}`)
+          }
+        }
+      }
+    })
+  )
+
+  // Remote stats
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.remote.stats', () => {
+      const stats = remoteManager.getStats()
+      const lines = [
+        `Configured: ${stats.totalConfigured}`,
+        `Connected: ${stats.totalConnected}`,
+        `Total Sessions: ${stats.totalSessions}`,
+        `Avg Latency: ${stats.averageLatency.toFixed(1)}ms`,
+        `Bandwidth: ${(stats.totalBandwidth / 1024).toFixed(1)} KB/s`,
+        '',
+        'By Status:',
+        ...Object.entries(stats.byStatus)
+          .filter(([, v]) => v > 0)
+          .map(([k, v]) => `  ${k}: ${v}`),
+      ]
+
+      vscode.window.showInformationMessage(lines.join('\n'), { modal: true })
+    })
+  )
+
+  // Check VS Code remote
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.remote.checkVSCode', () => {
+      const isRemote = RemoteSessionManager.isVSCodeRemote()
+      const authority = RemoteSessionManager.getVSCodeRemoteAuthority()
+
+      const lines = [
+        `VS Code Remote: ${isRemote ? 'Yes' : 'No'}`,
+        `Authority: ${authority || 'local'}`,
+        `SSH Remote: ${RemoteSessionManager.isSSHRemote() ? 'Yes' : 'No'}`,
+        `Dev Container: ${RemoteSessionManager.isDevContainer() ? 'Yes' : 'No'}`,
+        `WSL: ${RemoteSessionManager.isWSL() ? 'Yes' : 'No'}`,
+      ]
 
       vscode.window.showInformationMessage(lines.join('\n'), { modal: true })
     })

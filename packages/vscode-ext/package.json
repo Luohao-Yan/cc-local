@@ -1,5 +1,5 @@
 {
-  "name": "@cclocal/vscode-ext",
+  "name": "cclocal-vscode-ext",
   "displayName": "CCLocal - Claude Code Local",
   "description": "在 VSCode 侧边栏中使用 cclocal，支持第三方兼容 Anthropic API 的 LLM 服务",
   "version": "1.0.0",
@@ -19,21 +19,29 @@
     "llm"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onWebviewPanel:cclocalVSCodePanel"
   ],
-  "main": "./out/extension.js",
-  "engines": {
-    "vscode": "^1.85.0"
-  },
-  "icon": "images/icon.svg",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
         {
           "id": "cclocal-sidebar",
           "title": "CCLocal",
-          "icon": "images/icon.svg",
+          "icon": "images/icon.png",
           "visibility": "visible"
+        },
+        {
+          "id": "cclocal-sessions-sidebar",
+          "title": "CCLocal Sessions",
+          "icon": "$(history)"
+        }
+      ],
+      "secondarySidebar": [
+        {
+          "id": "cclocal-sidebar-secondary",
+          "title": "CCLocal",
+          "icon": "images/icon.png"
         }
       ]
     },
@@ -51,6 +59,22 @@
           "name": "Sessions",
           "icon": "$(history)",
           "contextualTitle": "CCLocal Sessions"
+        }
+      ],
+      "cclocal-sidebar-secondary": [
+        {
+          "type": "webview",
+          "id": "cclocal.chatViewSecondary",
+          "name": "CCLocal Chat",
+          "when": "!cclocal.doesNotSupportSecondarySidebar"
+        }
+      ],
+      "cclocal-sessions-sidebar": [
+        {
+          "type": "webview",
+          "id": "cclocal.sessionsList",
+          "name": "Sessions",
+          "when": "cclocal.sessionsListEnabled"
         }
       ]
     },
@@ -260,6 +284,147 @@
       {
         "command": "cclocal.sessionStats",
         "title": "CCLocal: Show Session Statistics"
+      },
+      {
+        "command": "cclocal.sendMessage",
+        "title": "CCLocal: Send Message"
+      },
+      {
+        "command": "cclocal.showRemotePanel",
+        "title": "CCLocal: Show Remote Panel",
+        "icon": "$(remote)"
+      },
+      {
+        "command": "cclocal.remote.addConfig",
+        "title": "CCLocal: Add Remote SSH Configuration",
+        "icon": "$(add)"
+      },
+      {
+        "command": "cclocal.remote.connect",
+        "title": "CCLocal: Connect to Remote Server",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "cclocal.remote.disconnect",
+        "title": "CCLocal: Disconnect from Remote Server",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "cclocal.remote.teleport",
+        "title": "CCLocal: Teleport Session to Remote",
+        "icon": "$(broadcast)"
+      },
+      {
+        "command": "cclocal.remote.stats",
+        "title": "CCLocal: Show Remote Connection Statistics"
+      },
+      {
+        "command": "cclocal.remote.execute",
+        "title": "CCLocal: Execute Command on Remote"
+      },
+      {
+        "command": "cclocal.remote.checkVSCode",
+        "title": "CCLocal: Check VS Code Remote Environment"
+      },
+      {
+        "command": "cclocal.newChannel",
+        "title": "CCLocal: New Conversation Tab",
+        "icon": "$(add)"
+      },
+      {
+        "command": "cclocal.closeChannel",
+        "title": "CCLocal: Close Conversation Tab"
+      },
+      {
+        "command": "cclocal.switchChannel",
+        "title": "CCLocal: Switch Conversation Tab"
+      },
+      {
+        "command": "cclocal.renameChannel",
+        "title": "CCLocal: Rename Conversation Tab"
+      },
+      {
+        "command": "cclocal.acceptProposedDiff",
+        "title": "CCLocal: Accept Proposed Changes",
+        "icon": "$(check)"
+      },
+      {
+        "command": "cclocal.rejectProposedDiff",
+        "title": "CCLocal: Reject Proposed Changes",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "cclocal.focus",
+        "title": "CCLocal: Focus Chat",
+        "icon": "$(symbol-color)"
+      },
+      {
+        "command": "cclocal.blur",
+        "title": "CCLocal: Blur Chat"
+      },
+      {
+        "command": "cclocal.editor.open",
+        "title": "CCLocal: Open in Editor Tab",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "cclocal.editor.openLast",
+        "title": "CCLocal: Open Last Conversation",
+        "icon": "$(history)"
+      },
+      {
+        "command": "cclocal.createWorktree",
+        "title": "CCLocal: Create Worktree",
+        "icon": "$(git-branch)"
+      },
+      {
+        "command": "cclocal.terminal.open",
+        "title": "CCLocal: Open in Terminal"
+      },
+      {
+        "command": "cclocal.terminal.open.keyboard",
+        "title": "CCLocal: Open Terminal (Keyboard Mode)"
+      },
+      {
+        "command": "cclocal.openWalkthrough",
+        "title": "CCLocal: Open Getting Started"
+      },
+      {
+        "command": "cclocal.window.open",
+        "title": "CCLocal: Open in New Window"
+      },
+      {
+        "command": "cclocal.primaryEditor.open",
+        "title": "CCLocal: Open as Primary Editor",
+        "enablement": "cclocal.primaryEditorEnabled"
+      },
+      {
+        "command": "cclocal.chat.new",
+        "title": "CCLocal: New Conversation"
+      },
+      {
+        "command": "cclocal.mcp.ensureChromeEnabled",
+        "title": "CCLocal: Enable Chrome MCP"
+      },
+      {
+        "command": "cclocal.mcp.disableChrome",
+        "title": "CCLocal: Disable Chrome MCP"
+      },
+      {
+        "command": "cclocal.mcp.enableJupyter",
+        "title": "CCLocal: Enable Jupyter MCP"
+      },
+      {
+        "command": "cclocal.mcp.disableJupyter",
+        "title": "CCLocal: Disable Jupyter MCP"
+      },
+      {
+        "command": "cclocal.update",
+        "title": "CCLocal: Check for Updates"
+      },
+      {
+        "command": "cclocal.installPlugin",
+        "title": "CCLocal: Install Plugin"
       }
     ],
     "menus": {
@@ -327,6 +492,16 @@
           "command": "cclocal.rejectEdit",
           "when": "cclocal.viewingProposedDiff",
           "group": "navigation@2"
+        },
+        {
+          "command": "cclocal.acceptProposedDiff",
+          "when": "cclocal.viewingProposedDiff",
+          "group": "navigation@3"
+        },
+        {
+          "command": "cclocal.rejectProposedDiff",
+          "when": "cclocal.viewingProposedDiff",
+          "group": "navigation@4"
         }
       ],
       "editor/context": [
@@ -353,21 +528,55 @@
     },
     "keybindings": [
       {
-        "command": "cclocal.insertAtMention",
+        "command": "cclocal.edit.insertAtMention",
         "key": "alt+k",
         "mac": "alt+k",
         "when": "editorTextFocus"
       },
       {
-        "command": "cclocal.focusInput",
+        "command": "cclocal.focus",
         "key": "ctrl+escape",
         "mac": "cmd+escape",
-        "when": "editorTextFocus"
+        "when": "editorFocus"
+      },
+      {
+        "command": "cclocal.blur",
+        "key": "ctrl+escape",
+        "mac": "cmd+escape",
+        "when": "cclocal.sideBarActive && !editorFocus"
+      },
+      {
+        "command": "cclocal.terminal.open.keyboard",
+        "key": "ctrl+escape",
+        "mac": "cmd+escape",
+        "when": "config.cclocal.useTerminal"
+      },
+      {
+        "command": "cclocal.editor.open",
+        "key": "ctrl+shift+escape",
+        "mac": "cmd+shift+escape"
+      },
+      {
+        "command": "cclocal.chat.new",
+        "key": "ctrl+n",
+        "mac": "cmd+n",
+        "when": "cclocal.enableNewConversationShortcut && cclocal.sideBarActive"
       }
     ],
     "configuration": {
       "title": "CCLocal",
       "properties": {
+        "cclocal.mode": {
+          "type": "string",
+          "default": "ide",
+          "enum": ["ide", "cli", "websocket"],
+          "enumDescriptions": [
+            "IDE 模式（推荐）：CLI 连接到扩展的 WebSocket 服务器",
+            "CLI 模式：每次对话启动新进程",
+            "WebSocket 模式：连接到外部 CCLocal 服务器"
+          ],
+          "description": "CCLocal 通信模式"
+        },
         "cclocal.forceLoginMethod": {
           "type": "string",
           "default": "",
@@ -807,7 +1016,67 @@
         "fileMatch": "cclocal-settings.json",
         "url": "./cclocal-settings.schema.json"
       }
+    ],
+    "uriHandler": [
+      {
+        "path": "cclocal"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "cclocal-walkthrough",
+        "title": "Get started with CCLocal",
+        "description": "Learn how to use CCLocal in VS Code",
+        "steps": [
+          {
+            "id": "welcome",
+            "title": "Welcome to CCLocal",
+            "description": "CCLocal helps you write, edit, and understand code right in VS Code.\n\n[Open CCLocal](command:cclocal.focus)",
+            "media": {
+              "image": "resources/walkthrough/welcome.png",
+              "altText": "Welcome to CCLocal"
+            },
+            "completionEvents": ["onCommand:cclocal.focus"]
+          },
+          {
+            "id": "open",
+            "title": "Open CCLocal",
+            "description": "Click the CCLocal icon in the sidebar, or press **Ctrl+Escape**.\n\n[Open Sidebar](command:cclocal.focus)",
+            "media": {
+              "image": "resources/walkthrough/click.png",
+              "altText": "Open CCLocal"
+            },
+            "completionEvents": ["onCommand:cclocal.focus"]
+          },
+          {
+            "id": "chat",
+            "title": "Start a conversation",
+            "description": "Type a message and press **Enter** to start chatting.\n\nUse **@** to mention files, **Shift+Enter** for a new line.\n\n[Start Chatting](command:cclocal.focus)",
+            "media": {
+              "image": "resources/walkthrough/chat.png",
+              "altText": "Chat with CCLocal"
+            },
+            "completionEvents": ["onCommand:cclocal.focus"]
+          },
+          {
+            "id": "sessions",
+            "title": "Resume past conversations",
+            "description": "Click the **Sessions** view or type **/resume** to browse past sessions.\n\n[View Sessions](command:cclocal.session.list)",
+            "media": {
+              "image": "resources/walkthrough/past.png",
+              "altText": "Past conversations"
+            },
+            "completionEvents": ["onCommand:cclocal.session.list"]
+          }
+        ]
+      }
     ]
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Untrusted workspaces are not supported"
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
@@ -817,10 +1086,14 @@
     "watch": "npm run watch:ext & npm run watch:webview",
     "watch:ext": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --watch",
     "watch:webview": "cd webview && npm run dev",
-    "package": "vsce package --no-dependencies",
+    "package": "vsce package --no-dependencies --allow-star-activation",
+    "package:bundle": "bun run ../../scripts/package-ext.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "dev": "npm run build:webview && npm run watch:ext",
-    "clean": "rm -rf out webview-dist"
+    "clean": "rm -rf out webview-dist bundle"
   },
   "dependencies": {
     "@cclocal/shared": "workspace:*",
@@ -833,6 +1106,7 @@
     "@types/ws": "^8.5.0",
     "@vscode/vsce": "^2.24.0",
     "esbuild": "^0.21.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
   }
 }

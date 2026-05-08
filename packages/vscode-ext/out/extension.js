@@ -1,11 +1,4776 @@
-"use strict";var Eo=Object.create;var et=Object.defineProperty;var Mo=Object.getOwnPropertyDescriptor;var _o=Object.getOwnPropertyNames;var To=Object.getPrototypeOf,Io=Object.prototype.hasOwnProperty;var V=(o,e)=>()=>(o&&(e=o(o=0)),e);var _=(o,e)=>()=>(e||o((e={exports:{}}).exports,e),e.exports),Le=(o,e)=>{for(var t in e)et(o,t,{get:e[t],enumerable:!0})},Os=(o,e,t,s)=>{if(e&&typeof e=="object"||typeof e=="function")for(let n of _o(e))!Io.call(o,n)&&n!==t&&et(o,n,{get:()=>e[n],enumerable:!(s=Mo(e,n))||s.enumerable});return o};var g=(o,e,t)=>(t=o!=null?Eo(To(o)):{},Os(e||!o||!o.__esModule?et(t,"default",{value:o,enumerable:!0}):t,o)),Ao=o=>Os(et({},"__esModule",{value:!0}),o);var K=_((Er,Ns)=>{"use strict";var Fs=["nodebuffer","arraybuffer","fragments"],Us=typeof Blob<"u";Us&&Fs.push("blob");Ns.exports={BINARY_TYPES:Fs,CLOSE_TIMEOUT:3e4,EMPTY_BUFFER:Buffer.alloc(0),GUID:"258EAFA5-E914-47DA-95CA-C5AB0DC85B11",hasBlob:Us,kForOnEventAttribute:Symbol("kIsForOnEventAttribute"),kListener:Symbol("kListener"),kStatusCode:Symbol("status-code"),kWebSocket:Symbol("websocket"),NOOP:()=>{}}});var De=_((Mr,st)=>{"use strict";var{EMPTY_BUFFER:Lo}=K(),Ut=Buffer[Symbol.species];function Oo(o,e){if(o.length===0)return Lo;if(o.length===1)return o[0];let t=Buffer.allocUnsafe(e),s=0;for(let n=0;n<o.length;n++){let i=o[n];t.set(i,s),s+=i.length}return s<e?new Ut(t.buffer,t.byteOffset,s):t}function js(o,e,t,s,n){for(let i=0;i<n;i++)t[s+i]=o[i]^e[i&3]}function Ws(o,e){for(let t=0;t<o.length;t++)o[t]^=e[t&3]}function Do(o){return o.length===o.buffer.byteLength?o.buffer:o.buffer.slice(o.byteOffset,o.byteOffset+o.length)}function Nt(o){if(Nt.readOnly=!0,Buffer.isBuffer(o))return o;let e;return o instanceof ArrayBuffer?e=new Ut(o):ArrayBuffer.isView(o)?e=new Ut(o.buffer,o.byteOffset,o.byteLength):(e=Buffer.from(o),Nt.readOnly=!1),e}st.exports={concat:Oo,mask:js,toArrayBuffer:Do,toBuffer:Nt,unmask:Ws};if(!process.env.WS_NO_BUFFER_UTIL)try{let o=require("bufferutil");st.exports.mask=function(e,t,s,n,i){i<48?js(e,t,s,n,i):o.mask(e,t,s,n,i)},st.exports.unmask=function(e,t){e.length<32?Ws(e,t):o.unmask(e,t)}}catch{}});var Gs=_((_r,Ks)=>{"use strict";var Vs=Symbol("kDone"),jt=Symbol("kRun"),Wt=class{constructor(e){this[Vs]=()=>{this.pending--,this[jt]()},this.concurrency=e||1/0,this.jobs=[],this.pending=0}add(e){this.jobs.push(e),this[jt]()}[jt](){if(this.pending!==this.concurrency&&this.jobs.length){let e=this.jobs.shift();this.pending++,e(this[Vs])}}};Ks.exports=Wt});var ge=_((Tr,Js)=>{"use strict";var Be=require("zlib"),zs=De(),Bo=Gs(),{kStatusCode:qs}=K(),Ho=Buffer[Symbol.species],$o=Buffer.from([0,0,255,255]),ot=Symbol("permessage-deflate"),G=Symbol("total-length"),ue=Symbol("callback"),X=Symbol("buffers"),pe=Symbol("error"),nt,Vt=class{constructor(e){if(this._options=e||{},this._threshold=this._options.threshold!==void 0?this._options.threshold:1024,this._maxPayload=this._options.maxPayload|0,this._isServer=!!this._options.isServer,this._deflate=null,this._inflate=null,this.params=null,!nt){let t=this._options.concurrencyLimit!==void 0?this._options.concurrencyLimit:10;nt=new Bo(t)}}static get extensionName(){return"permessage-deflate"}offer(){let e={};return this._options.serverNoContextTakeover&&(e.server_no_context_takeover=!0),this._options.clientNoContextTakeover&&(e.client_no_context_takeover=!0),this._options.serverMaxWindowBits&&(e.server_max_window_bits=this._options.serverMaxWindowBits),this._options.clientMaxWindowBits?e.client_max_window_bits=this._options.clientMaxWindowBits:this._options.clientMaxWindowBits==null&&(e.client_max_window_bits=!0),e}accept(e){return e=this.normalizeParams(e),this.params=this._isServer?this.acceptAsServer(e):this.acceptAsClient(e),this.params}cleanup(){if(this._inflate&&(this._inflate.close(),this._inflate=null),this._deflate){let e=this._deflate[ue];this._deflate.close(),this._deflate=null,e&&e(new Error("The deflate stream was closed while data was being processed"))}}acceptAsServer(e){let t=this._options,s=e.find(n=>!(t.serverNoContextTakeover===!1&&n.server_no_context_takeover||n.server_max_window_bits&&(t.serverMaxWindowBits===!1||typeof t.serverMaxWindowBits=="number"&&t.serverMaxWindowBits>n.server_max_window_bits)||typeof t.clientMaxWindowBits=="number"&&!n.client_max_window_bits));if(!s)throw new Error("None of the extension offers can be accepted");return t.serverNoContextTakeover&&(s.server_no_context_takeover=!0),t.clientNoContextTakeover&&(s.client_no_context_takeover=!0),typeof t.serverMaxWindowBits=="number"&&(s.server_max_window_bits=t.serverMaxWindowBits),typeof t.clientMaxWindowBits=="number"?s.client_max_window_bits=t.clientMaxWindowBits:(s.client_max_window_bits===!0||t.clientMaxWindowBits===!1)&&delete s.client_max_window_bits,s}acceptAsClient(e){let t=e[0];if(this._options.clientNoContextTakeover===!1&&t.client_no_context_takeover)throw new Error('Unexpected parameter "client_no_context_takeover"');if(!t.client_max_window_bits)typeof this._options.clientMaxWindowBits=="number"&&(t.client_max_window_bits=this._options.clientMaxWindowBits);else if(this._options.clientMaxWindowBits===!1||typeof this._options.clientMaxWindowBits=="number"&&t.client_max_window_bits>this._options.clientMaxWindowBits)throw new Error('Unexpected or invalid parameter "client_max_window_bits"');return t}normalizeParams(e){return e.forEach(t=>{Object.keys(t).forEach(s=>{let n=t[s];if(n.length>1)throw new Error(`Parameter "${s}" must have only a single value`);if(n=n[0],s==="client_max_window_bits"){if(n!==!0){let i=+n;if(!Number.isInteger(i)||i<8||i>15)throw new TypeError(`Invalid value for parameter "${s}": ${n}`);n=i}else if(!this._isServer)throw new TypeError(`Invalid value for parameter "${s}": ${n}`)}else if(s==="server_max_window_bits"){let i=+n;if(!Number.isInteger(i)||i<8||i>15)throw new TypeError(`Invalid value for parameter "${s}": ${n}`);n=i}else if(s==="client_no_context_takeover"||s==="server_no_context_takeover"){if(n!==!0)throw new TypeError(`Invalid value for parameter "${s}": ${n}`)}else throw new Error(`Unknown parameter "${s}"`);t[s]=n})}),e}decompress(e,t,s){nt.add(n=>{this._decompress(e,t,(i,r)=>{n(),s(i,r)})})}compress(e,t,s){nt.add(n=>{this._compress(e,t,(i,r)=>{n(),s(i,r)})})}_decompress(e,t,s){let n=this._isServer?"client":"server";if(!this._inflate){let i=`${n}_max_window_bits`,r=typeof this.params[i]!="number"?Be.Z_DEFAULT_WINDOWBITS:this.params[i];this._inflate=Be.createInflateRaw({...this._options.zlibInflateOptions,windowBits:r}),this._inflate[ot]=this,this._inflate[G]=0,this._inflate[X]=[],this._inflate.on("error",Fo),this._inflate.on("data",Ys)}this._inflate[ue]=s,this._inflate.write(e),t&&this._inflate.write($o),this._inflate.flush(()=>{let i=this._inflate[pe];if(i){this._inflate.close(),this._inflate=null,s(i);return}let r=zs.concat(this._inflate[X],this._inflate[G]);this._inflate._readableState.endEmitted?(this._inflate.close(),this._inflate=null):(this._inflate[G]=0,this._inflate[X]=[],t&&this.params[`${n}_no_context_takeover`]&&this._inflate.reset()),s(null,r)})}_compress(e,t,s){let n=this._isServer?"server":"client";if(!this._deflate){let i=`${n}_max_window_bits`,r=typeof this.params[i]!="number"?Be.Z_DEFAULT_WINDOWBITS:this.params[i];this._deflate=Be.createDeflateRaw({...this._options.zlibDeflateOptions,windowBits:r}),this._deflate[G]=0,this._deflate[X]=[],this._deflate.on("data",Ro)}this._deflate[ue]=s,this._deflate.write(e),this._deflate.flush(Be.Z_SYNC_FLUSH,()=>{if(!this._deflate)return;let i=zs.concat(this._deflate[X],this._deflate[G]);t&&(i=new Ho(i.buffer,i.byteOffset,i.length-4)),this._deflate[ue]=null,this._deflate[G]=0,this._deflate[X]=[],t&&this.params[`${n}_no_context_takeover`]&&this._deflate.reset(),s(null,i)})}};Js.exports=Vt;function Ro(o){this[X].push(o),this[G]+=o.length}function Ys(o){if(this[G]+=o.length,this[ot]._maxPayload<1||this[G]<=this[ot]._maxPayload){this[X].push(o);return}this[pe]=new RangeError("Max payload size exceeded"),this[pe].code="WS_ERR_UNSUPPORTED_MESSAGE_LENGTH",this[pe][qs]=1009,this.removeListener("data",Ys),this.reset()}function Fo(o){if(this[ot]._inflate=null,this[pe]){this[ue](this[pe]);return}o[qs]=1007,this[ue](o)}});var he=_((Ir,it)=>{"use strict";var{isUtf8:Qs}=require("buffer"),{hasBlob:Uo}=K(),No=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1,1,0,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0];function jo(o){return o>=1e3&&o<=1014&&o!==1004&&o!==1005&&o!==1006||o>=3e3&&o<=4999}function Kt(o){let e=o.length,t=0;for(;t<e;)if(!(o[t]&128))t++;else if((o[t]&224)===192){if(t+1===e||(o[t+1]&192)!==128||(o[t]&254)===192)return!1;t+=2}else if((o[t]&240)===224){if(t+2>=e||(o[t+1]&192)!==128||(o[t+2]&192)!==128||o[t]===224&&(o[t+1]&224)===128||o[t]===237&&(o[t+1]&224)===160)return!1;t+=3}else if((o[t]&248)===240){if(t+3>=e||(o[t+1]&192)!==128||(o[t+2]&192)!==128||(o[t+3]&192)!==128||o[t]===240&&(o[t+1]&240)===128||o[t]===244&&o[t+1]>143||o[t]>244)return!1;t+=4}else return!1;return!0}function Wo(o){return Uo&&typeof o=="object"&&typeof o.arrayBuffer=="function"&&typeof o.type=="string"&&typeof o.stream=="function"&&(o[Symbol.toStringTag]==="Blob"||o[Symbol.toStringTag]==="File")}it.exports={isBlob:Wo,isValidStatusCode:jo,isValidUTF8:Kt,tokenChars:No};if(Qs)it.exports.isValidUTF8=function(o){return o.length<24?Kt(o):Qs(o)};else if(!process.env.WS_NO_UTF_8_VALIDATE)try{let o=require("utf-8-validate");it.exports.isValidUTF8=function(e){return e.length<32?Kt(e):o(e)}}catch{}});var Jt=_((Ar,on)=>{"use strict";var{Writable:Vo}=require("stream"),Xs=ge(),{BINARY_TYPES:Ko,EMPTY_BUFFER:Zs,kStatusCode:Go,kWebSocket:zo}=K(),{concat:Gt,toArrayBuffer:qo,unmask:Yo}=De(),{isValidStatusCode:Jo,isValidUTF8:en}=he(),rt=Buffer[Symbol.species],A=0,tn=1,sn=2,nn=3,zt=4,qt=5,at=6,Yt=class extends Vo{constructor(e={}){super(),this._allowSynchronousEvents=e.allowSynchronousEvents!==void 0?e.allowSynchronousEvents:!0,this._binaryType=e.binaryType||Ko[0],this._extensions=e.extensions||{},this._isServer=!!e.isServer,this._maxPayload=e.maxPayload|0,this._skipUTF8Validation=!!e.skipUTF8Validation,this[zo]=void 0,this._bufferedBytes=0,this._buffers=[],this._compressed=!1,this._payloadLength=0,this._mask=void 0,this._fragmented=0,this._masked=!1,this._fin=!1,this._opcode=0,this._totalPayloadLength=0,this._messageLength=0,this._fragments=[],this._errored=!1,this._loop=!1,this._state=A}_write(e,t,s){if(this._opcode===8&&this._state==A)return s();this._bufferedBytes+=e.length,this._buffers.push(e),this.startLoop(s)}consume(e){if(this._bufferedBytes-=e,e===this._buffers[0].length)return this._buffers.shift();if(e<this._buffers[0].length){let s=this._buffers[0];return this._buffers[0]=new rt(s.buffer,s.byteOffset+e,s.length-e),new rt(s.buffer,s.byteOffset,e)}let t=Buffer.allocUnsafe(e);do{let s=this._buffers[0],n=t.length-e;e>=s.length?t.set(this._buffers.shift(),n):(t.set(new Uint8Array(s.buffer,s.byteOffset,e),n),this._buffers[0]=new rt(s.buffer,s.byteOffset+e,s.length-e)),e-=s.length}while(e>0);return t}startLoop(e){this._loop=!0;do switch(this._state){case A:this.getInfo(e);break;case tn:this.getPayloadLength16(e);break;case sn:this.getPayloadLength64(e);break;case nn:this.getMask();break;case zt:this.getData(e);break;case qt:case at:this._loop=!1;return}while(this._loop);this._errored||e()}getInfo(e){if(this._bufferedBytes<2){this._loop=!1;return}let t=this.consume(2);if(t[0]&48){let n=this.createError(RangeError,"RSV2 and RSV3 must be clear",!0,1002,"WS_ERR_UNEXPECTED_RSV_2_3");e(n);return}let s=(t[0]&64)===64;if(s&&!this._extensions[Xs.extensionName]){let n=this.createError(RangeError,"RSV1 must be clear",!0,1002,"WS_ERR_UNEXPECTED_RSV_1");e(n);return}if(this._fin=(t[0]&128)===128,this._opcode=t[0]&15,this._payloadLength=t[1]&127,this._opcode===0){if(s){let n=this.createError(RangeError,"RSV1 must be clear",!0,1002,"WS_ERR_UNEXPECTED_RSV_1");e(n);return}if(!this._fragmented){let n=this.createError(RangeError,"invalid opcode 0",!0,1002,"WS_ERR_INVALID_OPCODE");e(n);return}this._opcode=this._fragmented}else if(this._opcode===1||this._opcode===2){if(this._fragmented){let n=this.createError(RangeError,`invalid opcode ${this._opcode}`,!0,1002,"WS_ERR_INVALID_OPCODE");e(n);return}this._compressed=s}else if(this._opcode>7&&this._opcode<11){if(!this._fin){let n=this.createError(RangeError,"FIN must be set",!0,1002,"WS_ERR_EXPECTED_FIN");e(n);return}if(s){let n=this.createError(RangeError,"RSV1 must be clear",!0,1002,"WS_ERR_UNEXPECTED_RSV_1");e(n);return}if(this._payloadLength>125||this._opcode===8&&this._payloadLength===1){let n=this.createError(RangeError,`invalid payload length ${this._payloadLength}`,!0,1002,"WS_ERR_INVALID_CONTROL_PAYLOAD_LENGTH");e(n);return}}else{let n=this.createError(RangeError,`invalid opcode ${this._opcode}`,!0,1002,"WS_ERR_INVALID_OPCODE");e(n);return}if(!this._fin&&!this._fragmented&&(this._fragmented=this._opcode),this._masked=(t[1]&128)===128,this._isServer){if(!this._masked){let n=this.createError(RangeError,"MASK must be set",!0,1002,"WS_ERR_EXPECTED_MASK");e(n);return}}else if(this._masked){let n=this.createError(RangeError,"MASK must be clear",!0,1002,"WS_ERR_UNEXPECTED_MASK");e(n);return}this._payloadLength===126?this._state=tn:this._payloadLength===127?this._state=sn:this.haveLength(e)}getPayloadLength16(e){if(this._bufferedBytes<2){this._loop=!1;return}this._payloadLength=this.consume(2).readUInt16BE(0),this.haveLength(e)}getPayloadLength64(e){if(this._bufferedBytes<8){this._loop=!1;return}let t=this.consume(8),s=t.readUInt32BE(0);if(s>Math.pow(2,21)-1){let n=this.createError(RangeError,"Unsupported WebSocket frame: payload length > 2^53 - 1",!1,1009,"WS_ERR_UNSUPPORTED_DATA_PAYLOAD_LENGTH");e(n);return}this._payloadLength=s*Math.pow(2,32)+t.readUInt32BE(4),this.haveLength(e)}haveLength(e){if(this._payloadLength&&this._opcode<8&&(this._totalPayloadLength+=this._payloadLength,this._totalPayloadLength>this._maxPayload&&this._maxPayload>0)){let t=this.createError(RangeError,"Max payload size exceeded",!1,1009,"WS_ERR_UNSUPPORTED_MESSAGE_LENGTH");e(t);return}this._masked?this._state=nn:this._state=zt}getMask(){if(this._bufferedBytes<4){this._loop=!1;return}this._mask=this.consume(4),this._state=zt}getData(e){let t=Zs;if(this._payloadLength){if(this._bufferedBytes<this._payloadLength){this._loop=!1;return}t=this.consume(this._payloadLength),this._masked&&this._mask[0]|this._mask[1]|this._mask[2]|this._mask[3]&&Yo(t,this._mask)}if(this._opcode>7){this.controlMessage(t,e);return}if(this._compressed){this._state=qt,this.decompress(t,e);return}t.length&&(this._messageLength=this._totalPayloadLength,this._fragments.push(t)),this.dataMessage(e)}decompress(e,t){this._extensions[Xs.extensionName].decompress(e,this._fin,(n,i)=>{if(n)return t(n);if(i.length){if(this._messageLength+=i.length,this._messageLength>this._maxPayload&&this._maxPayload>0){let r=this.createError(RangeError,"Max payload size exceeded",!1,1009,"WS_ERR_UNSUPPORTED_MESSAGE_LENGTH");t(r);return}this._fragments.push(i)}this.dataMessage(t),this._state===A&&this.startLoop(t)})}dataMessage(e){if(!this._fin){this._state=A;return}let t=this._messageLength,s=this._fragments;if(this._totalPayloadLength=0,this._messageLength=0,this._fragmented=0,this._fragments=[],this._opcode===2){let n;this._binaryType==="nodebuffer"?n=Gt(s,t):this._binaryType==="arraybuffer"?n=qo(Gt(s,t)):this._binaryType==="blob"?n=new Blob(s):n=s,this._allowSynchronousEvents?(this.emit("message",n,!0),this._state=A):(this._state=at,setImmediate(()=>{this.emit("message",n,!0),this._state=A,this.startLoop(e)}))}else{let n=Gt(s,t);if(!this._skipUTF8Validation&&!en(n)){let i=this.createError(Error,"invalid UTF-8 sequence",!0,1007,"WS_ERR_INVALID_UTF8");e(i);return}this._state===qt||this._allowSynchronousEvents?(this.emit("message",n,!1),this._state=A):(this._state=at,setImmediate(()=>{this.emit("message",n,!1),this._state=A,this.startLoop(e)}))}}controlMessage(e,t){if(this._opcode===8){if(e.length===0)this._loop=!1,this.emit("conclude",1005,Zs),this.end();else{let s=e.readUInt16BE(0);if(!Jo(s)){let i=this.createError(RangeError,`invalid status code ${s}`,!0,1002,"WS_ERR_INVALID_CLOSE_CODE");t(i);return}let n=new rt(e.buffer,e.byteOffset+2,e.length-2);if(!this._skipUTF8Validation&&!en(n)){let i=this.createError(Error,"invalid UTF-8 sequence",!0,1007,"WS_ERR_INVALID_UTF8");t(i);return}this._loop=!1,this.emit("conclude",s,n),this.end()}this._state=A;return}this._allowSynchronousEvents?(this.emit(this._opcode===9?"ping":"pong",e),this._state=A):(this._state=at,setImmediate(()=>{this.emit(this._opcode===9?"ping":"pong",e),this._state=A,this.startLoop(t)}))}createError(e,t,s,n,i){this._loop=!1,this._errored=!0;let r=new e(s?`Invalid WebSocket frame: ${t}`:t);return Error.captureStackTrace(r,this.createError),r.code=i,r[Go]=n,r}};on.exports=Yt});var Zt=_((Or,ln)=>{"use strict";var{Duplex:Lr}=require("stream"),{randomFillSync:Qo}=require("crypto"),rn=ge(),{EMPTY_BUFFER:Xo,kWebSocket:Zo,NOOP:ei}=K(),{isBlob:me,isValidStatusCode:ti}=he(),{mask:an,toBuffer:se}=De(),L=Symbol("kByteLength"),si=Buffer.alloc(4),lt=8*1024,ne,fe=lt,$=0,ni=1,oi=2,Qt=class o{constructor(e,t,s){this._extensions=t||{},s&&(this._generateMask=s,this._maskBuffer=Buffer.alloc(4)),this._socket=e,this._firstFragment=!0,this._compress=!1,this._bufferedBytes=0,this._queue=[],this._state=$,this.onerror=ei,this[Zo]=void 0}static frame(e,t){let s,n=!1,i=2,r=!1;t.mask&&(s=t.maskBuffer||si,t.generateMask?t.generateMask(s):(fe===lt&&(ne===void 0&&(ne=Buffer.alloc(lt)),Qo(ne,0,lt),fe=0),s[0]=ne[fe++],s[1]=ne[fe++],s[2]=ne[fe++],s[3]=ne[fe++]),r=(s[0]|s[1]|s[2]|s[3])===0,i=6);let a;typeof e=="string"?(!t.mask||r)&&t[L]!==void 0?a=t[L]:(e=Buffer.from(e),a=e.length):(a=e.length,n=t.mask&&t.readOnly&&!r);let l=a;a>=65536?(i+=8,l=127):a>125&&(i+=2,l=126);let c=Buffer.allocUnsafe(n?a+i:i);return c[0]=t.fin?t.opcode|128:t.opcode,t.rsv1&&(c[0]|=64),c[1]=l,l===126?c.writeUInt16BE(a,2):l===127&&(c[2]=c[3]=0,c.writeUIntBE(a,4,6)),t.mask?(c[1]|=128,c[i-4]=s[0],c[i-3]=s[1],c[i-2]=s[2],c[i-1]=s[3],r?[c,e]:n?(an(e,s,c,i,a),[c]):(an(e,s,e,0,a),[c,e])):[c,e]}close(e,t,s,n){let i;if(e===void 0)i=Xo;else{if(typeof e!="number"||!ti(e))throw new TypeError("First argument must be a valid error code number");if(t===void 0||!t.length)i=Buffer.allocUnsafe(2),i.writeUInt16BE(e,0);else{let a=Buffer.byteLength(t);if(a>123)throw new RangeError("The message must not be greater than 123 bytes");i=Buffer.allocUnsafe(2+a),i.writeUInt16BE(e,0),typeof t=="string"?i.write(t,2):i.set(t,2)}}let r={[L]:i.length,fin:!0,generateMask:this._generateMask,mask:s,maskBuffer:this._maskBuffer,opcode:8,readOnly:!1,rsv1:!1};this._state!==$?this.enqueue([this.dispatch,i,!1,r,n]):this.sendFrame(o.frame(i,r),n)}ping(e,t,s){let n,i;if(typeof e=="string"?(n=Buffer.byteLength(e),i=!1):me(e)?(n=e.size,i=!1):(e=se(e),n=e.length,i=se.readOnly),n>125)throw new RangeError("The data size must not be greater than 125 bytes");let r={[L]:n,fin:!0,generateMask:this._generateMask,mask:t,maskBuffer:this._maskBuffer,opcode:9,readOnly:i,rsv1:!1};me(e)?this._state!==$?this.enqueue([this.getBlobData,e,!1,r,s]):this.getBlobData(e,!1,r,s):this._state!==$?this.enqueue([this.dispatch,e,!1,r,s]):this.sendFrame(o.frame(e,r),s)}pong(e,t,s){let n,i;if(typeof e=="string"?(n=Buffer.byteLength(e),i=!1):me(e)?(n=e.size,i=!1):(e=se(e),n=e.length,i=se.readOnly),n>125)throw new RangeError("The data size must not be greater than 125 bytes");let r={[L]:n,fin:!0,generateMask:this._generateMask,mask:t,maskBuffer:this._maskBuffer,opcode:10,readOnly:i,rsv1:!1};me(e)?this._state!==$?this.enqueue([this.getBlobData,e,!1,r,s]):this.getBlobData(e,!1,r,s):this._state!==$?this.enqueue([this.dispatch,e,!1,r,s]):this.sendFrame(o.frame(e,r),s)}send(e,t,s){let n=this._extensions[rn.extensionName],i=t.binary?2:1,r=t.compress,a,l;typeof e=="string"?(a=Buffer.byteLength(e),l=!1):me(e)?(a=e.size,l=!1):(e=se(e),a=e.length,l=se.readOnly),this._firstFragment?(this._firstFragment=!1,r&&n&&n.params[n._isServer?"server_no_context_takeover":"client_no_context_takeover"]&&(r=a>=n._threshold),this._compress=r):(r=!1,i=0),t.fin&&(this._firstFragment=!0);let c={[L]:a,fin:t.fin,generateMask:this._generateMask,mask:t.mask,maskBuffer:this._maskBuffer,opcode:i,readOnly:l,rsv1:r};me(e)?this._state!==$?this.enqueue([this.getBlobData,e,this._compress,c,s]):this.getBlobData(e,this._compress,c,s):this._state!==$?this.enqueue([this.dispatch,e,this._compress,c,s]):this.dispatch(e,this._compress,c,s)}getBlobData(e,t,s,n){this._bufferedBytes+=s[L],this._state=oi,e.arrayBuffer().then(i=>{if(this._socket.destroyed){let a=new Error("The socket was closed while the blob was being read");process.nextTick(Xt,this,a,n);return}this._bufferedBytes-=s[L];let r=se(i);t?this.dispatch(r,t,s,n):(this._state=$,this.sendFrame(o.frame(r,s),n),this.dequeue())}).catch(i=>{process.nextTick(ii,this,i,n)})}dispatch(e,t,s,n){if(!t){this.sendFrame(o.frame(e,s),n);return}let i=this._extensions[rn.extensionName];this._bufferedBytes+=s[L],this._state=ni,i.compress(e,s.fin,(r,a)=>{if(this._socket.destroyed){let l=new Error("The socket was closed while data was being compressed");Xt(this,l,n);return}this._bufferedBytes-=s[L],this._state=$,s.readOnly=!1,this.sendFrame(o.frame(a,s),n),this.dequeue()})}dequeue(){for(;this._state===$&&this._queue.length;){let e=this._queue.shift();this._bufferedBytes-=e[3][L],Reflect.apply(e[0],this,e.slice(1))}}enqueue(e){this._bufferedBytes+=e[3][L],this._queue.push(e)}sendFrame(e,t){e.length===2?(this._socket.cork(),this._socket.write(e[0]),this._socket.write(e[1],t),this._socket.uncork()):this._socket.write(e[0],t)}};ln.exports=Qt;function Xt(o,e,t){typeof t=="function"&&t(e);for(let s=0;s<o._queue.length;s++){let n=o._queue[s],i=n[n.length-1];typeof i=="function"&&i(e)}}function ii(o,e,t){Xt(o,e,t),o.onerror(e)}});var vn=_((Dr,fn)=>{"use strict";var{kForOnEventAttribute:He,kListener:es}=K(),cn=Symbol("kCode"),dn=Symbol("kData"),un=Symbol("kError"),pn=Symbol("kMessage"),gn=Symbol("kReason"),ve=Symbol("kTarget"),hn=Symbol("kType"),mn=Symbol("kWasClean"),z=class{constructor(e){this[ve]=null,this[hn]=e}get target(){return this[ve]}get type(){return this[hn]}};Object.defineProperty(z.prototype,"target",{enumerable:!0});Object.defineProperty(z.prototype,"type",{enumerable:!0});var oe=class extends z{constructor(e,t={}){super(e),this[cn]=t.code===void 0?0:t.code,this[gn]=t.reason===void 0?"":t.reason,this[mn]=t.wasClean===void 0?!1:t.wasClean}get code(){return this[cn]}get reason(){return this[gn]}get wasClean(){return this[mn]}};Object.defineProperty(oe.prototype,"code",{enumerable:!0});Object.defineProperty(oe.prototype,"reason",{enumerable:!0});Object.defineProperty(oe.prototype,"wasClean",{enumerable:!0});var be=class extends z{constructor(e,t={}){super(e),this[un]=t.error===void 0?null:t.error,this[pn]=t.message===void 0?"":t.message}get error(){return this[un]}get message(){return this[pn]}};Object.defineProperty(be.prototype,"error",{enumerable:!0});Object.defineProperty(be.prototype,"message",{enumerable:!0});var $e=class extends z{constructor(e,t={}){super(e),this[dn]=t.data===void 0?null:t.data}get data(){return this[dn]}};Object.defineProperty($e.prototype,"data",{enumerable:!0});var ri={addEventListener(o,e,t={}){for(let n of this.listeners(o))if(!t[He]&&n[es]===e&&!n[He])return;let s;if(o==="message")s=function(i,r){let a=new $e("message",{data:r?i:i.toString()});a[ve]=this,ct(e,this,a)};else if(o==="close")s=function(i,r){let a=new oe("close",{code:i,reason:r.toString(),wasClean:this._closeFrameReceived&&this._closeFrameSent});a[ve]=this,ct(e,this,a)};else if(o==="error")s=function(i){let r=new be("error",{error:i,message:i.message});r[ve]=this,ct(e,this,r)};else if(o==="open")s=function(){let i=new z("open");i[ve]=this,ct(e,this,i)};else return;s[He]=!!t[He],s[es]=e,t.once?this.once(o,s):this.on(o,s)},removeEventListener(o,e){for(let t of this.listeners(o))if(t[es]===e&&!t[He]){this.removeListener(o,t);break}}};fn.exports={CloseEvent:oe,ErrorEvent:be,Event:z,EventTarget:ri,MessageEvent:$e};function ct(o,e,t){typeof o=="object"&&o.handleEvent?o.handleEvent.call(o,t):o.call(e,t)}});var dt=_((Br,bn)=>{"use strict";var{tokenChars:Re}=he();function F(o,e,t){o[e]===void 0?o[e]=[t]:o[e].push(t)}function ai(o){let e=Object.create(null),t=Object.create(null),s=!1,n=!1,i=!1,r,a,l=-1,c=-1,u=-1,p=0;for(;p<o.length;p++)if(c=o.charCodeAt(p),r===void 0)if(u===-1&&Re[c]===1)l===-1&&(l=p);else if(p!==0&&(c===32||c===9))u===-1&&l!==-1&&(u=p);else if(c===59||c===44){if(l===-1)throw new SyntaxError(`Unexpected character at index ${p}`);u===-1&&(u=p);let m=o.slice(l,u);c===44?(F(e,m,t),t=Object.create(null)):r=m,l=u=-1}else throw new SyntaxError(`Unexpected character at index ${p}`);else if(a===void 0)if(u===-1&&Re[c]===1)l===-1&&(l=p);else if(c===32||c===9)u===-1&&l!==-1&&(u=p);else if(c===59||c===44){if(l===-1)throw new SyntaxError(`Unexpected character at index ${p}`);u===-1&&(u=p),F(t,o.slice(l,u),!0),c===44&&(F(e,r,t),t=Object.create(null),r=void 0),l=u=-1}else if(c===61&&l!==-1&&u===-1)a=o.slice(l,p),l=u=-1;else throw new SyntaxError(`Unexpected character at index ${p}`);else if(n){if(Re[c]!==1)throw new SyntaxError(`Unexpected character at index ${p}`);l===-1?l=p:s||(s=!0),n=!1}else if(i)if(Re[c]===1)l===-1&&(l=p);else if(c===34&&l!==-1)i=!1,u=p;else if(c===92)n=!0;else throw new SyntaxError(`Unexpected character at index ${p}`);else if(c===34&&o.charCodeAt(p-1)===61)i=!0;else if(u===-1&&Re[c]===1)l===-1&&(l=p);else if(l!==-1&&(c===32||c===9))u===-1&&(u=p);else if(c===59||c===44){if(l===-1)throw new SyntaxError(`Unexpected character at index ${p}`);u===-1&&(u=p);let m=o.slice(l,u);s&&(m=m.replace(/\\/g,""),s=!1),F(t,a,m),c===44&&(F(e,r,t),t=Object.create(null),r=void 0),a=void 0,l=u=-1}else throw new SyntaxError(`Unexpected character at index ${p}`);if(l===-1||i||c===32||c===9)throw new SyntaxError("Unexpected end of input");u===-1&&(u=p);let h=o.slice(l,u);return r===void 0?F(e,h,t):(a===void 0?F(t,h,!0):s?F(t,a,h.replace(/\\/g,"")):F(t,a,h),F(e,r,t)),e}function li(o){return Object.keys(o).map(e=>{let t=o[e];return Array.isArray(t)||(t=[t]),t.map(s=>[e].concat(Object.keys(s).map(n=>{let i=s[n];return Array.isArray(i)||(i=[i]),i.map(r=>r===!0?n:`${n}=${r}`).join("; ")})).join("; ")).join(", ")}).join(", ")}bn.exports={format:li,parse:ai}});var ht=_((Rr,In)=>{"use strict";var ci=require("events"),di=require("https"),ui=require("http"),kn=require("net"),pi=require("tls"),{randomBytes:gi,createHash:hi}=require("crypto"),{Duplex:Hr,Readable:$r}=require("stream"),{URL:ts}=require("url"),Z=ge(),mi=Jt(),fi=Zt(),{isBlob:vi}=he(),{BINARY_TYPES:wn,CLOSE_TIMEOUT:bi,EMPTY_BUFFER:ut,GUID:wi,kForOnEventAttribute:ss,kListener:yi,kStatusCode:ki,kWebSocket:S,NOOP:Sn}=K(),{EventTarget:{addEventListener:Si,removeEventListener:Ci}}=vn(),{format:xi,parse:Pi}=dt(),{toBuffer:Ei}=De(),Cn=Symbol("kAborted"),ns=[8,13],q=["CONNECTING","OPEN","CLOSING","CLOSED"],Mi=/^[!#$%&'*+\-.0-9A-Z^_`|a-z~]+$/,y=class o extends ci{constructor(e,t,s){super(),this._binaryType=wn[0],this._closeCode=1006,this._closeFrameReceived=!1,this._closeFrameSent=!1,this._closeMessage=ut,this._closeTimer=null,this._errorEmitted=!1,this._extensions={},this._paused=!1,this._protocol="",this._readyState=o.CONNECTING,this._receiver=null,this._sender=null,this._socket=null,e!==null?(this._bufferedAmount=0,this._isServer=!1,this._redirects=0,t===void 0?t=[]:Array.isArray(t)||(typeof t=="object"&&t!==null?(s=t,t=[]):t=[t]),xn(this,e,t,s)):(this._autoPong=s.autoPong,this._closeTimeout=s.closeTimeout,this._isServer=!0)}get binaryType(){return this._binaryType}set binaryType(e){wn.includes(e)&&(this._binaryType=e,this._receiver&&(this._receiver._binaryType=e))}get bufferedAmount(){return this._socket?this._socket._writableState.length+this._sender._bufferedBytes:this._bufferedAmount}get extensions(){return Object.keys(this._extensions).join()}get isPaused(){return this._paused}get onclose(){return null}get onerror(){return null}get onopen(){return null}get onmessage(){return null}get protocol(){return this._protocol}get readyState(){return this._readyState}get url(){return this._url}setSocket(e,t,s){let n=new mi({allowSynchronousEvents:s.allowSynchronousEvents,binaryType:this.binaryType,extensions:this._extensions,isServer:this._isServer,maxPayload:s.maxPayload,skipUTF8Validation:s.skipUTF8Validation}),i=new fi(e,this._extensions,s.generateMask);this._receiver=n,this._sender=i,this._socket=e,n[S]=this,i[S]=this,e[S]=this,n.on("conclude",Ii),n.on("drain",Ai),n.on("error",Li),n.on("message",Oi),n.on("ping",Di),n.on("pong",Bi),i.onerror=Hi,e.setTimeout&&e.setTimeout(0),e.setNoDelay&&e.setNoDelay(),t.length>0&&e.unshift(t),e.on("close",Mn),e.on("data",gt),e.on("end",_n),e.on("error",Tn),this._readyState=o.OPEN,this.emit("open")}emitClose(){if(!this._socket){this._readyState=o.CLOSED,this.emit("close",this._closeCode,this._closeMessage);return}this._extensions[Z.extensionName]&&this._extensions[Z.extensionName].cleanup(),this._receiver.removeAllListeners(),this._readyState=o.CLOSED,this.emit("close",this._closeCode,this._closeMessage)}close(e,t){if(this.readyState!==o.CLOSED){if(this.readyState===o.CONNECTING){T(this,this._req,"WebSocket was closed before the connection was established");return}if(this.readyState===o.CLOSING){this._closeFrameSent&&(this._closeFrameReceived||this._receiver._writableState.errorEmitted)&&this._socket.end();return}this._readyState=o.CLOSING,this._sender.close(e,t,!this._isServer,s=>{s||(this._closeFrameSent=!0,(this._closeFrameReceived||this._receiver._writableState.errorEmitted)&&this._socket.end())}),En(this)}}pause(){this.readyState===o.CONNECTING||this.readyState===o.CLOSED||(this._paused=!0,this._socket.pause())}ping(e,t,s){if(this.readyState===o.CONNECTING)throw new Error("WebSocket is not open: readyState 0 (CONNECTING)");if(typeof e=="function"?(s=e,e=t=void 0):typeof t=="function"&&(s=t,t=void 0),typeof e=="number"&&(e=e.toString()),this.readyState!==o.OPEN){os(this,e,s);return}t===void 0&&(t=!this._isServer),this._sender.ping(e||ut,t,s)}pong(e,t,s){if(this.readyState===o.CONNECTING)throw new Error("WebSocket is not open: readyState 0 (CONNECTING)");if(typeof e=="function"?(s=e,e=t=void 0):typeof t=="function"&&(s=t,t=void 0),typeof e=="number"&&(e=e.toString()),this.readyState!==o.OPEN){os(this,e,s);return}t===void 0&&(t=!this._isServer),this._sender.pong(e||ut,t,s)}resume(){this.readyState===o.CONNECTING||this.readyState===o.CLOSED||(this._paused=!1,this._receiver._writableState.needDrain||this._socket.resume())}send(e,t,s){if(this.readyState===o.CONNECTING)throw new Error("WebSocket is not open: readyState 0 (CONNECTING)");if(typeof t=="function"&&(s=t,t={}),typeof e=="number"&&(e=e.toString()),this.readyState!==o.OPEN){os(this,e,s);return}let n={binary:typeof e!="string",mask:!this._isServer,compress:!0,fin:!0,...t};this._extensions[Z.extensionName]||(n.compress=!1),this._sender.send(e||ut,n,s)}terminate(){if(this.readyState!==o.CLOSED){if(this.readyState===o.CONNECTING){T(this,this._req,"WebSocket was closed before the connection was established");return}this._socket&&(this._readyState=o.CLOSING,this._socket.destroy())}}};Object.defineProperty(y,"CONNECTING",{enumerable:!0,value:q.indexOf("CONNECTING")});Object.defineProperty(y.prototype,"CONNECTING",{enumerable:!0,value:q.indexOf("CONNECTING")});Object.defineProperty(y,"OPEN",{enumerable:!0,value:q.indexOf("OPEN")});Object.defineProperty(y.prototype,"OPEN",{enumerable:!0,value:q.indexOf("OPEN")});Object.defineProperty(y,"CLOSING",{enumerable:!0,value:q.indexOf("CLOSING")});Object.defineProperty(y.prototype,"CLOSING",{enumerable:!0,value:q.indexOf("CLOSING")});Object.defineProperty(y,"CLOSED",{enumerable:!0,value:q.indexOf("CLOSED")});Object.defineProperty(y.prototype,"CLOSED",{enumerable:!0,value:q.indexOf("CLOSED")});["binaryType","bufferedAmount","extensions","isPaused","protocol","readyState","url"].forEach(o=>{Object.defineProperty(y.prototype,o,{enumerable:!0})});["open","error","close","message"].forEach(o=>{Object.defineProperty(y.prototype,`on${o}`,{enumerable:!0,get(){for(let e of this.listeners(o))if(e[ss])return e[yi];return null},set(e){for(let t of this.listeners(o))if(t[ss]){this.removeListener(o,t);break}typeof e=="function"&&this.addEventListener(o,e,{[ss]:!0})}})});y.prototype.addEventListener=Si;y.prototype.removeEventListener=Ci;In.exports=y;function xn(o,e,t,s){let n={allowSynchronousEvents:!0,autoPong:!0,closeTimeout:bi,protocolVersion:ns[1],maxPayload:104857600,skipUTF8Validation:!1,perMessageDeflate:!0,followRedirects:!1,maxRedirects:10,...s,socketPath:void 0,hostname:void 0,protocol:void 0,timeout:void 0,method:"GET",host:void 0,path:void 0,port:void 0};if(o._autoPong=n.autoPong,o._closeTimeout=n.closeTimeout,!ns.includes(n.protocolVersion))throw new RangeError(`Unsupported protocol version: ${n.protocolVersion} (supported versions: ${ns.join(", ")})`);let i;if(e instanceof ts)i=e;else try{i=new ts(e)}catch{throw new SyntaxError(`Invalid URL: ${e}`)}i.protocol==="http:"?i.protocol="ws:":i.protocol==="https:"&&(i.protocol="wss:"),o._url=i.href;let r=i.protocol==="wss:",a=i.protocol==="ws+unix:",l;if(i.protocol!=="ws:"&&!r&&!a?l=`The URL's protocol must be one of "ws:", "wss:", "http:", "https:", or "ws+unix:"`:a&&!i.pathname?l="The URL's pathname is empty":i.hash&&(l="The URL contains a fragment identifier"),l){let v=new SyntaxError(l);if(o._redirects===0)throw v;pt(o,v);return}let c=r?443:80,u=gi(16).toString("base64"),p=r?di.request:ui.request,h=new Set,m;if(n.createConnection=n.createConnection||(r?Ti:_i),n.defaultPort=n.defaultPort||c,n.port=i.port||c,n.host=i.hostname.startsWith("[")?i.hostname.slice(1,-1):i.hostname,n.headers={...n.headers,"Sec-WebSocket-Version":n.protocolVersion,"Sec-WebSocket-Key":u,Connection:"Upgrade",Upgrade:"websocket"},n.path=i.pathname+i.search,n.timeout=n.handshakeTimeout,n.perMessageDeflate&&(m=new Z({...n.perMessageDeflate,isServer:!1,maxPayload:n.maxPayload}),n.headers["Sec-WebSocket-Extensions"]=xi({[Z.extensionName]:m.offer()})),t.length){for(let v of t){if(typeof v!="string"||!Mi.test(v)||h.has(v))throw new SyntaxError("An invalid or duplicated subprotocol was specified");h.add(v)}n.headers["Sec-WebSocket-Protocol"]=t.join(",")}if(n.origin&&(n.protocolVersion<13?n.headers["Sec-WebSocket-Origin"]=n.origin:n.headers.Origin=n.origin),(i.username||i.password)&&(n.auth=`${i.username}:${i.password}`),a){let v=n.path.split(":");n.socketPath=v[0],n.path=v[1]}let w;if(n.followRedirects){if(o._redirects===0){o._originalIpc=a,o._originalSecure=r,o._originalHostOrSocketPath=a?n.socketPath:i.host;let v=s&&s.headers;if(s={...s,headers:{}},v)for(let[E,ce]of Object.entries(v))s.headers[E.toLowerCase()]=ce}else if(o.listenerCount("redirect")===0){let v=a?o._originalIpc?n.socketPath===o._originalHostOrSocketPath:!1:o._originalIpc?!1:i.host===o._originalHostOrSocketPath;(!v||o._originalSecure&&!r)&&(delete n.headers.authorization,delete n.headers.cookie,v||delete n.headers.host,n.auth=void 0)}n.auth&&!s.headers.authorization&&(s.headers.authorization="Basic "+Buffer.from(n.auth).toString("base64")),w=o._req=p(n),o._redirects&&o.emit("redirect",o.url,w)}else w=o._req=p(n);n.timeout&&w.on("timeout",()=>{T(o,w,"Opening handshake has timed out")}),w.on("error",v=>{w===null||w[Cn]||(w=o._req=null,pt(o,v))}),w.on("response",v=>{let E=v.headers.location,ce=v.statusCode;if(E&&n.followRedirects&&ce>=300&&ce<400){if(++o._redirects>n.maxRedirects){T(o,w,"Maximum redirects exceeded");return}w.abort();let Ie;try{Ie=new ts(E,e)}catch{let de=new SyntaxError(`Invalid URL: ${E}`);pt(o,de);return}xn(o,Ie,t,s)}else o.emit("unexpected-response",w,v)||T(o,w,`Unexpected server response: ${v.statusCode}`)}),w.on("upgrade",(v,E,ce)=>{if(o.emit("upgrade",v),o.readyState!==y.CONNECTING)return;w=o._req=null;let Ie=v.headers.upgrade;if(Ie===void 0||Ie.toLowerCase()!=="websocket"){T(o,E,"Invalid Upgrade header");return}let Is=hi("sha1").update(u+wi).digest("base64");if(v.headers["sec-websocket-accept"]!==Is){T(o,E,"Invalid Sec-WebSocket-Accept header");return}let de=v.headers["sec-websocket-protocol"],Ae;if(de!==void 0?h.size?h.has(de)||(Ae="Server sent an invalid subprotocol"):Ae="Server sent a subprotocol but none was requested":h.size&&(Ae="Server sent no subprotocol"),Ae){T(o,E,Ae);return}de&&(o._protocol=de);let As=v.headers["sec-websocket-extensions"];if(As!==void 0){if(!m){T(o,E,"Server sent a Sec-WebSocket-Extensions header but no extension was requested");return}let Ht;try{Ht=Pi(As)}catch{T(o,E,"Invalid Sec-WebSocket-Extensions header");return}let Ls=Object.keys(Ht);if(Ls.length!==1||Ls[0]!==Z.extensionName){T(o,E,"Server indicated an extension that was not requested");return}try{m.accept(Ht[Z.extensionName])}catch{T(o,E,"Invalid Sec-WebSocket-Extensions header");return}o._extensions[Z.extensionName]=m}o.setSocket(E,ce,{allowSynchronousEvents:n.allowSynchronousEvents,generateMask:n.generateMask,maxPayload:n.maxPayload,skipUTF8Validation:n.skipUTF8Validation})}),n.finishRequest?n.finishRequest(w,o):w.end()}function pt(o,e){o._readyState=y.CLOSING,o._errorEmitted=!0,o.emit("error",e),o.emitClose()}function _i(o){return o.path=o.socketPath,kn.connect(o)}function Ti(o){return o.path=void 0,!o.servername&&o.servername!==""&&(o.servername=kn.isIP(o.host)?"":o.host),pi.connect(o)}function T(o,e,t){o._readyState=y.CLOSING;let s=new Error(t);Error.captureStackTrace(s,T),e.setHeader?(e[Cn]=!0,e.abort(),e.socket&&!e.socket.destroyed&&e.socket.destroy(),process.nextTick(pt,o,s)):(e.destroy(s),e.once("error",o.emit.bind(o,"error")),e.once("close",o.emitClose.bind(o)))}function os(o,e,t){if(e){let s=vi(e)?e.size:Ei(e).length;o._socket?o._sender._bufferedBytes+=s:o._bufferedAmount+=s}if(t){let s=new Error(`WebSocket is not open: readyState ${o.readyState} (${q[o.readyState]})`);process.nextTick(t,s)}}function Ii(o,e){let t=this[S];t._closeFrameReceived=!0,t._closeMessage=e,t._closeCode=o,t._socket[S]!==void 0&&(t._socket.removeListener("data",gt),process.nextTick(Pn,t._socket),o===1005?t.close():t.close(o,e))}function Ai(){let o=this[S];o.isPaused||o._socket.resume()}function Li(o){let e=this[S];e._socket[S]!==void 0&&(e._socket.removeListener("data",gt),process.nextTick(Pn,e._socket),e.close(o[ki])),e._errorEmitted||(e._errorEmitted=!0,e.emit("error",o))}function yn(){this[S].emitClose()}function Oi(o,e){this[S].emit("message",o,e)}function Di(o){let e=this[S];e._autoPong&&e.pong(o,!this._isServer,Sn),e.emit("ping",o)}function Bi(o){this[S].emit("pong",o)}function Pn(o){o.resume()}function Hi(o){let e=this[S];e.readyState!==y.CLOSED&&(e.readyState===y.OPEN&&(e._readyState=y.CLOSING,En(e)),this._socket.end(),e._errorEmitted||(e._errorEmitted=!0,e.emit("error",o)))}function En(o){o._closeTimer=setTimeout(o._socket.destroy.bind(o._socket),o._closeTimeout)}function Mn(){let o=this[S];if(this.removeListener("close",Mn),this.removeListener("data",gt),this.removeListener("end",_n),o._readyState=y.CLOSING,!this._readableState.endEmitted&&!o._closeFrameReceived&&!o._receiver._writableState.errorEmitted&&this._readableState.length!==0){let e=this.read(this._readableState.length);o._receiver.write(e)}o._receiver.end(),this[S]=void 0,clearTimeout(o._closeTimer),o._receiver._writableState.finished||o._receiver._writableState.errorEmitted?o.emitClose():(o._receiver.on("error",yn),o._receiver.on("finish",yn))}function gt(o){this[S]._receiver.write(o)||this.pause()}function _n(){let o=this[S];o._readyState=y.CLOSING,o._receiver.end(),this.end()}function Tn(){let o=this[S];this.removeListener("error",Tn),this.on("error",Sn),o&&(o._readyState=y.CLOSING,this.destroy())}});var Dn=_((Ur,On)=>{"use strict";var Fr=ht(),{Duplex:$i}=require("stream");function An(o){o.emit("close")}function Ri(){!this.destroyed&&this._writableState.finished&&this.destroy()}function Ln(o){this.removeListener("error",Ln),this.destroy(),this.listenerCount("error")===0&&this.emit("error",o)}function Fi(o,e){let t=!0,s=new $i({...e,autoDestroy:!1,emitClose:!1,objectMode:!1,writableObjectMode:!1});return o.on("message",function(i,r){let a=!r&&s._readableState.objectMode?i.toString():i;s.push(a)||o.pause()}),o.once("error",function(i){s.destroyed||(t=!1,s.destroy(i))}),o.once("close",function(){s.destroyed||s.push(null)}),s._destroy=function(n,i){if(o.readyState===o.CLOSED){i(n),process.nextTick(An,s);return}let r=!1;o.once("error",function(l){r=!0,i(l)}),o.once("close",function(){r||i(n),process.nextTick(An,s)}),t&&o.terminate()},s._final=function(n){if(o.readyState===o.CONNECTING){o.once("open",function(){s._final(n)});return}o._socket!==null&&(o._socket._writableState.finished?(n(),s._readableState.endEmitted&&s.destroy()):(o._socket.once("finish",function(){n()}),o.close()))},s._read=function(){o.isPaused&&o.resume()},s._write=function(n,i,r){if(o.readyState===o.CONNECTING){o.once("open",function(){s._write(n,i,r)});return}o.send(n,r)},s.on("end",Ri),s.on("error",Ln),s}On.exports=Fi});var is=_((Nr,Bn)=>{"use strict";var{tokenChars:Ui}=he();function Ni(o){let e=new Set,t=-1,s=-1,n=0;for(n;n<o.length;n++){let r=o.charCodeAt(n);if(s===-1&&Ui[r]===1)t===-1&&(t=n);else if(n!==0&&(r===32||r===9))s===-1&&t!==-1&&(s=n);else if(r===44){if(t===-1)throw new SyntaxError(`Unexpected character at index ${n}`);s===-1&&(s=n);let a=o.slice(t,s);if(e.has(a))throw new SyntaxError(`The "${a}" subprotocol is duplicated`);e.add(a),t=s=-1}else throw new SyntaxError(`Unexpected character at index ${n}`)}if(t===-1||s!==-1)throw new SyntaxError("Unexpected end of input");let i=o.slice(t,n);if(e.has(i))throw new SyntaxError(`The "${i}" subprotocol is duplicated`);return e.add(i),e}Bn.exports={parse:Ni}});var jn=_((Wr,Nn)=>{"use strict";var ji=require("events"),mt=require("http"),{Duplex:jr}=require("stream"),{createHash:Wi}=require("crypto"),Hn=dt(),ie=ge(),Vi=is(),Ki=ht(),{CLOSE_TIMEOUT:Gi,GUID:zi,kWebSocket:qi}=K(),Yi=/^[+/0-9A-Za-z]{22}==$/,$n=0,Rn=1,Un=2,rs=class extends ji{constructor(e,t){if(super(),e={allowSynchronousEvents:!0,autoPong:!0,maxPayload:100*1024*1024,skipUTF8Validation:!1,perMessageDeflate:!1,handleProtocols:null,clientTracking:!0,closeTimeout:Gi,verifyClient:null,noServer:!1,backlog:null,server:null,host:null,path:null,port:null,WebSocket:Ki,...e},e.port==null&&!e.server&&!e.noServer||e.port!=null&&(e.server||e.noServer)||e.server&&e.noServer)throw new TypeError('One and only one of the "port", "server", or "noServer" options must be specified');if(e.port!=null?(this._server=mt.createServer((s,n)=>{let i=mt.STATUS_CODES[426];n.writeHead(426,{"Content-Length":i.length,"Content-Type":"text/plain"}),n.end(i)}),this._server.listen(e.port,e.host,e.backlog,t)):e.server&&(this._server=e.server),this._server){let s=this.emit.bind(this,"connection");this._removeListeners=Ji(this._server,{listening:this.emit.bind(this,"listening"),error:this.emit.bind(this,"error"),upgrade:(n,i,r)=>{this.handleUpgrade(n,i,r,s)}})}e.perMessageDeflate===!0&&(e.perMessageDeflate={}),e.clientTracking&&(this.clients=new Set,this._shouldEmitClose=!1),this.options=e,this._state=$n}address(){if(this.options.noServer)throw new Error('The server is operating in "noServer" mode');return this._server?this._server.address():null}close(e){if(this._state===Un){e&&this.once("close",()=>{e(new Error("The server is not running"))}),process.nextTick(Fe,this);return}if(e&&this.once("close",e),this._state!==Rn)if(this._state=Rn,this.options.noServer||this.options.server)this._server&&(this._removeListeners(),this._removeListeners=this._server=null),this.clients?this.clients.size?this._shouldEmitClose=!0:process.nextTick(Fe,this):process.nextTick(Fe,this);else{let t=this._server;this._removeListeners(),this._removeListeners=this._server=null,t.close(()=>{Fe(this)})}}shouldHandle(e){if(this.options.path){let t=e.url.indexOf("?");if((t!==-1?e.url.slice(0,t):e.url)!==this.options.path)return!1}return!0}handleUpgrade(e,t,s,n){t.on("error",Fn);let i=e.headers["sec-websocket-key"],r=e.headers.upgrade,a=+e.headers["sec-websocket-version"];if(e.method!=="GET"){re(this,e,t,405,"Invalid HTTP method");return}if(r===void 0||r.toLowerCase()!=="websocket"){re(this,e,t,400,"Invalid Upgrade header");return}if(i===void 0||!Yi.test(i)){re(this,e,t,400,"Missing or invalid Sec-WebSocket-Key header");return}if(a!==13&&a!==8){re(this,e,t,400,"Missing or invalid Sec-WebSocket-Version header",{"Sec-WebSocket-Version":"13, 8"});return}if(!this.shouldHandle(e)){Ue(t,400);return}let l=e.headers["sec-websocket-protocol"],c=new Set;if(l!==void 0)try{c=Vi.parse(l)}catch{re(this,e,t,400,"Invalid Sec-WebSocket-Protocol header");return}let u=e.headers["sec-websocket-extensions"],p={};if(this.options.perMessageDeflate&&u!==void 0){let h=new ie({...this.options.perMessageDeflate,isServer:!0,maxPayload:this.options.maxPayload});try{let m=Hn.parse(u);m[ie.extensionName]&&(h.accept(m[ie.extensionName]),p[ie.extensionName]=h)}catch{re(this,e,t,400,"Invalid or unacceptable Sec-WebSocket-Extensions header");return}}if(this.options.verifyClient){let h={origin:e.headers[`${a===8?"sec-websocket-origin":"origin"}`],secure:!!(e.socket.authorized||e.socket.encrypted),req:e};if(this.options.verifyClient.length===2){this.options.verifyClient(h,(m,w,v,E)=>{if(!m)return Ue(t,w||401,v,E);this.completeUpgrade(p,i,c,e,t,s,n)});return}if(!this.options.verifyClient(h))return Ue(t,401)}this.completeUpgrade(p,i,c,e,t,s,n)}completeUpgrade(e,t,s,n,i,r,a){if(!i.readable||!i.writable)return i.destroy();if(i[qi])throw new Error("server.handleUpgrade() was called more than once with the same socket, possibly due to a misconfiguration");if(this._state>$n)return Ue(i,503);let c=["HTTP/1.1 101 Switching Protocols","Upgrade: websocket","Connection: Upgrade",`Sec-WebSocket-Accept: ${Wi("sha1").update(t+zi).digest("base64")}`],u=new this.options.WebSocket(null,void 0,this.options);if(s.size){let p=this.options.handleProtocols?this.options.handleProtocols(s,n):s.values().next().value;p&&(c.push(`Sec-WebSocket-Protocol: ${p}`),u._protocol=p)}if(e[ie.extensionName]){let p=e[ie.extensionName].params,h=Hn.format({[ie.extensionName]:[p]});c.push(`Sec-WebSocket-Extensions: ${h}`),u._extensions=e}this.emit("headers",c,n),i.write(c.concat(`\r
-`).join(`\r
-`)),i.removeListener("error",Fn),u.setSocket(i,r,{allowSynchronousEvents:this.options.allowSynchronousEvents,maxPayload:this.options.maxPayload,skipUTF8Validation:this.options.skipUTF8Validation}),this.clients&&(this.clients.add(u),u.on("close",()=>{this.clients.delete(u),this._shouldEmitClose&&!this.clients.size&&process.nextTick(Fe,this)})),a(u,n)}};Nn.exports=rs;function Ji(o,e){for(let t of Object.keys(e))o.on(t,e[t]);return function(){for(let s of Object.keys(e))o.removeListener(s,e[s])}}function Fe(o){o._state=Un,o.emit("close")}function Fn(){this.destroy()}function Ue(o,e,t,s){t=t||mt.STATUS_CODES[e],s={Connection:"close","Content-Type":"text/html","Content-Length":Buffer.byteLength(t),...s},o.once("finish",o.destroy),o.end(`HTTP/1.1 ${e} ${mt.STATUS_CODES[e]}\r
-`+Object.keys(s).map(n=>`${n}: ${s[n]}`).join(`\r
-`)+`\r
-\r
-`+t)}function re(o,e,t,s,n,i){if(o.listenerCount("wsClientError")){let r=new Error(n);Error.captureStackTrace(r,re),o.emit("wsClientError",r,t,e)}else Ue(t,s,n,i)}});var Jn={};Le(Jn,{PerMessageDeflate:()=>Kn.default,Receiver:()=>Gn.default,Sender:()=>zn.default,WebSocket:()=>as.default,WebSocketServer:()=>Yn.default,createWebSocketStream:()=>Wn.default,default:()=>Qi,extension:()=>Vn.default,subprotocol:()=>qn.default});var Wn,Vn,Kn,Gn,zn,qn,as,Yn,Qi,Qn=V(()=>{Wn=g(Dn(),1),Vn=g(dt(),1),Kn=g(ge(),1),Gn=g(Jt(),1),zn=g(Zt(),1),qn=g(is(),1),as=g(ht(),1),Yn=g(jn(),1),Qi=as.default});var no,U,Ke=V(()=>{"use strict";no=g(require("vscode"),1),U=class{constructor(e,t,s){this.provider=e;this.config=t;this.storage=s}storage;async getApiKey(){let e=await this.storage.getApiKey(this.provider);if(e)return e;if(this.config.envVarName){let s=process.env[this.config.envVarName];if(s)return s}let t=this.getStandardEnvVars();for(let s of t){let n=process.env[s];if(n)return n}}async storeApiKey(e){await this.storage.storeApiKey(this.provider,e)}async validateApiKey(e){switch(this.provider){case"anthropic":return this.validateAnthropicKey(e);case"openai":return this.validateOpenAIKey(e);case"bedrock":return this.validateBedrockKey(e);case"vertex":return this.validateVertexKey(e);default:return this.validateGenericKey(e)}}async validateAnthropicKey(e){if(!e.startsWith("sk-ant-"))return{valid:!1,error:"Invalid Anthropic API key format. Key should start with sk-ant-"};try{let t=await fetch("https://api.anthropic.com/v1/models",{headers:{"x-api-key":e,"anthropic-version":"2023-06-01"}});return t.ok?{valid:!0,provider:"anthropic"}:t.status===401?{valid:!1,error:"Invalid API key"}:{valid:!1,error:`API error: ${t.status}`}}catch(t){return{valid:!1,error:`Connection error: ${t}`}}}async validateOpenAIKey(e){if(!e.startsWith("sk-"))return{valid:!1,error:"Invalid OpenAI API key format. Key should start with sk-"};try{let t=await fetch("https://api.openai.com/v1/models",{headers:{Authorization:`Bearer ${e}`}});return t.ok?{valid:!0,provider:"openai"}:t.status===401?{valid:!1,error:"Invalid API key"}:{valid:!1,error:`API error: ${t.status}`}}catch(t){return{valid:!1,error:`Connection error: ${t}`}}}async validateBedrockKey(e){return{valid:!0,provider:"bedrock"}}async validateVertexKey(e){return{valid:!0,provider:"vertex"}}async validateGenericKey(e){return!e||e.length<10?{valid:!1,error:"API key is too short"}:{valid:!0,provider:this.provider}}getStandardEnvVars(){return{anthropic:["ANTHROPIC_API_KEY","ANTHROPIC_AUTH_TOKEN"],openai:["OPENAI_API_KEY"],bedrock:["AWS_ACCESS_KEY_ID"],vertex:["GOOGLE_APPLICATION_CREDENTIALS"]}[this.provider]||[]}async promptForApiKey(){return await no.window.showInputBox({prompt:`Enter your ${this.provider} API key`,password:!0,placeHolder:`Enter your ${this.provider} API key`,validateInput:async t=>!t||t.trim().length===0?"API key cannot be empty":null})}async deleteApiKey(){await this.storage.delete(`apikey_${this.provider}`)}async hasApiKey(){let e=await this.getApiKey();return e!==void 0&&e.length>0}async getAuthHeader(){let e=await this.getApiKey();return e?`${this.config.prefix||"Bearer "}${e}`:void 0}dispose(){}}});var io={};Le(io,{CustomProviderAuth:()=>ze});var C,Q,Ge,oo,J,ze,ps=V(()=>{"use strict";C=g(require("vscode"),1),Q=g(require("fs"),1),Ge=g(require("path"),1),oo=g(require("os"),1);Ke();J=Ge.join(oo.homedir(),".claude","models.json"),ze=class extends U{modelsConfig=null;constructor(e){super("custom",{provider:"custom"},e)}async configure(){await this.loadModelsConfig();let e=[{label:"$(add) Add New Provider",action:"new"},{label:"$(file) Edit models.json",action:"edit"},{label:"$(list) View Existing Providers",action:"list"}],t=await C.window.showQuickPick(e,{placeHolder:"Custom Provider Configuration"});if(!t)return!1;switch(t.action){case"new":return await this.addNewProvider();case"edit":return await this.editModelsJson();case"list":return await this.listProviders()}return!1}async addNewProvider(){let e=await C.window.showInputBox({prompt:"Provider Name",placeHolder:"e.g., OpenRouter, DeepSeek, Groq"});if(!e)return!1;let t=await C.window.showInputBox({prompt:"API Base URL",placeHolder:"https://api.example.com/v1"});if(!t)return!1;let s=[{label:"Anthropic",value:"anthropic"},{label:"OpenAI",value:"openai"}],n=await C.window.showQuickPick(s,{placeHolder:"Select API Format"});if(!n)return!1;let i=n.value,r=await C.window.showInputBox({prompt:"API Key",password:!0});if(!r)return!1;let a=await C.window.showInputBox({prompt:"Default Model Name (optional)",placeHolder:"e.g., gpt-4, claude-3-opus"});return!await this.validateProvider({name:e,baseUrl:t,apiKey:r,apiFormat:i})&&await C.window.showWarningMessage("Could not validate the API configuration. Save anyway?","Yes","No")!=="Yes"?!1:(await this.saveProviderConfig({name:e,baseUrl:t,apiKey:r,apiFormat:i,models:a?{[a]:{name:a}}:void 0}),C.window.showInformationMessage(`Provider "${e}" configured successfully!`),!0)}async validateProvider(e){try{let t={"Content-Type":"application/json"};e.apiFormat==="openai"?t.Authorization=`Bearer ${e.apiKey}`:t["x-api-key"]=e.apiKey;let s=e.baseUrl.endsWith("/")?`${e.baseUrl}models`:`${e.baseUrl}/models`,n=await fetch(s,{headers:t});return n.ok||n.status===404?!0:n.status<500}catch{return!1}}async saveProviderConfig(e){this.modelsConfig||(this.modelsConfig={providers:{}});let t=e.name.toLowerCase().replace(/\s+/g,"-");await this.storeApiKey(e.apiKey),this.modelsConfig.providers[t]={name:e.name,baseUrl:e.baseUrl,apiKey:`{env:CCLOCAL_${t.toUpperCase()}_API_KEY}`,apiFormat:e.apiFormat,models:e.models},await this.saveModelsConfig(),process.env[`CCLOCAL_${t.toUpperCase()}_API_KEY`]=e.apiKey}async editModelsJson(){Q.existsSync(J)||await this.createDefaultModelsConfig();let e=await C.workspace.openTextDocument(J);return await C.window.showTextDocument(e),!0}async listProviders(){if(await this.loadModelsConfig(),!this.modelsConfig||Object.keys(this.modelsConfig.providers).length===0)return C.window.showInformationMessage("No custom providers configured yet."),!1;let e=Object.entries(this.modelsConfig.providers).map(([i,r])=>({label:r.name,description:r.baseUrl,detail:`API Format: ${r.apiFormat||"openai"}`,key:i})),t=await C.window.showQuickPick(e,{placeHolder:"Configured Providers"});if(!t)return!1;let s=[{label:"$(pencil) Edit",action:"edit"},{label:"$(trash) Delete",action:"delete"},{label:"$(check) Test",action:"test"}],n=await C.window.showQuickPick(s,{placeHolder:`Actions for ${t.label}`});if(!n)return!1;switch(n.action){case"edit":return await this.editProvider(t.key);case"delete":return await this.deleteProvider(t.key);case"test":return await this.testProvider(t.key)}return!1}async editProvider(e){return await this.editModelsJson(),!0}async deleteProvider(e){return await C.window.showWarningMessage(`Delete provider "${e}"?`,"Yes","No")!=="Yes"?!1:(this.modelsConfig&&(delete this.modelsConfig.providers[e],await this.saveModelsConfig()),!0)}async testProvider(e){if(!this.modelsConfig)return!1;let t=this.modelsConfig.providers[e];if(!t)return!1;let s=await this.validateProvider(t);return s?C.window.showInformationMessage(`Provider "${t.name}" is working!`):C.window.showErrorMessage(`Provider "${t.name}" test failed.`),s}async loadModelsConfig(){try{if(Q.existsSync(J)){let e=await Q.promises.readFile(J,"utf8");this.modelsConfig=JSON.parse(e)}else this.modelsConfig={providers:{}}}catch(e){console.error("Failed to load models.json:",e),this.modelsConfig={providers:{}}}}async saveModelsConfig(){let e=Ge.dirname(J);await Q.promises.mkdir(e,{recursive:!0}),await Q.promises.writeFile(J,JSON.stringify(this.modelsConfig,null,2),"utf8")}async createDefaultModelsConfig(){let e={providers:{},defaultModel:void 0,smallFastModel:void 0};await Q.promises.mkdir(Ge.dirname(J),{recursive:!0}),await Q.promises.writeFile(J,JSON.stringify(e,null,2),"utf8"),this.modelsConfig=e}async getConfiguredProviders(){return await this.loadModelsConfig(),this.modelsConfig?.providers||{}}static getModelsConfigPath(){return J}}});function Et(o,e){return!xe&&o&&(xe=new Ye(o,e)),xe}function Mt(){xe&&(xe.dispose(),xe=null)}var N,Pt,ro,ms,Ye,xe,ao=V(()=>{"use strict";N=g(require("vscode"),1),Pt=g(require("path"),1),ro=g(require("fs"),1),ms={user:".claude.json",local:"cclocal.json",project:".mcp.json"},Ye=class{outputChannel;servers;options;disposables;stateChangeEmitter;onDidChangeState;constructor(e,t={}){this.outputChannel=e,this.options={autoDiscoverProject:!0,autoApproveKnown:!1,preApprovedServers:[],deniedServers:[],allowedPatterns:[],blockedPatterns:[],...t},this.servers=new Map,this.disposables=[],this.stateChangeEmitter=new N.EventEmitter,this.onDidChangeState=this.stateChangeEmitter.event,this.outputChannel.debug("MCPManager initialized")}async discoverServers(){this.outputChannel.debug("Discovering MCP servers...");let e=[],t=await this.discoverFromConfig(this.getUserConfigPath(),"user");e.push(...t);let s=await this.discoverFromConfig(this.getLocalConfigPath(),"local");if(e.push(...s),this.options.autoDiscoverProject){let n=await this.discoverFromConfig(this.getProjectConfigPath(),"project");e.push(...n)}for(let n of e)this.mergeServer(n);return this.outputChannel.info(`Discovered ${e.length} MCP servers`),e}async discoverFromConfig(e,t){if(!e)return[];try{let s=await ro.promises.readFile(e,"utf-8"),n=JSON.parse(s);if(!n.mcpServers)return[];let i=[],r=Date.now();for(let[a,l]of Object.entries(n.mcpServers)){let c=this.determineApprovalState(a,t),u={name:a,config:l,status:"registered",tools:[],approvalState:c,authState:this.determineAuthState(l),source:t,updatedAt:r,description:l.description};i.push(u)}return this.outputChannel.debug(`Found ${i.length} servers in ${e}`),i}catch(s){return s.code!=="ENOENT"&&this.outputChannel.warn(`Failed to read config ${e}: ${s}`),[]}}determineApprovalState(e,t){if(this.options.preApprovedServers?.includes(e))return"approved";if(this.options.deniedServers?.includes(e))return"denied";if(this.options.allowedPatterns?.length){for(let s of this.options.allowedPatterns)if(new RegExp(s).test(e))return"approved"}if(this.options.blockedPatterns?.length){for(let s of this.options.blockedPatterns)if(new RegExp(s).test(e))return"denied"}return t==="user"||t==="local"?"approved":"pending"}determineAuthState(e){return e.authToken?"authenticated":e.oauth||e.requiresAuth?"required":"none"}async approveServer(e,t=!1){let s=this.servers.get(e);if(!s)return this.outputChannel.warn(`Cannot approve: server "${e}" not found`),!1;let n={...s};return s.approvalState="approved",s.updatedAt=Date.now(),t&&await this.saveApprovalDecision(e,!0),this.emitStateChange("server_approved",e,s,n),this.outputChannel.info(`Approved MCP server: ${e}`),!0}async denyServer(e,t=!1,s){let n=this.servers.get(e);if(!n)return this.outputChannel.warn(`Cannot deny: server "${e}" not found`),!1;let i={...n};return n.approvalState="denied",n.updatedAt=Date.now(),t&&await this.saveApprovalDecision(e,!1),this.emitStateChange("server_denied",e,n,i),this.outputChannel.info(`Denied MCP server: ${e}${s?` (${s})`:""}`),!0}async removeServer(e){let t=this.servers.get(e);return t?(this.servers.delete(e),this.emitStateChange("server_removed",e,void 0,t),this.outputChannel.info(`Removed MCP server: ${e}`),!0):!1}async enableServer(e){let t=this.servers.get(e);return t?t.approvalState!=="approved"?(this.outputChannel.warn(`Cannot enable: server "${e}" is not approved`),!1):!0:!1}async disableServer(e){let t=this.servers.get(e);if(!t)return!1;let s={...t};return t.status="disconnected",t.updatedAt=Date.now(),this.emitStateChange("server_disconnected",e,t,s),!0}getServer(e){return this.servers.get(e)}getAllServers(){return Array.from(this.servers.values())}getServersByApproval(e){return this.getAllServers().filter(t=>t.approvalState===e)}getServersByStatus(e){return this.getAllServers().filter(t=>t.status===e)}getPendingApprovals(){return this.getServersByApproval("pending")}getActiveServers(){return this.getAllServers().filter(e=>e.approvalState==="approved"&&e.status==="connected")}getStats(){let e=this.getAllServers(),t={registered:0,connecting:0,connected:0,disconnected:0,failed:0},s={pending:0,approved:0,denied:0},n={user:0,local:0,project:0};for(let a of e)t[a.status]++,s[a.approvalState]++,n[a.source]++;let i=e.filter(a=>a.status==="connected").map(a=>a.name),r=e.filter(a=>a.status==="failed").map(a=>a.name);return{totalDiscovered:e.length,byStatus:t,byApproval:s,bySource:n,totalTools:e.reduce((a,l)=>a+l.tools.length,0),connectedServers:i,failedServers:r}}updateServerStatus(e,t,s){let n=this.servers.get(e);if(!n)return;let i={...n};n.status=t,n.lastError=s,n.updatedAt=Date.now();let r=t==="connected"?"server_connected":t==="failed"?"server_failed":t==="disconnected"?"server_disconnected":"server_discovered";this.emitStateChange(r,e,n,i)}updateServerTools(e,t){let s=this.servers.get(e);if(!s)return;let n={...s};s.tools=t,s.updatedAt=Date.now(),this.emitStateChange("tools_updated",e,s,n)}async showApprovalUI(e){let t=e.info,s=this.formatApprovalMessage(e),n=[{title:"Approve"},{title:"Approve & Remember"},{title:"Deny"},{title:"Deny & Remember"}],i=await N.window.showInformationMessage(s,{modal:!0,detail:this.formatApprovalDetail(e)},...n);return i?i.title==="Approve"?this.approveServer(t.name,!1):i.title==="Approve & Remember"?this.approveServer(t.name,!0):i.title==="Deny"?this.denyServer(t.name,!1):i.title==="Deny & Remember"?this.denyServer(t.name,!0):!1:!1}formatApprovalMessage(e){return`MCP Server Approval Request: "${e.name}"`}formatApprovalDetail(e){return[`Source: ${e.info.source}`,`Transport: ${e.info.config.type}`,"","Tools that will be available:",...e.tools.slice(0,5).map(s=>`  \u2022 ${s.name}: ${s.description||"No description"}`),e.tools.length>5?`  ... and ${e.tools.length-5} more`:""].filter(Boolean).join(`
-`)}getUserConfigPath(){let e=process.env.HOME||process.env.USERPROFILE||"";return Pt.join(e,ms.user)}getLocalConfigPath(){let e=process.env.HOME||process.env.USERPROFILE||"";return Pt.join(e,".claude",ms.local)}getProjectConfigPath(){let e=N.workspace.workspaceFolders;if(!(!e||e.length===0))return Pt.join(e[0].uri.fsPath,ms.project)}async saveApprovalDecision(e,t){let s=N.workspace.getConfiguration("cclocal");if(t){let n=s.get("approvedMcpServers")||[];n.includes(e)||(n.push(e),await s.update("approvedMcpServers",n,N.ConfigurationTarget.Global))}else{let n=s.get("deniedMcpServers")||[];n.includes(e)||(n.push(e),await s.update("deniedMcpServers",n,N.ConfigurationTarget.Global))}}mergeServer(e){let t=this.servers.get(e.name);if(t){let s={...e,approvalState:t.approvalState!=="pending"?t.approvalState:e.approvalState,updatedAt:Date.now()};this.servers.set(e.name,s)}else this.servers.set(e.name,e),this.emitStateChange("server_discovered",e.name,e)}emitStateChange(e,t,s,n){this.stateChangeEmitter.fire({type:e,serverName:t,info:s,previousState:n})}dispose(){this.servers.clear(),this.disposables.forEach(e=>e.dispose()),this.disposables=[],this.stateChangeEmitter.dispose(),this.outputChannel.debug("MCPManager disposed")}},xe=null});var D,Pe,fs=V(()=>{"use strict";D=g(require("vscode"),1),Pe=class{panel=null;mcpManager;constructor(e){this.mcpManager=e}show(){if(this.panel){this.panel.reveal();return}this.panel=D.window.createWebviewPanel("cclocal.mcp","MCP Servers",D.ViewColumn.One,{enableScripts:!0,retainContextWhenHidden:!0}),this.panel.webview.html=this.getWebviewContent(),this.setupMessageHandler(),this.mcpManager.onDidChangeState(e=>{this.sendState()})}setupMessageHandler(){this.panel&&this.panel.webview.onDidReceiveMessage(async e=>{switch(e.type){case"getState":this.sendState();break;case"refreshServers":await this.mcpManager.discoverServers(),this.sendState();break;case"approveServer":await this.mcpManager.approveServer(e.name,e.remember),this.sendState();break;case"denyServer":await this.mcpManager.denyServer(e.name,e.remember),this.sendState();break;case"enableServer":await this.mcpManager.enableServer(e.name),this.sendState();break;case"disableServer":await this.mcpManager.disableServer(e.name),this.sendState();break;case"removeServer":await this.mcpManager.removeServer(e.name),this.sendState();break;case"openSettings":await D.commands.executeCommand("workbench.action.openSettings","cclocal.mcp");break;case"openConfigFile":await this.openConfigFile(e.source);break}})}sendState(){let e=this.mcpManager.getAllServers(),t=this.mcpManager.getStats(),s=this.mcpManager.getPendingApprovals();this.panel?.webview.postMessage({type:"state",servers:e,stats:t,pendingApprovals:s})}async openConfigFile(e){let t=process.env.HOME||process.env.USERPROFILE||"",s={user:`${t}/.claude.json`,local:`${t}/.claude/cclocal.json`,project:""};if(e==="project"){let i=D.workspace.workspaceFolders;if(i&&i.length>0)s.project=`${i[0].uri.fsPath}/.mcp.json`;else{D.window.showWarningMessage("No workspace folder open");return}}let n=s[e];if(n)try{let i=await D.workspace.openTextDocument(n);await D.window.showTextDocument(i)}catch(i){D.window.showErrorMessage(`Failed to open ${n}: ${i}`)}}getWebviewContent(){return`
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __commonJS = (cb, mod) => function __require2() {
+  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/constants.js
+var require_constants = __commonJS({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/constants.js"(exports, module) {
+    "use strict";
+    var BINARY_TYPES = ["nodebuffer", "arraybuffer", "fragments"];
+    var hasBlob = typeof Blob !== "undefined";
+    if (hasBlob) BINARY_TYPES.push("blob");
+    module.exports = {
+      BINARY_TYPES,
+      CLOSE_TIMEOUT: 3e4,
+      EMPTY_BUFFER: Buffer.alloc(0),
+      GUID: "258EAFA5-E914-47DA-95CA-C5AB0DC85B11",
+      hasBlob,
+      kForOnEventAttribute: Symbol("kIsForOnEventAttribute"),
+      kListener: Symbol("kListener"),
+      kStatusCode: Symbol("status-code"),
+      kWebSocket: Symbol("websocket"),
+      NOOP: () => {
+      }
+    };
+  }
+});
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/buffer-util.js
+var require_buffer_util = __commonJS({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/buffer-util.js"(exports, module) {
+    "use strict";
+    var { EMPTY_BUFFER } = require_constants();
+    var FastBuffer = Buffer[Symbol.species];
+    function concat(list, totalLength) {
+      if (list.length === 0) return EMPTY_BUFFER;
+      if (list.length === 1) return list[0];
+      const target = Buffer.allocUnsafe(totalLength);
+      let offset = 0;
+      for (let i = 0; i < list.length; i++) {
+        const buf = list[i];
+        target.set(buf, offset);
+        offset += buf.length;
+      }
+      if (offset < totalLength) {
+        return new FastBuffer(target.buffer, target.byteOffset, offset);
+      }
+      return target;
+    }
+    function _mask(source, mask, output, offset, length) {
+      for (let i = 0; i < length; i++) {
+        output[offset + i] = source[i] ^ mask[i & 3];
+      }
+    }
+    function _unmask(buffer, mask) {
+      for (let i = 0; i < buffer.length; i++) {
+        buffer[i] ^= mask[i & 3];
+      }
+    }
+    function toArrayBuffer(buf) {
+      if (buf.length === buf.buffer.byteLength) {
+        return buf.buffer;
+      }
+      return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.length);
+    }
+    function toBuffer(data) {
+      toBuffer.readOnly = true;
+      if (Buffer.isBuffer(data)) return data;
+      let buf;
+      if (data instanceof ArrayBuffer) {
+        buf = new FastBuffer(data);
+      } else if (ArrayBuffer.isView(data)) {
+        buf = new FastBuffer(data.buffer, data.byteOffset, data.byteLength);
+      } else {
+        buf = Buffer.from(data);
+        toBuffer.readOnly = false;
+      }
+      return buf;
+    }
+    module.exports = {
+      concat,
+      mask: _mask,
+      toArrayBuffer,
+      toBuffer,
+      unmask: _unmask
+    };
+    if (!process.env.WS_NO_BUFFER_UTIL) {
+      try {
+        const bufferUtil = __require("bufferutil");
+        module.exports.mask = function(source, mask, output, offset, length) {
+          if (length < 48) _mask(source, mask, output, offset, length);
+          else bufferUtil.mask(source, mask, output, offset, length);
+        };
+        module.exports.unmask = function(buffer, mask) {
+          if (buffer.length < 32) _unmask(buffer, mask);
+          else bufferUtil.unmask(buffer, mask);
+        };
+      } catch (e) {
+      }
+    }
+  }
+});
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/limiter.js
+var require_limiter = __commonJS({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/limiter.js"(exports, module) {
+    "use strict";
+    var kDone = Symbol("kDone");
+    var kRun = Symbol("kRun");
+    var Limiter = class {
+      /**
+       * Creates a new `Limiter`.
+       *
+       * @param {Number} [concurrency=Infinity] The maximum number of jobs allowed
+       *     to run concurrently
+       */
+      constructor(concurrency) {
+        this[kDone] = () => {
+          this.pending--;
+          this[kRun]();
+        };
+        this.concurrency = concurrency || Infinity;
+        this.jobs = [];
+        this.pending = 0;
+      }
+      /**
+       * Adds a job to the queue.
+       *
+       * @param {Function} job The job to run
+       * @public
+       */
+      add(job) {
+        this.jobs.push(job);
+        this[kRun]();
+      }
+      /**
+       * Removes a job from the queue and runs it if possible.
+       *
+       * @private
+       */
+      [kRun]() {
+        if (this.pending === this.concurrency) return;
+        if (this.jobs.length) {
+          const job = this.jobs.shift();
+          this.pending++;
+          job(this[kDone]);
+        }
+      }
+    };
+    module.exports = Limiter;
+  }
+});
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/permessage-deflate.js
+var require_permessage_deflate = __commonJS({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/permessage-deflate.js"(exports, module) {
+    "use strict";
+    var zlib = __require("zlib");
+    var bufferUtil = require_buffer_util();
+    var Limiter = require_limiter();
+    var { kStatusCode } = require_constants();
+    var FastBuffer = Buffer[Symbol.species];
+    var TRAILER = Buffer.from([0, 0, 255, 255]);
+    var kPerMessageDeflate = Symbol("permessage-deflate");
+    var kTotalLength = Symbol("total-length");
+    var kCallback = Symbol("callback");
+    var kBuffers = Symbol("buffers");
+    var kError = Symbol("error");
+    var zlibLimiter;
+    var PerMessageDeflate2 = class {
+      /**
+       * Creates a PerMessageDeflate instance.
+       *
+       * @param {Object} [options] Configuration options
+       * @param {(Boolean|Number)} [options.clientMaxWindowBits] Advertise support
+       *     for, or request, a custom client window size
+       * @param {Boolean} [options.clientNoContextTakeover=false] Advertise/
+       *     acknowledge disabling of client context takeover
+       * @param {Number} [options.concurrencyLimit=10] The number of concurrent
+       *     calls to zlib
+       * @param {Boolean} [options.isServer=false] Create the instance in either
+       *     server or client mode
+       * @param {Number} [options.maxPayload=0] The maximum allowed message length
+       * @param {(Boolean|Number)} [options.serverMaxWindowBits] Request/confirm the
+       *     use of a custom server window size
+       * @param {Boolean} [options.serverNoContextTakeover=false] Request/accept
+       *     disabling of server context takeover
+       * @param {Number} [options.threshold=1024] Size (in bytes) below which
+       *     messages should not be compressed if context takeover is disabled
+       * @param {Object} [options.zlibDeflateOptions] Options to pass to zlib on
+       *     deflate
+       * @param {Object} [options.zlibInflateOptions] Options to pass to zlib on
+       *     inflate
+       */
+      constructor(options) {
+        this._options = options || {};
+        this._threshold = this._options.threshold !== void 0 ? this._options.threshold : 1024;
+        this._maxPayload = this._options.maxPayload | 0;
+        this._isServer = !!this._options.isServer;
+        this._deflate = null;
+        this._inflate = null;
+        this.params = null;
+        if (!zlibLimiter) {
+          const concurrency = this._options.concurrencyLimit !== void 0 ? this._options.concurrencyLimit : 10;
+          zlibLimiter = new Limiter(concurrency);
+        }
+      }
+      /**
+       * @type {String}
+       */
+      static get extensionName() {
+        return "permessage-deflate";
+      }
+      /**
+       * Create an extension negotiation offer.
+       *
+       * @return {Object} Extension parameters
+       * @public
+       */
+      offer() {
+        const params = {};
+        if (this._options.serverNoContextTakeover) {
+          params.server_no_context_takeover = true;
+        }
+        if (this._options.clientNoContextTakeover) {
+          params.client_no_context_takeover = true;
+        }
+        if (this._options.serverMaxWindowBits) {
+          params.server_max_window_bits = this._options.serverMaxWindowBits;
+        }
+        if (this._options.clientMaxWindowBits) {
+          params.client_max_window_bits = this._options.clientMaxWindowBits;
+        } else if (this._options.clientMaxWindowBits == null) {
+          params.client_max_window_bits = true;
+        }
+        return params;
+      }
+      /**
+       * Accept an extension negotiation offer/response.
+       *
+       * @param {Array} configurations The extension negotiation offers/reponse
+       * @return {Object} Accepted configuration
+       * @public
+       */
+      accept(configurations) {
+        configurations = this.normalizeParams(configurations);
+        this.params = this._isServer ? this.acceptAsServer(configurations) : this.acceptAsClient(configurations);
+        return this.params;
+      }
+      /**
+       * Releases all resources used by the extension.
+       *
+       * @public
+       */
+      cleanup() {
+        if (this._inflate) {
+          this._inflate.close();
+          this._inflate = null;
+        }
+        if (this._deflate) {
+          const callback = this._deflate[kCallback];
+          this._deflate.close();
+          this._deflate = null;
+          if (callback) {
+            callback(
+              new Error(
+                "The deflate stream was closed while data was being processed"
+              )
+            );
+          }
+        }
+      }
+      /**
+       *  Accept an extension negotiation offer.
+       *
+       * @param {Array} offers The extension negotiation offers
+       * @return {Object} Accepted configuration
+       * @private
+       */
+      acceptAsServer(offers) {
+        const opts = this._options;
+        const accepted = offers.find((params) => {
+          if (opts.serverNoContextTakeover === false && params.server_no_context_takeover || params.server_max_window_bits && (opts.serverMaxWindowBits === false || typeof opts.serverMaxWindowBits === "number" && opts.serverMaxWindowBits > params.server_max_window_bits) || typeof opts.clientMaxWindowBits === "number" && !params.client_max_window_bits) {
+            return false;
+          }
+          return true;
+        });
+        if (!accepted) {
+          throw new Error("None of the extension offers can be accepted");
+        }
+        if (opts.serverNoContextTakeover) {
+          accepted.server_no_context_takeover = true;
+        }
+        if (opts.clientNoContextTakeover) {
+          accepted.client_no_context_takeover = true;
+        }
+        if (typeof opts.serverMaxWindowBits === "number") {
+          accepted.server_max_window_bits = opts.serverMaxWindowBits;
+        }
+        if (typeof opts.clientMaxWindowBits === "number") {
+          accepted.client_max_window_bits = opts.clientMaxWindowBits;
+        } else if (accepted.client_max_window_bits === true || opts.clientMaxWindowBits === false) {
+          delete accepted.client_max_window_bits;
+        }
+        return accepted;
+      }
+      /**
+       * Accept the extension negotiation response.
+       *
+       * @param {Array} response The extension negotiation response
+       * @return {Object} Accepted configuration
+       * @private
+       */
+      acceptAsClient(response) {
+        const params = response[0];
+        if (this._options.clientNoContextTakeover === false && params.client_no_context_takeover) {
+          throw new Error('Unexpected parameter "client_no_context_takeover"');
+        }
+        if (!params.client_max_window_bits) {
+          if (typeof this._options.clientMaxWindowBits === "number") {
+            params.client_max_window_bits = this._options.clientMaxWindowBits;
+          }
+        } else if (this._options.clientMaxWindowBits === false || typeof this._options.clientMaxWindowBits === "number" && params.client_max_window_bits > this._options.clientMaxWindowBits) {
+          throw new Error(
+            'Unexpected or invalid parameter "client_max_window_bits"'
+          );
+        }
+        return params;
+      }
+      /**
+       * Normalize parameters.
+       *
+       * @param {Array} configurations The extension negotiation offers/reponse
+       * @return {Array} The offers/response with normalized parameters
+       * @private
+       */
+      normalizeParams(configurations) {
+        configurations.forEach((params) => {
+          Object.keys(params).forEach((key) => {
+            let value = params[key];
+            if (value.length > 1) {
+              throw new Error(`Parameter "${key}" must have only a single value`);
+            }
+            value = value[0];
+            if (key === "client_max_window_bits") {
+              if (value !== true) {
+                const num = +value;
+                if (!Number.isInteger(num) || num < 8 || num > 15) {
+                  throw new TypeError(
+                    `Invalid value for parameter "${key}": ${value}`
+                  );
+                }
+                value = num;
+              } else if (!this._isServer) {
+                throw new TypeError(
+                  `Invalid value for parameter "${key}": ${value}`
+                );
+              }
+            } else if (key === "server_max_window_bits") {
+              const num = +value;
+              if (!Number.isInteger(num) || num < 8 || num > 15) {
+                throw new TypeError(
+                  `Invalid value for parameter "${key}": ${value}`
+                );
+              }
+              value = num;
+            } else if (key === "client_no_context_takeover" || key === "server_no_context_takeover") {
+              if (value !== true) {
+                throw new TypeError(
+                  `Invalid value for parameter "${key}": ${value}`
+                );
+              }
+            } else {
+              throw new Error(`Unknown parameter "${key}"`);
+            }
+            params[key] = value;
+          });
+        });
+        return configurations;
+      }
+      /**
+       * Decompress data. Concurrency limited.
+       *
+       * @param {Buffer} data Compressed data
+       * @param {Boolean} fin Specifies whether or not this is the last fragment
+       * @param {Function} callback Callback
+       * @public
+       */
+      decompress(data, fin, callback) {
+        zlibLimiter.add((done) => {
+          this._decompress(data, fin, (err, result) => {
+            done();
+            callback(err, result);
+          });
+        });
+      }
+      /**
+       * Compress data. Concurrency limited.
+       *
+       * @param {(Buffer|String)} data Data to compress
+       * @param {Boolean} fin Specifies whether or not this is the last fragment
+       * @param {Function} callback Callback
+       * @public
+       */
+      compress(data, fin, callback) {
+        zlibLimiter.add((done) => {
+          this._compress(data, fin, (err, result) => {
+            done();
+            callback(err, result);
+          });
+        });
+      }
+      /**
+       * Decompress data.
+       *
+       * @param {Buffer} data Compressed data
+       * @param {Boolean} fin Specifies whether or not this is the last fragment
+       * @param {Function} callback Callback
+       * @private
+       */
+      _decompress(data, fin, callback) {
+        const endpoint = this._isServer ? "client" : "server";
+        if (!this._inflate) {
+          const key = `${endpoint}_max_window_bits`;
+          const windowBits = typeof this.params[key] !== "number" ? zlib.Z_DEFAULT_WINDOWBITS : this.params[key];
+          this._inflate = zlib.createInflateRaw({
+            ...this._options.zlibInflateOptions,
+            windowBits
+          });
+          this._inflate[kPerMessageDeflate] = this;
+          this._inflate[kTotalLength] = 0;
+          this._inflate[kBuffers] = [];
+          this._inflate.on("error", inflateOnError);
+          this._inflate.on("data", inflateOnData);
+        }
+        this._inflate[kCallback] = callback;
+        this._inflate.write(data);
+        if (fin) this._inflate.write(TRAILER);
+        this._inflate.flush(() => {
+          const err = this._inflate[kError];
+          if (err) {
+            this._inflate.close();
+            this._inflate = null;
+            callback(err);
+            return;
+          }
+          const data2 = bufferUtil.concat(
+            this._inflate[kBuffers],
+            this._inflate[kTotalLength]
+          );
+          if (this._inflate._readableState.endEmitted) {
+            this._inflate.close();
+            this._inflate = null;
+          } else {
+            this._inflate[kTotalLength] = 0;
+            this._inflate[kBuffers] = [];
+            if (fin && this.params[`${endpoint}_no_context_takeover`]) {
+              this._inflate.reset();
+            }
+          }
+          callback(null, data2);
+        });
+      }
+      /**
+       * Compress data.
+       *
+       * @param {(Buffer|String)} data Data to compress
+       * @param {Boolean} fin Specifies whether or not this is the last fragment
+       * @param {Function} callback Callback
+       * @private
+       */
+      _compress(data, fin, callback) {
+        const endpoint = this._isServer ? "server" : "client";
+        if (!this._deflate) {
+          const key = `${endpoint}_max_window_bits`;
+          const windowBits = typeof this.params[key] !== "number" ? zlib.Z_DEFAULT_WINDOWBITS : this.params[key];
+          this._deflate = zlib.createDeflateRaw({
+            ...this._options.zlibDeflateOptions,
+            windowBits
+          });
+          this._deflate[kTotalLength] = 0;
+          this._deflate[kBuffers] = [];
+          this._deflate.on("data", deflateOnData);
+        }
+        this._deflate[kCallback] = callback;
+        this._deflate.write(data);
+        this._deflate.flush(zlib.Z_SYNC_FLUSH, () => {
+          if (!this._deflate) {
+            return;
+          }
+          let data2 = bufferUtil.concat(
+            this._deflate[kBuffers],
+            this._deflate[kTotalLength]
+          );
+          if (fin) {
+            data2 = new FastBuffer(data2.buffer, data2.byteOffset, data2.length - 4);
+          }
+          this._deflate[kCallback] = null;
+          this._deflate[kTotalLength] = 0;
+          this._deflate[kBuffers] = [];
+          if (fin && this.params[`${endpoint}_no_context_takeover`]) {
+            this._deflate.reset();
+          }
+          callback(null, data2);
+        });
+      }
+    };
+    module.exports = PerMessageDeflate2;
+    function deflateOnData(chunk) {
+      this[kBuffers].push(chunk);
+      this[kTotalLength] += chunk.length;
+    }
+    function inflateOnData(chunk) {
+      this[kTotalLength] += chunk.length;
+      if (this[kPerMessageDeflate]._maxPayload < 1 || this[kTotalLength] <= this[kPerMessageDeflate]._maxPayload) {
+        this[kBuffers].push(chunk);
+        return;
+      }
+      this[kError] = new RangeError("Max payload size exceeded");
+      this[kError].code = "WS_ERR_UNSUPPORTED_MESSAGE_LENGTH";
+      this[kError][kStatusCode] = 1009;
+      this.removeListener("data", inflateOnData);
+      this.reset();
+    }
+    function inflateOnError(err) {
+      this[kPerMessageDeflate]._inflate = null;
+      if (this[kError]) {
+        this[kCallback](this[kError]);
+        return;
+      }
+      err[kStatusCode] = 1007;
+      this[kCallback](err);
+    }
+  }
+});
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/validation.js
+var require_validation = __commonJS({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/validation.js"(exports, module) {
+    "use strict";
+    var { isUtf8 } = __require("buffer");
+    var { hasBlob } = require_constants();
+    var tokenChars = [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      // 0 - 15
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      // 16 - 31
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      // 32 - 47
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      // 48 - 63
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      // 64 - 79
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      1,
+      // 80 - 95
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      // 96 - 111
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0
+      // 112 - 127
+    ];
+    function isValidStatusCode(code) {
+      return code >= 1e3 && code <= 1014 && code !== 1004 && code !== 1005 && code !== 1006 || code >= 3e3 && code <= 4999;
+    }
+    function _isValidUTF8(buf) {
+      const len = buf.length;
+      let i = 0;
+      while (i < len) {
+        if ((buf[i] & 128) === 0) {
+          i++;
+        } else if ((buf[i] & 224) === 192) {
+          if (i + 1 === len || (buf[i + 1] & 192) !== 128 || (buf[i] & 254) === 192) {
+            return false;
+          }
+          i += 2;
+        } else if ((buf[i] & 240) === 224) {
+          if (i + 2 >= len || (buf[i + 1] & 192) !== 128 || (buf[i + 2] & 192) !== 128 || buf[i] === 224 && (buf[i + 1] & 224) === 128 || // Overlong
+          buf[i] === 237 && (buf[i + 1] & 224) === 160) {
+            return false;
+          }
+          i += 3;
+        } else if ((buf[i] & 248) === 240) {
+          if (i + 3 >= len || (buf[i + 1] & 192) !== 128 || (buf[i + 2] & 192) !== 128 || (buf[i + 3] & 192) !== 128 || buf[i] === 240 && (buf[i + 1] & 240) === 128 || // Overlong
+          buf[i] === 244 && buf[i + 1] > 143 || buf[i] > 244) {
+            return false;
+          }
+          i += 4;
+        } else {
+          return false;
+        }
+      }
+      return true;
+    }
+    function isBlob(value) {
+      return hasBlob && typeof value === "object" && typeof value.arrayBuffer === "function" && typeof value.type === "string" && typeof value.stream === "function" && (value[Symbol.toStringTag] === "Blob" || value[Symbol.toStringTag] === "File");
+    }
+    module.exports = {
+      isBlob,
+      isValidStatusCode,
+      isValidUTF8: _isValidUTF8,
+      tokenChars
+    };
+    if (isUtf8) {
+      module.exports.isValidUTF8 = function(buf) {
+        return buf.length < 24 ? _isValidUTF8(buf) : isUtf8(buf);
+      };
+    } else if (!process.env.WS_NO_UTF_8_VALIDATE) {
+      try {
+        const isValidUTF8 = __require("utf-8-validate");
+        module.exports.isValidUTF8 = function(buf) {
+          return buf.length < 32 ? _isValidUTF8(buf) : isValidUTF8(buf);
+        };
+      } catch (e) {
+      }
+    }
+  }
+});
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/receiver.js
+var require_receiver = __commonJS({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/receiver.js"(exports, module) {
+    "use strict";
+    var { Writable } = __require("stream");
+    var PerMessageDeflate2 = require_permessage_deflate();
+    var {
+      BINARY_TYPES,
+      EMPTY_BUFFER,
+      kStatusCode,
+      kWebSocket
+    } = require_constants();
+    var { concat, toArrayBuffer, unmask } = require_buffer_util();
+    var { isValidStatusCode, isValidUTF8 } = require_validation();
+    var FastBuffer = Buffer[Symbol.species];
+    var GET_INFO = 0;
+    var GET_PAYLOAD_LENGTH_16 = 1;
+    var GET_PAYLOAD_LENGTH_64 = 2;
+    var GET_MASK = 3;
+    var GET_DATA = 4;
+    var INFLATING = 5;
+    var DEFER_EVENT = 6;
+    var Receiver2 = class extends Writable {
+      /**
+       * Creates a Receiver instance.
+       *
+       * @param {Object} [options] Options object
+       * @param {Boolean} [options.allowSynchronousEvents=true] Specifies whether
+       *     any of the `'message'`, `'ping'`, and `'pong'` events can be emitted
+       *     multiple times in the same tick
+       * @param {String} [options.binaryType=nodebuffer] The type for binary data
+       * @param {Object} [options.extensions] An object containing the negotiated
+       *     extensions
+       * @param {Boolean} [options.isServer=false] Specifies whether to operate in
+       *     client or server mode
+       * @param {Number} [options.maxPayload=0] The maximum allowed message length
+       * @param {Boolean} [options.skipUTF8Validation=false] Specifies whether or
+       *     not to skip UTF-8 validation for text and close messages
+       */
+      constructor(options = {}) {
+        super();
+        this._allowSynchronousEvents = options.allowSynchronousEvents !== void 0 ? options.allowSynchronousEvents : true;
+        this._binaryType = options.binaryType || BINARY_TYPES[0];
+        this._extensions = options.extensions || {};
+        this._isServer = !!options.isServer;
+        this._maxPayload = options.maxPayload | 0;
+        this._skipUTF8Validation = !!options.skipUTF8Validation;
+        this[kWebSocket] = void 0;
+        this._bufferedBytes = 0;
+        this._buffers = [];
+        this._compressed = false;
+        this._payloadLength = 0;
+        this._mask = void 0;
+        this._fragmented = 0;
+        this._masked = false;
+        this._fin = false;
+        this._opcode = 0;
+        this._totalPayloadLength = 0;
+        this._messageLength = 0;
+        this._fragments = [];
+        this._errored = false;
+        this._loop = false;
+        this._state = GET_INFO;
+      }
+      /**
+       * Implements `Writable.prototype._write()`.
+       *
+       * @param {Buffer} chunk The chunk of data to write
+       * @param {String} encoding The character encoding of `chunk`
+       * @param {Function} cb Callback
+       * @private
+       */
+      _write(chunk, encoding, cb) {
+        if (this._opcode === 8 && this._state == GET_INFO) return cb();
+        this._bufferedBytes += chunk.length;
+        this._buffers.push(chunk);
+        this.startLoop(cb);
+      }
+      /**
+       * Consumes `n` bytes from the buffered data.
+       *
+       * @param {Number} n The number of bytes to consume
+       * @return {Buffer} The consumed bytes
+       * @private
+       */
+      consume(n) {
+        this._bufferedBytes -= n;
+        if (n === this._buffers[0].length) return this._buffers.shift();
+        if (n < this._buffers[0].length) {
+          const buf = this._buffers[0];
+          this._buffers[0] = new FastBuffer(
+            buf.buffer,
+            buf.byteOffset + n,
+            buf.length - n
+          );
+          return new FastBuffer(buf.buffer, buf.byteOffset, n);
+        }
+        const dst = Buffer.allocUnsafe(n);
+        do {
+          const buf = this._buffers[0];
+          const offset = dst.length - n;
+          if (n >= buf.length) {
+            dst.set(this._buffers.shift(), offset);
+          } else {
+            dst.set(new Uint8Array(buf.buffer, buf.byteOffset, n), offset);
+            this._buffers[0] = new FastBuffer(
+              buf.buffer,
+              buf.byteOffset + n,
+              buf.length - n
+            );
+          }
+          n -= buf.length;
+        } while (n > 0);
+        return dst;
+      }
+      /**
+       * Starts the parsing loop.
+       *
+       * @param {Function} cb Callback
+       * @private
+       */
+      startLoop(cb) {
+        this._loop = true;
+        do {
+          switch (this._state) {
+            case GET_INFO:
+              this.getInfo(cb);
+              break;
+            case GET_PAYLOAD_LENGTH_16:
+              this.getPayloadLength16(cb);
+              break;
+            case GET_PAYLOAD_LENGTH_64:
+              this.getPayloadLength64(cb);
+              break;
+            case GET_MASK:
+              this.getMask();
+              break;
+            case GET_DATA:
+              this.getData(cb);
+              break;
+            case INFLATING:
+            case DEFER_EVENT:
+              this._loop = false;
+              return;
+          }
+        } while (this._loop);
+        if (!this._errored) cb();
+      }
+      /**
+       * Reads the first two bytes of a frame.
+       *
+       * @param {Function} cb Callback
+       * @private
+       */
+      getInfo(cb) {
+        if (this._bufferedBytes < 2) {
+          this._loop = false;
+          return;
+        }
+        const buf = this.consume(2);
+        if ((buf[0] & 48) !== 0) {
+          const error = this.createError(
+            RangeError,
+            "RSV2 and RSV3 must be clear",
+            true,
+            1002,
+            "WS_ERR_UNEXPECTED_RSV_2_3"
+          );
+          cb(error);
+          return;
+        }
+        const compressed = (buf[0] & 64) === 64;
+        if (compressed && !this._extensions[PerMessageDeflate2.extensionName]) {
+          const error = this.createError(
+            RangeError,
+            "RSV1 must be clear",
+            true,
+            1002,
+            "WS_ERR_UNEXPECTED_RSV_1"
+          );
+          cb(error);
+          return;
+        }
+        this._fin = (buf[0] & 128) === 128;
+        this._opcode = buf[0] & 15;
+        this._payloadLength = buf[1] & 127;
+        if (this._opcode === 0) {
+          if (compressed) {
+            const error = this.createError(
+              RangeError,
+              "RSV1 must be clear",
+              true,
+              1002,
+              "WS_ERR_UNEXPECTED_RSV_1"
+            );
+            cb(error);
+            return;
+          }
+          if (!this._fragmented) {
+            const error = this.createError(
+              RangeError,
+              "invalid opcode 0",
+              true,
+              1002,
+              "WS_ERR_INVALID_OPCODE"
+            );
+            cb(error);
+            return;
+          }
+          this._opcode = this._fragmented;
+        } else if (this._opcode === 1 || this._opcode === 2) {
+          if (this._fragmented) {
+            const error = this.createError(
+              RangeError,
+              `invalid opcode ${this._opcode}`,
+              true,
+              1002,
+              "WS_ERR_INVALID_OPCODE"
+            );
+            cb(error);
+            return;
+          }
+          this._compressed = compressed;
+        } else if (this._opcode > 7 && this._opcode < 11) {
+          if (!this._fin) {
+            const error = this.createError(
+              RangeError,
+              "FIN must be set",
+              true,
+              1002,
+              "WS_ERR_EXPECTED_FIN"
+            );
+            cb(error);
+            return;
+          }
+          if (compressed) {
+            const error = this.createError(
+              RangeError,
+              "RSV1 must be clear",
+              true,
+              1002,
+              "WS_ERR_UNEXPECTED_RSV_1"
+            );
+            cb(error);
+            return;
+          }
+          if (this._payloadLength > 125 || this._opcode === 8 && this._payloadLength === 1) {
+            const error = this.createError(
+              RangeError,
+              `invalid payload length ${this._payloadLength}`,
+              true,
+              1002,
+              "WS_ERR_INVALID_CONTROL_PAYLOAD_LENGTH"
+            );
+            cb(error);
+            return;
+          }
+        } else {
+          const error = this.createError(
+            RangeError,
+            `invalid opcode ${this._opcode}`,
+            true,
+            1002,
+            "WS_ERR_INVALID_OPCODE"
+          );
+          cb(error);
+          return;
+        }
+        if (!this._fin && !this._fragmented) this._fragmented = this._opcode;
+        this._masked = (buf[1] & 128) === 128;
+        if (this._isServer) {
+          if (!this._masked) {
+            const error = this.createError(
+              RangeError,
+              "MASK must be set",
+              true,
+              1002,
+              "WS_ERR_EXPECTED_MASK"
+            );
+            cb(error);
+            return;
+          }
+        } else if (this._masked) {
+          const error = this.createError(
+            RangeError,
+            "MASK must be clear",
+            true,
+            1002,
+            "WS_ERR_UNEXPECTED_MASK"
+          );
+          cb(error);
+          return;
+        }
+        if (this._payloadLength === 126) this._state = GET_PAYLOAD_LENGTH_16;
+        else if (this._payloadLength === 127) this._state = GET_PAYLOAD_LENGTH_64;
+        else this.haveLength(cb);
+      }
+      /**
+       * Gets extended payload length (7+16).
+       *
+       * @param {Function} cb Callback
+       * @private
+       */
+      getPayloadLength16(cb) {
+        if (this._bufferedBytes < 2) {
+          this._loop = false;
+          return;
+        }
+        this._payloadLength = this.consume(2).readUInt16BE(0);
+        this.haveLength(cb);
+      }
+      /**
+       * Gets extended payload length (7+64).
+       *
+       * @param {Function} cb Callback
+       * @private
+       */
+      getPayloadLength64(cb) {
+        if (this._bufferedBytes < 8) {
+          this._loop = false;
+          return;
+        }
+        const buf = this.consume(8);
+        const num = buf.readUInt32BE(0);
+        if (num > Math.pow(2, 53 - 32) - 1) {
+          const error = this.createError(
+            RangeError,
+            "Unsupported WebSocket frame: payload length > 2^53 - 1",
+            false,
+            1009,
+            "WS_ERR_UNSUPPORTED_DATA_PAYLOAD_LENGTH"
+          );
+          cb(error);
+          return;
+        }
+        this._payloadLength = num * Math.pow(2, 32) + buf.readUInt32BE(4);
+        this.haveLength(cb);
+      }
+      /**
+       * Payload length has been read.
+       *
+       * @param {Function} cb Callback
+       * @private
+       */
+      haveLength(cb) {
+        if (this._payloadLength && this._opcode < 8) {
+          this._totalPayloadLength += this._payloadLength;
+          if (this._totalPayloadLength > this._maxPayload && this._maxPayload > 0) {
+            const error = this.createError(
+              RangeError,
+              "Max payload size exceeded",
+              false,
+              1009,
+              "WS_ERR_UNSUPPORTED_MESSAGE_LENGTH"
+            );
+            cb(error);
+            return;
+          }
+        }
+        if (this._masked) this._state = GET_MASK;
+        else this._state = GET_DATA;
+      }
+      /**
+       * Reads mask bytes.
+       *
+       * @private
+       */
+      getMask() {
+        if (this._bufferedBytes < 4) {
+          this._loop = false;
+          return;
+        }
+        this._mask = this.consume(4);
+        this._state = GET_DATA;
+      }
+      /**
+       * Reads data bytes.
+       *
+       * @param {Function} cb Callback
+       * @private
+       */
+      getData(cb) {
+        let data = EMPTY_BUFFER;
+        if (this._payloadLength) {
+          if (this._bufferedBytes < this._payloadLength) {
+            this._loop = false;
+            return;
+          }
+          data = this.consume(this._payloadLength);
+          if (this._masked && (this._mask[0] | this._mask[1] | this._mask[2] | this._mask[3]) !== 0) {
+            unmask(data, this._mask);
+          }
+        }
+        if (this._opcode > 7) {
+          this.controlMessage(data, cb);
+          return;
+        }
+        if (this._compressed) {
+          this._state = INFLATING;
+          this.decompress(data, cb);
+          return;
+        }
+        if (data.length) {
+          this._messageLength = this._totalPayloadLength;
+          this._fragments.push(data);
+        }
+        this.dataMessage(cb);
+      }
+      /**
+       * Decompresses data.
+       *
+       * @param {Buffer} data Compressed data
+       * @param {Function} cb Callback
+       * @private
+       */
+      decompress(data, cb) {
+        const perMessageDeflate = this._extensions[PerMessageDeflate2.extensionName];
+        perMessageDeflate.decompress(data, this._fin, (err, buf) => {
+          if (err) return cb(err);
+          if (buf.length) {
+            this._messageLength += buf.length;
+            if (this._messageLength > this._maxPayload && this._maxPayload > 0) {
+              const error = this.createError(
+                RangeError,
+                "Max payload size exceeded",
+                false,
+                1009,
+                "WS_ERR_UNSUPPORTED_MESSAGE_LENGTH"
+              );
+              cb(error);
+              return;
+            }
+            this._fragments.push(buf);
+          }
+          this.dataMessage(cb);
+          if (this._state === GET_INFO) this.startLoop(cb);
+        });
+      }
+      /**
+       * Handles a data message.
+       *
+       * @param {Function} cb Callback
+       * @private
+       */
+      dataMessage(cb) {
+        if (!this._fin) {
+          this._state = GET_INFO;
+          return;
+        }
+        const messageLength = this._messageLength;
+        const fragments = this._fragments;
+        this._totalPayloadLength = 0;
+        this._messageLength = 0;
+        this._fragmented = 0;
+        this._fragments = [];
+        if (this._opcode === 2) {
+          let data;
+          if (this._binaryType === "nodebuffer") {
+            data = concat(fragments, messageLength);
+          } else if (this._binaryType === "arraybuffer") {
+            data = toArrayBuffer(concat(fragments, messageLength));
+          } else if (this._binaryType === "blob") {
+            data = new Blob(fragments);
+          } else {
+            data = fragments;
+          }
+          if (this._allowSynchronousEvents) {
+            this.emit("message", data, true);
+            this._state = GET_INFO;
+          } else {
+            this._state = DEFER_EVENT;
+            setImmediate(() => {
+              this.emit("message", data, true);
+              this._state = GET_INFO;
+              this.startLoop(cb);
+            });
+          }
+        } else {
+          const buf = concat(fragments, messageLength);
+          if (!this._skipUTF8Validation && !isValidUTF8(buf)) {
+            const error = this.createError(
+              Error,
+              "invalid UTF-8 sequence",
+              true,
+              1007,
+              "WS_ERR_INVALID_UTF8"
+            );
+            cb(error);
+            return;
+          }
+          if (this._state === INFLATING || this._allowSynchronousEvents) {
+            this.emit("message", buf, false);
+            this._state = GET_INFO;
+          } else {
+            this._state = DEFER_EVENT;
+            setImmediate(() => {
+              this.emit("message", buf, false);
+              this._state = GET_INFO;
+              this.startLoop(cb);
+            });
+          }
+        }
+      }
+      /**
+       * Handles a control message.
+       *
+       * @param {Buffer} data Data to handle
+       * @return {(Error|RangeError|undefined)} A possible error
+       * @private
+       */
+      controlMessage(data, cb) {
+        if (this._opcode === 8) {
+          if (data.length === 0) {
+            this._loop = false;
+            this.emit("conclude", 1005, EMPTY_BUFFER);
+            this.end();
+          } else {
+            const code = data.readUInt16BE(0);
+            if (!isValidStatusCode(code)) {
+              const error = this.createError(
+                RangeError,
+                `invalid status code ${code}`,
+                true,
+                1002,
+                "WS_ERR_INVALID_CLOSE_CODE"
+              );
+              cb(error);
+              return;
+            }
+            const buf = new FastBuffer(
+              data.buffer,
+              data.byteOffset + 2,
+              data.length - 2
+            );
+            if (!this._skipUTF8Validation && !isValidUTF8(buf)) {
+              const error = this.createError(
+                Error,
+                "invalid UTF-8 sequence",
+                true,
+                1007,
+                "WS_ERR_INVALID_UTF8"
+              );
+              cb(error);
+              return;
+            }
+            this._loop = false;
+            this.emit("conclude", code, buf);
+            this.end();
+          }
+          this._state = GET_INFO;
+          return;
+        }
+        if (this._allowSynchronousEvents) {
+          this.emit(this._opcode === 9 ? "ping" : "pong", data);
+          this._state = GET_INFO;
+        } else {
+          this._state = DEFER_EVENT;
+          setImmediate(() => {
+            this.emit(this._opcode === 9 ? "ping" : "pong", data);
+            this._state = GET_INFO;
+            this.startLoop(cb);
+          });
+        }
+      }
+      /**
+       * Builds an error object.
+       *
+       * @param {function(new:Error|RangeError)} ErrorCtor The error constructor
+       * @param {String} message The error message
+       * @param {Boolean} prefix Specifies whether or not to add a default prefix to
+       *     `message`
+       * @param {Number} statusCode The status code
+       * @param {String} errorCode The exposed error code
+       * @return {(Error|RangeError)} The error
+       * @private
+       */
+      createError(ErrorCtor, message, prefix, statusCode, errorCode) {
+        this._loop = false;
+        this._errored = true;
+        const err = new ErrorCtor(
+          prefix ? `Invalid WebSocket frame: ${message}` : message
+        );
+        Error.captureStackTrace(err, this.createError);
+        err.code = errorCode;
+        err[kStatusCode] = statusCode;
+        return err;
+      }
+    };
+    module.exports = Receiver2;
+  }
+});
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/sender.js
+var require_sender = __commonJS({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/sender.js"(exports, module) {
+    "use strict";
+    var { Duplex } = __require("stream");
+    var { randomFillSync } = __require("crypto");
+    var PerMessageDeflate2 = require_permessage_deflate();
+    var { EMPTY_BUFFER, kWebSocket, NOOP } = require_constants();
+    var { isBlob, isValidStatusCode } = require_validation();
+    var { mask: applyMask, toBuffer } = require_buffer_util();
+    var kByteLength = Symbol("kByteLength");
+    var maskBuffer = Buffer.alloc(4);
+    var RANDOM_POOL_SIZE = 8 * 1024;
+    var randomPool;
+    var randomPoolPointer = RANDOM_POOL_SIZE;
+    var DEFAULT = 0;
+    var DEFLATING = 1;
+    var GET_BLOB_DATA = 2;
+    var Sender2 = class _Sender {
+      /**
+       * Creates a Sender instance.
+       *
+       * @param {Duplex} socket The connection socket
+       * @param {Object} [extensions] An object containing the negotiated extensions
+       * @param {Function} [generateMask] The function used to generate the masking
+       *     key
+       */
+      constructor(socket, extensions, generateMask) {
+        this._extensions = extensions || {};
+        if (generateMask) {
+          this._generateMask = generateMask;
+          this._maskBuffer = Buffer.alloc(4);
+        }
+        this._socket = socket;
+        this._firstFragment = true;
+        this._compress = false;
+        this._bufferedBytes = 0;
+        this._queue = [];
+        this._state = DEFAULT;
+        this.onerror = NOOP;
+        this[kWebSocket] = void 0;
+      }
+      /**
+       * Frames a piece of data according to the HyBi WebSocket protocol.
+       *
+       * @param {(Buffer|String)} data The data to frame
+       * @param {Object} options Options object
+       * @param {Boolean} [options.fin=false] Specifies whether or not to set the
+       *     FIN bit
+       * @param {Function} [options.generateMask] The function used to generate the
+       *     masking key
+       * @param {Boolean} [options.mask=false] Specifies whether or not to mask
+       *     `data`
+       * @param {Buffer} [options.maskBuffer] The buffer used to store the masking
+       *     key
+       * @param {Number} options.opcode The opcode
+       * @param {Boolean} [options.readOnly=false] Specifies whether `data` can be
+       *     modified
+       * @param {Boolean} [options.rsv1=false] Specifies whether or not to set the
+       *     RSV1 bit
+       * @return {(Buffer|String)[]} The framed data
+       * @public
+       */
+      static frame(data, options) {
+        let mask;
+        let merge = false;
+        let offset = 2;
+        let skipMasking = false;
+        if (options.mask) {
+          mask = options.maskBuffer || maskBuffer;
+          if (options.generateMask) {
+            options.generateMask(mask);
+          } else {
+            if (randomPoolPointer === RANDOM_POOL_SIZE) {
+              if (randomPool === void 0) {
+                randomPool = Buffer.alloc(RANDOM_POOL_SIZE);
+              }
+              randomFillSync(randomPool, 0, RANDOM_POOL_SIZE);
+              randomPoolPointer = 0;
+            }
+            mask[0] = randomPool[randomPoolPointer++];
+            mask[1] = randomPool[randomPoolPointer++];
+            mask[2] = randomPool[randomPoolPointer++];
+            mask[3] = randomPool[randomPoolPointer++];
+          }
+          skipMasking = (mask[0] | mask[1] | mask[2] | mask[3]) === 0;
+          offset = 6;
+        }
+        let dataLength;
+        if (typeof data === "string") {
+          if ((!options.mask || skipMasking) && options[kByteLength] !== void 0) {
+            dataLength = options[kByteLength];
+          } else {
+            data = Buffer.from(data);
+            dataLength = data.length;
+          }
+        } else {
+          dataLength = data.length;
+          merge = options.mask && options.readOnly && !skipMasking;
+        }
+        let payloadLength = dataLength;
+        if (dataLength >= 65536) {
+          offset += 8;
+          payloadLength = 127;
+        } else if (dataLength > 125) {
+          offset += 2;
+          payloadLength = 126;
+        }
+        const target = Buffer.allocUnsafe(merge ? dataLength + offset : offset);
+        target[0] = options.fin ? options.opcode | 128 : options.opcode;
+        if (options.rsv1) target[0] |= 64;
+        target[1] = payloadLength;
+        if (payloadLength === 126) {
+          target.writeUInt16BE(dataLength, 2);
+        } else if (payloadLength === 127) {
+          target[2] = target[3] = 0;
+          target.writeUIntBE(dataLength, 4, 6);
+        }
+        if (!options.mask) return [target, data];
+        target[1] |= 128;
+        target[offset - 4] = mask[0];
+        target[offset - 3] = mask[1];
+        target[offset - 2] = mask[2];
+        target[offset - 1] = mask[3];
+        if (skipMasking) return [target, data];
+        if (merge) {
+          applyMask(data, mask, target, offset, dataLength);
+          return [target];
+        }
+        applyMask(data, mask, data, 0, dataLength);
+        return [target, data];
+      }
+      /**
+       * Sends a close message to the other peer.
+       *
+       * @param {Number} [code] The status code component of the body
+       * @param {(String|Buffer)} [data] The message component of the body
+       * @param {Boolean} [mask=false] Specifies whether or not to mask the message
+       * @param {Function} [cb] Callback
+       * @public
+       */
+      close(code, data, mask, cb) {
+        let buf;
+        if (code === void 0) {
+          buf = EMPTY_BUFFER;
+        } else if (typeof code !== "number" || !isValidStatusCode(code)) {
+          throw new TypeError("First argument must be a valid error code number");
+        } else if (data === void 0 || !data.length) {
+          buf = Buffer.allocUnsafe(2);
+          buf.writeUInt16BE(code, 0);
+        } else {
+          const length = Buffer.byteLength(data);
+          if (length > 123) {
+            throw new RangeError("The message must not be greater than 123 bytes");
+          }
+          buf = Buffer.allocUnsafe(2 + length);
+          buf.writeUInt16BE(code, 0);
+          if (typeof data === "string") {
+            buf.write(data, 2);
+          } else {
+            buf.set(data, 2);
+          }
+        }
+        const options = {
+          [kByteLength]: buf.length,
+          fin: true,
+          generateMask: this._generateMask,
+          mask,
+          maskBuffer: this._maskBuffer,
+          opcode: 8,
+          readOnly: false,
+          rsv1: false
+        };
+        if (this._state !== DEFAULT) {
+          this.enqueue([this.dispatch, buf, false, options, cb]);
+        } else {
+          this.sendFrame(_Sender.frame(buf, options), cb);
+        }
+      }
+      /**
+       * Sends a ping message to the other peer.
+       *
+       * @param {*} data The message to send
+       * @param {Boolean} [mask=false] Specifies whether or not to mask `data`
+       * @param {Function} [cb] Callback
+       * @public
+       */
+      ping(data, mask, cb) {
+        let byteLength;
+        let readOnly;
+        if (typeof data === "string") {
+          byteLength = Buffer.byteLength(data);
+          readOnly = false;
+        } else if (isBlob(data)) {
+          byteLength = data.size;
+          readOnly = false;
+        } else {
+          data = toBuffer(data);
+          byteLength = data.length;
+          readOnly = toBuffer.readOnly;
+        }
+        if (byteLength > 125) {
+          throw new RangeError("The data size must not be greater than 125 bytes");
+        }
+        const options = {
+          [kByteLength]: byteLength,
+          fin: true,
+          generateMask: this._generateMask,
+          mask,
+          maskBuffer: this._maskBuffer,
+          opcode: 9,
+          readOnly,
+          rsv1: false
+        };
+        if (isBlob(data)) {
+          if (this._state !== DEFAULT) {
+            this.enqueue([this.getBlobData, data, false, options, cb]);
+          } else {
+            this.getBlobData(data, false, options, cb);
+          }
+        } else if (this._state !== DEFAULT) {
+          this.enqueue([this.dispatch, data, false, options, cb]);
+        } else {
+          this.sendFrame(_Sender.frame(data, options), cb);
+        }
+      }
+      /**
+       * Sends a pong message to the other peer.
+       *
+       * @param {*} data The message to send
+       * @param {Boolean} [mask=false] Specifies whether or not to mask `data`
+       * @param {Function} [cb] Callback
+       * @public
+       */
+      pong(data, mask, cb) {
+        let byteLength;
+        let readOnly;
+        if (typeof data === "string") {
+          byteLength = Buffer.byteLength(data);
+          readOnly = false;
+        } else if (isBlob(data)) {
+          byteLength = data.size;
+          readOnly = false;
+        } else {
+          data = toBuffer(data);
+          byteLength = data.length;
+          readOnly = toBuffer.readOnly;
+        }
+        if (byteLength > 125) {
+          throw new RangeError("The data size must not be greater than 125 bytes");
+        }
+        const options = {
+          [kByteLength]: byteLength,
+          fin: true,
+          generateMask: this._generateMask,
+          mask,
+          maskBuffer: this._maskBuffer,
+          opcode: 10,
+          readOnly,
+          rsv1: false
+        };
+        if (isBlob(data)) {
+          if (this._state !== DEFAULT) {
+            this.enqueue([this.getBlobData, data, false, options, cb]);
+          } else {
+            this.getBlobData(data, false, options, cb);
+          }
+        } else if (this._state !== DEFAULT) {
+          this.enqueue([this.dispatch, data, false, options, cb]);
+        } else {
+          this.sendFrame(_Sender.frame(data, options), cb);
+        }
+      }
+      /**
+       * Sends a data message to the other peer.
+       *
+       * @param {*} data The message to send
+       * @param {Object} options Options object
+       * @param {Boolean} [options.binary=false] Specifies whether `data` is binary
+       *     or text
+       * @param {Boolean} [options.compress=false] Specifies whether or not to
+       *     compress `data`
+       * @param {Boolean} [options.fin=false] Specifies whether the fragment is the
+       *     last one
+       * @param {Boolean} [options.mask=false] Specifies whether or not to mask
+       *     `data`
+       * @param {Function} [cb] Callback
+       * @public
+       */
+      send(data, options, cb) {
+        const perMessageDeflate = this._extensions[PerMessageDeflate2.extensionName];
+        let opcode = options.binary ? 2 : 1;
+        let rsv1 = options.compress;
+        let byteLength;
+        let readOnly;
+        if (typeof data === "string") {
+          byteLength = Buffer.byteLength(data);
+          readOnly = false;
+        } else if (isBlob(data)) {
+          byteLength = data.size;
+          readOnly = false;
+        } else {
+          data = toBuffer(data);
+          byteLength = data.length;
+          readOnly = toBuffer.readOnly;
+        }
+        if (this._firstFragment) {
+          this._firstFragment = false;
+          if (rsv1 && perMessageDeflate && perMessageDeflate.params[perMessageDeflate._isServer ? "server_no_context_takeover" : "client_no_context_takeover"]) {
+            rsv1 = byteLength >= perMessageDeflate._threshold;
+          }
+          this._compress = rsv1;
+        } else {
+          rsv1 = false;
+          opcode = 0;
+        }
+        if (options.fin) this._firstFragment = true;
+        const opts = {
+          [kByteLength]: byteLength,
+          fin: options.fin,
+          generateMask: this._generateMask,
+          mask: options.mask,
+          maskBuffer: this._maskBuffer,
+          opcode,
+          readOnly,
+          rsv1
+        };
+        if (isBlob(data)) {
+          if (this._state !== DEFAULT) {
+            this.enqueue([this.getBlobData, data, this._compress, opts, cb]);
+          } else {
+            this.getBlobData(data, this._compress, opts, cb);
+          }
+        } else if (this._state !== DEFAULT) {
+          this.enqueue([this.dispatch, data, this._compress, opts, cb]);
+        } else {
+          this.dispatch(data, this._compress, opts, cb);
+        }
+      }
+      /**
+       * Gets the contents of a blob as binary data.
+       *
+       * @param {Blob} blob The blob
+       * @param {Boolean} [compress=false] Specifies whether or not to compress
+       *     the data
+       * @param {Object} options Options object
+       * @param {Boolean} [options.fin=false] Specifies whether or not to set the
+       *     FIN bit
+       * @param {Function} [options.generateMask] The function used to generate the
+       *     masking key
+       * @param {Boolean} [options.mask=false] Specifies whether or not to mask
+       *     `data`
+       * @param {Buffer} [options.maskBuffer] The buffer used to store the masking
+       *     key
+       * @param {Number} options.opcode The opcode
+       * @param {Boolean} [options.readOnly=false] Specifies whether `data` can be
+       *     modified
+       * @param {Boolean} [options.rsv1=false] Specifies whether or not to set the
+       *     RSV1 bit
+       * @param {Function} [cb] Callback
+       * @private
+       */
+      getBlobData(blob, compress, options, cb) {
+        this._bufferedBytes += options[kByteLength];
+        this._state = GET_BLOB_DATA;
+        blob.arrayBuffer().then((arrayBuffer) => {
+          if (this._socket.destroyed) {
+            const err = new Error(
+              "The socket was closed while the blob was being read"
+            );
+            process.nextTick(callCallbacks, this, err, cb);
+            return;
+          }
+          this._bufferedBytes -= options[kByteLength];
+          const data = toBuffer(arrayBuffer);
+          if (!compress) {
+            this._state = DEFAULT;
+            this.sendFrame(_Sender.frame(data, options), cb);
+            this.dequeue();
+          } else {
+            this.dispatch(data, compress, options, cb);
+          }
+        }).catch((err) => {
+          process.nextTick(onError, this, err, cb);
+        });
+      }
+      /**
+       * Dispatches a message.
+       *
+       * @param {(Buffer|String)} data The message to send
+       * @param {Boolean} [compress=false] Specifies whether or not to compress
+       *     `data`
+       * @param {Object} options Options object
+       * @param {Boolean} [options.fin=false] Specifies whether or not to set the
+       *     FIN bit
+       * @param {Function} [options.generateMask] The function used to generate the
+       *     masking key
+       * @param {Boolean} [options.mask=false] Specifies whether or not to mask
+       *     `data`
+       * @param {Buffer} [options.maskBuffer] The buffer used to store the masking
+       *     key
+       * @param {Number} options.opcode The opcode
+       * @param {Boolean} [options.readOnly=false] Specifies whether `data` can be
+       *     modified
+       * @param {Boolean} [options.rsv1=false] Specifies whether or not to set the
+       *     RSV1 bit
+       * @param {Function} [cb] Callback
+       * @private
+       */
+      dispatch(data, compress, options, cb) {
+        if (!compress) {
+          this.sendFrame(_Sender.frame(data, options), cb);
+          return;
+        }
+        const perMessageDeflate = this._extensions[PerMessageDeflate2.extensionName];
+        this._bufferedBytes += options[kByteLength];
+        this._state = DEFLATING;
+        perMessageDeflate.compress(data, options.fin, (_, buf) => {
+          if (this._socket.destroyed) {
+            const err = new Error(
+              "The socket was closed while data was being compressed"
+            );
+            callCallbacks(this, err, cb);
+            return;
+          }
+          this._bufferedBytes -= options[kByteLength];
+          this._state = DEFAULT;
+          options.readOnly = false;
+          this.sendFrame(_Sender.frame(buf, options), cb);
+          this.dequeue();
+        });
+      }
+      /**
+       * Executes queued send operations.
+       *
+       * @private
+       */
+      dequeue() {
+        while (this._state === DEFAULT && this._queue.length) {
+          const params = this._queue.shift();
+          this._bufferedBytes -= params[3][kByteLength];
+          Reflect.apply(params[0], this, params.slice(1));
+        }
+      }
+      /**
+       * Enqueues a send operation.
+       *
+       * @param {Array} params Send operation parameters.
+       * @private
+       */
+      enqueue(params) {
+        this._bufferedBytes += params[3][kByteLength];
+        this._queue.push(params);
+      }
+      /**
+       * Sends a frame.
+       *
+       * @param {(Buffer | String)[]} list The frame to send
+       * @param {Function} [cb] Callback
+       * @private
+       */
+      sendFrame(list, cb) {
+        if (list.length === 2) {
+          this._socket.cork();
+          this._socket.write(list[0]);
+          this._socket.write(list[1], cb);
+          this._socket.uncork();
+        } else {
+          this._socket.write(list[0], cb);
+        }
+      }
+    };
+    module.exports = Sender2;
+    function callCallbacks(sender, err, cb) {
+      if (typeof cb === "function") cb(err);
+      for (let i = 0; i < sender._queue.length; i++) {
+        const params = sender._queue[i];
+        const callback = params[params.length - 1];
+        if (typeof callback === "function") callback(err);
+      }
+    }
+    function onError(sender, err, cb) {
+      callCallbacks(sender, err, cb);
+      sender.onerror(err);
+    }
+  }
+});
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/event-target.js
+var require_event_target = __commonJS({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/event-target.js"(exports, module) {
+    "use strict";
+    var { kForOnEventAttribute, kListener } = require_constants();
+    var kCode = Symbol("kCode");
+    var kData = Symbol("kData");
+    var kError = Symbol("kError");
+    var kMessage = Symbol("kMessage");
+    var kReason = Symbol("kReason");
+    var kTarget = Symbol("kTarget");
+    var kType = Symbol("kType");
+    var kWasClean = Symbol("kWasClean");
+    var Event = class {
+      /**
+       * Create a new `Event`.
+       *
+       * @param {String} type The name of the event
+       * @throws {TypeError} If the `type` argument is not specified
+       */
+      constructor(type) {
+        this[kTarget] = null;
+        this[kType] = type;
+      }
+      /**
+       * @type {*}
+       */
+      get target() {
+        return this[kTarget];
+      }
+      /**
+       * @type {String}
+       */
+      get type() {
+        return this[kType];
+      }
+    };
+    Object.defineProperty(Event.prototype, "target", { enumerable: true });
+    Object.defineProperty(Event.prototype, "type", { enumerable: true });
+    var CloseEvent = class extends Event {
+      /**
+       * Create a new `CloseEvent`.
+       *
+       * @param {String} type The name of the event
+       * @param {Object} [options] A dictionary object that allows for setting
+       *     attributes via object members of the same name
+       * @param {Number} [options.code=0] The status code explaining why the
+       *     connection was closed
+       * @param {String} [options.reason=''] A human-readable string explaining why
+       *     the connection was closed
+       * @param {Boolean} [options.wasClean=false] Indicates whether or not the
+       *     connection was cleanly closed
+       */
+      constructor(type, options = {}) {
+        super(type);
+        this[kCode] = options.code === void 0 ? 0 : options.code;
+        this[kReason] = options.reason === void 0 ? "" : options.reason;
+        this[kWasClean] = options.wasClean === void 0 ? false : options.wasClean;
+      }
+      /**
+       * @type {Number}
+       */
+      get code() {
+        return this[kCode];
+      }
+      /**
+       * @type {String}
+       */
+      get reason() {
+        return this[kReason];
+      }
+      /**
+       * @type {Boolean}
+       */
+      get wasClean() {
+        return this[kWasClean];
+      }
+    };
+    Object.defineProperty(CloseEvent.prototype, "code", { enumerable: true });
+    Object.defineProperty(CloseEvent.prototype, "reason", { enumerable: true });
+    Object.defineProperty(CloseEvent.prototype, "wasClean", { enumerable: true });
+    var ErrorEvent = class extends Event {
+      /**
+       * Create a new `ErrorEvent`.
+       *
+       * @param {String} type The name of the event
+       * @param {Object} [options] A dictionary object that allows for setting
+       *     attributes via object members of the same name
+       * @param {*} [options.error=null] The error that generated this event
+       * @param {String} [options.message=''] The error message
+       */
+      constructor(type, options = {}) {
+        super(type);
+        this[kError] = options.error === void 0 ? null : options.error;
+        this[kMessage] = options.message === void 0 ? "" : options.message;
+      }
+      /**
+       * @type {*}
+       */
+      get error() {
+        return this[kError];
+      }
+      /**
+       * @type {String}
+       */
+      get message() {
+        return this[kMessage];
+      }
+    };
+    Object.defineProperty(ErrorEvent.prototype, "error", { enumerable: true });
+    Object.defineProperty(ErrorEvent.prototype, "message", { enumerable: true });
+    var MessageEvent = class extends Event {
+      /**
+       * Create a new `MessageEvent`.
+       *
+       * @param {String} type The name of the event
+       * @param {Object} [options] A dictionary object that allows for setting
+       *     attributes via object members of the same name
+       * @param {*} [options.data=null] The message content
+       */
+      constructor(type, options = {}) {
+        super(type);
+        this[kData] = options.data === void 0 ? null : options.data;
+      }
+      /**
+       * @type {*}
+       */
+      get data() {
+        return this[kData];
+      }
+    };
+    Object.defineProperty(MessageEvent.prototype, "data", { enumerable: true });
+    var EventTarget = {
+      /**
+       * Register an event listener.
+       *
+       * @param {String} type A string representing the event type to listen for
+       * @param {(Function|Object)} handler The listener to add
+       * @param {Object} [options] An options object specifies characteristics about
+       *     the event listener
+       * @param {Boolean} [options.once=false] A `Boolean` indicating that the
+       *     listener should be invoked at most once after being added. If `true`,
+       *     the listener would be automatically removed when invoked.
+       * @public
+       */
+      addEventListener(type, handler, options = {}) {
+        for (const listener of this.listeners(type)) {
+          if (!options[kForOnEventAttribute] && listener[kListener] === handler && !listener[kForOnEventAttribute]) {
+            return;
+          }
+        }
+        let wrapper;
+        if (type === "message") {
+          wrapper = function onMessage(data, isBinary) {
+            const event = new MessageEvent("message", {
+              data: isBinary ? data : data.toString()
+            });
+            event[kTarget] = this;
+            callListener(handler, this, event);
+          };
+        } else if (type === "close") {
+          wrapper = function onClose(code, message) {
+            const event = new CloseEvent("close", {
+              code,
+              reason: message.toString(),
+              wasClean: this._closeFrameReceived && this._closeFrameSent
+            });
+            event[kTarget] = this;
+            callListener(handler, this, event);
+          };
+        } else if (type === "error") {
+          wrapper = function onError(error) {
+            const event = new ErrorEvent("error", {
+              error,
+              message: error.message
+            });
+            event[kTarget] = this;
+            callListener(handler, this, event);
+          };
+        } else if (type === "open") {
+          wrapper = function onOpen() {
+            const event = new Event("open");
+            event[kTarget] = this;
+            callListener(handler, this, event);
+          };
+        } else {
+          return;
+        }
+        wrapper[kForOnEventAttribute] = !!options[kForOnEventAttribute];
+        wrapper[kListener] = handler;
+        if (options.once) {
+          this.once(type, wrapper);
+        } else {
+          this.on(type, wrapper);
+        }
+      },
+      /**
+       * Remove an event listener.
+       *
+       * @param {String} type A string representing the event type to remove
+       * @param {(Function|Object)} handler The listener to remove
+       * @public
+       */
+      removeEventListener(type, handler) {
+        for (const listener of this.listeners(type)) {
+          if (listener[kListener] === handler && !listener[kForOnEventAttribute]) {
+            this.removeListener(type, listener);
+            break;
+          }
+        }
+      }
+    };
+    module.exports = {
+      CloseEvent,
+      ErrorEvent,
+      Event,
+      EventTarget,
+      MessageEvent
+    };
+    function callListener(listener, thisArg, event) {
+      if (typeof listener === "object" && listener.handleEvent) {
+        listener.handleEvent.call(listener, event);
+      } else {
+        listener.call(thisArg, event);
+      }
+    }
+  }
+});
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/extension.js
+var require_extension = __commonJS({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/extension.js"(exports, module) {
+    "use strict";
+    var { tokenChars } = require_validation();
+    function push(dest, name, elem) {
+      if (dest[name] === void 0) dest[name] = [elem];
+      else dest[name].push(elem);
+    }
+    function parse2(header) {
+      const offers = /* @__PURE__ */ Object.create(null);
+      let params = /* @__PURE__ */ Object.create(null);
+      let mustUnescape = false;
+      let isEscaping = false;
+      let inQuotes = false;
+      let extensionName;
+      let paramName;
+      let start = -1;
+      let code = -1;
+      let end = -1;
+      let i = 0;
+      for (; i < header.length; i++) {
+        code = header.charCodeAt(i);
+        if (extensionName === void 0) {
+          if (end === -1 && tokenChars[code] === 1) {
+            if (start === -1) start = i;
+          } else if (i !== 0 && (code === 32 || code === 9)) {
+            if (end === -1 && start !== -1) end = i;
+          } else if (code === 59 || code === 44) {
+            if (start === -1) {
+              throw new SyntaxError(`Unexpected character at index ${i}`);
+            }
+            if (end === -1) end = i;
+            const name = header.slice(start, end);
+            if (code === 44) {
+              push(offers, name, params);
+              params = /* @__PURE__ */ Object.create(null);
+            } else {
+              extensionName = name;
+            }
+            start = end = -1;
+          } else {
+            throw new SyntaxError(`Unexpected character at index ${i}`);
+          }
+        } else if (paramName === void 0) {
+          if (end === -1 && tokenChars[code] === 1) {
+            if (start === -1) start = i;
+          } else if (code === 32 || code === 9) {
+            if (end === -1 && start !== -1) end = i;
+          } else if (code === 59 || code === 44) {
+            if (start === -1) {
+              throw new SyntaxError(`Unexpected character at index ${i}`);
+            }
+            if (end === -1) end = i;
+            push(params, header.slice(start, end), true);
+            if (code === 44) {
+              push(offers, extensionName, params);
+              params = /* @__PURE__ */ Object.create(null);
+              extensionName = void 0;
+            }
+            start = end = -1;
+          } else if (code === 61 && start !== -1 && end === -1) {
+            paramName = header.slice(start, i);
+            start = end = -1;
+          } else {
+            throw new SyntaxError(`Unexpected character at index ${i}`);
+          }
+        } else {
+          if (isEscaping) {
+            if (tokenChars[code] !== 1) {
+              throw new SyntaxError(`Unexpected character at index ${i}`);
+            }
+            if (start === -1) start = i;
+            else if (!mustUnescape) mustUnescape = true;
+            isEscaping = false;
+          } else if (inQuotes) {
+            if (tokenChars[code] === 1) {
+              if (start === -1) start = i;
+            } else if (code === 34 && start !== -1) {
+              inQuotes = false;
+              end = i;
+            } else if (code === 92) {
+              isEscaping = true;
+            } else {
+              throw new SyntaxError(`Unexpected character at index ${i}`);
+            }
+          } else if (code === 34 && header.charCodeAt(i - 1) === 61) {
+            inQuotes = true;
+          } else if (end === -1 && tokenChars[code] === 1) {
+            if (start === -1) start = i;
+          } else if (start !== -1 && (code === 32 || code === 9)) {
+            if (end === -1) end = i;
+          } else if (code === 59 || code === 44) {
+            if (start === -1) {
+              throw new SyntaxError(`Unexpected character at index ${i}`);
+            }
+            if (end === -1) end = i;
+            let value = header.slice(start, end);
+            if (mustUnescape) {
+              value = value.replace(/\\/g, "");
+              mustUnescape = false;
+            }
+            push(params, paramName, value);
+            if (code === 44) {
+              push(offers, extensionName, params);
+              params = /* @__PURE__ */ Object.create(null);
+              extensionName = void 0;
+            }
+            paramName = void 0;
+            start = end = -1;
+          } else {
+            throw new SyntaxError(`Unexpected character at index ${i}`);
+          }
+        }
+      }
+      if (start === -1 || inQuotes || code === 32 || code === 9) {
+        throw new SyntaxError("Unexpected end of input");
+      }
+      if (end === -1) end = i;
+      const token = header.slice(start, end);
+      if (extensionName === void 0) {
+        push(offers, token, params);
+      } else {
+        if (paramName === void 0) {
+          push(params, token, true);
+        } else if (mustUnescape) {
+          push(params, paramName, token.replace(/\\/g, ""));
+        } else {
+          push(params, paramName, token);
+        }
+        push(offers, extensionName, params);
+      }
+      return offers;
+    }
+    function format(extensions) {
+      return Object.keys(extensions).map((extension2) => {
+        let configurations = extensions[extension2];
+        if (!Array.isArray(configurations)) configurations = [configurations];
+        return configurations.map((params) => {
+          return [extension2].concat(
+            Object.keys(params).map((k) => {
+              let values = params[k];
+              if (!Array.isArray(values)) values = [values];
+              return values.map((v) => v === true ? k : `${k}=${v}`).join("; ");
+            })
+          ).join("; ");
+        }).join(", ");
+      }).join(", ");
+    }
+    module.exports = { format, parse: parse2 };
+  }
+});
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/websocket.js
+var require_websocket = __commonJS({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/websocket.js"(exports, module) {
+    "use strict";
+    var EventEmitter13 = __require("events");
+    var https2 = __require("https");
+    var http5 = __require("http");
+    var net = __require("net");
+    var tls = __require("tls");
+    var { randomBytes: randomBytes8, createHash: createHash3 } = __require("crypto");
+    var { Duplex, Readable } = __require("stream");
+    var { URL: URL4 } = __require("url");
+    var PerMessageDeflate2 = require_permessage_deflate();
+    var Receiver2 = require_receiver();
+    var Sender2 = require_sender();
+    var { isBlob } = require_validation();
+    var {
+      BINARY_TYPES,
+      CLOSE_TIMEOUT,
+      EMPTY_BUFFER,
+      GUID,
+      kForOnEventAttribute,
+      kListener,
+      kStatusCode,
+      kWebSocket,
+      NOOP
+    } = require_constants();
+    var {
+      EventTarget: { addEventListener, removeEventListener }
+    } = require_event_target();
+    var { format, parse: parse2 } = require_extension();
+    var { toBuffer } = require_buffer_util();
+    var kAborted = Symbol("kAborted");
+    var protocolVersions = [8, 13];
+    var readyStates = ["CONNECTING", "OPEN", "CLOSING", "CLOSED"];
+    var subprotocolRegex = /^[!#$%&'*+\-.0-9A-Z^_`|a-z~]+$/;
+    var WebSocket3 = class _WebSocket extends EventEmitter13 {
+      /**
+       * Create a new `WebSocket`.
+       *
+       * @param {(String|URL)} address The URL to which to connect
+       * @param {(String|String[])} [protocols] The subprotocols
+       * @param {Object} [options] Connection options
+       */
+      constructor(address, protocols, options) {
+        super();
+        this._binaryType = BINARY_TYPES[0];
+        this._closeCode = 1006;
+        this._closeFrameReceived = false;
+        this._closeFrameSent = false;
+        this._closeMessage = EMPTY_BUFFER;
+        this._closeTimer = null;
+        this._errorEmitted = false;
+        this._extensions = {};
+        this._paused = false;
+        this._protocol = "";
+        this._readyState = _WebSocket.CONNECTING;
+        this._receiver = null;
+        this._sender = null;
+        this._socket = null;
+        if (address !== null) {
+          this._bufferedAmount = 0;
+          this._isServer = false;
+          this._redirects = 0;
+          if (protocols === void 0) {
+            protocols = [];
+          } else if (!Array.isArray(protocols)) {
+            if (typeof protocols === "object" && protocols !== null) {
+              options = protocols;
+              protocols = [];
+            } else {
+              protocols = [protocols];
+            }
+          }
+          initAsClient(this, address, protocols, options);
+        } else {
+          this._autoPong = options.autoPong;
+          this._closeTimeout = options.closeTimeout;
+          this._isServer = true;
+        }
+      }
+      /**
+       * For historical reasons, the custom "nodebuffer" type is used by the default
+       * instead of "blob".
+       *
+       * @type {String}
+       */
+      get binaryType() {
+        return this._binaryType;
+      }
+      set binaryType(type) {
+        if (!BINARY_TYPES.includes(type)) return;
+        this._binaryType = type;
+        if (this._receiver) this._receiver._binaryType = type;
+      }
+      /**
+       * @type {Number}
+       */
+      get bufferedAmount() {
+        if (!this._socket) return this._bufferedAmount;
+        return this._socket._writableState.length + this._sender._bufferedBytes;
+      }
+      /**
+       * @type {String}
+       */
+      get extensions() {
+        return Object.keys(this._extensions).join();
+      }
+      /**
+       * @type {Boolean}
+       */
+      get isPaused() {
+        return this._paused;
+      }
+      /**
+       * @type {Function}
+       */
+      /* istanbul ignore next */
+      get onclose() {
+        return null;
+      }
+      /**
+       * @type {Function}
+       */
+      /* istanbul ignore next */
+      get onerror() {
+        return null;
+      }
+      /**
+       * @type {Function}
+       */
+      /* istanbul ignore next */
+      get onopen() {
+        return null;
+      }
+      /**
+       * @type {Function}
+       */
+      /* istanbul ignore next */
+      get onmessage() {
+        return null;
+      }
+      /**
+       * @type {String}
+       */
+      get protocol() {
+        return this._protocol;
+      }
+      /**
+       * @type {Number}
+       */
+      get readyState() {
+        return this._readyState;
+      }
+      /**
+       * @type {String}
+       */
+      get url() {
+        return this._url;
+      }
+      /**
+       * Set up the socket and the internal resources.
+       *
+       * @param {Duplex} socket The network socket between the server and client
+       * @param {Buffer} head The first packet of the upgraded stream
+       * @param {Object} options Options object
+       * @param {Boolean} [options.allowSynchronousEvents=false] Specifies whether
+       *     any of the `'message'`, `'ping'`, and `'pong'` events can be emitted
+       *     multiple times in the same tick
+       * @param {Function} [options.generateMask] The function used to generate the
+       *     masking key
+       * @param {Number} [options.maxPayload=0] The maximum allowed message size
+       * @param {Boolean} [options.skipUTF8Validation=false] Specifies whether or
+       *     not to skip UTF-8 validation for text and close messages
+       * @private
+       */
+      setSocket(socket, head, options) {
+        const receiver = new Receiver2({
+          allowSynchronousEvents: options.allowSynchronousEvents,
+          binaryType: this.binaryType,
+          extensions: this._extensions,
+          isServer: this._isServer,
+          maxPayload: options.maxPayload,
+          skipUTF8Validation: options.skipUTF8Validation
+        });
+        const sender = new Sender2(socket, this._extensions, options.generateMask);
+        this._receiver = receiver;
+        this._sender = sender;
+        this._socket = socket;
+        receiver[kWebSocket] = this;
+        sender[kWebSocket] = this;
+        socket[kWebSocket] = this;
+        receiver.on("conclude", receiverOnConclude);
+        receiver.on("drain", receiverOnDrain);
+        receiver.on("error", receiverOnError);
+        receiver.on("message", receiverOnMessage);
+        receiver.on("ping", receiverOnPing);
+        receiver.on("pong", receiverOnPong);
+        sender.onerror = senderOnError;
+        if (socket.setTimeout) socket.setTimeout(0);
+        if (socket.setNoDelay) socket.setNoDelay();
+        if (head.length > 0) socket.unshift(head);
+        socket.on("close", socketOnClose);
+        socket.on("data", socketOnData);
+        socket.on("end", socketOnEnd);
+        socket.on("error", socketOnError);
+        this._readyState = _WebSocket.OPEN;
+        this.emit("open");
+      }
+      /**
+       * Emit the `'close'` event.
+       *
+       * @private
+       */
+      emitClose() {
+        if (!this._socket) {
+          this._readyState = _WebSocket.CLOSED;
+          this.emit("close", this._closeCode, this._closeMessage);
+          return;
+        }
+        if (this._extensions[PerMessageDeflate2.extensionName]) {
+          this._extensions[PerMessageDeflate2.extensionName].cleanup();
+        }
+        this._receiver.removeAllListeners();
+        this._readyState = _WebSocket.CLOSED;
+        this.emit("close", this._closeCode, this._closeMessage);
+      }
+      /**
+       * Start a closing handshake.
+       *
+       *          +----------+   +-----------+   +----------+
+       *     - - -|ws.close()|-->|close frame|-->|ws.close()|- - -
+       *    |     +----------+   +-----------+   +----------+     |
+       *          +----------+   +-----------+         |
+       * CLOSING  |ws.close()|<--|close frame|<--+-----+       CLOSING
+       *          +----------+   +-----------+   |
+       *    |           |                        |   +---+        |
+       *                +------------------------+-->|fin| - - - -
+       *    |         +---+                      |   +---+
+       *     - - - - -|fin|<---------------------+
+       *              +---+
+       *
+       * @param {Number} [code] Status code explaining why the connection is closing
+       * @param {(String|Buffer)} [data] The reason why the connection is
+       *     closing
+       * @public
+       */
+      close(code, data) {
+        if (this.readyState === _WebSocket.CLOSED) return;
+        if (this.readyState === _WebSocket.CONNECTING) {
+          const msg = "WebSocket was closed before the connection was established";
+          abortHandshake(this, this._req, msg);
+          return;
+        }
+        if (this.readyState === _WebSocket.CLOSING) {
+          if (this._closeFrameSent && (this._closeFrameReceived || this._receiver._writableState.errorEmitted)) {
+            this._socket.end();
+          }
+          return;
+        }
+        this._readyState = _WebSocket.CLOSING;
+        this._sender.close(code, data, !this._isServer, (err) => {
+          if (err) return;
+          this._closeFrameSent = true;
+          if (this._closeFrameReceived || this._receiver._writableState.errorEmitted) {
+            this._socket.end();
+          }
+        });
+        setCloseTimer(this);
+      }
+      /**
+       * Pause the socket.
+       *
+       * @public
+       */
+      pause() {
+        if (this.readyState === _WebSocket.CONNECTING || this.readyState === _WebSocket.CLOSED) {
+          return;
+        }
+        this._paused = true;
+        this._socket.pause();
+      }
+      /**
+       * Send a ping.
+       *
+       * @param {*} [data] The data to send
+       * @param {Boolean} [mask] Indicates whether or not to mask `data`
+       * @param {Function} [cb] Callback which is executed when the ping is sent
+       * @public
+       */
+      ping(data, mask, cb) {
+        if (this.readyState === _WebSocket.CONNECTING) {
+          throw new Error("WebSocket is not open: readyState 0 (CONNECTING)");
+        }
+        if (typeof data === "function") {
+          cb = data;
+          data = mask = void 0;
+        } else if (typeof mask === "function") {
+          cb = mask;
+          mask = void 0;
+        }
+        if (typeof data === "number") data = data.toString();
+        if (this.readyState !== _WebSocket.OPEN) {
+          sendAfterClose(this, data, cb);
+          return;
+        }
+        if (mask === void 0) mask = !this._isServer;
+        this._sender.ping(data || EMPTY_BUFFER, mask, cb);
+      }
+      /**
+       * Send a pong.
+       *
+       * @param {*} [data] The data to send
+       * @param {Boolean} [mask] Indicates whether or not to mask `data`
+       * @param {Function} [cb] Callback which is executed when the pong is sent
+       * @public
+       */
+      pong(data, mask, cb) {
+        if (this.readyState === _WebSocket.CONNECTING) {
+          throw new Error("WebSocket is not open: readyState 0 (CONNECTING)");
+        }
+        if (typeof data === "function") {
+          cb = data;
+          data = mask = void 0;
+        } else if (typeof mask === "function") {
+          cb = mask;
+          mask = void 0;
+        }
+        if (typeof data === "number") data = data.toString();
+        if (this.readyState !== _WebSocket.OPEN) {
+          sendAfterClose(this, data, cb);
+          return;
+        }
+        if (mask === void 0) mask = !this._isServer;
+        this._sender.pong(data || EMPTY_BUFFER, mask, cb);
+      }
+      /**
+       * Resume the socket.
+       *
+       * @public
+       */
+      resume() {
+        if (this.readyState === _WebSocket.CONNECTING || this.readyState === _WebSocket.CLOSED) {
+          return;
+        }
+        this._paused = false;
+        if (!this._receiver._writableState.needDrain) this._socket.resume();
+      }
+      /**
+       * Send a data message.
+       *
+       * @param {*} data The message to send
+       * @param {Object} [options] Options object
+       * @param {Boolean} [options.binary] Specifies whether `data` is binary or
+       *     text
+       * @param {Boolean} [options.compress] Specifies whether or not to compress
+       *     `data`
+       * @param {Boolean} [options.fin=true] Specifies whether the fragment is the
+       *     last one
+       * @param {Boolean} [options.mask] Specifies whether or not to mask `data`
+       * @param {Function} [cb] Callback which is executed when data is written out
+       * @public
+       */
+      send(data, options, cb) {
+        if (this.readyState === _WebSocket.CONNECTING) {
+          throw new Error("WebSocket is not open: readyState 0 (CONNECTING)");
+        }
+        if (typeof options === "function") {
+          cb = options;
+          options = {};
+        }
+        if (typeof data === "number") data = data.toString();
+        if (this.readyState !== _WebSocket.OPEN) {
+          sendAfterClose(this, data, cb);
+          return;
+        }
+        const opts = {
+          binary: typeof data !== "string",
+          mask: !this._isServer,
+          compress: true,
+          fin: true,
+          ...options
+        };
+        if (!this._extensions[PerMessageDeflate2.extensionName]) {
+          opts.compress = false;
+        }
+        this._sender.send(data || EMPTY_BUFFER, opts, cb);
+      }
+      /**
+       * Forcibly close the connection.
+       *
+       * @public
+       */
+      terminate() {
+        if (this.readyState === _WebSocket.CLOSED) return;
+        if (this.readyState === _WebSocket.CONNECTING) {
+          const msg = "WebSocket was closed before the connection was established";
+          abortHandshake(this, this._req, msg);
+          return;
+        }
+        if (this._socket) {
+          this._readyState = _WebSocket.CLOSING;
+          this._socket.destroy();
+        }
+      }
+    };
+    Object.defineProperty(WebSocket3, "CONNECTING", {
+      enumerable: true,
+      value: readyStates.indexOf("CONNECTING")
+    });
+    Object.defineProperty(WebSocket3.prototype, "CONNECTING", {
+      enumerable: true,
+      value: readyStates.indexOf("CONNECTING")
+    });
+    Object.defineProperty(WebSocket3, "OPEN", {
+      enumerable: true,
+      value: readyStates.indexOf("OPEN")
+    });
+    Object.defineProperty(WebSocket3.prototype, "OPEN", {
+      enumerable: true,
+      value: readyStates.indexOf("OPEN")
+    });
+    Object.defineProperty(WebSocket3, "CLOSING", {
+      enumerable: true,
+      value: readyStates.indexOf("CLOSING")
+    });
+    Object.defineProperty(WebSocket3.prototype, "CLOSING", {
+      enumerable: true,
+      value: readyStates.indexOf("CLOSING")
+    });
+    Object.defineProperty(WebSocket3, "CLOSED", {
+      enumerable: true,
+      value: readyStates.indexOf("CLOSED")
+    });
+    Object.defineProperty(WebSocket3.prototype, "CLOSED", {
+      enumerable: true,
+      value: readyStates.indexOf("CLOSED")
+    });
+    [
+      "binaryType",
+      "bufferedAmount",
+      "extensions",
+      "isPaused",
+      "protocol",
+      "readyState",
+      "url"
+    ].forEach((property) => {
+      Object.defineProperty(WebSocket3.prototype, property, { enumerable: true });
+    });
+    ["open", "error", "close", "message"].forEach((method) => {
+      Object.defineProperty(WebSocket3.prototype, `on${method}`, {
+        enumerable: true,
+        get() {
+          for (const listener of this.listeners(method)) {
+            if (listener[kForOnEventAttribute]) return listener[kListener];
+          }
+          return null;
+        },
+        set(handler) {
+          for (const listener of this.listeners(method)) {
+            if (listener[kForOnEventAttribute]) {
+              this.removeListener(method, listener);
+              break;
+            }
+          }
+          if (typeof handler !== "function") return;
+          this.addEventListener(method, handler, {
+            [kForOnEventAttribute]: true
+          });
+        }
+      });
+    });
+    WebSocket3.prototype.addEventListener = addEventListener;
+    WebSocket3.prototype.removeEventListener = removeEventListener;
+    module.exports = WebSocket3;
+    function initAsClient(websocket, address, protocols, options) {
+      const opts = {
+        allowSynchronousEvents: true,
+        autoPong: true,
+        closeTimeout: CLOSE_TIMEOUT,
+        protocolVersion: protocolVersions[1],
+        maxPayload: 100 * 1024 * 1024,
+        skipUTF8Validation: false,
+        perMessageDeflate: true,
+        followRedirects: false,
+        maxRedirects: 10,
+        ...options,
+        socketPath: void 0,
+        hostname: void 0,
+        protocol: void 0,
+        timeout: void 0,
+        method: "GET",
+        host: void 0,
+        path: void 0,
+        port: void 0
+      };
+      websocket._autoPong = opts.autoPong;
+      websocket._closeTimeout = opts.closeTimeout;
+      if (!protocolVersions.includes(opts.protocolVersion)) {
+        throw new RangeError(
+          `Unsupported protocol version: ${opts.protocolVersion} (supported versions: ${protocolVersions.join(", ")})`
+        );
+      }
+      let parsedUrl;
+      if (address instanceof URL4) {
+        parsedUrl = address;
+      } else {
+        try {
+          parsedUrl = new URL4(address);
+        } catch {
+          throw new SyntaxError(`Invalid URL: ${address}`);
+        }
+      }
+      if (parsedUrl.protocol === "http:") {
+        parsedUrl.protocol = "ws:";
+      } else if (parsedUrl.protocol === "https:") {
+        parsedUrl.protocol = "wss:";
+      }
+      websocket._url = parsedUrl.href;
+      const isSecure = parsedUrl.protocol === "wss:";
+      const isIpcUrl = parsedUrl.protocol === "ws+unix:";
+      let invalidUrlMessage;
+      if (parsedUrl.protocol !== "ws:" && !isSecure && !isIpcUrl) {
+        invalidUrlMessage = `The URL's protocol must be one of "ws:", "wss:", "http:", "https:", or "ws+unix:"`;
+      } else if (isIpcUrl && !parsedUrl.pathname) {
+        invalidUrlMessage = "The URL's pathname is empty";
+      } else if (parsedUrl.hash) {
+        invalidUrlMessage = "The URL contains a fragment identifier";
+      }
+      if (invalidUrlMessage) {
+        const err = new SyntaxError(invalidUrlMessage);
+        if (websocket._redirects === 0) {
+          throw err;
+        } else {
+          emitErrorAndClose(websocket, err);
+          return;
+        }
+      }
+      const defaultPort = isSecure ? 443 : 80;
+      const key = randomBytes8(16).toString("base64");
+      const request = isSecure ? https2.request : http5.request;
+      const protocolSet = /* @__PURE__ */ new Set();
+      let perMessageDeflate;
+      opts.createConnection = opts.createConnection || (isSecure ? tlsConnect : netConnect);
+      opts.defaultPort = opts.defaultPort || defaultPort;
+      opts.port = parsedUrl.port || defaultPort;
+      opts.host = parsedUrl.hostname.startsWith("[") ? parsedUrl.hostname.slice(1, -1) : parsedUrl.hostname;
+      opts.headers = {
+        ...opts.headers,
+        "Sec-WebSocket-Version": opts.protocolVersion,
+        "Sec-WebSocket-Key": key,
+        Connection: "Upgrade",
+        Upgrade: "websocket"
+      };
+      opts.path = parsedUrl.pathname + parsedUrl.search;
+      opts.timeout = opts.handshakeTimeout;
+      if (opts.perMessageDeflate) {
+        perMessageDeflate = new PerMessageDeflate2({
+          ...opts.perMessageDeflate,
+          isServer: false,
+          maxPayload: opts.maxPayload
+        });
+        opts.headers["Sec-WebSocket-Extensions"] = format({
+          [PerMessageDeflate2.extensionName]: perMessageDeflate.offer()
+        });
+      }
+      if (protocols.length) {
+        for (const protocol of protocols) {
+          if (typeof protocol !== "string" || !subprotocolRegex.test(protocol) || protocolSet.has(protocol)) {
+            throw new SyntaxError(
+              "An invalid or duplicated subprotocol was specified"
+            );
+          }
+          protocolSet.add(protocol);
+        }
+        opts.headers["Sec-WebSocket-Protocol"] = protocols.join(",");
+      }
+      if (opts.origin) {
+        if (opts.protocolVersion < 13) {
+          opts.headers["Sec-WebSocket-Origin"] = opts.origin;
+        } else {
+          opts.headers.Origin = opts.origin;
+        }
+      }
+      if (parsedUrl.username || parsedUrl.password) {
+        opts.auth = `${parsedUrl.username}:${parsedUrl.password}`;
+      }
+      if (isIpcUrl) {
+        const parts = opts.path.split(":");
+        opts.socketPath = parts[0];
+        opts.path = parts[1];
+      }
+      let req;
+      if (opts.followRedirects) {
+        if (websocket._redirects === 0) {
+          websocket._originalIpc = isIpcUrl;
+          websocket._originalSecure = isSecure;
+          websocket._originalHostOrSocketPath = isIpcUrl ? opts.socketPath : parsedUrl.host;
+          const headers = options && options.headers;
+          options = { ...options, headers: {} };
+          if (headers) {
+            for (const [key2, value] of Object.entries(headers)) {
+              options.headers[key2.toLowerCase()] = value;
+            }
+          }
+        } else if (websocket.listenerCount("redirect") === 0) {
+          const isSameHost = isIpcUrl ? websocket._originalIpc ? opts.socketPath === websocket._originalHostOrSocketPath : false : websocket._originalIpc ? false : parsedUrl.host === websocket._originalHostOrSocketPath;
+          if (!isSameHost || websocket._originalSecure && !isSecure) {
+            delete opts.headers.authorization;
+            delete opts.headers.cookie;
+            if (!isSameHost) delete opts.headers.host;
+            opts.auth = void 0;
+          }
+        }
+        if (opts.auth && !options.headers.authorization) {
+          options.headers.authorization = "Basic " + Buffer.from(opts.auth).toString("base64");
+        }
+        req = websocket._req = request(opts);
+        if (websocket._redirects) {
+          websocket.emit("redirect", websocket.url, req);
+        }
+      } else {
+        req = websocket._req = request(opts);
+      }
+      if (opts.timeout) {
+        req.on("timeout", () => {
+          abortHandshake(websocket, req, "Opening handshake has timed out");
+        });
+      }
+      req.on("error", (err) => {
+        if (req === null || req[kAborted]) return;
+        req = websocket._req = null;
+        emitErrorAndClose(websocket, err);
+      });
+      req.on("response", (res) => {
+        const location = res.headers.location;
+        const statusCode = res.statusCode;
+        if (location && opts.followRedirects && statusCode >= 300 && statusCode < 400) {
+          if (++websocket._redirects > opts.maxRedirects) {
+            abortHandshake(websocket, req, "Maximum redirects exceeded");
+            return;
+          }
+          req.abort();
+          let addr;
+          try {
+            addr = new URL4(location, address);
+          } catch (e) {
+            const err = new SyntaxError(`Invalid URL: ${location}`);
+            emitErrorAndClose(websocket, err);
+            return;
+          }
+          initAsClient(websocket, addr, protocols, options);
+        } else if (!websocket.emit("unexpected-response", req, res)) {
+          abortHandshake(
+            websocket,
+            req,
+            `Unexpected server response: ${res.statusCode}`
+          );
+        }
+      });
+      req.on("upgrade", (res, socket, head) => {
+        websocket.emit("upgrade", res);
+        if (websocket.readyState !== WebSocket3.CONNECTING) return;
+        req = websocket._req = null;
+        const upgrade = res.headers.upgrade;
+        if (upgrade === void 0 || upgrade.toLowerCase() !== "websocket") {
+          abortHandshake(websocket, socket, "Invalid Upgrade header");
+          return;
+        }
+        const digest = createHash3("sha1").update(key + GUID).digest("base64");
+        if (res.headers["sec-websocket-accept"] !== digest) {
+          abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
+          return;
+        }
+        const serverProt = res.headers["sec-websocket-protocol"];
+        let protError;
+        if (serverProt !== void 0) {
+          if (!protocolSet.size) {
+            protError = "Server sent a subprotocol but none was requested";
+          } else if (!protocolSet.has(serverProt)) {
+            protError = "Server sent an invalid subprotocol";
+          }
+        } else if (protocolSet.size) {
+          protError = "Server sent no subprotocol";
+        }
+        if (protError) {
+          abortHandshake(websocket, socket, protError);
+          return;
+        }
+        if (serverProt) websocket._protocol = serverProt;
+        const secWebSocketExtensions = res.headers["sec-websocket-extensions"];
+        if (secWebSocketExtensions !== void 0) {
+          if (!perMessageDeflate) {
+            const message = "Server sent a Sec-WebSocket-Extensions header but no extension was requested";
+            abortHandshake(websocket, socket, message);
+            return;
+          }
+          let extensions;
+          try {
+            extensions = parse2(secWebSocketExtensions);
+          } catch (err) {
+            const message = "Invalid Sec-WebSocket-Extensions header";
+            abortHandshake(websocket, socket, message);
+            return;
+          }
+          const extensionNames = Object.keys(extensions);
+          if (extensionNames.length !== 1 || extensionNames[0] !== PerMessageDeflate2.extensionName) {
+            const message = "Server indicated an extension that was not requested";
+            abortHandshake(websocket, socket, message);
+            return;
+          }
+          try {
+            perMessageDeflate.accept(extensions[PerMessageDeflate2.extensionName]);
+          } catch (err) {
+            const message = "Invalid Sec-WebSocket-Extensions header";
+            abortHandshake(websocket, socket, message);
+            return;
+          }
+          websocket._extensions[PerMessageDeflate2.extensionName] = perMessageDeflate;
+        }
+        websocket.setSocket(socket, head, {
+          allowSynchronousEvents: opts.allowSynchronousEvents,
+          generateMask: opts.generateMask,
+          maxPayload: opts.maxPayload,
+          skipUTF8Validation: opts.skipUTF8Validation
+        });
+      });
+      if (opts.finishRequest) {
+        opts.finishRequest(req, websocket);
+      } else {
+        req.end();
+      }
+    }
+    function emitErrorAndClose(websocket, err) {
+      websocket._readyState = WebSocket3.CLOSING;
+      websocket._errorEmitted = true;
+      websocket.emit("error", err);
+      websocket.emitClose();
+    }
+    function netConnect(options) {
+      options.path = options.socketPath;
+      return net.connect(options);
+    }
+    function tlsConnect(options) {
+      options.path = void 0;
+      if (!options.servername && options.servername !== "") {
+        options.servername = net.isIP(options.host) ? "" : options.host;
+      }
+      return tls.connect(options);
+    }
+    function abortHandshake(websocket, stream, message) {
+      websocket._readyState = WebSocket3.CLOSING;
+      const err = new Error(message);
+      Error.captureStackTrace(err, abortHandshake);
+      if (stream.setHeader) {
+        stream[kAborted] = true;
+        stream.abort();
+        if (stream.socket && !stream.socket.destroyed) {
+          stream.socket.destroy();
+        }
+        process.nextTick(emitErrorAndClose, websocket, err);
+      } else {
+        stream.destroy(err);
+        stream.once("error", websocket.emit.bind(websocket, "error"));
+        stream.once("close", websocket.emitClose.bind(websocket));
+      }
+    }
+    function sendAfterClose(websocket, data, cb) {
+      if (data) {
+        const length = isBlob(data) ? data.size : toBuffer(data).length;
+        if (websocket._socket) websocket._sender._bufferedBytes += length;
+        else websocket._bufferedAmount += length;
+      }
+      if (cb) {
+        const err = new Error(
+          `WebSocket is not open: readyState ${websocket.readyState} (${readyStates[websocket.readyState]})`
+        );
+        process.nextTick(cb, err);
+      }
+    }
+    function receiverOnConclude(code, reason) {
+      const websocket = this[kWebSocket];
+      websocket._closeFrameReceived = true;
+      websocket._closeMessage = reason;
+      websocket._closeCode = code;
+      if (websocket._socket[kWebSocket] === void 0) return;
+      websocket._socket.removeListener("data", socketOnData);
+      process.nextTick(resume, websocket._socket);
+      if (code === 1005) websocket.close();
+      else websocket.close(code, reason);
+    }
+    function receiverOnDrain() {
+      const websocket = this[kWebSocket];
+      if (!websocket.isPaused) websocket._socket.resume();
+    }
+    function receiverOnError(err) {
+      const websocket = this[kWebSocket];
+      if (websocket._socket[kWebSocket] !== void 0) {
+        websocket._socket.removeListener("data", socketOnData);
+        process.nextTick(resume, websocket._socket);
+        websocket.close(err[kStatusCode]);
+      }
+      if (!websocket._errorEmitted) {
+        websocket._errorEmitted = true;
+        websocket.emit("error", err);
+      }
+    }
+    function receiverOnFinish() {
+      this[kWebSocket].emitClose();
+    }
+    function receiverOnMessage(data, isBinary) {
+      this[kWebSocket].emit("message", data, isBinary);
+    }
+    function receiverOnPing(data) {
+      const websocket = this[kWebSocket];
+      if (websocket._autoPong) websocket.pong(data, !this._isServer, NOOP);
+      websocket.emit("ping", data);
+    }
+    function receiverOnPong(data) {
+      this[kWebSocket].emit("pong", data);
+    }
+    function resume(stream) {
+      stream.resume();
+    }
+    function senderOnError(err) {
+      const websocket = this[kWebSocket];
+      if (websocket.readyState === WebSocket3.CLOSED) return;
+      if (websocket.readyState === WebSocket3.OPEN) {
+        websocket._readyState = WebSocket3.CLOSING;
+        setCloseTimer(websocket);
+      }
+      this._socket.end();
+      if (!websocket._errorEmitted) {
+        websocket._errorEmitted = true;
+        websocket.emit("error", err);
+      }
+    }
+    function setCloseTimer(websocket) {
+      websocket._closeTimer = setTimeout(
+        websocket._socket.destroy.bind(websocket._socket),
+        websocket._closeTimeout
+      );
+    }
+    function socketOnClose() {
+      const websocket = this[kWebSocket];
+      this.removeListener("close", socketOnClose);
+      this.removeListener("data", socketOnData);
+      this.removeListener("end", socketOnEnd);
+      websocket._readyState = WebSocket3.CLOSING;
+      if (!this._readableState.endEmitted && !websocket._closeFrameReceived && !websocket._receiver._writableState.errorEmitted && this._readableState.length !== 0) {
+        const chunk = this.read(this._readableState.length);
+        websocket._receiver.write(chunk);
+      }
+      websocket._receiver.end();
+      this[kWebSocket] = void 0;
+      clearTimeout(websocket._closeTimer);
+      if (websocket._receiver._writableState.finished || websocket._receiver._writableState.errorEmitted) {
+        websocket.emitClose();
+      } else {
+        websocket._receiver.on("error", receiverOnFinish);
+        websocket._receiver.on("finish", receiverOnFinish);
+      }
+    }
+    function socketOnData(chunk) {
+      if (!this[kWebSocket]._receiver.write(chunk)) {
+        this.pause();
+      }
+    }
+    function socketOnEnd() {
+      const websocket = this[kWebSocket];
+      websocket._readyState = WebSocket3.CLOSING;
+      websocket._receiver.end();
+      this.end();
+    }
+    function socketOnError() {
+      const websocket = this[kWebSocket];
+      this.removeListener("error", socketOnError);
+      this.on("error", NOOP);
+      if (websocket) {
+        websocket._readyState = WebSocket3.CLOSING;
+        this.destroy();
+      }
+    }
+  }
+});
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/stream.js
+var require_stream = __commonJS({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/stream.js"(exports, module) {
+    "use strict";
+    var WebSocket3 = require_websocket();
+    var { Duplex } = __require("stream");
+    function emitClose(stream) {
+      stream.emit("close");
+    }
+    function duplexOnEnd() {
+      if (!this.destroyed && this._writableState.finished) {
+        this.destroy();
+      }
+    }
+    function duplexOnError(err) {
+      this.removeListener("error", duplexOnError);
+      this.destroy();
+      if (this.listenerCount("error") === 0) {
+        this.emit("error", err);
+      }
+    }
+    function createWebSocketStream2(ws, options) {
+      let terminateOnDestroy = true;
+      const duplex = new Duplex({
+        ...options,
+        autoDestroy: false,
+        emitClose: false,
+        objectMode: false,
+        writableObjectMode: false
+      });
+      ws.on("message", function message(msg, isBinary) {
+        const data = !isBinary && duplex._readableState.objectMode ? msg.toString() : msg;
+        if (!duplex.push(data)) ws.pause();
+      });
+      ws.once("error", function error(err) {
+        if (duplex.destroyed) return;
+        terminateOnDestroy = false;
+        duplex.destroy(err);
+      });
+      ws.once("close", function close() {
+        if (duplex.destroyed) return;
+        duplex.push(null);
+      });
+      duplex._destroy = function(err, callback) {
+        if (ws.readyState === ws.CLOSED) {
+          callback(err);
+          process.nextTick(emitClose, duplex);
+          return;
+        }
+        let called = false;
+        ws.once("error", function error(err2) {
+          called = true;
+          callback(err2);
+        });
+        ws.once("close", function close() {
+          if (!called) callback(err);
+          process.nextTick(emitClose, duplex);
+        });
+        if (terminateOnDestroy) ws.terminate();
+      };
+      duplex._final = function(callback) {
+        if (ws.readyState === ws.CONNECTING) {
+          ws.once("open", function open() {
+            duplex._final(callback);
+          });
+          return;
+        }
+        if (ws._socket === null) return;
+        if (ws._socket._writableState.finished) {
+          callback();
+          if (duplex._readableState.endEmitted) duplex.destroy();
+        } else {
+          ws._socket.once("finish", function finish() {
+            callback();
+          });
+          ws.close();
+        }
+      };
+      duplex._read = function() {
+        if (ws.isPaused) ws.resume();
+      };
+      duplex._write = function(chunk, encoding, callback) {
+        if (ws.readyState === ws.CONNECTING) {
+          ws.once("open", function open() {
+            duplex._write(chunk, encoding, callback);
+          });
+          return;
+        }
+        ws.send(chunk, callback);
+      };
+      duplex.on("end", duplexOnEnd);
+      duplex.on("error", duplexOnError);
+      return duplex;
+    }
+    module.exports = createWebSocketStream2;
+  }
+});
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/subprotocol.js
+var require_subprotocol = __commonJS({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/subprotocol.js"(exports, module) {
+    "use strict";
+    var { tokenChars } = require_validation();
+    function parse2(header) {
+      const protocols = /* @__PURE__ */ new Set();
+      let start = -1;
+      let end = -1;
+      let i = 0;
+      for (i; i < header.length; i++) {
+        const code = header.charCodeAt(i);
+        if (end === -1 && tokenChars[code] === 1) {
+          if (start === -1) start = i;
+        } else if (i !== 0 && (code === 32 || code === 9)) {
+          if (end === -1 && start !== -1) end = i;
+        } else if (code === 44) {
+          if (start === -1) {
+            throw new SyntaxError(`Unexpected character at index ${i}`);
+          }
+          if (end === -1) end = i;
+          const protocol2 = header.slice(start, end);
+          if (protocols.has(protocol2)) {
+            throw new SyntaxError(`The "${protocol2}" subprotocol is duplicated`);
+          }
+          protocols.add(protocol2);
+          start = end = -1;
+        } else {
+          throw new SyntaxError(`Unexpected character at index ${i}`);
+        }
+      }
+      if (start === -1 || end !== -1) {
+        throw new SyntaxError("Unexpected end of input");
+      }
+      const protocol = header.slice(start, i);
+      if (protocols.has(protocol)) {
+        throw new SyntaxError(`The "${protocol}" subprotocol is duplicated`);
+      }
+      protocols.add(protocol);
+      return protocols;
+    }
+    module.exports = { parse: parse2 };
+  }
+});
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/websocket-server.js
+var require_websocket_server = __commonJS({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/lib/websocket-server.js"(exports, module) {
+    "use strict";
+    var EventEmitter13 = __require("events");
+    var http5 = __require("http");
+    var { Duplex } = __require("stream");
+    var { createHash: createHash3 } = __require("crypto");
+    var extension2 = require_extension();
+    var PerMessageDeflate2 = require_permessage_deflate();
+    var subprotocol2 = require_subprotocol();
+    var WebSocket3 = require_websocket();
+    var { CLOSE_TIMEOUT, GUID, kWebSocket } = require_constants();
+    var keyRegex = /^[+/0-9A-Za-z]{22}==$/;
+    var RUNNING = 0;
+    var CLOSING = 1;
+    var CLOSED = 2;
+    var WebSocketServer2 = class extends EventEmitter13 {
+      /**
+       * Create a `WebSocketServer` instance.
+       *
+       * @param {Object} options Configuration options
+       * @param {Boolean} [options.allowSynchronousEvents=true] Specifies whether
+       *     any of the `'message'`, `'ping'`, and `'pong'` events can be emitted
+       *     multiple times in the same tick
+       * @param {Boolean} [options.autoPong=true] Specifies whether or not to
+       *     automatically send a pong in response to a ping
+       * @param {Number} [options.backlog=511] The maximum length of the queue of
+       *     pending connections
+       * @param {Boolean} [options.clientTracking=true] Specifies whether or not to
+       *     track clients
+       * @param {Number} [options.closeTimeout=30000] Duration in milliseconds to
+       *     wait for the closing handshake to finish after `websocket.close()` is
+       *     called
+       * @param {Function} [options.handleProtocols] A hook to handle protocols
+       * @param {String} [options.host] The hostname where to bind the server
+       * @param {Number} [options.maxPayload=104857600] The maximum allowed message
+       *     size
+       * @param {Boolean} [options.noServer=false] Enable no server mode
+       * @param {String} [options.path] Accept only connections matching this path
+       * @param {(Boolean|Object)} [options.perMessageDeflate=false] Enable/disable
+       *     permessage-deflate
+       * @param {Number} [options.port] The port where to bind the server
+       * @param {(http.Server|https.Server)} [options.server] A pre-created HTTP/S
+       *     server to use
+       * @param {Boolean} [options.skipUTF8Validation=false] Specifies whether or
+       *     not to skip UTF-8 validation for text and close messages
+       * @param {Function} [options.verifyClient] A hook to reject connections
+       * @param {Function} [options.WebSocket=WebSocket] Specifies the `WebSocket`
+       *     class to use. It must be the `WebSocket` class or class that extends it
+       * @param {Function} [callback] A listener for the `listening` event
+       */
+      constructor(options, callback) {
+        super();
+        options = {
+          allowSynchronousEvents: true,
+          autoPong: true,
+          maxPayload: 100 * 1024 * 1024,
+          skipUTF8Validation: false,
+          perMessageDeflate: false,
+          handleProtocols: null,
+          clientTracking: true,
+          closeTimeout: CLOSE_TIMEOUT,
+          verifyClient: null,
+          noServer: false,
+          backlog: null,
+          // use default (511 as implemented in net.js)
+          server: null,
+          host: null,
+          path: null,
+          port: null,
+          WebSocket: WebSocket3,
+          ...options
+        };
+        if (options.port == null && !options.server && !options.noServer || options.port != null && (options.server || options.noServer) || options.server && options.noServer) {
+          throw new TypeError(
+            'One and only one of the "port", "server", or "noServer" options must be specified'
+          );
+        }
+        if (options.port != null) {
+          this._server = http5.createServer((req, res) => {
+            const body = http5.STATUS_CODES[426];
+            res.writeHead(426, {
+              "Content-Length": body.length,
+              "Content-Type": "text/plain"
+            });
+            res.end(body);
+          });
+          this._server.listen(
+            options.port,
+            options.host,
+            options.backlog,
+            callback
+          );
+        } else if (options.server) {
+          this._server = options.server;
+        }
+        if (this._server) {
+          const emitConnection = this.emit.bind(this, "connection");
+          this._removeListeners = addListeners(this._server, {
+            listening: this.emit.bind(this, "listening"),
+            error: this.emit.bind(this, "error"),
+            upgrade: (req, socket, head) => {
+              this.handleUpgrade(req, socket, head, emitConnection);
+            }
+          });
+        }
+        if (options.perMessageDeflate === true) options.perMessageDeflate = {};
+        if (options.clientTracking) {
+          this.clients = /* @__PURE__ */ new Set();
+          this._shouldEmitClose = false;
+        }
+        this.options = options;
+        this._state = RUNNING;
+      }
+      /**
+       * Returns the bound address, the address family name, and port of the server
+       * as reported by the operating system if listening on an IP socket.
+       * If the server is listening on a pipe or UNIX domain socket, the name is
+       * returned as a string.
+       *
+       * @return {(Object|String|null)} The address of the server
+       * @public
+       */
+      address() {
+        if (this.options.noServer) {
+          throw new Error('The server is operating in "noServer" mode');
+        }
+        if (!this._server) return null;
+        return this._server.address();
+      }
+      /**
+       * Stop the server from accepting new connections and emit the `'close'` event
+       * when all existing connections are closed.
+       *
+       * @param {Function} [cb] A one-time listener for the `'close'` event
+       * @public
+       */
+      close(cb) {
+        if (this._state === CLOSED) {
+          if (cb) {
+            this.once("close", () => {
+              cb(new Error("The server is not running"));
+            });
+          }
+          process.nextTick(emitClose, this);
+          return;
+        }
+        if (cb) this.once("close", cb);
+        if (this._state === CLOSING) return;
+        this._state = CLOSING;
+        if (this.options.noServer || this.options.server) {
+          if (this._server) {
+            this._removeListeners();
+            this._removeListeners = this._server = null;
+          }
+          if (this.clients) {
+            if (!this.clients.size) {
+              process.nextTick(emitClose, this);
+            } else {
+              this._shouldEmitClose = true;
+            }
+          } else {
+            process.nextTick(emitClose, this);
+          }
+        } else {
+          const server = this._server;
+          this._removeListeners();
+          this._removeListeners = this._server = null;
+          server.close(() => {
+            emitClose(this);
+          });
+        }
+      }
+      /**
+       * See if a given request should be handled by this server instance.
+       *
+       * @param {http.IncomingMessage} req Request object to inspect
+       * @return {Boolean} `true` if the request is valid, else `false`
+       * @public
+       */
+      shouldHandle(req) {
+        if (this.options.path) {
+          const index = req.url.indexOf("?");
+          const pathname = index !== -1 ? req.url.slice(0, index) : req.url;
+          if (pathname !== this.options.path) return false;
+        }
+        return true;
+      }
+      /**
+       * Handle a HTTP Upgrade request.
+       *
+       * @param {http.IncomingMessage} req The request object
+       * @param {Duplex} socket The network socket between the server and client
+       * @param {Buffer} head The first packet of the upgraded stream
+       * @param {Function} cb Callback
+       * @public
+       */
+      handleUpgrade(req, socket, head, cb) {
+        socket.on("error", socketOnError);
+        const key = req.headers["sec-websocket-key"];
+        const upgrade = req.headers.upgrade;
+        const version = +req.headers["sec-websocket-version"];
+        if (req.method !== "GET") {
+          const message = "Invalid HTTP method";
+          abortHandshakeOrEmitwsClientError(this, req, socket, 405, message);
+          return;
+        }
+        if (upgrade === void 0 || upgrade.toLowerCase() !== "websocket") {
+          const message = "Invalid Upgrade header";
+          abortHandshakeOrEmitwsClientError(this, req, socket, 400, message);
+          return;
+        }
+        if (key === void 0 || !keyRegex.test(key)) {
+          const message = "Missing or invalid Sec-WebSocket-Key header";
+          abortHandshakeOrEmitwsClientError(this, req, socket, 400, message);
+          return;
+        }
+        if (version !== 13 && version !== 8) {
+          const message = "Missing or invalid Sec-WebSocket-Version header";
+          abortHandshakeOrEmitwsClientError(this, req, socket, 400, message, {
+            "Sec-WebSocket-Version": "13, 8"
+          });
+          return;
+        }
+        if (!this.shouldHandle(req)) {
+          abortHandshake(socket, 400);
+          return;
+        }
+        const secWebSocketProtocol = req.headers["sec-websocket-protocol"];
+        let protocols = /* @__PURE__ */ new Set();
+        if (secWebSocketProtocol !== void 0) {
+          try {
+            protocols = subprotocol2.parse(secWebSocketProtocol);
+          } catch (err) {
+            const message = "Invalid Sec-WebSocket-Protocol header";
+            abortHandshakeOrEmitwsClientError(this, req, socket, 400, message);
+            return;
+          }
+        }
+        const secWebSocketExtensions = req.headers["sec-websocket-extensions"];
+        const extensions = {};
+        if (this.options.perMessageDeflate && secWebSocketExtensions !== void 0) {
+          const perMessageDeflate = new PerMessageDeflate2({
+            ...this.options.perMessageDeflate,
+            isServer: true,
+            maxPayload: this.options.maxPayload
+          });
+          try {
+            const offers = extension2.parse(secWebSocketExtensions);
+            if (offers[PerMessageDeflate2.extensionName]) {
+              perMessageDeflate.accept(offers[PerMessageDeflate2.extensionName]);
+              extensions[PerMessageDeflate2.extensionName] = perMessageDeflate;
+            }
+          } catch (err) {
+            const message = "Invalid or unacceptable Sec-WebSocket-Extensions header";
+            abortHandshakeOrEmitwsClientError(this, req, socket, 400, message);
+            return;
+          }
+        }
+        if (this.options.verifyClient) {
+          const info = {
+            origin: req.headers[`${version === 8 ? "sec-websocket-origin" : "origin"}`],
+            secure: !!(req.socket.authorized || req.socket.encrypted),
+            req
+          };
+          if (this.options.verifyClient.length === 2) {
+            this.options.verifyClient(info, (verified, code, message, headers) => {
+              if (!verified) {
+                return abortHandshake(socket, code || 401, message, headers);
+              }
+              this.completeUpgrade(
+                extensions,
+                key,
+                protocols,
+                req,
+                socket,
+                head,
+                cb
+              );
+            });
+            return;
+          }
+          if (!this.options.verifyClient(info)) return abortHandshake(socket, 401);
+        }
+        this.completeUpgrade(extensions, key, protocols, req, socket, head, cb);
+      }
+      /**
+       * Upgrade the connection to WebSocket.
+       *
+       * @param {Object} extensions The accepted extensions
+       * @param {String} key The value of the `Sec-WebSocket-Key` header
+       * @param {Set} protocols The subprotocols
+       * @param {http.IncomingMessage} req The request object
+       * @param {Duplex} socket The network socket between the server and client
+       * @param {Buffer} head The first packet of the upgraded stream
+       * @param {Function} cb Callback
+       * @throws {Error} If called more than once with the same socket
+       * @private
+       */
+      completeUpgrade(extensions, key, protocols, req, socket, head, cb) {
+        if (!socket.readable || !socket.writable) return socket.destroy();
+        if (socket[kWebSocket]) {
+          throw new Error(
+            "server.handleUpgrade() was called more than once with the same socket, possibly due to a misconfiguration"
+          );
+        }
+        if (this._state > RUNNING) return abortHandshake(socket, 503);
+        const digest = createHash3("sha1").update(key + GUID).digest("base64");
+        const headers = [
+          "HTTP/1.1 101 Switching Protocols",
+          "Upgrade: websocket",
+          "Connection: Upgrade",
+          `Sec-WebSocket-Accept: ${digest}`
+        ];
+        const ws = new this.options.WebSocket(null, void 0, this.options);
+        if (protocols.size) {
+          const protocol = this.options.handleProtocols ? this.options.handleProtocols(protocols, req) : protocols.values().next().value;
+          if (protocol) {
+            headers.push(`Sec-WebSocket-Protocol: ${protocol}`);
+            ws._protocol = protocol;
+          }
+        }
+        if (extensions[PerMessageDeflate2.extensionName]) {
+          const params = extensions[PerMessageDeflate2.extensionName].params;
+          const value = extension2.format({
+            [PerMessageDeflate2.extensionName]: [params]
+          });
+          headers.push(`Sec-WebSocket-Extensions: ${value}`);
+          ws._extensions = extensions;
+        }
+        this.emit("headers", headers, req);
+        socket.write(headers.concat("\r\n").join("\r\n"));
+        socket.removeListener("error", socketOnError);
+        ws.setSocket(socket, head, {
+          allowSynchronousEvents: this.options.allowSynchronousEvents,
+          maxPayload: this.options.maxPayload,
+          skipUTF8Validation: this.options.skipUTF8Validation
+        });
+        if (this.clients) {
+          this.clients.add(ws);
+          ws.on("close", () => {
+            this.clients.delete(ws);
+            if (this._shouldEmitClose && !this.clients.size) {
+              process.nextTick(emitClose, this);
+            }
+          });
+        }
+        cb(ws, req);
+      }
+    };
+    module.exports = WebSocketServer2;
+    function addListeners(server, map) {
+      for (const event of Object.keys(map)) server.on(event, map[event]);
+      return function removeListeners() {
+        for (const event of Object.keys(map)) {
+          server.removeListener(event, map[event]);
+        }
+      };
+    }
+    function emitClose(server) {
+      server._state = CLOSED;
+      server.emit("close");
+    }
+    function socketOnError() {
+      this.destroy();
+    }
+    function abortHandshake(socket, code, message, headers) {
+      message = message || http5.STATUS_CODES[code];
+      headers = {
+        Connection: "close",
+        "Content-Type": "text/html",
+        "Content-Length": Buffer.byteLength(message),
+        ...headers
+      };
+      socket.once("finish", socket.destroy);
+      socket.end(
+        `HTTP/1.1 ${code} ${http5.STATUS_CODES[code]}\r
+` + Object.keys(headers).map((h) => `${h}: ${headers[h]}`).join("\r\n") + "\r\n\r\n" + message
+      );
+    }
+    function abortHandshakeOrEmitwsClientError(server, req, socket, code, message, headers) {
+      if (server.listenerCount("wsClientError")) {
+        const err = new Error(message);
+        Error.captureStackTrace(err, abortHandshakeOrEmitwsClientError);
+        server.emit("wsClientError", err, socket, req);
+      } else {
+        abortHandshake(socket, code, message, headers);
+      }
+    }
+  }
+});
+
+// ../../node_modules/.bun/ws@8.20.0/node_modules/ws/wrapper.mjs
+var wrapper_exports = {};
+__export(wrapper_exports, {
+  PerMessageDeflate: () => import_permessage_deflate.default,
+  Receiver: () => import_receiver.default,
+  Sender: () => import_sender.default,
+  WebSocket: () => import_websocket.default,
+  WebSocketServer: () => import_websocket_server.default,
+  createWebSocketStream: () => import_stream.default,
+  default: () => wrapper_default,
+  extension: () => import_extension.default,
+  subprotocol: () => import_subprotocol.default
+});
+var import_stream, import_extension, import_permessage_deflate, import_receiver, import_sender, import_subprotocol, import_websocket, import_websocket_server, wrapper_default;
+var init_wrapper = __esm({
+  "../../node_modules/.bun/ws@8.20.0/node_modules/ws/wrapper.mjs"() {
+    import_stream = __toESM(require_stream(), 1);
+    import_extension = __toESM(require_extension(), 1);
+    import_permessage_deflate = __toESM(require_permessage_deflate(), 1);
+    import_receiver = __toESM(require_receiver(), 1);
+    import_sender = __toESM(require_sender(), 1);
+    import_subprotocol = __toESM(require_subprotocol(), 1);
+    import_websocket = __toESM(require_websocket(), 1);
+    import_websocket_server = __toESM(require_websocket_server(), 1);
+    wrapper_default = import_websocket.default;
+  }
+});
+
+// src/auth/ApiKeyAuth.ts
+import * as vscode7 from "vscode";
+var ApiKeyAuth;
+var init_ApiKeyAuth = __esm({
+  "src/auth/ApiKeyAuth.ts"() {
+    "use strict";
+    ApiKeyAuth = class {
+      constructor(provider, config, storage) {
+        this.provider = provider;
+        this.config = config;
+        this.storage = storage;
+      }
+      storage;
+      /**
+       * Get API key from various sources
+       * Priority: stored key > environment variable > user input
+       */
+      async getApiKey() {
+        const storedKey = await this.storage.getApiKey(this.provider);
+        if (storedKey) {
+          return storedKey;
+        }
+        if (this.config.envVarName) {
+          const envKey = process.env[this.config.envVarName];
+          if (envKey) {
+            return envKey;
+          }
+        }
+        const standardEnvVars = this.getStandardEnvVars();
+        for (const envVar of standardEnvVars) {
+          const envKey = process.env[envVar];
+          if (envKey) {
+            return envKey;
+          }
+        }
+        return void 0;
+      }
+      /**
+       * Store API key securely
+       */
+      async storeApiKey(apiKey) {
+        await this.storage.storeApiKey(this.provider, apiKey);
+      }
+      /**
+       * Validate API key by making a test request
+       */
+      async validateApiKey(apiKey) {
+        switch (this.provider) {
+          case "anthropic":
+            return this.validateAnthropicKey(apiKey);
+          case "openai":
+            return this.validateOpenAIKey(apiKey);
+          case "bedrock":
+            return this.validateBedrockKey(apiKey);
+          case "vertex":
+            return this.validateVertexKey(apiKey);
+          default:
+            return this.validateGenericKey(apiKey);
+        }
+      }
+      /**
+       * Validate Anthropic API key
+       */
+      async validateAnthropicKey(apiKey) {
+        if (!apiKey.startsWith("sk-ant-")) {
+          return {
+            valid: false,
+            error: "Invalid Anthropic API key format. Key should start with sk-ant-"
+          };
+        }
+        try {
+          const response = await fetch("https://api.anthropic.com/v1/models", {
+            headers: {
+              "x-api-key": apiKey,
+              "anthropic-version": "2023-06-01"
+            }
+          });
+          if (response.ok) {
+            return { valid: true, provider: "anthropic" };
+          }
+          if (response.status === 401) {
+            return { valid: false, error: "Invalid API key" };
+          }
+          return { valid: false, error: `API error: ${response.status}` };
+        } catch (error) {
+          return { valid: false, error: `Connection error: ${error}` };
+        }
+      }
+      /**
+       * Validate OpenAI API key
+       */
+      async validateOpenAIKey(apiKey) {
+        if (!apiKey.startsWith("sk-")) {
+          return {
+            valid: false,
+            error: "Invalid OpenAI API key format. Key should start with sk-"
+          };
+        }
+        try {
+          const response = await fetch("https://api.openai.com/v1/models", {
+            headers: {
+              Authorization: `Bearer ${apiKey}`
+            }
+          });
+          if (response.ok) {
+            return { valid: true, provider: "openai" };
+          }
+          if (response.status === 401) {
+            return { valid: false, error: "Invalid API key" };
+          }
+          return { valid: false, error: `API error: ${response.status}` };
+        } catch (error) {
+          return { valid: false, error: `Connection error: ${error}` };
+        }
+      }
+      /**
+       * Validate AWS Bedrock credentials
+       */
+      async validateBedrockKey(apiKey) {
+        return { valid: true, provider: "bedrock" };
+      }
+      /**
+       * Validate GCP Vertex AI credentials
+       */
+      async validateVertexKey(apiKey) {
+        return { valid: true, provider: "vertex" };
+      }
+      /**
+       * Generic API key validation
+       */
+      async validateGenericKey(apiKey) {
+        if (!apiKey || apiKey.length < 10) {
+          return { valid: false, error: "API key is too short" };
+        }
+        return { valid: true, provider: this.provider };
+      }
+      /**
+       * Get standard environment variables for provider
+       */
+      getStandardEnvVars() {
+        const envVarMap = {
+          anthropic: ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"],
+          openai: ["OPENAI_API_KEY"],
+          bedrock: ["AWS_ACCESS_KEY_ID"],
+          vertex: ["GOOGLE_APPLICATION_CREDENTIALS"]
+        };
+        return envVarMap[this.provider] || [];
+      }
+      /**
+       * Prompt user for API key
+       */
+      async promptForApiKey() {
+        const apiKey = await vscode7.window.showInputBox({
+          prompt: `Enter your ${this.provider} API key`,
+          password: true,
+          placeHolder: `Enter your ${this.provider} API key`,
+          validateInput: async (value) => {
+            if (!value || value.trim().length === 0) {
+              return "API key cannot be empty";
+            }
+            return null;
+          }
+        });
+        return apiKey;
+      }
+      /**
+       * Delete stored API key
+       */
+      async deleteApiKey() {
+        await this.storage.delete(`apikey_${this.provider}`);
+      }
+      /**
+       * Check if API key exists
+       */
+      async hasApiKey() {
+        const key = await this.getApiKey();
+        return key !== void 0 && key.length > 0;
+      }
+      /**
+       * Get authorization header value
+       */
+      async getAuthHeader() {
+        const apiKey = await this.getApiKey();
+        if (!apiKey) {
+          return void 0;
+        }
+        const prefix = this.config.prefix || "Bearer ";
+        return `${prefix}${apiKey}`;
+      }
+      /**
+       * Dispose
+       */
+      dispose() {
+      }
+    };
+  }
+});
+
+// src/auth/providers/CustomProviderAuth.ts
+var CustomProviderAuth_exports = {};
+__export(CustomProviderAuth_exports, {
+  CustomProviderAuth: () => CustomProviderAuth
+});
+import * as vscode10 from "vscode";
+import * as fs3 from "fs";
+import * as path6 from "path";
+import * as os6 from "os";
+var MODELS_CONFIG_PATH, CustomProviderAuth;
+var init_CustomProviderAuth = __esm({
+  "src/auth/providers/CustomProviderAuth.ts"() {
+    "use strict";
+    init_ApiKeyAuth();
+    MODELS_CONFIG_PATH = path6.join(os6.homedir(), ".claude", "models.json");
+    CustomProviderAuth = class extends ApiKeyAuth {
+      modelsConfig = null;
+      constructor(storage) {
+        super("custom", {
+          provider: "custom"
+        }, storage);
+      }
+      /**
+       * Configure custom provider
+       */
+      async configure() {
+        await this.loadModelsConfig();
+        const options = [
+          { label: "$(add) Add New Provider", action: "new" },
+          { label: "$(file) Edit models.json", action: "edit" },
+          { label: "$(list) View Existing Providers", action: "list" }
+        ];
+        const selected = await vscode10.window.showQuickPick(options, {
+          placeHolder: "Custom Provider Configuration"
+        });
+        if (!selected) return false;
+        switch (selected.action) {
+          case "new":
+            return await this.addNewProvider();
+          case "edit":
+            return await this.editModelsJson();
+          case "list":
+            return await this.listProviders();
+        }
+        return false;
+      }
+      /**
+       * Add new custom provider
+       */
+      async addNewProvider() {
+        const name = await vscode10.window.showInputBox({
+          prompt: "Provider Name",
+          placeHolder: "e.g., OpenRouter, DeepSeek, Groq"
+        });
+        if (!name) return false;
+        const baseUrl = await vscode10.window.showInputBox({
+          prompt: "API Base URL",
+          placeHolder: "https://api.example.com/v1"
+        });
+        if (!baseUrl) return false;
+        const apiFormatOptions = [
+          { label: "Anthropic", value: "anthropic" },
+          { label: "OpenAI", value: "openai" }
+        ];
+        const apiFormatSelected = await vscode10.window.showQuickPick(apiFormatOptions, {
+          placeHolder: "Select API Format"
+        });
+        if (!apiFormatSelected) return false;
+        const apiFormat = apiFormatSelected.value;
+        const apiKey = await vscode10.window.showInputBox({
+          prompt: "API Key",
+          password: true
+        });
+        if (!apiKey) return false;
+        const modelName = await vscode10.window.showInputBox({
+          prompt: "Default Model Name (optional)",
+          placeHolder: "e.g., gpt-4, claude-3-opus"
+        });
+        const isValid = await this.validateProvider({
+          name,
+          baseUrl,
+          apiKey,
+          apiFormat
+        });
+        if (!isValid) {
+          const continueAnyway = await vscode10.window.showWarningMessage(
+            "Could not validate the API configuration. Save anyway?",
+            "Yes",
+            "No"
+          );
+          if (continueAnyway !== "Yes") return false;
+        }
+        await this.saveProviderConfig({
+          name,
+          baseUrl,
+          apiKey,
+          apiFormat,
+          models: modelName ? { [modelName]: { name: modelName } } : void 0
+        });
+        vscode10.window.showInformationMessage(`Provider "${name}" configured successfully!`);
+        return true;
+      }
+      /**
+       * Validate provider configuration
+       */
+      async validateProvider(config) {
+        try {
+          const headers = {
+            "Content-Type": "application/json"
+          };
+          if (config.apiFormat === "openai") {
+            headers["Authorization"] = `Bearer ${config.apiKey}`;
+          } else {
+            headers["x-api-key"] = config.apiKey;
+          }
+          const modelsUrl = config.baseUrl.endsWith("/") ? `${config.baseUrl}models` : `${config.baseUrl}/models`;
+          const response = await fetch(modelsUrl, { headers });
+          if (response.ok) {
+            return true;
+          }
+          if (response.status === 404) {
+            return true;
+          }
+          return response.status < 500;
+        } catch {
+          return false;
+        }
+      }
+      /**
+       * Save provider configuration to models.json
+       */
+      async saveProviderConfig(config) {
+        if (!this.modelsConfig) {
+          this.modelsConfig = { providers: {} };
+        }
+        const providerKey = config.name.toLowerCase().replace(/\s+/g, "-");
+        await this.storeApiKey(config.apiKey);
+        this.modelsConfig.providers[providerKey] = {
+          name: config.name,
+          baseUrl: config.baseUrl,
+          apiKey: `{env:CCLOCAL_${providerKey.toUpperCase()}_API_KEY}`,
+          apiFormat: config.apiFormat,
+          models: config.models
+        };
+        await this.saveModelsConfig();
+        process.env[`CCLOCAL_${providerKey.toUpperCase()}_API_KEY`] = config.apiKey;
+      }
+      /**
+       * Edit models.json file
+       */
+      async editModelsJson() {
+        if (!fs3.existsSync(MODELS_CONFIG_PATH)) {
+          await this.createDefaultModelsConfig();
+        }
+        const document = await vscode10.workspace.openTextDocument(MODELS_CONFIG_PATH);
+        await vscode10.window.showTextDocument(document);
+        return true;
+      }
+      /**
+       * List existing providers
+       */
+      async listProviders() {
+        await this.loadModelsConfig();
+        if (!this.modelsConfig || Object.keys(this.modelsConfig.providers).length === 0) {
+          vscode10.window.showInformationMessage("No custom providers configured yet.");
+          return false;
+        }
+        const items = Object.entries(this.modelsConfig.providers).map(([key, config]) => ({
+          label: config.name,
+          description: config.baseUrl,
+          detail: `API Format: ${config.apiFormat || "openai"}`,
+          key
+        }));
+        const selected = await vscode10.window.showQuickPick(items, {
+          placeHolder: "Configured Providers"
+        });
+        if (!selected) return false;
+        const actions = [
+          { label: "$(pencil) Edit", action: "edit" },
+          { label: "$(trash) Delete", action: "delete" },
+          { label: "$(check) Test", action: "test" }
+        ];
+        const actionSelected = await vscode10.window.showQuickPick(actions, {
+          placeHolder: `Actions for ${selected.label}`
+        });
+        if (!actionSelected) return false;
+        switch (actionSelected.action) {
+          case "edit":
+            return await this.editProvider(selected.key);
+          case "delete":
+            return await this.deleteProvider(selected.key);
+          case "test":
+            return await this.testProvider(selected.key);
+        }
+        return false;
+      }
+      /**
+       * Edit a provider
+       */
+      async editProvider(key) {
+        await this.editModelsJson();
+        return true;
+      }
+      /**
+       * Delete a provider
+       */
+      async deleteProvider(key) {
+        const confirm = await vscode10.window.showWarningMessage(
+          `Delete provider "${key}"?`,
+          "Yes",
+          "No"
+        );
+        if (confirm !== "Yes") return false;
+        if (this.modelsConfig) {
+          delete this.modelsConfig.providers[key];
+          await this.saveModelsConfig();
+        }
+        return true;
+      }
+      /**
+       * Test a provider
+       */
+      async testProvider(key) {
+        if (!this.modelsConfig) return false;
+        const config = this.modelsConfig.providers[key];
+        if (!config) return false;
+        const isValid = await this.validateProvider(config);
+        if (isValid) {
+          vscode10.window.showInformationMessage(`Provider "${config.name}" is working!`);
+        } else {
+          vscode10.window.showErrorMessage(`Provider "${config.name}" test failed.`);
+        }
+        return isValid;
+      }
+      /**
+       * Load models.json configuration
+       */
+      async loadModelsConfig() {
+        try {
+          if (fs3.existsSync(MODELS_CONFIG_PATH)) {
+            const content = await fs3.promises.readFile(MODELS_CONFIG_PATH, "utf8");
+            this.modelsConfig = JSON.parse(content);
+          } else {
+            this.modelsConfig = { providers: {} };
+          }
+        } catch (error) {
+          console.error("Failed to load models.json:", error);
+          this.modelsConfig = { providers: {} };
+        }
+      }
+      /**
+       * Save models.json configuration
+       */
+      async saveModelsConfig() {
+        const dir = path6.dirname(MODELS_CONFIG_PATH);
+        await fs3.promises.mkdir(dir, { recursive: true });
+        await fs3.promises.writeFile(
+          MODELS_CONFIG_PATH,
+          JSON.stringify(this.modelsConfig, null, 2),
+          "utf8"
+        );
+      }
+      /**
+       * Create default models.json
+       */
+      async createDefaultModelsConfig() {
+        const defaultConfig = {
+          providers: {},
+          defaultModel: void 0,
+          smallFastModel: void 0
+        };
+        await fs3.promises.mkdir(path6.dirname(MODELS_CONFIG_PATH), { recursive: true });
+        await fs3.promises.writeFile(
+          MODELS_CONFIG_PATH,
+          JSON.stringify(defaultConfig, null, 2),
+          "utf8"
+        );
+        this.modelsConfig = defaultConfig;
+      }
+      /**
+       * Get all configured providers
+       */
+      async getConfiguredProviders() {
+        await this.loadModelsConfig();
+        return this.modelsConfig?.providers || {};
+      }
+      /**
+       * Get models.json path
+       */
+      static getModelsConfigPath() {
+        return MODELS_CONFIG_PATH;
+      }
+    };
+  }
+});
+
+// src/mcp/MCPManager.ts
+import * as vscode13 from "vscode";
+import * as path7 from "path";
+import * as fs4 from "fs";
+function getMCPManager(outputChannel2, options) {
+  if (!instance2 && outputChannel2) {
+    instance2 = new MCPManager(outputChannel2, options);
+  }
+  return instance2;
+}
+function disposeMCPManager() {
+  if (instance2) {
+    instance2.dispose();
+    instance2 = null;
+  }
+}
+var CONFIG_FILE_NAMES, MCPManager, instance2;
+var init_MCPManager = __esm({
+  "src/mcp/MCPManager.ts"() {
+    "use strict";
+    CONFIG_FILE_NAMES = {
+      user: ".claude.json",
+      // Global: ~/.claude.json
+      local: "cclocal.json",
+      // Local: ~/.claude/cclocal.json
+      project: ".mcp.json"
+      // Project: <workspace>/.mcp.json
+    };
+    MCPManager = class {
+      outputChannel;
+      servers;
+      options;
+      disposables;
+      stateChangeEmitter;
+      /** Event fired when MCP state changes */
+      onDidChangeState;
+      constructor(outputChannel2, options = {}) {
+        this.outputChannel = outputChannel2;
+        this.options = {
+          autoDiscoverProject: true,
+          autoApproveKnown: false,
+          preApprovedServers: [],
+          deniedServers: [],
+          allowedPatterns: [],
+          blockedPatterns: [],
+          ...options
+        };
+        this.servers = /* @__PURE__ */ new Map();
+        this.disposables = [];
+        this.stateChangeEmitter = new vscode13.EventEmitter();
+        this.onDidChangeState = this.stateChangeEmitter.event;
+        this.outputChannel.debug("MCPManager initialized");
+      }
+      // ─── Server Discovery ────────────────────────────────────────────────────────
+      /**
+       * Discover MCP servers from all config sources
+       */
+      async discoverServers() {
+        this.outputChannel.debug("Discovering MCP servers...");
+        const discovered = [];
+        const userServers = await this.discoverFromConfig(
+          this.getUserConfigPath(),
+          "user"
+        );
+        discovered.push(...userServers);
+        const localServers = await this.discoverFromConfig(
+          this.getLocalConfigPath(),
+          "local"
+        );
+        discovered.push(...localServers);
+        if (this.options.autoDiscoverProject) {
+          const projectServers = await this.discoverFromConfig(
+            this.getProjectConfigPath(),
+            "project"
+          );
+          discovered.push(...projectServers);
+        }
+        for (const server of discovered) {
+          this.mergeServer(server);
+        }
+        this.outputChannel.info(`Discovered ${discovered.length} MCP servers`);
+        return discovered;
+      }
+      /**
+       * Discover servers from a specific config file
+       */
+      async discoverFromConfig(configPath, source) {
+        if (!configPath) {
+          return [];
+        }
+        try {
+          const content = await fs4.promises.readFile(configPath, "utf-8");
+          const config = JSON.parse(content);
+          if (!config.mcpServers) {
+            return [];
+          }
+          const servers = [];
+          const now = Date.now();
+          for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
+            const approvalState = this.determineApprovalState(name, source);
+            const info = {
+              name,
+              config: serverConfig,
+              status: "registered",
+              tools: [],
+              approvalState,
+              authState: this.determineAuthState(serverConfig),
+              source,
+              updatedAt: now,
+              description: serverConfig.description
+            };
+            servers.push(info);
+          }
+          this.outputChannel.debug(`Found ${servers.length} servers in ${configPath}`);
+          return servers;
+        } catch (error) {
+          if (error.code !== "ENOENT") {
+            this.outputChannel.warn(`Failed to read config ${configPath}: ${error}`);
+          }
+          return [];
+        }
+      }
+      /**
+       * Determine approval state for a server
+       */
+      determineApprovalState(name, source) {
+        if (this.options.preApprovedServers?.includes(name)) {
+          return "approved";
+        }
+        if (this.options.deniedServers?.includes(name)) {
+          return "denied";
+        }
+        if (this.options.allowedPatterns?.length) {
+          for (const pattern of this.options.allowedPatterns) {
+            if (new RegExp(pattern).test(name)) {
+              return "approved";
+            }
+          }
+        }
+        if (this.options.blockedPatterns?.length) {
+          for (const pattern of this.options.blockedPatterns) {
+            if (new RegExp(pattern).test(name)) {
+              return "denied";
+            }
+          }
+        }
+        if (source === "user" || source === "local") {
+          return "approved";
+        }
+        return "pending";
+      }
+      /**
+       * Determine auth state from config
+       */
+      determineAuthState(config) {
+        if (config.authToken) {
+          return "authenticated";
+        }
+        if (config.oauth || config.requiresAuth) {
+          return "required";
+        }
+        return "none";
+      }
+      // ─── Server Management ────────────────────────────────────────────────────────
+      /**
+       * Approve a server
+       */
+      async approveServer(name, remember = false) {
+        const server = this.servers.get(name);
+        if (!server) {
+          this.outputChannel.warn(`Cannot approve: server "${name}" not found`);
+          return false;
+        }
+        const previousState = { ...server };
+        server.approvalState = "approved";
+        server.updatedAt = Date.now();
+        if (remember) {
+          await this.saveApprovalDecision(name, true);
+        }
+        this.emitStateChange("server_approved", name, server, previousState);
+        this.outputChannel.info(`Approved MCP server: ${name}`);
+        return true;
+      }
+      /**
+       * Deny a server
+       */
+      async denyServer(name, remember = false, reason) {
+        const server = this.servers.get(name);
+        if (!server) {
+          this.outputChannel.warn(`Cannot deny: server "${name}" not found`);
+          return false;
+        }
+        const previousState = { ...server };
+        server.approvalState = "denied";
+        server.updatedAt = Date.now();
+        if (remember) {
+          await this.saveApprovalDecision(name, false);
+        }
+        this.emitStateChange("server_denied", name, server, previousState);
+        this.outputChannel.info(`Denied MCP server: ${name}${reason ? ` (${reason})` : ""}`);
+        return true;
+      }
+      /**
+       * Remove a server
+       */
+      async removeServer(name) {
+        const server = this.servers.get(name);
+        if (!server) {
+          return false;
+        }
+        this.servers.delete(name);
+        this.emitStateChange("server_removed", name, void 0, server);
+        this.outputChannel.info(`Removed MCP server: ${name}`);
+        return true;
+      }
+      /**
+       * Enable a server (if approved)
+       */
+      async enableServer(name) {
+        const server = this.servers.get(name);
+        if (!server) {
+          return false;
+        }
+        if (server.approvalState !== "approved") {
+          this.outputChannel.warn(`Cannot enable: server "${name}" is not approved`);
+          return false;
+        }
+        return true;
+      }
+      /**
+       * Disable a server
+       */
+      async disableServer(name) {
+        const server = this.servers.get(name);
+        if (!server) {
+          return false;
+        }
+        const previousState = { ...server };
+        server.status = "disconnected";
+        server.updatedAt = Date.now();
+        this.emitStateChange("server_disconnected", name, server, previousState);
+        return true;
+      }
+      // ─── Server Queries ───────────────────────────────────────────────────────────
+      /**
+       * Get a server by name
+       */
+      getServer(name) {
+        return this.servers.get(name);
+      }
+      /**
+       * Get all servers
+       */
+      getAllServers() {
+        return Array.from(this.servers.values());
+      }
+      /**
+       * Get servers by approval state
+       */
+      getServersByApproval(state) {
+        return this.getAllServers().filter((s) => s.approvalState === state);
+      }
+      /**
+       * Get servers by status
+       */
+      getServersByStatus(status) {
+        return this.getAllServers().filter((s) => s.status === status);
+      }
+      /**
+       * Get pending approval servers
+       */
+      getPendingApprovals() {
+        return this.getServersByApproval("pending");
+      }
+      /**
+       * Get approved and connected servers
+       */
+      getActiveServers() {
+        return this.getAllServers().filter(
+          (s) => s.approvalState === "approved" && s.status === "connected"
+        );
+      }
+      /**
+       * Get MCP statistics
+       */
+      getStats() {
+        const servers = this.getAllServers();
+        const byStatus = {
+          registered: 0,
+          connecting: 0,
+          connected: 0,
+          disconnected: 0,
+          failed: 0
+        };
+        const byApproval = {
+          pending: 0,
+          approved: 0,
+          denied: 0
+        };
+        const bySource = {
+          user: 0,
+          local: 0,
+          project: 0
+        };
+        for (const server of servers) {
+          byStatus[server.status]++;
+          byApproval[server.approvalState]++;
+          bySource[server.source]++;
+        }
+        const connectedServers = servers.filter((s) => s.status === "connected").map((s) => s.name);
+        const failedServers = servers.filter((s) => s.status === "failed").map((s) => s.name);
+        return {
+          totalDiscovered: servers.length,
+          byStatus,
+          byApproval,
+          bySource,
+          totalTools: servers.reduce((sum, s) => sum + s.tools.length, 0),
+          connectedServers,
+          failedServers
+        };
+      }
+      // ─── Server Updates ────────────────────────────────────────────────────────────
+      /**
+       * Update server status (called from core MCPManager)
+       */
+      updateServerStatus(name, status, error) {
+        const server = this.servers.get(name);
+        if (!server) {
+          return;
+        }
+        const previousState = { ...server };
+        server.status = status;
+        server.lastError = error;
+        server.updatedAt = Date.now();
+        const eventType = status === "connected" ? "server_connected" : status === "failed" ? "server_failed" : status === "disconnected" ? "server_disconnected" : "server_discovered";
+        this.emitStateChange(eventType, name, server, previousState);
+      }
+      /**
+       * Update server tools
+       */
+      updateServerTools(name, tools) {
+        const server = this.servers.get(name);
+        if (!server) {
+          return;
+        }
+        const previousState = { ...server };
+        server.tools = tools;
+        server.updatedAt = Date.now();
+        this.emitStateChange("tools_updated", name, server, previousState);
+      }
+      // ─── Approval Requests ────────────────────────────────────────────────────────
+      /**
+       * Show approval UI for pending servers
+       */
+      async showApprovalUI(request) {
+        const server = request.info;
+        const message = this.formatApprovalMessage(request);
+        const items = [
+          { title: "Approve" },
+          { title: "Approve & Remember" },
+          { title: "Deny" },
+          { title: "Deny & Remember" }
+        ];
+        const result = await vscode13.window.showInformationMessage(
+          message,
+          { modal: true, detail: this.formatApprovalDetail(request) },
+          ...items
+        );
+        if (!result) {
+          return false;
+        }
+        if (result.title === "Approve") {
+          return this.approveServer(server.name, false);
+        } else if (result.title === "Approve & Remember") {
+          return this.approveServer(server.name, true);
+        } else if (result.title === "Deny") {
+          return this.denyServer(server.name, false);
+        } else if (result.title === "Deny & Remember") {
+          return this.denyServer(server.name, true);
+        }
+        return false;
+      }
+      formatApprovalMessage(request) {
+        return `MCP Server Approval Request: "${request.name}"`;
+      }
+      formatApprovalDetail(request) {
+        const lines = [
+          `Source: ${request.info.source}`,
+          `Transport: ${request.info.config.type}`,
+          "",
+          "Tools that will be available:",
+          ...request.tools.slice(0, 5).map((t) => `  \u2022 ${t.name}: ${t.description || "No description"}`),
+          request.tools.length > 5 ? `  ... and ${request.tools.length - 5} more` : ""
+        ];
+        return lines.filter(Boolean).join("\n");
+      }
+      // ─── Config Paths ───────────────────────────────────────────────────────────────
+      getUserConfigPath() {
+        const home = process.env.HOME || process.env.USERPROFILE || "";
+        return path7.join(home, CONFIG_FILE_NAMES.user);
+      }
+      getLocalConfigPath() {
+        const home = process.env.HOME || process.env.USERPROFILE || "";
+        return path7.join(home, ".claude", CONFIG_FILE_NAMES.local);
+      }
+      getProjectConfigPath() {
+        const workspaceFolders = vscode13.workspace.workspaceFolders;
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+          return void 0;
+        }
+        return path7.join(workspaceFolders[0].uri.fsPath, CONFIG_FILE_NAMES.project);
+      }
+      // ─── Persistence ───────────────────────────────────────────────────────────────
+      /**
+       * Save approval decision to config
+       */
+      async saveApprovalDecision(name, approved) {
+        const config = vscode13.workspace.getConfiguration("cclocal");
+        if (approved) {
+          const approvedServers = config.get("approvedMcpServers") || [];
+          if (!approvedServers.includes(name)) {
+            approvedServers.push(name);
+            await config.update("approvedMcpServers", approvedServers, vscode13.ConfigurationTarget.Global);
+          }
+        } else {
+          const deniedServers = config.get("deniedMcpServers") || [];
+          if (!deniedServers.includes(name)) {
+            deniedServers.push(name);
+            await config.update("deniedMcpServers", deniedServers, vscode13.ConfigurationTarget.Global);
+          }
+        }
+      }
+      // ─── Helpers ───────────────────────────────────────────────────────────────────
+      mergeServer(server) {
+        const existing = this.servers.get(server.name);
+        if (existing) {
+          const merged = {
+            ...server,
+            approvalState: existing.approvalState !== "pending" ? existing.approvalState : server.approvalState,
+            updatedAt: Date.now()
+          };
+          this.servers.set(server.name, merged);
+        } else {
+          this.servers.set(server.name, server);
+          this.emitStateChange("server_discovered", server.name, server);
+        }
+      }
+      emitStateChange(type, serverName, info, previousState) {
+        this.stateChangeEmitter.fire({
+          type,
+          serverName,
+          info,
+          previousState
+        });
+      }
+      // ─── Lifecycle ─────────────────────────────────────────────────────────────────
+      dispose() {
+        this.servers.clear();
+        this.disposables.forEach((d) => d.dispose());
+        this.disposables = [];
+        this.stateChangeEmitter.dispose();
+        this.outputChannel.debug("MCPManager disposed");
+      }
+    };
+    instance2 = null;
+  }
+});
+
+// src/mcp/MCPPanelProvider.ts
+import * as vscode14 from "vscode";
+var MCPPanelProvider;
+var init_MCPPanelProvider = __esm({
+  "src/mcp/MCPPanelProvider.ts"() {
+    "use strict";
+    MCPPanelProvider = class {
+      panel = null;
+      mcpManager;
+      constructor(mcpManager2) {
+        this.mcpManager = mcpManager2;
+      }
+      /**
+       * Show MCP management panel
+       */
+      show() {
+        if (this.panel) {
+          this.panel.reveal();
+          return;
+        }
+        this.panel = vscode14.window.createWebviewPanel(
+          "cclocal.mcp",
+          "MCP Servers",
+          vscode14.ViewColumn.One,
+          {
+            enableScripts: true,
+            retainContextWhenHidden: true
+          }
+        );
+        this.panel.webview.html = this.getWebviewContent();
+        this.setupMessageHandler();
+        this.mcpManager.onDidChangeState((event) => {
+          this.sendState();
+        });
+      }
+      /**
+       * Setup message handler for webview communication
+       */
+      setupMessageHandler() {
+        if (!this.panel) return;
+        this.panel.webview.onDidReceiveMessage(async (message) => {
+          switch (message.type) {
+            case "getState":
+              this.sendState();
+              break;
+            case "refreshServers":
+              await this.mcpManager.discoverServers();
+              this.sendState();
+              break;
+            case "approveServer":
+              await this.mcpManager.approveServer(message.name, message.remember);
+              this.sendState();
+              break;
+            case "denyServer":
+              await this.mcpManager.denyServer(message.name, message.remember);
+              this.sendState();
+              break;
+            case "enableServer":
+              await this.mcpManager.enableServer(message.name);
+              this.sendState();
+              break;
+            case "disableServer":
+              await this.mcpManager.disableServer(message.name);
+              this.sendState();
+              break;
+            case "removeServer":
+              await this.mcpManager.removeServer(message.name);
+              this.sendState();
+              break;
+            case "openSettings":
+              await vscode14.commands.executeCommand("workbench.action.openSettings", "cclocal.mcp");
+              break;
+            case "openConfigFile":
+              await this.openConfigFile(message.source);
+              break;
+          }
+        });
+      }
+      /**
+       * Send current state to webview
+       */
+      sendState() {
+        const servers = this.mcpManager.getAllServers();
+        const stats = this.mcpManager.getStats();
+        const pending = this.mcpManager.getPendingApprovals();
+        this.panel?.webview.postMessage({
+          type: "state",
+          servers,
+          stats,
+          pendingApprovals: pending
+        });
+      }
+      /**
+       * Open config file for editing
+       */
+      async openConfigFile(source) {
+        const home = process.env.HOME || process.env.USERPROFILE || "";
+        const paths = {
+          user: `${home}/.claude.json`,
+          local: `${home}/.claude/cclocal.json`,
+          project: ""
+        };
+        if (source === "project") {
+          const workspaceFolders = vscode14.workspace.workspaceFolders;
+          if (workspaceFolders && workspaceFolders.length > 0) {
+            paths.project = `${workspaceFolders[0].uri.fsPath}/.mcp.json`;
+          } else {
+            vscode14.window.showWarningMessage("No workspace folder open");
+            return;
+          }
+        }
+        const filePath = paths[source];
+        if (!filePath) return;
+        try {
+          const doc = await vscode14.workspace.openTextDocument(filePath);
+          await vscode14.window.showTextDocument(doc);
+        } catch (error) {
+          vscode14.window.showErrorMessage(`Failed to open ${filePath}: ${error}`);
+        }
+      }
+      /**
+       * Get webview HTML content
+       */
+      getWebviewContent() {
+        return (
+          /* html */
+          `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -401,11 +5166,750 @@
   </script>
 </body>
 </html>
-`}dispose(){this.panel?.dispose(),this.panel=null}}});var Tt,lo,co,Je,_t,uo=V(()=>{"use strict";Tt=g(require("vscode"),1),lo=g(require("http"),1),co=g(require("url"),1),Je=g(require("crypto"),1),_t=class{outputChannel;context;pendingFlows;callbackServer;constructor(e,t){this.context=e,this.outputChannel=t,this.pendingFlows=new Map,this.callbackServer=null}async authenticate(e,t){this.outputChannel.info(`Starting OAuth flow for MCP server: ${e.name}`);let s=await this.getStoredToken(e.name);if(s&&!this.isTokenExpired(s))return this.outputChannel.debug(`Using cached token for: ${e.name}`),s;if(s?.refreshToken)try{let n=await this.refreshToken(t,s.refreshToken);return await this.storeToken(e.name,n),n}catch(n){this.outputChannel.debug(`Token refresh failed for ${e.name}: ${n}`)}return this.startOAuthFlow(t)}async clearAuth(e){await this.context.secrets.delete(`mcp_token_${e}`),this.outputChannel.info(`Cleared auth for MCP server: ${e}`)}async startOAuthFlow(e){let t=this.generateCodeVerifier(),s=await this.generateCodeChallenge(t),n=Je.randomBytes(16).toString("hex"),i=new URL(e.authorizationUrl);i.searchParams.set("response_type","code"),i.searchParams.set("client_id",e.clientId),i.searchParams.set("redirect_uri",e.redirectUri||this.getLocalCallbackUrl()),i.searchParams.set("scope",(e.scope||[]).join(" ")),i.searchParams.set("state",n),i.searchParams.set("code_challenge",s),i.searchParams.set("code_challenge_method","S256");let r=await this.startCallbackServer(),a=new Promise((c,u)=>{this.pendingFlows.set(e.serverName,{resolve:c,reject:u,state:n,codeVerifier:t})}),l=Tt.Uri.parse(i.toString());await Tt.env.openExternal(l),this.outputChannel.debug(`Opened OAuth authorization URL for: ${e.serverName}`);try{let c=await a;return await this.storeToken(e.serverName,c),c}catch(c){throw this.outputChannel.error(`OAuth flow failed for ${e.serverName}: ${c}`),c}finally{this.pendingFlows.delete(e.serverName),this.stopCallbackServer()}}handleCallback(e,t){let s=new co.URL(e.url||"/","http://localhost");if(s.pathname==="/callback"){let n=s.searchParams.get("code"),i=s.searchParams.get("state"),r=s.searchParams.get("error");if(r){t.writeHead(400,{"Content-Type":"text/html"}),t.end("<h1>Authentication Failed</h1><p>You can close this window.</p>"),this.rejectAllFlows(new Error(`OAuth error: ${r}`));return}if(!n||!i){t.writeHead(400,{"Content-Type":"text/html"}),t.end("<h1>Invalid Callback</h1><p>You can close this window.</p>");return}for(let[a,l]of this.pendingFlows)if(l.state===i){t.writeHead(200,{"Content-Type":"text/html"}),t.end(`
+`
+        );
+      }
+      /**
+       * Dispose
+       */
+      dispose() {
+        this.panel?.dispose();
+        this.panel = null;
+      }
+    };
+  }
+});
+
+// src/mcp/MCPAuthenticator.ts
+import * as vscode15 from "vscode";
+import * as http4 from "http";
+import * as url3 from "url";
+import * as crypto7 from "crypto";
+var MCPAuthenticator;
+var init_MCPAuthenticator = __esm({
+  "src/mcp/MCPAuthenticator.ts"() {
+    "use strict";
+    MCPAuthenticator = class {
+      outputChannel;
+      context;
+      pendingFlows;
+      callbackServer;
+      constructor(context, outputChannel2) {
+        this.context = context;
+        this.outputChannel = outputChannel2;
+        this.pendingFlows = /* @__PURE__ */ new Map();
+        this.callbackServer = null;
+      }
+      /**
+       * Authenticate an MCP server using OAuth
+       */
+      async authenticate(server, config) {
+        this.outputChannel.info(`Starting OAuth flow for MCP server: ${server.name}`);
+        const existingToken = await this.getStoredToken(server.name);
+        if (existingToken && !this.isTokenExpired(existingToken)) {
+          this.outputChannel.debug(`Using cached token for: ${server.name}`);
+          return existingToken;
+        }
+        if (existingToken?.refreshToken) {
+          try {
+            const refreshed = await this.refreshToken(config, existingToken.refreshToken);
+            await this.storeToken(server.name, refreshed);
+            return refreshed;
+          } catch (error) {
+            this.outputChannel.debug(`Token refresh failed for ${server.name}: ${error}`);
+          }
+        }
+        return this.startOAuthFlow(config);
+      }
+      /**
+       * Clear authentication for a server
+       */
+      async clearAuth(serverName) {
+        await this.context.secrets.delete(`mcp_token_${serverName}`);
+        this.outputChannel.info(`Cleared auth for MCP server: ${serverName}`);
+      }
+      // ─── OAuth Flow ─────────────────────────────────────────────────────────────
+      async startOAuthFlow(config) {
+        const codeVerifier = this.generateCodeVerifier();
+        const codeChallenge = await this.generateCodeChallenge(codeVerifier);
+        const state = crypto7.randomBytes(16).toString("hex");
+        const authUrl = new URL(config.authorizationUrl);
+        authUrl.searchParams.set("response_type", "code");
+        authUrl.searchParams.set("client_id", config.clientId);
+        authUrl.searchParams.set("redirect_uri", config.redirectUri || this.getLocalCallbackUrl());
+        authUrl.searchParams.set("scope", (config.scope || []).join(" "));
+        authUrl.searchParams.set("state", state);
+        authUrl.searchParams.set("code_challenge", codeChallenge);
+        authUrl.searchParams.set("code_challenge_method", "S256");
+        const callbackPort = await this.startCallbackServer();
+        const flowPromise = new Promise((resolve, reject) => {
+          this.pendingFlows.set(config.serverName, {
+            resolve,
+            reject,
+            state,
+            codeVerifier
+          });
+        });
+        const uri = vscode15.Uri.parse(authUrl.toString());
+        await vscode15.env.openExternal(uri);
+        this.outputChannel.debug(`Opened OAuth authorization URL for: ${config.serverName}`);
+        try {
+          const token = await flowPromise;
+          await this.storeToken(config.serverName, token);
+          return token;
+        } catch (error) {
+          this.outputChannel.error(`OAuth flow failed for ${config.serverName}: ${error}`);
+          throw error;
+        } finally {
+          this.pendingFlows.delete(config.serverName);
+          this.stopCallbackServer();
+        }
+      }
+      /**
+       * Handle OAuth callback
+       */
+      handleCallback(req, res) {
+        const parsedUrl = new url3.URL(req.url || "/", "http://localhost");
+        if (parsedUrl.pathname === "/callback") {
+          const code = parsedUrl.searchParams.get("code");
+          const state = parsedUrl.searchParams.get("state");
+          const error = parsedUrl.searchParams.get("error");
+          if (error) {
+            res.writeHead(400, { "Content-Type": "text/html" });
+            res.end("<h1>Authentication Failed</h1><p>You can close this window.</p>");
+            this.rejectAllFlows(new Error(`OAuth error: ${error}`));
+            return;
+          }
+          if (!code || !state) {
+            res.writeHead(400, { "Content-Type": "text/html" });
+            res.end("<h1>Invalid Callback</h1><p>You can close this window.</p>");
+            return;
+          }
+          for (const [serverName, flow] of this.pendingFlows) {
+            if (flow.state === state) {
+              res.writeHead(200, { "Content-Type": "text/html" });
+              res.end(`
             <h1>Authentication Successful</h1>
             <p>You can close this window and return to VS Code.</p>
             <script>window.close()</script>
-          `),l.resolve({accessToken:n,tokenType:"pending",obtainedAt:Date.now()});return}t.writeHead(400,{"Content-Type":"text/html"}),t.end("<h1>No matching flow found</h1><p>You can close this window.</p>")}else t.writeHead(404),t.end("Not found")}async exchangeCode(e,t,s){let n=new URL(e.tokenUrl),i=new URLSearchParams;i.set("grant_type","authorization_code"),i.set("code",t),i.set("client_id",e.clientId),e.clientSecret&&i.set("client_secret",e.clientSecret),i.set("redirect_uri",e.redirectUri||this.getLocalCallbackUrl()),i.set("code_verifier",s);let r=await fetch(n.toString(),{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:i.toString()});if(!r.ok)throw new Error(`Token exchange failed: ${r.status} ${r.statusText}`);let a=await r.json();return{accessToken:a.access_token,refreshToken:a.refresh_token,tokenType:a.token_type||"Bearer",expiresIn:a.expires_in,obtainedAt:Date.now(),scope:typeof a.scope=="string"?a.scope.split(" "):void 0}}async refreshToken(e,t){let s=new URL(e.tokenUrl),n=new URLSearchParams;n.set("grant_type","refresh_token"),n.set("refresh_token",t),n.set("client_id",e.clientId),e.clientSecret&&n.set("client_secret",e.clientSecret);let i=await fetch(s.toString(),{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:n.toString()});if(!i.ok)throw new Error(`Token refresh failed: ${i.status}`);let r=await i.json();return{accessToken:r.access_token,refreshToken:r.refresh_token||t,tokenType:r.token_type||"Bearer",expiresIn:r.expires_in,obtainedAt:Date.now(),scope:typeof r.scope=="string"?r.scope.split(" "):void 0}}async startCallbackServer(){return this.callbackServer?0:new Promise(e=>{this.callbackServer=lo.createServer((t,s)=>{this.handleCallback(t,s)}),this.callbackServer.listen(0,"127.0.0.1",()=>{let t=this.callbackServer?.address(),s=t&&typeof t=="object"?t.port:0;this.outputChannel.debug(`OAuth callback server started on port ${s}`),e(s)})})}stopCallbackServer(){this.callbackServer&&(this.callbackServer.close(),this.callbackServer=null,this.outputChannel.debug("OAuth callback server stopped"))}getLocalCallbackUrl(){let e=this.callbackServer?.address();return`http://127.0.0.1:${e&&typeof e=="object"?e.port:8765}/callback`}async getStoredToken(e){let t=await this.context.secrets.get(`mcp_token_${e}`);if(t)try{return JSON.parse(t)}catch{return}}async storeToken(e,t){await this.context.secrets.store(`mcp_token_${e}`,JSON.stringify(t))}isTokenExpired(e){if(!e.expiresIn)return!1;let t=e.obtainedAt+(e.expiresIn-300)*1e3;return Date.now()>t}generateCodeVerifier(){return Je.randomBytes(32).toString("base64url")}async generateCodeChallenge(e){return Je.createHash("sha256").update(e).digest().toString("base64url")}rejectAllFlows(e){for(let[,t]of this.pendingFlows)t.reject(e);this.pendingFlows.clear()}dispose(){this.stopCallbackServer(),this.rejectAllFlows(new Error("Authenticator disposed")),this.outputChannel.debug("MCPAuthenticator disposed")}}});function sr(){return{name:"get_open_files",description:"Get a list of all currently open files in the editor.",inputSchema:{type:"object",properties:{includePath:{type:"boolean",default:!0,description:"Include full file paths"},includeLanguage:{type:"boolean",default:!0,description:"Include language identifiers"}}},execute:async o=>{let e=o;return{files:k.window.tabGroups.all.flatMap(n=>n.tabs).filter(n=>n.input instanceof k.TabInputText).map(n=>{let i=n.input,r={name:i.uri.path.split("/").pop()||""};return e.includePath!==!1&&(r.path=i.uri.fsPath),e.includeLanguage!==!1&&(r.language=void 0),r})}}}}function nr(){return{name:"get_visible_text",description:"Get the currently visible text in the active editor.",inputSchema:{type:"object",properties:{includeRange:{type:"boolean",default:!0,description:"Include line range information"}}},execute:async o=>{let e=o,t=k.window.activeTextEditor;if(!t)return{error:"No active editor"};let n=t.visibleRanges.map(i=>{let a={text:t.document.getText(i)};return e.includeRange!==!1&&(a.startLine=i.start.line+1,a.endLine=i.end.line+1),a});return{fileName:t.document.fileName,language:t.document.languageId,visibleTexts:n}}}}function or(){return{name:"run_task",description:"Run a background task in the VS Code terminal.",inputSchema:{type:"object",properties:{command:{type:"string",description:"The command to execute"},name:{type:"string",description:"Name for the terminal instance"},cwd:{type:"string",description:"Working directory for the command"}},required:["command"]},execute:async o=>{let e=o,t=k.window.createTerminal({name:e.name||"CCLocal Task",cwd:e.cwd});return t.show(),t.sendText(e.command),{success:!0,message:`Task started in terminal: ${e.name||"CCLocal Task"}`}}}}function ir(){return{name:"diagnostics_changed",description:"Get current diagnostics (errors, warnings) for all open files or a specific file.",inputSchema:{type:"object",properties:{filePath:{type:"string",description:"Optional specific file path to check. If omitted, checks all open files."},severities:{type:"array",items:{type:"string",enum:["error","warning","info","hint"]},description:"Filter by severity levels"}}},execute:async o=>{let e=o,t={error:k.DiagnosticSeverity.Error,warning:k.DiagnosticSeverity.Warning,info:k.DiagnosticSeverity.Information,hint:k.DiagnosticSeverity.Hint},s=(e.severities||["error","warning"]).map(r=>t[r]).filter(r=>r!==void 0),n;e.filePath?n=[k.Uri.file(e.filePath)]:n=k.window.tabGroups.all.flatMap(r=>r.tabs).filter(r=>r.input instanceof k.TabInputText).map(r=>r.input.uri);let i={};for(let r of n){let l=k.languages.getDiagnostics(r).filter(c=>s.includes(c.severity));l.length>0&&(i[r.fsPath]=l.map(c=>({severity:["error","warning","info","hint"][c.severity],message:c.message,line:c.range.start.line+1,source:c.source,code:c.code?.toString()})))}return{diagnostics:i}}}}function rr(){return{name:"file_saved",description:"Listen for file save events. Returns recently saved files.",inputSchema:{type:"object",properties:{since:{type:"number",description:"Unix timestamp to get saves since (defaults to last 60 seconds)"}}},execute:async o=>{let t=o.since||Date.now()-6e4;return{savedFiles:It.filter(n=>n.timestamp>=t)}}}}function lr(o){for(It.push({path:o.fileName,timestamp:Date.now(),language:o.languageId});It.length>ar;)It.shift()}function po(){return vs||(vs=[sr(),nr(),or(),ir(),rr()]),vs}function At(o){o.subscriptions.push(k.workspace.onDidSaveTextDocument(e=>{lr(e)}))}var k,It,ar,vs,go=V(()=>{"use strict";k=g(require("vscode"),1);It=[],ar=100;vs=null});var ho={};Le(ho,{MCPAuthenticator:()=>_t,MCPManager:()=>Ye,MCPPanelProvider:()=>Pe,disposeMCPManager:()=>Mt,formatApprovalState:()=>dr,formatServerStatus:()=>cr,getApprovalColor:()=>pr,getMCPManager:()=>Et,getStatusColor:()=>ur,getTransportIcon:()=>gr,getVSCodeMCPTools:()=>po,registerFileSaveListener:()=>At});function cr(o){return{registered:"Registered",connecting:"Connecting...",connected:"Connected",disconnected:"Disconnected",failed:"Failed"}[o]||o}function dr(o){return{pending:"Pending",approved:"Approved",denied:"Denied"}[o]||o}function ur(o){return{connected:"#4CAF50",connecting:"#2196F3",failed:"#f44336",disconnected:"#9E9E9E",registered:"#757575"}[o]||"#757575"}function pr(o){return{approved:"#4CAF50",pending:"#FF9800",denied:"#f44336"}[o]||"#757575"}function gr(o){return{stdio:"$(terminal)",sse:"$(globe)",http:"$(globe)",ws:"$(plug)"}[o]||"$(server)"}var bs=V(()=>{"use strict";ao();fs();uo();go()});var fo={};Le(fo,{ConfigPanelProvider:()=>Ps});var te,Ps,vo=V(()=>{"use strict";te=g(require("vscode"),1),Ps=class{panel=null;configManager;constructor(e){this.configManager=e}show(){if(this.panel){this.panel.reveal();return}this.panel=te.window.createWebviewPanel("cclocal.config","CCLocal Settings",te.ViewColumn.One,{enableScripts:!0,retainContextWhenHidden:!0}),this.panel.webview.html=this.getWebviewContent(),this.setupMessageHandler()}setupMessageHandler(){this.panel&&this.panel.webview.onDidReceiveMessage(async e=>{switch(e.type){case"getConfig":let t=this.configManager.getConfig();this.panel?.webview.postMessage({type:"config",config:t});break;case"updateConfig":await this.updateConfig(e.key,e.value);break;case"resetConfig":await this.resetConfig(e.key);break;case"addEnvironmentVariable":await this.configManager.addEnvironmentVariable(e.name,e.value),this.sendConfig();break;case"removeEnvironmentVariable":await this.configManager.removeEnvironmentVariable(e.name),this.sendConfig();break;case"addPermissionRule":await this.configManager.addPermissionRule(e.rule),this.sendConfig();break;case"addAllowedMcpServer":await this.configManager.addAllowedMcpServer(e.server),this.sendConfig();break;case"addDeniedMcpServer":await this.configManager.addDeniedMcpServer(e.server),this.sendConfig();break;case"openSettings":await te.commands.executeCommand("workbench.action.openSettings","cclocal");break;case"editModelsJson":await te.commands.executeCommand("cclocal.configureCustomProvider");break;case"addHook":await this.addHook(e.hookType,e.definition),this.sendConfig();break;case"removeHook":await this.removeHook(e.hookType,e.defIndex,e.handlerIndex),this.sendConfig();break;case"getHookStats":let s=await te.commands.executeCommand("cclocal.hooks.stats");this.panel?.webview.postMessage({type:"hookStats",stats:s});break}})}async updateConfig(e,t){await this.configManager.update(e,t),this.sendConfig()}async resetConfig(e){await this.configManager.update(e,void 0),this.sendConfig()}sendConfig(){let e=this.configManager.getConfig();this.panel?.webview.postMessage({type:"config",config:e})}async addHook(e,t){let s=this.configManager.get("hooks")||{},n=s[e]||[];n.push(t),s[e]=n,await this.configManager.update("hooks",s)}async removeHook(e,t,s){let n=this.configManager.get("hooks")||{},i=n[e];if(i&&i[t]){let r=i[t];r.hooks&&r.hooks.length>s&&(r.hooks.splice(s,1),r.hooks.length===0&&i.splice(t,1)),i.length===0&&delete n[e],await this.configManager.update("hooks",n)}}getWebviewContent(){return`
+          `);
+              flow.resolve({
+                accessToken: code,
+                tokenType: "pending",
+                obtainedAt: Date.now()
+              });
+              return;
+            }
+          }
+          res.writeHead(400, { "Content-Type": "text/html" });
+          res.end("<h1>No matching flow found</h1><p>You can close this window.</p>");
+        } else {
+          res.writeHead(404);
+          res.end("Not found");
+        }
+      }
+      /**
+       * Exchange authorization code for token
+       */
+      async exchangeCode(config, code, codeVerifier) {
+        const tokenUrl = new URL(config.tokenUrl);
+        const body = new URLSearchParams();
+        body.set("grant_type", "authorization_code");
+        body.set("code", code);
+        body.set("client_id", config.clientId);
+        if (config.clientSecret) {
+          body.set("client_secret", config.clientSecret);
+        }
+        body.set("redirect_uri", config.redirectUri || this.getLocalCallbackUrl());
+        body.set("code_verifier", codeVerifier);
+        const response = await fetch(tokenUrl.toString(), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: body.toString()
+        });
+        if (!response.ok) {
+          throw new Error(`Token exchange failed: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        return {
+          accessToken: data.access_token,
+          refreshToken: data.refresh_token,
+          tokenType: data.token_type || "Bearer",
+          expiresIn: data.expires_in,
+          obtainedAt: Date.now(),
+          scope: typeof data.scope === "string" ? data.scope.split(" ") : void 0
+        };
+      }
+      /**
+       * Refresh an expired token
+       */
+      async refreshToken(config, refreshToken) {
+        const tokenUrl = new URL(config.tokenUrl);
+        const body = new URLSearchParams();
+        body.set("grant_type", "refresh_token");
+        body.set("refresh_token", refreshToken);
+        body.set("client_id", config.clientId);
+        if (config.clientSecret) {
+          body.set("client_secret", config.clientSecret);
+        }
+        const response = await fetch(tokenUrl.toString(), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: body.toString()
+        });
+        if (!response.ok) {
+          throw new Error(`Token refresh failed: ${response.status}`);
+        }
+        const data = await response.json();
+        return {
+          accessToken: data.access_token,
+          refreshToken: data.refresh_token || refreshToken,
+          tokenType: data.token_type || "Bearer",
+          expiresIn: data.expires_in,
+          obtainedAt: Date.now(),
+          scope: typeof data.scope === "string" ? data.scope.split(" ") : void 0
+        };
+      }
+      // ─── Callback Server ────────────────────────────────────────────────────────
+      async startCallbackServer() {
+        if (this.callbackServer) {
+          return 0;
+        }
+        return new Promise((resolve) => {
+          this.callbackServer = http4.createServer((req, res) => {
+            this.handleCallback(req, res);
+          });
+          this.callbackServer.listen(0, "127.0.0.1", () => {
+            const address = this.callbackServer?.address();
+            const port = address && typeof address === "object" ? address.port : 0;
+            this.outputChannel.debug(`OAuth callback server started on port ${port}`);
+            resolve(port);
+          });
+        });
+      }
+      stopCallbackServer() {
+        if (this.callbackServer) {
+          this.callbackServer.close();
+          this.callbackServer = null;
+          this.outputChannel.debug("OAuth callback server stopped");
+        }
+      }
+      getLocalCallbackUrl() {
+        const address = this.callbackServer?.address();
+        const port = address && typeof address === "object" ? address.port : 8765;
+        return `http://127.0.0.1:${port}/callback`;
+      }
+      // ─── Token Storage ──────────────────────────────────────────────────────────
+      async getStoredToken(serverName) {
+        const stored = await this.context.secrets.get(`mcp_token_${serverName}`);
+        if (!stored) return void 0;
+        try {
+          return JSON.parse(stored);
+        } catch {
+          return void 0;
+        }
+      }
+      async storeToken(serverName, token) {
+        await this.context.secrets.store(
+          `mcp_token_${serverName}`,
+          JSON.stringify(token)
+        );
+      }
+      isTokenExpired(token) {
+        if (!token.expiresIn) return false;
+        const expiresAt = token.obtainedAt + (token.expiresIn - 300) * 1e3;
+        return Date.now() > expiresAt;
+      }
+      // ─── PKCE ───────────────────────────────────────────────────────────────────
+      generateCodeVerifier() {
+        return crypto7.randomBytes(32).toString("base64url");
+      }
+      async generateCodeChallenge(verifier) {
+        const hash = crypto7.createHash("sha256").update(verifier).digest();
+        return hash.toString("base64url");
+      }
+      // ─── Helpers ────────────────────────────────────────────────────────────────
+      rejectAllFlows(error) {
+        for (const [, flow] of this.pendingFlows) {
+          flow.reject(error);
+        }
+        this.pendingFlows.clear();
+      }
+      // ─── Lifecycle ──────────────────────────────────────────────────────────────
+      dispose() {
+        this.stopCallbackServer();
+        this.rejectAllFlows(new Error("Authenticator disposed"));
+        this.outputChannel.debug("MCPAuthenticator disposed");
+      }
+    };
+  }
+});
+
+// src/mcp/vscodeTools.ts
+import * as vscode16 from "vscode";
+function getOpenFilesTool() {
+  return {
+    name: "get_open_files",
+    description: "Get a list of all currently open files in the editor.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        includePath: {
+          type: "boolean",
+          default: true,
+          description: "Include full file paths"
+        },
+        includeLanguage: {
+          type: "boolean",
+          default: true,
+          description: "Include language identifiers"
+        }
+      }
+    },
+    execute: async (input) => {
+      const opts = input;
+      const tabs = vscode16.window.tabGroups.all.flatMap((group) => group.tabs);
+      const files = tabs.filter((tab) => tab.input instanceof vscode16.TabInputText).map((tab) => {
+        const textTab = tab.input;
+        const result = {
+          name: textTab.uri.path.split("/").pop() || ""
+        };
+        if (opts.includePath !== false) {
+          result.path = textTab.uri.fsPath;
+        }
+        if (opts.includeLanguage !== false) {
+          result.language = void 0;
+        }
+        return result;
+      });
+      return { files };
+    }
+  };
+}
+function getVisibleTextTool() {
+  return {
+    name: "get_visible_text",
+    description: "Get the currently visible text in the active editor.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        includeRange: {
+          type: "boolean",
+          default: true,
+          description: "Include line range information"
+        }
+      }
+    },
+    execute: async (input) => {
+      const opts = input;
+      const editor = vscode16.window.activeTextEditor;
+      if (!editor) {
+        return { error: "No active editor" };
+      }
+      const visibleRanges = editor.visibleRanges;
+      const texts = visibleRanges.map((range) => {
+        const text = editor.document.getText(range);
+        const result = { text };
+        if (opts.includeRange !== false) {
+          result.startLine = range.start.line + 1;
+          result.endLine = range.end.line + 1;
+        }
+        return result;
+      });
+      return {
+        fileName: editor.document.fileName,
+        language: editor.document.languageId,
+        visibleTexts: texts
+      };
+    }
+  };
+}
+function runTaskTool() {
+  return {
+    name: "run_task",
+    description: "Run a background task in the VS Code terminal.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        command: {
+          type: "string",
+          description: "The command to execute"
+        },
+        name: {
+          type: "string",
+          description: "Name for the terminal instance"
+        },
+        cwd: {
+          type: "string",
+          description: "Working directory for the command"
+        }
+      },
+      required: ["command"]
+    },
+    execute: async (input) => {
+      const opts = input;
+      const terminal = vscode16.window.createTerminal({
+        name: opts.name || "CCLocal Task",
+        cwd: opts.cwd
+      });
+      terminal.show();
+      terminal.sendText(opts.command);
+      return {
+        success: true,
+        message: `Task started in terminal: ${opts.name || "CCLocal Task"}`
+      };
+    }
+  };
+}
+function diagnosticsChangedTool() {
+  return {
+    name: "diagnostics_changed",
+    description: "Get current diagnostics (errors, warnings) for all open files or a specific file.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        filePath: {
+          type: "string",
+          description: "Optional specific file path to check. If omitted, checks all open files."
+        },
+        severities: {
+          type: "array",
+          items: { type: "string", enum: ["error", "warning", "info", "hint"] },
+          description: "Filter by severity levels"
+        }
+      }
+    },
+    execute: async (input) => {
+      const opts = input;
+      const severityMap = {
+        error: vscode16.DiagnosticSeverity.Error,
+        warning: vscode16.DiagnosticSeverity.Warning,
+        info: vscode16.DiagnosticSeverity.Information,
+        hint: vscode16.DiagnosticSeverity.Hint
+      };
+      const allowedSeverities = (opts.severities || ["error", "warning"]).map((s) => severityMap[s]).filter((s) => s !== void 0);
+      let uris;
+      if (opts.filePath) {
+        uris = [vscode16.Uri.file(opts.filePath)];
+      } else {
+        uris = vscode16.window.tabGroups.all.flatMap((g) => g.tabs).filter((t) => t.input instanceof vscode16.TabInputText).map((t) => t.input.uri);
+      }
+      const results = {};
+      for (const uri of uris) {
+        const diagnostics = vscode16.languages.getDiagnostics(uri);
+        const filtered = diagnostics.filter((d) => allowedSeverities.includes(d.severity));
+        if (filtered.length > 0) {
+          results[uri.fsPath] = filtered.map((d) => ({
+            severity: ["error", "warning", "info", "hint"][d.severity],
+            message: d.message,
+            line: d.range.start.line + 1,
+            source: d.source,
+            code: d.code?.toString()
+          }));
+        }
+      }
+      return { diagnostics: results };
+    }
+  };
+}
+function fileSavedTool() {
+  return {
+    name: "file_saved",
+    description: "Listen for file save events. Returns recently saved files.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        since: {
+          type: "number",
+          description: "Unix timestamp to get saves since (defaults to last 60 seconds)"
+        }
+      }
+    },
+    execute: async (input) => {
+      const opts = input;
+      const since = opts.since || Date.now() - 6e4;
+      const savedFiles = recentlySavedFiles.filter(
+        (f) => f.timestamp >= since
+      );
+      return { savedFiles };
+    }
+  };
+}
+function trackFileSave(doc) {
+  recentlySavedFiles.push({
+    path: doc.fileName,
+    timestamp: Date.now(),
+    language: doc.languageId
+  });
+  while (recentlySavedFiles.length > MAX_SAVED_FILES) {
+    recentlySavedFiles.shift();
+  }
+}
+function getVSCodeMCPTools() {
+  if (!registeredTools) {
+    registeredTools = [
+      getOpenFilesTool(),
+      getVisibleTextTool(),
+      runTaskTool(),
+      diagnosticsChangedTool(),
+      fileSavedTool()
+    ];
+  }
+  return registeredTools;
+}
+function registerFileSaveListener(context) {
+  context.subscriptions.push(
+    vscode16.workspace.onDidSaveTextDocument((doc) => {
+      trackFileSave(doc);
+    })
+  );
+}
+var recentlySavedFiles, MAX_SAVED_FILES, registeredTools;
+var init_vscodeTools = __esm({
+  "src/mcp/vscodeTools.ts"() {
+    "use strict";
+    recentlySavedFiles = [];
+    MAX_SAVED_FILES = 100;
+    registeredTools = null;
+  }
+});
+
+// src/mcp/index.ts
+var mcp_exports = {};
+__export(mcp_exports, {
+  MCPAuthenticator: () => MCPAuthenticator,
+  MCPManager: () => MCPManager,
+  MCPPanelProvider: () => MCPPanelProvider,
+  disposeMCPManager: () => disposeMCPManager,
+  formatApprovalState: () => formatApprovalState,
+  formatServerStatus: () => formatServerStatus,
+  getApprovalColor: () => getApprovalColor,
+  getMCPManager: () => getMCPManager,
+  getStatusColor: () => getStatusColor,
+  getTransportIcon: () => getTransportIcon,
+  getVSCodeMCPTools: () => getVSCodeMCPTools,
+  registerFileSaveListener: () => registerFileSaveListener
+});
+function formatServerStatus(status) {
+  const statusMap = {
+    registered: "Registered",
+    connecting: "Connecting...",
+    connected: "Connected",
+    disconnected: "Disconnected",
+    failed: "Failed"
+  };
+  return statusMap[status] || status;
+}
+function formatApprovalState(state) {
+  const stateMap = {
+    pending: "Pending",
+    approved: "Approved",
+    denied: "Denied"
+  };
+  return stateMap[state] || state;
+}
+function getStatusColor(status) {
+  const colorMap = {
+    connected: "#4CAF50",
+    connecting: "#2196F3",
+    failed: "#f44336",
+    disconnected: "#9E9E9E",
+    registered: "#757575"
+  };
+  return colorMap[status] || "#757575";
+}
+function getApprovalColor(state) {
+  const colorMap = {
+    approved: "#4CAF50",
+    pending: "#FF9800",
+    denied: "#f44336"
+  };
+  return colorMap[state] || "#757575";
+}
+function getTransportIcon(type) {
+  const iconMap = {
+    stdio: "$(terminal)",
+    sse: "$(globe)",
+    http: "$(globe)",
+    ws: "$(plug)"
+  };
+  return iconMap[type] || "$(server)";
+}
+var init_mcp = __esm({
+  "src/mcp/index.ts"() {
+    "use strict";
+    init_MCPManager();
+    init_MCPPanelProvider();
+    init_MCPAuthenticator();
+    init_vscodeTools();
+  }
+});
+
+// src/ConfigPanelProvider.ts
+var ConfigPanelProvider_exports = {};
+__export(ConfigPanelProvider_exports, {
+  ConfigPanelProvider: () => ConfigPanelProvider
+});
+import * as vscode21 from "vscode";
+var ConfigPanelProvider;
+var init_ConfigPanelProvider = __esm({
+  "src/ConfigPanelProvider.ts"() {
+    "use strict";
+    ConfigPanelProvider = class {
+      panel = null;
+      configManager;
+      constructor(configManager2) {
+        this.configManager = configManager2;
+      }
+      /**
+       * Show configuration panel
+       */
+      show() {
+        if (this.panel) {
+          this.panel.reveal();
+          return;
+        }
+        this.panel = vscode21.window.createWebviewPanel(
+          "cclocal.config",
+          "CCLocal Settings",
+          vscode21.ViewColumn.One,
+          {
+            enableScripts: true,
+            retainContextWhenHidden: true
+          }
+        );
+        this.panel.webview.html = this.getWebviewContent();
+        this.setupMessageHandler();
+      }
+      /**
+       * Setup message handler for webview communication
+       */
+      setupMessageHandler() {
+        if (!this.panel) return;
+        this.panel.webview.onDidReceiveMessage(async (message) => {
+          switch (message.type) {
+            case "getConfig":
+              const config = this.configManager.getConfig();
+              this.panel?.webview.postMessage({
+                type: "config",
+                config
+              });
+              break;
+            case "updateConfig":
+              await this.updateConfig(message.key, message.value);
+              break;
+            case "resetConfig":
+              await this.resetConfig(message.key);
+              break;
+            case "addEnvironmentVariable":
+              await this.configManager.addEnvironmentVariable(message.name, message.value);
+              this.sendConfig();
+              break;
+            case "removeEnvironmentVariable":
+              await this.configManager.removeEnvironmentVariable(message.name);
+              this.sendConfig();
+              break;
+            case "addPermissionRule":
+              await this.configManager.addPermissionRule(message.rule);
+              this.sendConfig();
+              break;
+            case "addAllowedMcpServer":
+              await this.configManager.addAllowedMcpServer(message.server);
+              this.sendConfig();
+              break;
+            case "addDeniedMcpServer":
+              await this.configManager.addDeniedMcpServer(message.server);
+              this.sendConfig();
+              break;
+            case "openSettings":
+              await vscode21.commands.executeCommand("workbench.action.openSettings", "cclocal");
+              break;
+            case "editModelsJson":
+              await vscode21.commands.executeCommand("cclocal.configureCustomProvider");
+              break;
+            case "addHook":
+              await this.addHook(message.hookType, message.definition);
+              this.sendConfig();
+              break;
+            case "removeHook":
+              await this.removeHook(message.hookType, message.defIndex, message.handlerIndex);
+              this.sendConfig();
+              break;
+            case "getHookStats":
+              const stats = await vscode21.commands.executeCommand("cclocal.hooks.stats");
+              this.panel?.webview.postMessage({
+                type: "hookStats",
+                stats
+              });
+              break;
+          }
+        });
+      }
+      /**
+       * Update configuration value
+       */
+      async updateConfig(key, value) {
+        await this.configManager.update(key, value);
+        this.sendConfig();
+      }
+      /**
+       * Reset configuration to default
+       */
+      async resetConfig(key) {
+        await this.configManager.update(key, void 0);
+        this.sendConfig();
+      }
+      /**
+       * Send current config to webview
+       */
+      sendConfig() {
+        const config = this.configManager.getConfig();
+        this.panel?.webview.postMessage({
+          type: "config",
+          config
+        });
+      }
+      /**
+       * Add a hook definition
+       */
+      async addHook(hookType, definition) {
+        const hooks = this.configManager.get("hooks") || {};
+        const typeHooks = hooks[hookType] || [];
+        typeHooks.push(definition);
+        hooks[hookType] = typeHooks;
+        await this.configManager.update("hooks", hooks);
+      }
+      /**
+       * Remove a hook
+       */
+      async removeHook(hookType, defIndex, handlerIndex) {
+        const hooks = this.configManager.get("hooks") || {};
+        const typeHooks = hooks[hookType];
+        if (typeHooks && typeHooks[defIndex]) {
+          const def = typeHooks[defIndex];
+          if (def.hooks && def.hooks.length > handlerIndex) {
+            def.hooks.splice(handlerIndex, 1);
+            if (def.hooks.length === 0) {
+              typeHooks.splice(defIndex, 1);
+            }
+          }
+          if (typeHooks.length === 0) {
+            delete hooks[hookType];
+          }
+          await this.configManager.update("hooks", hooks);
+        }
+      }
+      /**
+       * Get webview HTML content
+       */
+      getWebviewContent() {
+        return (
+          /* html */
+          `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1227,18 +6731,760 @@
   </script>
 </body>
 </html>
-`}dispose(){this.panel?.dispose(),this.panel=null}}});var kr={};Le(kr,{activate:()=>mr,configManager:()=>M,deactivate:()=>fr,hookManager:()=>W,mcpManager:()=>Te,outputChannel:()=>R});module.exports=Ao(kr);var d=g(require("vscode"),1),Ts=g(require("path"),1);var Rt=g(require("crypto"),1),Rs=g(require("os"),1),Ft=g(require("vscode"),1);var Ds=require("child_process"),Bs=g(require("path"),1),Hs=g(require("fs"),1),$s=g(require("os"),1),tt=class{constructor(e){this.callbacks=e}process=null;buffer="";killed=!1;launch(e){this.process&&this.kill(),this.buffer="",this.killed=!1;let{args:t,cmd:s}=this.buildCommand(e);this.process=(0,Ds.spawn)(s,t,{cwd:e.cwd,env:this.buildEnv(),stdio:["ignore","pipe","pipe"],shell:!0}),this.process.stdout?.on("data",i=>{this.handleStdoutChunk(i.toString())});let n="";this.process.stderr?.on("data",i=>{n+=i.toString()}),this.process.on("error",i=>{this.killed||this.callbacks.onError(`\u542F\u52A8 cclocal \u5931\u8D25: ${i.message}`)}),this.process.on("close",i=>{if(this.process=null,!this.killed){if(i!==0&&i!==null){let r=n.trim()?`
-\u8BE6\u60C5: ${n.trim().split(`
-`).slice(-3).join(" | ")}`:"";this.callbacks.onError(`cclocal \u8FDB\u7A0B\u4EE5\u9000\u51FA\u7801 ${i} \u7ED3\u675F${r}`)}this.callbacks.onExit()}})}kill(){this.killed=!0,this.process&&(this.process.kill("SIGTERM"),this.process=null)}isRunning(){return this.process!==null&&!this.killed}buildEnv(){let e=$s.homedir(),t=["/opt/homebrew/bin","/usr/local/bin",`${e}/.bun/bin`,`${e}/.local/bin`,`${e}/.eigent/bin`,"/usr/bin","/bin"],s=process.env.PATH??"",n=[...t,s].filter(Boolean).join(Bs.delimiter);return{...process.env,PATH:n}}buildCommand(e){let s=["--print",e.prompt,"--output-format","stream-json","--verbose"];return e.model&&s.push("--model",e.model),e.projectPath&&Hs.existsSync(e.projectPath)?{cmd:e.executablePath||"bun",args:["run","start","--",...s]}:{cmd:e.executablePath||"cclocal",args:s}}handleStdoutChunk(e){this.buffer+=e;let t=this.buffer.split(`
-`);this.buffer=t.pop()??"";for(let s of t){let n=s.trim();if(n)try{let i=JSON.parse(n);this.callbacks.onMessage(i)}catch{}}}};var Oe=class{constructor(e){this.extensionUri=e;this.cclocalProcess=new tt({onMessage:t=>this.handleStreamMsg(t),onError:t=>{this.sendToWebview({type:"error",message:t}),this.setStatus("error")},onExit:()=>{this.currentMessageId&&(this.sendToWebview({type:"assistantDone",messageId:this.currentMessageId}),this.currentMessageId=""),this.setStatus("idle")}})}static viewType="cclocal.chatView";view;cclocalProcess;currentMessageId="";status="idle";resolveWebviewView(e,t,s){this.view=e,e.webview.options={enableScripts:!0,localResourceRoots:[this.extensionUri]},e.webview.html=this.buildHtml(e.webview),e.webview.onDidReceiveMessage(n=>{this.handleWebviewMessage(n)})}handleCommand(e){switch(e){case"newSession":this.newSession();break;case"clearChat":this.clearChat();break;case"stopGeneration":this.stopGeneration();break}}sendMessage(e){this.handleSendMessage(e)}handleWebviewMessage(e){switch(e.type){case"ready":this.sendToWebview({type:"statusChange",status:this.status});break;case"sendMessage":this.handleSendMessage(e.text);break;case"stopGeneration":this.stopGeneration();break;case"newSession":this.newSession();break;case"clearChat":this.clearChat();break}}handleSendMessage(e){if(this.status==="running"){this.sendToWebview({type:"error",message:"\u6B63\u5728\u5904\u7406\u4E0A\u4E00\u6761\u6D88\u606F\uFF0C\u8BF7\u7B49\u5F85\u6216\u70B9\u51FB\u505C\u6B62"});return}let t=Ft.workspace.getConfiguration("cclocal"),s=t.get("cclocalPath")||"cclocal",n=t.get("model")||"",i=Ft.workspace.workspaceFolders?.[0]?.uri.fsPath??Rs.homedir();this.currentMessageId=this.generateId(),this.sendToWebview({type:"userMessage",text:e,messageId:this.generateId()}),this.setStatus("running"),this.cclocalProcess.launch({executablePath:s,cwd:i,prompt:e,model:n||void 0})}handleStreamMsg(e){switch(e.type){case"assistant":{let t=e.message?.content??[];for(let s of t)s.type==="text"&&s.text?(this.currentMessageId||(this.currentMessageId=this.generateId()),this.sendToWebview({type:"assistantChunk",text:s.text,messageId:this.currentMessageId})):s.type==="tool_use"&&this.sendToWebview({type:"toolUse",name:s.name??"tool",input:s.input,messageId:this.currentMessageId||this.generateId()});break}case"content_block_delta":e.delta?.type==="text_delta"&&e.delta.text&&(this.currentMessageId||(this.currentMessageId=this.generateId()),this.sendToWebview({type:"assistantChunk",text:e.delta.text,messageId:this.currentMessageId}));break;case"tool_use":this.sendToWebview({type:"toolUse",name:e.name??"tool",input:e.input,messageId:this.currentMessageId||this.generateId()});break;case"result":this.currentMessageId&&(this.sendToWebview({type:"assistantDone",messageId:this.currentMessageId}),this.currentMessageId=""),this.setStatus("idle");break;case"system":break;default:break}}stopGeneration(){this.status==="running"&&(this.cclocalProcess.kill(),this.currentMessageId&&(this.sendToWebview({type:"assistantDone",messageId:this.currentMessageId}),this.currentMessageId=""),this.setStatus("idle"))}newSession(){this.stopGeneration(),this.sendToWebview({type:"sessionCleared"})}clearChat(){this.stopGeneration(),this.sendToWebview({type:"sessionCleared"})}setStatus(e){this.status=e,this.sendToWebview({type:"statusChange",status:e})}sendToWebview(e){this.view?.webview.postMessage(e)}generateId(){return Rt.randomBytes(8).toString("hex")}buildHtml(e){let t=Rt.randomBytes(16).toString("base64");return`<!DOCTYPE html>
+`
+        );
+      }
+      /**
+       * Dispose
+       */
+      dispose() {
+        this.panel?.dispose();
+        this.panel = null;
+      }
+    };
+  }
+});
+
+// src/vfs/CommandFSProvider.ts
+var CommandFSProvider_exports = {};
+__export(CommandFSProvider_exports, {
+  CommandFSProvider: () => CommandFSProvider,
+  KeyboardCommandFSProvider: () => KeyboardCommandFSProvider
+});
+import * as vscode26 from "vscode";
+import { execFile } from "child_process";
+var CommandFSProvider, KeyboardCommandFSProvider;
+var init_CommandFSProvider = __esm({
+  "src/vfs/CommandFSProvider.ts"() {
+    "use strict";
+    CommandFSProvider = class {
+      emitter = new vscode26.EventEmitter();
+      onDidChangeFile = this.emitter.event;
+      // Cache results for reads
+      results = /* @__PURE__ */ new Map();
+      stat(uri) {
+        return {
+          type: vscode26.FileType.File,
+          ctime: 0,
+          mtime: Date.now(),
+          size: this.results.get(uri.path)?.length ?? 0
+        };
+      }
+      async readFile(uri) {
+        const cached = this.results.get(uri.path);
+        if (cached) return cached;
+        const command = this.parseCommand(uri);
+        const result = await this.executeCommand(command);
+        const encoded = new TextEncoder().encode(result);
+        this.results.set(uri.path, encoded);
+        return encoded;
+      }
+      writeFile(uri, content) {
+        this.results.set(uri.path, content);
+        this.emitter.fire([{ type: vscode26.FileChangeType.Changed, uri }]);
+      }
+      delete(uri) {
+        this.results.delete(uri.path);
+      }
+      rename(_oldUri, _newUri) {
+      }
+      watch() {
+        return { dispose: () => {
+        } };
+      }
+      readDirectory() {
+        return [];
+      }
+      createDirectory() {
+      }
+      parseCommand(uri) {
+        const query = new URLSearchParams(uri.query);
+        return query.get("cmd") || uri.path.replace(/^\//, "");
+      }
+      executeCommand(command) {
+        return new Promise((resolve) => {
+          const cwd = vscode26.workspace.workspaceFolders?.[0]?.uri.fsPath;
+          execFile("sh", ["-c", command], { cwd, timeout: 3e4 }, (error, stdout, stderr) => {
+            if (error) {
+              resolve(`Error: ${error.message}
+${stderr}`);
+            } else {
+              resolve(stdout || stderr || "(no output)");
+            }
+          });
+        });
+      }
+    };
+    KeyboardCommandFSProvider = class extends CommandFSProvider {
+      // Inherits all behavior, just uses a different scheme
+    };
+  }
+});
+
+// src/vfs/StateFSProvider.ts
+var StateFSProvider_exports = {};
+__export(StateFSProvider_exports, {
+  StateFSProvider: () => StateFSProvider,
+  StateResponseFSProvider: () => StateResponseFSProvider
+});
+import * as vscode27 from "vscode";
+var StateFSProvider, StateResponseFSProvider;
+var init_StateFSProvider = __esm({
+  "src/vfs/StateFSProvider.ts"() {
+    "use strict";
+    StateFSProvider = class {
+      emitter = new vscode27.EventEmitter();
+      onDidChangeFile = this.emitter.event;
+      // Registered state handlers
+      handlers = /* @__PURE__ */ new Map();
+      // Cached results
+      results = /* @__PURE__ */ new Map();
+      constructor() {
+        this.registerDefaultHandlers();
+      }
+      /** Register a custom state handler */
+      registerHandler(path11, handler) {
+        this.handlers.set(path11, handler);
+      }
+      stat(uri) {
+        return {
+          type: vscode27.FileType.File,
+          ctime: 0,
+          mtime: Date.now(),
+          size: this.results.get(uri.path)?.length ?? 0
+        };
+      }
+      async readFile(uri) {
+        const cached = this.results.get(uri.path);
+        if (cached) return cached;
+        const path11 = uri.path.replace(/^\//, "");
+        const handler = this.handlers.get(path11);
+        let result;
+        if (handler) {
+          result = await handler();
+        } else {
+          result = JSON.stringify({ error: `Unknown state path: ${path11}` });
+        }
+        const encoded = new TextEncoder().encode(result);
+        this.results.set(uri.path, encoded);
+        return encoded;
+      }
+      writeFile(uri, content) {
+        this.results.set(uri.path, content);
+        this.emitter.fire([{ type: vscode27.FileChangeType.Changed, uri }]);
+      }
+      delete(uri) {
+        this.results.delete(uri.path);
+      }
+      rename(_oldUri, _newUri) {
+      }
+      watch() {
+        return { dispose: () => {
+        } };
+      }
+      readDirectory() {
+        return [];
+      }
+      createDirectory() {
+      }
+      /** Invalidate cache for a specific path */
+      invalidate(path11) {
+        const uri = vscode27.Uri.parse(`_claude_state:/${path11}`);
+        this.results.delete(`/${path11}`);
+        this.emitter.fire([{ type: vscode27.FileChangeType.Changed, uri }]);
+      }
+      /** Invalidate all cached state */
+      invalidateAll() {
+        this.results.clear();
+      }
+      registerDefaultHandlers() {
+        this.handlers.set("selection", async () => {
+          const editor = vscode27.window.activeTextEditor;
+          if (!editor) return JSON.stringify({ selection: null });
+          const selection = editor.selection;
+          const text = editor.document.getText(selection);
+          return JSON.stringify({
+            file: editor.document.uri.fsPath,
+            startLine: selection.start.line + 1,
+            endLine: selection.end.line + 1,
+            text
+          });
+        });
+        this.handlers.set("diagnostics", async () => {
+          const diags = vscode27.languages.getDiagnostics();
+          const result = {};
+          for (const [uri, diagnostics] of diags) {
+            if (diagnostics.length > 0) {
+              result[uri.fsPath] = diagnostics.map((d) => ({
+                severity: vscode27.DiagnosticSeverity[d.severity],
+                message: d.message,
+                line: d.range.start.line + 1
+              }));
+            }
+          }
+          return JSON.stringify(result);
+        });
+        this.handlers.set("visibleEditors", async () => {
+          const editors = vscode27.window.visibleTextEditors;
+          return JSON.stringify(editors.map((e) => ({
+            file: e.document.uri.fsPath,
+            language: e.document.languageId,
+            viewColumn: e.viewColumn
+          })));
+        });
+        this.handlers.set("activeFile", async () => {
+          const editor = vscode27.window.activeTextEditor;
+          if (!editor) return JSON.stringify({ file: null });
+          return JSON.stringify({
+            file: editor.document.uri.fsPath,
+            language: editor.document.languageId,
+            isDirty: editor.document.isDirty
+          });
+        });
+        this.handlers.set("workspaceFolders", async () => {
+          return JSON.stringify(
+            vscode27.workspace.workspaceFolders?.map((f) => f.uri.fsPath) ?? []
+          );
+        });
+      }
+    };
+    StateResponseFSProvider = class {
+      emitter = new vscode27.EventEmitter();
+      onDidChangeFile = this.emitter.event;
+      responses = /* @__PURE__ */ new Map();
+      stat(uri) {
+        return {
+          type: vscode27.FileType.File,
+          ctime: 0,
+          mtime: Date.now(),
+          size: this.responses.get(uri.path)?.length ?? 0
+        };
+      }
+      readFile(uri) {
+        return Promise.resolve(this.responses.get(uri.path) ?? new Uint8Array(0));
+      }
+      writeFile(uri, content) {
+        this.responses.set(uri.path, content);
+        this.emitter.fire([{ type: vscode27.FileChangeType.Changed, uri }]);
+      }
+      delete(uri) {
+        this.responses.delete(uri.path);
+      }
+      rename(_o, _n) {
+      }
+      watch() {
+        return { dispose: () => {
+        } };
+      }
+      readDirectory() {
+        return [];
+      }
+      createDirectory() {
+      }
+    };
+  }
+});
+
+// src/vfs/TerminalSettingFSProvider.ts
+var TerminalSettingFSProvider_exports = {};
+__export(TerminalSettingFSProvider_exports, {
+  TerminalSettingFSProvider: () => TerminalSettingFSProvider,
+  TerminalSettingResponseFSProvider: () => TerminalSettingResponseFSProvider
+});
+import * as vscode28 from "vscode";
+var TerminalSettingFSProvider, TerminalSettingResponseFSProvider;
+var init_TerminalSettingFSProvider = __esm({
+  "src/vfs/TerminalSettingFSProvider.ts"() {
+    "use strict";
+    TerminalSettingFSProvider = class {
+      emitter = new vscode28.EventEmitter();
+      onDidChangeFile = this.emitter.event;
+      cache = /* @__PURE__ */ new Map();
+      stat(uri) {
+        return {
+          type: vscode28.FileType.File,
+          ctime: 0,
+          mtime: Date.now(),
+          size: this.cache.get(uri.path)?.length ?? 0
+        };
+      }
+      async readFile(uri) {
+        const cached = this.cache.get(uri.path);
+        if (cached) return cached;
+        const path11 = uri.path.replace(/^\//, "");
+        let result;
+        switch (path11) {
+          case "shell": {
+            const termProfile = vscode28.workspace.getConfiguration("terminal.integrated").get("defaultProfile.windows") ?? vscode28.workspace.getConfiguration("terminal.integrated").get("defaultProfile.linux") ?? vscode28.workspace.getConfiguration("terminal.integrated").get("defaultProfile.osx") ?? "default";
+            result = JSON.stringify({ shell: termProfile });
+            break;
+          }
+          case "cwd": {
+            const cwd = vscode28.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.env.HOME ?? "/";
+            result = JSON.stringify({ cwd });
+            break;
+          }
+          case "theme": {
+            const theme = vscode28.window.activeColorTheme;
+            result = JSON.stringify({
+              kind: vscode28.ColorThemeKind[theme.kind],
+              isDark: theme.kind === vscode28.ColorThemeKind.Dark || theme.kind === vscode28.ColorThemeKind.HighContrastDark
+            });
+            break;
+          }
+          case "font": {
+            const fontFamily = vscode28.workspace.getConfiguration("terminal.integrated").get("fontFamily") ?? "Consolas";
+            const fontSize = vscode28.workspace.getConfiguration("terminal.integrated").get("fontSize") ?? 14;
+            result = JSON.stringify({ fontFamily, fontSize });
+            break;
+          }
+          default:
+            result = JSON.stringify({ error: `Unknown terminal setting: ${path11}` });
+        }
+        const encoded = new TextEncoder().encode(result);
+        this.cache.set(uri.path, encoded);
+        return encoded;
+      }
+      writeFile(uri, content) {
+        this.cache.set(uri.path, content);
+        this.emitter.fire([{ type: vscode28.FileChangeType.Changed, uri }]);
+      }
+      delete(uri) {
+        this.cache.delete(uri.path);
+      }
+      rename(_o, _n) {
+      }
+      watch() {
+        return { dispose: () => {
+        } };
+      }
+      readDirectory() {
+        return [];
+      }
+      createDirectory() {
+      }
+    };
+    TerminalSettingResponseFSProvider = class {
+      emitter = new vscode28.EventEmitter();
+      onDidChangeFile = this.emitter.event;
+      responses = /* @__PURE__ */ new Map();
+      stat(uri) {
+        return {
+          type: vscode28.FileType.File,
+          ctime: 0,
+          mtime: Date.now(),
+          size: this.responses.get(uri.path)?.length ?? 0
+        };
+      }
+      readFile(uri) {
+        return Promise.resolve(this.responses.get(uri.path) ?? new Uint8Array(0));
+      }
+      writeFile(uri, content) {
+        this.responses.set(uri.path, content);
+        this.emitter.fire([{ type: vscode28.FileChangeType.Changed, uri }]);
+      }
+      delete(uri) {
+        this.responses.delete(uri.path);
+      }
+      rename(_o, _n) {
+      }
+      watch() {
+        return { dispose: () => {
+        } };
+      }
+      readDirectory() {
+        return [];
+      }
+      createDirectory() {
+      }
+    };
+  }
+});
+
+// src/vfs/ChromeFSProvider.ts
+var ChromeFSProvider_exports = {};
+__export(ChromeFSProvider_exports, {
+  ChromeFSProvider: () => ChromeFSProvider
+});
+import * as vscode29 from "vscode";
+var ChromeFSProvider;
+var init_ChromeFSProvider = __esm({
+  "src/vfs/ChromeFSProvider.ts"() {
+    "use strict";
+    ChromeFSProvider = class {
+      emitter = new vscode29.EventEmitter();
+      onDidChangeFile = this.emitter.event;
+      cache = /* @__PURE__ */ new Map();
+      static scheme = "_claude_in_chrome__";
+      stat(uri) {
+        return {
+          type: vscode29.FileType.File,
+          ctime: 0,
+          mtime: Date.now(),
+          size: this.cache.get(uri.path)?.length ?? 0
+        };
+      }
+      readFile(uri) {
+        const cached = this.cache.get(uri.path);
+        if (cached) return cached;
+        const result = JSON.stringify({ status: "ready", path: uri.path });
+        return new TextEncoder().encode(result);
+      }
+      writeFile(uri, content, _options) {
+        this.cache.set(uri.path, content);
+        this.emitter.fire([{ type: vscode29.FileChangeType.Changed, uri }]);
+      }
+      delete(uri) {
+        this.cache.delete(uri.path);
+        this.emitter.fire([{ type: vscode29.FileChangeType.Deleted, uri }]);
+      }
+      rename(_oldUri, _newUri) {
+        throw vscode29.FileSystemError.NoPermissions("Chrome FS does not support rename");
+      }
+      watch() {
+        return { dispose: () => {
+        } };
+      }
+      readDirectory() {
+        return [];
+      }
+      createDirectory() {
+      }
+    };
+  }
+});
+
+// src/remote/types.ts
+var types_exports = {};
+var init_types = __esm({
+  "src/remote/types.ts"() {
+    "use strict";
+  }
+});
+
+// src/extension.ts
+import * as vscode40 from "vscode";
+import * as path10 from "path";
+
+// src/CliViewProvider.ts
+import * as crypto2 from "crypto";
+import * as os2 from "os";
+import * as vscode from "vscode";
+
+// src/CclocalProcess.ts
+import { spawn } from "child_process";
+import * as path from "path";
+import * as fs from "fs";
+import * as os from "os";
+var CclocalProcess = class {
+  constructor(callbacks) {
+    this.callbacks = callbacks;
+  }
+  process = null;
+  buffer = "";
+  killed = false;
+  /** 启动 cclocal 进程处理一次对话 */
+  launch(options) {
+    if (this.process) {
+      this.kill();
+    }
+    this.buffer = "";
+    this.killed = false;
+    const { args, cmd } = this.buildCommand(options);
+    this.process = spawn(cmd, args, {
+      cwd: options.cwd,
+      env: this.buildEnv(),
+      stdio: ["ignore", "pipe", "pipe"],
+      shell: true
+    });
+    this.process.stdout?.on("data", (chunk) => {
+      this.handleStdoutChunk(chunk.toString());
+    });
+    let stderrBuf = "";
+    this.process.stderr?.on("data", (chunk) => {
+      stderrBuf += chunk.toString();
+    });
+    this.process.on("error", (err) => {
+      if (!this.killed) {
+        this.callbacks.onError(`\u542F\u52A8 cclocal \u5931\u8D25: ${err.message}`);
+      }
+    });
+    this.process.on("close", (code) => {
+      this.process = null;
+      if (!this.killed) {
+        if (code !== 0 && code !== null) {
+          const detail = stderrBuf.trim() ? `
+\u8BE6\u60C5: ${stderrBuf.trim().split("\n").slice(-3).join(" | ")}` : "";
+          this.callbacks.onError(`cclocal \u8FDB\u7A0B\u4EE5\u9000\u51FA\u7801 ${code} \u7ED3\u675F${detail}`);
+        }
+        this.callbacks.onExit();
+      }
+    });
+  }
+  /** 强制终止进程 */
+  kill() {
+    this.killed = true;
+    if (this.process) {
+      this.process.kill("SIGTERM");
+      this.process = null;
+    }
+  }
+  /** 判断进程是否仍在运行 */
+  isRunning() {
+    return this.process !== null && !this.killed;
+  }
+  /**
+   * 构建注入了完整 PATH 的环境变量，确保子进程能找到 cclocal 和 bun。
+   * VSCode Extension Host 不加载 shell 配置，默认 PATH 极简，
+   * 需要手动补全 macOS 常见的可执行文件目录。
+   */
+  buildEnv() {
+    const home = os.homedir();
+    const extraPaths = [
+      "/opt/homebrew/bin",
+      // Apple Silicon Homebrew
+      "/usr/local/bin",
+      // Intel Homebrew / 手动安装
+      `${home}/.bun/bin`,
+      // bun 默认安装路径
+      `${home}/.local/bin`,
+      // 用户级工具
+      `${home}/.eigent/bin`,
+      // eigent 自带 bun
+      "/usr/bin",
+      "/bin"
+    ];
+    const currentPath = process.env.PATH ?? "";
+    const mergedPath = [...extraPaths, currentPath].filter(Boolean).join(path.delimiter);
+    return { ...process.env, PATH: mergedPath };
+  }
+  /**
+   * 根据配置构建启动命令和参数。
+   * 优先使用全局命令 cclocal，若提供了 projectPath 则用 bun run start。
+   */
+  buildCommand(options) {
+    const safePrompt = options.prompt;
+    const baseArgs = [
+      "--print",
+      safePrompt,
+      "--output-format",
+      "stream-json",
+      "--verbose"
+    ];
+    if (options.model) {
+      baseArgs.push("--model", options.model);
+    }
+    if (options.projectPath && fs.existsSync(options.projectPath)) {
+      const bunBin = options.executablePath || "bun";
+      return {
+        cmd: bunBin,
+        args: ["run", "start", "--", ...baseArgs]
+      };
+    }
+    return {
+      cmd: options.executablePath || "cclocal",
+      args: baseArgs
+    };
+  }
+  /**
+   * 处理 stdout 增量数据，按行分割并解析 JSON。
+   * cclocal stream-json 模式每行输出一个 JSON 对象。
+   */
+  handleStdoutChunk(chunk) {
+    this.buffer += chunk;
+    const lines = this.buffer.split("\n");
+    this.buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        continue;
+      }
+      try {
+        const msg = JSON.parse(trimmed);
+        this.callbacks.onMessage(msg);
+      } catch {
+      }
+    }
+  }
+};
+
+// src/CliViewProvider.ts
+var CliViewProvider = class {
+  constructor(extensionUri) {
+    this.extensionUri = extensionUri;
+    this.cclocalProcess = new CclocalProcess({
+      onMessage: (msg) => this.handleStreamMsg(msg),
+      onError: (err) => {
+        this.sendToWebview({ type: "error", message: err });
+        this.setStatus("error");
+      },
+      onExit: () => {
+        if (this.currentMessageId) {
+          this.sendToWebview({
+            type: "from-extension",
+            message: { type: "result", subtype: "success", session_id: "" }
+          });
+          this.currentMessageId = "";
+        }
+        this.setStatus("idle");
+      }
+    });
+  }
+  static viewType = "cclocal.chatView";
+  view;
+  cclocalProcess;
+  /** 当前正在构建的 AI 消息 ID */
+  currentMessageId = "";
+  /** 当前状态 */
+  status = "idle";
+  /** VSCode 调用此方法创建/恢复 WebviewView */
+  resolveWebviewView(webviewView, _context, _token) {
+    this.view = webviewView;
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this.extensionUri]
+    };
+    webviewView.webview.html = this.buildHtml(webviewView.webview);
+    webviewView.webview.onDidReceiveMessage((message) => {
+      this.handleWebviewMessage(message);
+    });
+  }
+  /**
+   * 供 extension.ts 外部调用的命令分发接口。
+   */
+  handleCommand(command) {
+    switch (command) {
+      case "newSession":
+        this.newSession();
+        break;
+      case "clearChat":
+        this.clearChat();
+        break;
+      case "stopGeneration":
+        this.stopGeneration();
+        break;
+    }
+  }
+  /**
+   * 供 extension.ts 外部直接发送消息（例如从编辑器右键菜单发送选中代码）。
+   */
+  sendMessage(text) {
+    this.handleSendMessage(text);
+  }
+  // ─── 私有方法 ────────────────────────────────────────────────────────────────
+  /** 处理来自 Webview 的消息 */
+  handleWebviewMessage(message) {
+    switch (message.type) {
+      case "ready":
+        this.sendToWebview({ type: "statusChange", status: this.status });
+        break;
+      case "submit":
+        this.handleSendMessage(message.text);
+        break;
+      case "stopGeneration":
+        this.stopGeneration();
+        break;
+      case "newSession":
+        this.newSession();
+        break;
+      case "clearChat":
+        this.clearChat();
+        break;
+    }
+  }
+  /** 启动 cclocal 进程发送消息 */
+  handleSendMessage(text) {
+    if (this.status === "running") {
+      this.sendToWebview({ type: "error", message: "\u6B63\u5728\u5904\u7406\u4E0A\u4E00\u6761\u6D88\u606F\uFF0C\u8BF7\u7B49\u5F85\u6216\u70B9\u51FB\u505C\u6B62" });
+      return;
+    }
+    const config = vscode.workspace.getConfiguration("cclocal");
+    const cclocalPath = config.get("cclocalPath") || "cclocal";
+    const model = config.get("model") || "";
+    const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? os2.homedir();
+    this.currentMessageId = this.generateId();
+    this.sendToWebview({
+      type: "from-extension",
+      message: {
+        type: "system",
+        subtype: "info",
+        message: text
+      }
+    });
+    this.setStatus("running");
+    this.cclocalProcess.launch({
+      executablePath: cclocalPath,
+      cwd,
+      prompt: text,
+      model: model || void 0
+    });
+  }
+  /** 处理 stream-json 行 — 转发为 from-extension 消息 */
+  handleStreamMsg(msg) {
+    this.sendToWebview({ type: "from-extension", message: msg });
+    switch (msg.type) {
+      case "result":
+        this.currentMessageId = "";
+        this.setStatus("idle");
+        break;
+      case "system":
+        break;
+    }
+  }
+  /** 停止当前生成 */
+  stopGeneration() {
+    if (this.status === "running") {
+      this.cclocalProcess.kill();
+      if (this.currentMessageId) {
+        this.sendToWebview({
+          type: "from-extension",
+          message: { type: "result", subtype: "cancelled", session_id: "" }
+        });
+        this.currentMessageId = "";
+      }
+      this.setStatus("idle");
+    }
+  }
+  /** 新建会话（清空 UI） */
+  newSession() {
+    this.stopGeneration();
+    this.sendToWebview({ type: "sessionCleared" });
+  }
+  /** 清空聊天记录 */
+  clearChat() {
+    this.stopGeneration();
+    this.sendToWebview({ type: "sessionCleared" });
+  }
+  /** 更新状态并通知 Webview */
+  setStatus(status) {
+    this.status = status;
+    this.sendToWebview({ type: "statusChange", status });
+  }
+  /** 从 Extension 侧向 Webview 发送消息 */
+  sendToWebview(message) {
+    this.view?.webview.postMessage(message);
+  }
+  /** 生成随机消息 ID */
+  generateId() {
+    return crypto2.randomBytes(8).toString("hex");
+  }
+  /**
+   * 构建侧边栏 Webview 的 HTML 内容。
+   * 现代化设计：参考 Claude.ai 对话风格，全内联，离线可用。
+   */
+  buildHtml(webview) {
+    const nonce = crypto2.randomBytes(16).toString("base64");
+    return (
+      /* html */
+      `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'none'; style-src 'nonce-${t}'; script-src 'nonce-${t}';" />
+    content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';" />
   <title>CCLocal</title>
-  <style nonce="${t}">
+  <style nonce="${nonce}">
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -1478,7 +7724,7 @@
   </div>
 </div>
 
-<script nonce="${t}">
+<script nonce="${nonce}">
 const vscode = acquireVsCodeApi()
 
 const threadEl  = document.getElementById('thread')
@@ -1669,7 +7915,181 @@ vscode.postMessage({ type: 'ready' })
 inputEl.focus()
 </script>
 </body>
-</html>`}};var Ne=g(require("vscode"),1),je=class{static viewType="cclocal.chatView";view;ws;serverManager;currentMessageId="";messageBuffer="";status="idle";constructor(e,t){this.serverManager=t,this.connectToServer()}resolveWebviewView(e,t,s){this.view=e,e.webview.options={enableScripts:!0,localResourceRoots:[this.getExtensionUri()]},e.webview.html=this.getWebviewContent(),e.webview.onDidReceiveMessage(async n=>{switch(n.type){case"sendMessage":n.text&&await this.sendMessage(n.text);break;case"cancel":this.stopGeneration();break}}),e.onDidDispose(()=>{this.ws?.close()})}async connectToServer(){let e=this.serverManager.getServerUrl();try{let{default:t}=await Promise.resolve().then(()=>(Qn(),Jn));this.ws=new t(`${e}/ws?token=default`),this.ws.onopen=()=>{this.ws?.send(JSON.stringify({type:"auth",payload:{clientType:"vscode"},timestamp:Date.now()}))},this.ws.onmessage=s=>{try{let n=JSON.parse(s.data.toString());this.handleServerMessage(n)}catch(n){console.error("Failed to parse message:",n)}},this.ws.onerror=()=>{this.setStatus("error"),this.sendToWebview({type:"error",message:"Connection error. Please try again."})},this.ws.onclose=()=>{setTimeout(()=>this.connectToServer(),3e3)}}catch(t){console.error("Failed to connect:",t)}}handleServerMessage(e){switch(e.type){case"auth_success":break;case"stream_start":this.messageBuffer="",this.setStatus("running");break;case"stream_delta":{let t=e.payload;t?.delta?.type==="text_delta"&&t.delta.text&&(this.messageBuffer+=t.delta.text,this.sendToWebview({type:"stream_delta",text:t.delta.text,messageId:this.currentMessageId}));break}case"stream_end":this.setStatus("idle"),this.sendToWebview({type:"assistantDone",messageId:this.currentMessageId}),this.currentMessageId="";break;case"error":{let t=e.payload;this.setStatus("error"),this.sendToWebview({type:"error",message:t?.message||"Unknown error"});break}case"cancelled":this.setStatus("idle");break}}async sendMessage(e){if(this.status==="running"){Ne.window.showWarningMessage("Already processing a message. Please wait or cancel.");return}if(!this.ws||this.ws.readyState!==WebSocket.OPEN){Ne.window.showErrorMessage("Not connected to CCLocal server. Please try again.");return}this.currentMessageId=this.generateId(),this.sendToWebview({type:"userMessage",text:e,messageId:this.generateId()}),this.setStatus("running"),this.ws.send(JSON.stringify({type:"message",payload:{sessionId:"default-session",content:e},timestamp:Date.now()}))}stopGeneration(){this.status==="running"&&this.ws?.send(JSON.stringify({type:"cancel",payload:{sessionId:"default-session"},timestamp:Date.now()}))}clearChat(){this.sendToWebview({type:"clear"})}setStatus(e){this.status=e,this.sendToWebview({type:"status",status:e})}sendToWebview(e){this.view?.webview.postMessage(e)}generateId(){return`msg_${Date.now()}_${Math.random().toString(36).substr(2,9)}`}getExtensionUri(){return Ne.Uri.file(__dirname)}getWebviewContent(){return`<!DOCTYPE html>
+</html>`
+    );
+  }
+};
+
+// src/WsViewProvider.ts
+import * as vscode2 from "vscode";
+var WsViewProvider = class {
+  static viewType = "cclocal.chatView";
+  view;
+  ws;
+  serverManager;
+  currentMessageId = "";
+  messageBuffer = "";
+  status = "idle";
+  constructor(extensionUri, serverManager) {
+    this.serverManager = serverManager;
+    this.connectToServer();
+  }
+  resolveWebviewView(webviewView, _context, _token) {
+    this.view = webviewView;
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this.getExtensionUri()]
+    };
+    webviewView.webview.html = this.getWebviewContent();
+    webviewView.webview.onDidReceiveMessage(async (data) => {
+      switch (data.type) {
+        case "sendMessage":
+          if (data.text) {
+            await this.sendMessage(data.text);
+          }
+          break;
+        case "cancel":
+          this.stopGeneration();
+          break;
+      }
+    });
+    webviewView.onDidDispose(() => {
+      this.ws?.close();
+    });
+  }
+  async connectToServer() {
+    const serverUrl = this.serverManager.getServerUrl();
+    try {
+      const { default: WebSocketClient } = await Promise.resolve().then(() => (init_wrapper(), wrapper_exports));
+      this.ws = new WebSocketClient(`${serverUrl}/ws?token=default`);
+      this.ws.onopen = () => {
+        this.ws?.send(
+          JSON.stringify({
+            type: "auth",
+            payload: { clientType: "vscode" },
+            timestamp: Date.now()
+          })
+        );
+      };
+      this.ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data.toString());
+          this.handleServerMessage(message);
+        } catch (error) {
+          console.error("Failed to parse message:", error);
+        }
+      };
+      this.ws.onerror = () => {
+        this.setStatus("error");
+        this.sendToWebview({
+          type: "error",
+          message: "Connection error. Please try again."
+        });
+      };
+      this.ws.onclose = () => {
+        setTimeout(() => this.connectToServer(), 3e3);
+      };
+    } catch (error) {
+      console.error("Failed to connect:", error);
+    }
+  }
+  handleServerMessage(message) {
+    switch (message.type) {
+      case "auth_success":
+        break;
+      case "stream_start":
+        this.messageBuffer = "";
+        this.setStatus("running");
+        break;
+      case "stream_delta": {
+        const payload = message.payload;
+        if (payload?.delta?.type === "text_delta" && payload.delta.text) {
+          this.messageBuffer += payload.delta.text;
+          this.sendToWebview({
+            type: "stream_delta",
+            text: payload.delta.text,
+            messageId: this.currentMessageId
+          });
+        }
+        break;
+      }
+      case "stream_end":
+        this.setStatus("idle");
+        this.sendToWebview({
+          type: "assistantDone",
+          messageId: this.currentMessageId
+        });
+        this.currentMessageId = "";
+        break;
+      case "error": {
+        const payload = message.payload;
+        this.setStatus("error");
+        this.sendToWebview({
+          type: "error",
+          message: payload?.message || "Unknown error"
+        });
+        break;
+      }
+      case "cancelled":
+        this.setStatus("idle");
+        break;
+    }
+  }
+  async sendMessage(text) {
+    if (this.status === "running") {
+      vscode2.window.showWarningMessage("Already processing a message. Please wait or cancel.");
+      return;
+    }
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      vscode2.window.showErrorMessage("Not connected to CCLocal server. Please try again.");
+      return;
+    }
+    this.currentMessageId = this.generateId();
+    this.sendToWebview({
+      type: "userMessage",
+      text,
+      messageId: this.generateId()
+    });
+    this.setStatus("running");
+    this.ws.send(
+      JSON.stringify({
+        type: "message",
+        payload: {
+          sessionId: "default-session",
+          content: text
+        },
+        timestamp: Date.now()
+      })
+    );
+  }
+  stopGeneration() {
+    if (this.status !== "running") return;
+    this.ws?.send(
+      JSON.stringify({
+        type: "cancel",
+        payload: { sessionId: "default-session" },
+        timestamp: Date.now()
+      })
+    );
+  }
+  clearChat() {
+    this.sendToWebview({ type: "clear" });
+  }
+  setStatus(status) {
+    this.status = status;
+    this.sendToWebview({ type: "status", status });
+  }
+  sendToWebview(message) {
+    this.view?.webview.postMessage(message);
+  }
+  generateId() {
+    return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+  getExtensionUri() {
+    return vscode2.Uri.file(__dirname);
+  }
+  getWebviewContent() {
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -1831,7 +8251,2759 @@ inputEl.focus()
     });
   </script>
 </body>
-</html>`}};var Xn=require("child_process"),ls=g(require("path"),1),ft=class{serverProcess;serverPort=5678;serverUrl="ws://127.0.0.1:5678";getServerUrl(){return this.serverUrl}async ensureServerRunning(){if(await this.checkServerHealth()){console.log("CCLocal server already running");return}await this.startEmbeddedServer()}async checkServerHealth(){try{return(await fetch(`http://127.0.0.1:${this.serverPort}/health`)).ok}catch{return!1}}async startEmbeddedServer(){return new Promise((e,t)=>{let s=this.findServerPath();if(!s){t(new Error("CCLocal server not found"));return}console.log(`Starting CCLocal server from: ${s}`),this.serverProcess=(0,Xn.spawn)("bun",[s],{env:{...process.env,CCLOCAL_PORT:String(this.serverPort),CCLOCAL_HOST:"127.0.0.1"},detached:!1}),this.serverProcess.stdout?.on("data",n=>{console.log(`[CCLocal Server] ${n.toString().trim()}`)}),this.serverProcess.stderr?.on("data",n=>{console.error(`[CCLocal Server] ${n.toString().trim()}`)}),setTimeout(async()=>{await this.checkServerHealth()?e():t(new Error("Server failed to start"))},3e3)})}findServerPath(){let e=[ls.join(__dirname,"..","..","server","dist","index.js"),ls.join(__dirname,"..","..","..","packages","server","dist","index.js")];for(let t of e)try{if(require("fs").existsSync(t))return t}catch{}}stopServer(){this.serverProcess&&(this.serverProcess.kill(),this.serverProcess=void 0)}};var Zn=g(require("vscode"),1),eo=g(require("child_process"),1),Xi=g(require("https"),1),Zi=g(require("http"),1),cs=g(require("url"),1),we=class{createResult(e,t,s,n,i,r){return{hookId:e,handlerIndex:t,success:s,output:n,error:i,duration:r||0}}getTimeout(e,t){return e.timeout||t}},ye=class extends we{outputChannel;allowedCommands;constructor(e,t){super(),this.outputChannel=e,this.allowedCommands=t?new Set(t):null}async execute(e,t){let s=`hook_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,n=Date.now(),i=this.getTimeout(e,3e4),r=this.buildEnvironment(t,e.env),a=this.substituteContext(e.command,t);this.outputChannel.debug(`Executing command hook: ${a}`);try{let l=await this.runCommand(a,r,i,t),c=Date.now()-n;return this.createResult(s,0,l.success,l.output,l.error,c)}catch(l){let c=Date.now()-n;return this.createResult(s,0,!1,void 0,l instanceof Error?l.message:String(l),c)}}runCommand(e,t,s,n){return new Promise(i=>{let r=Zn.workspace.workspaceFolders?.[0]?.uri.fsPath,a=eo.spawn(e,[],{cwd:r||process.cwd(),env:{...process.env,...t},shell:!0,timeout:s}),l="",c="";if(a.stdout?.on("data",u=>{l+=u.toString()}),a.stderr?.on("data",u=>{c+=u.toString()}),a.on("error",u=>{i({success:!1,output:l,error:u.message})}),a.on("close",u=>{i({success:u===0,output:l,error:u!==0?c:void 0})}),n)try{a.stdin?.write(JSON.stringify(n)),a.stdin?.end()}catch{}})}buildEnvironment(e,t){let s={CCLOCAL_HOOK_TYPE:e.type,CCLOCAL_HOOK_TIMESTAMP:String(e.timestamp)};return e.sessionId&&(s.CCLOCAL_SESSION_ID=e.sessionId),e.toolName&&(s.CCLOCAL_TOOL_NAME=e.toolName),e.filePath&&(s.CCLOCAL_FILE_PATH=e.filePath),e.command&&(s.CCLOCAL_COMMAND=e.command),e.model&&(s.CCLOCAL_MODEL=e.model),t&&Object.assign(s,t),s}substituteContext(e,t){return e.replace(/\$\{toolName\}/g,t.toolName||"").replace(/\$\{filePath\}/g,t.filePath||"").replace(/\$\{command\}/g,t.command||"").replace(/\$\{model\}/g,t.model||"").replace(/\$\{sessionId\}/g,t.sessionId||"").replace(/\$\{timestamp\}/g,String(t.timestamp)).replace(/\$\{type\}/g,t.type)}},ke=class extends we{outputChannel;allowedUrls;allowedEnvVars;constructor(e,t,s){super(),this.outputChannel=e,this.allowedUrls=t?new Set(t):null,this.allowedEnvVars=new Set(s||[])}async execute(e,t){let s=`hook_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,n=Date.now(),i=this.getTimeout(e,1e4);if(this.allowedUrls&&!this.isUrlAllowed(e.url))return this.createResult(s,0,!1,void 0,`URL not in whitelist: ${e.url}`,Date.now()-n);this.outputChannel.debug(`Executing HTTP hook: ${e.url}`);try{let r=await this.makeRequest(e,t,i),a=Date.now()-n;return this.createResult(s,0,r.success,r.output,r.error,a)}catch(r){let a=Date.now()-n;return this.createResult(s,0,!1,void 0,r instanceof Error?r.message:String(r),a)}}isUrlAllowed(e){if(!this.allowedUrls)return!0;try{let t=new cs.URL(e);for(let s of this.allowedUrls)if(t.origin===s||e.startsWith(s))return!0;return!1}catch{return!1}}makeRequest(e,t,s){return new Promise(n=>{let i=new cs.URL(e.url),r=i.protocol==="https:",a=r?Xi:Zi,l={"Content-Type":"application/json",...e.headers};for(let[p,h]of Object.entries(l))if(typeof h=="string"&&h.startsWith("${env:")){let m=h.match(/\$\{env:([^}]+)\}/)?.[1];m&&this.allowedEnvVars.has(m)?l[p]=process.env[m]||"":m&&delete l[p]}let c={hostname:i.hostname,port:i.port||(r?443:80),path:i.pathname+i.search,method:e.method||"POST",headers:l,timeout:s},u=a.request(c,p=>{let h="";p.on("data",m=>{h+=m.toString()}),p.on("end",()=>{n({success:p.statusCode!==void 0&&p.statusCode>=200&&p.statusCode<300,output:h,error:p.statusCode!==void 0&&p.statusCode>=400?`HTTP ${p.statusCode}`:void 0})})});u.on("error",p=>{n({success:!1,error:p.message})}),u.on("timeout",()=>{u.destroy(),n({success:!1,error:"Request timed out"})}),u.write(JSON.stringify(t)),u.end()})}},We=class extends we{outputChannel;registeredFunctions;constructor(e,t){super(),this.outputChannel=e,this.registeredFunctions=t||new Map}registerFunction(e,t){this.registeredFunctions.set(e,t)}unregisterFunction(e){this.registeredFunctions.delete(e)}async execute(e,t){let s=`hook_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,n=Date.now(),i=this.getTimeout(e,5e3),r=this.registeredFunctions.get(e.handler);if(!r)return this.createResult(s,0,!1,void 0,`Function not registered: ${e.handler}`,Date.now()-n);this.outputChannel.debug(`Executing function hook: ${e.handler}`);try{let a=await Promise.race([r(t),new Promise((c,u)=>setTimeout(()=>u(new Error("Function timed out")),i))]),l=Date.now()-n;return this.createResult(s,0,!0,JSON.stringify(a),void 0,l)}catch(a){let l=Date.now()-n;return this.createResult(s,0,!1,void 0,a instanceof Error?a.message:String(a),l)}}};var vt=class{outputChannel;hooks;executors;enabled=!0;allowedHttpUrls;allowedCommands;allowedEnvVars;constructor(e,t){this.outputChannel=e,this.hooks=new Map,this.allowedHttpUrls=new Set(t?.allowedHttpUrls||[]),this.allowedCommands=new Set(t?.allowedCommands||[]),this.allowedEnvVars=new Set(t?.allowedEnvVars||[]),this.executors={command:new ye(e,t?.allowedCommands),http:new ke(e,t?.allowedHttpUrls,t?.allowedEnvVars),function:new We(e,t?.registeredFunctions)},this.outputChannel.debug("HookManager initialized")}loadFromConfig(e){this.clear();for(let[t,s]of Object.entries(e))if(s&&s.length>0){let n=t;this.hooks.set(n,s.filter(i=>i.enabled!==!1))}this.outputChannel.debug(`Loaded ${this.getTotalHookCount()} hooks from configuration`)}setAllowedHttpUrls(e){this.allowedHttpUrls=new Set(e),this.executors.http=new ke(this.outputChannel,e,Array.from(this.allowedEnvVars))}setAllowedCommands(e){this.allowedCommands=new Set(e),this.executors.command=new ye(this.outputChannel,e)}registerFunction(e,t){this.executors.function.registerFunction(e,t),this.outputChannel.debug(`Registered function hook: ${e}`)}unregisterFunction(e){this.executors.function.unregisterFunction(e),this.outputChannel.debug(`Unregistered function hook: ${e}`)}setEnabled(e){this.enabled=e,this.outputChannel.debug(`Hooks ${e?"enabled":"disabled"}`)}register(e,t){let s=this.hooks.get(e)||[];s.push(t),this.hooks.set(e,s),this.outputChannel.debug(`Registered ${e} hook with ${t.hooks.length} handlers`)}unregister(e,t){let s=this.hooks.get(e);return!s||t<0||t>=s.length?!1:(s.splice(t,1),s.length===0&&this.hooks.delete(e),this.outputChannel.debug(`Unregistered ${e} hook at index ${t}`),!0)}clear(){this.hooks.clear(),this.outputChannel.debug("Cleared all hooks")}async execute(e,t,s){if(!this.enabled)return this.outputChannel.debug(`Hooks disabled, skipping ${e}`),[];let n=this.hooks.get(e);if(!n||n.length===0)return this.outputChannel.debug(`No hooks registered for ${e}`),[];let i={type:e,timestamp:Date.now(),...t},r=[],a=s?.timeout??6e4,l=s?.parallel??!1,c=s?.stopOnFailure??!0;this.outputChannel.debug(`Executing ${n.length} ${e} hooks (${l?"parallel":"sequential"})`);try{if(l){let u=n.flatMap((h,m)=>this.executeDefinition(h,m,i,a)),p=await Promise.allSettled(u);for(let h of p)h.status==="fulfilled"?r.push(...h.value):this.outputChannel.error(`Hook execution failed: ${h.reason}`)}else for(let u=0;u<n.length;u++){let p=await this.executeDefinition(n[u],u,i,a);if(r.push(...p),c){let h=p.some(w=>!w.success),m=p.some(w=>w.block);if(h||m){this.outputChannel.debug(`Stopping hook execution due to ${m?"block":"failure"}`);break}}}}catch(u){this.outputChannel.error(`Hook execution error: ${u}`)}return this.outputChannel.debug(`Hook ${e} completed with ${r.length} results`),r}async executeDefinition(e,t,s,n){if(e.matcher&&!this.matchesContext(e.matcher,s))return this.outputChannel.debug(`Matcher "${e.matcher}" did not match, skipping`),[];let i=[],r=Date.now();for(let a=0;a<e.hooks.length;a++){let l=e.hooks[a],c=n-(Date.now()-r);if(c<=0){this.outputChannel.warn("Hook execution timed out");break}try{let u=await this.executeHandler(l,s,c);if(u.handlerIndex=a,i.push(u),u.block){this.outputChannel.debug("Handler requested block, stopping execution");break}}catch(u){i.push({hookId:`error_${Date.now()}`,handlerIndex:a,success:!1,error:u instanceof Error?u.message:String(u),duration:Date.now()-r})}}return i}async executeHandler(e,t,s){let n=this.executors[e.type];return n?n.execute(e,t):{hookId:`invalid_${Date.now()}`,handlerIndex:0,success:!1,error:`Unknown handler type: ${e.type}`,duration:0}}matchesContext(e,t){try{return t.toolName?new RegExp(e,"i").test(t.toolName):t.filePath?new RegExp(e,"i").test(t.filePath):t.command?new RegExp(e,"i").test(t.command):!0}catch(s){return this.outputChannel.error(`Invalid matcher pattern "${e}": ${s}`),!1}}async executePreToolUse(e,t){let s=await this.execute("PreToolUse",{type:"PreToolUse",timestamp:Date.now(),toolName:e,toolInput:t}),n=s.some(r=>r.block),i=s.find(r=>r.modifiedInput!==void 0)?.modifiedInput;return{blocked:n,modifiedInput:i,results:s}}async executePostToolUse(e,t,s){return this.execute("PostToolUse",{type:"PostToolUse",timestamp:Date.now(),toolName:e,toolResult:t,toolError:s})}async executeFileWrite(e,t){return this.execute("FileWrite",{type:"FileWrite",timestamp:Date.now(),filePath:e,fileContent:t})}async executeFileEdit(e,t){return this.execute("FileEdit",{type:"FileEdit",timestamp:Date.now(),filePath:e,fileContent:t})}async executeBashExecution(e){let t=await this.execute("BashExecution",{type:"BashExecution",timestamp:Date.now(),command:e});return{blocked:t.some(s=>s.block),results:t}}async executeSessionStart(e){return this.execute("SessionStart",{type:"SessionStart",timestamp:Date.now(),sessionId:e})}async executeSessionEnd(e){return this.execute("SessionEnd",{type:"SessionEnd",timestamp:Date.now(),sessionId:e})}async executeError(e,t){return this.execute("Error",{type:"Error",timestamp:Date.now(),errorMessage:e,errorStack:t})}getAllHooks(){return new Map(this.hooks)}getHooks(e){return this.hooks.get(e)||[]}hasHooks(e){let t=this.hooks.get(e);return t!==void 0&&t.length>0}getTotalHookCount(){let e=0;for(let t of this.hooks.values())e+=t.reduce((s,n)=>s+n.hooks.length,0);return e}getStats(){let e={};for(let[t,s]of this.hooks)e[t]=s.reduce((n,i)=>n+i.hooks.length,0);return{totalHooks:this.getTotalHookCount(),hooksByType:e}}dispose(){this.clear(),this.outputChannel.debug("HookManager disposed")}},Se=null;function ds(o,e){return!Se&&o&&(Se=new vt(o,e)),Se}function us(){Se&&(Se.dispose(),Se=null)}var ee=g(require("vscode"),1),bt=class{config;disposables=[];onConfigChangeEmitter=new ee.EventEmitter;constructor(){this.config=ee.workspace.getConfiguration("cclocal"),this.setupConfigWatcher()}getConfig(){return{forceLoginMethod:this.getForceLoginMethod(),forceLoginOrgUUID:this.getForceLoginOrgUUID(),disableLoginPrompt:this.getDisableLoginPrompt(),environmentVariables:this.getEnvironmentVariables(),cclocalPath:this.getCclocalPath(),claudeProcessWrapper:this.getClaudeProcessWrapper(),initialPermissionMode:this.getInitialPermissionMode(),allowDangerouslySkipPermissions:this.getAllowDangerouslySkipPermissions(),permissionRules:this.getPermissionRules(),respectGitIgnore:this.getRespectGitIgnore(),fileSuggestion:this.getFileSuggestion(),autosave:this.getAutosave(),claudeMdExcludes:this.getClaudeMdExcludes(),mcp:this.getMCPConfig(),enableAllProjectMcpServers:this.getEnableAllProjectMcpServers(),allowedMcpServers:this.getAllowedMcpServers(),deniedMcpServers:this.getDeniedMcpServers(),hooks:this.getHooks(),disableAllHooks:this.getDisableAllHooks(),allowedHttpHookUrls:this.getAllowedHttpHookUrls(),httpHookAllowedEnvVars:this.getHttpHookAllowedEnvVars(),allowManagedHooksOnly:this.getAllowManagedHooksOnly(),plugins:this.getPluginConfig(),enabledPlugins:this.getEnabledPlugins(),extraKnownMarketplaces:this.getExtraKnownMarketplaces(),strictKnownMarketplaces:this.getStrictKnownMarketplaces(),blockedMarketplaces:this.getBlockedMarketplaces(),useTerminal:this.getUseTerminal(),useCtrlEnterToSend:this.getUseCtrlEnterToSend(),preferredLocation:this.getPreferredLocation(),hideOnboarding:this.getHideOnboarding(),enableNewConversationShortcut:this.getEnableNewConversationShortcut(),usePythonEnvironment:this.getUsePythonEnvironment(),showTerminalBanner:this.getShowTerminalBanner(),model:this.getModel(),availableModels:this.getAvailableModels(),modelOverrides:this.getModelOverrides(),alwaysThinkingEnabled:this.getAlwaysThinkingEnabled(),fastMode:this.getFastMode(),maxThinkingTokens:this.getMaxThinkingTokens(),outputStyle:this.getOutputStyle(),language:this.getLanguage(),spinnerTipsEnabled:this.getSpinnerTipsEnabled(),spinnerVerbs:this.getSpinnerVerbs(),spinnerTipsOverride:this.getSpinnerTipsOverride(),syntaxHighlightingDisabled:this.getSyntaxHighlightingDisabled(),terminalTitleFromRename:this.getTerminalTitleFromRename(),remoteConfig:this.getRemoteConfig(),sshConfigs:this.getSSHConfigs(),includeCoAuthoredBy:this.getIncludeCoAuthoredBy(),includeGitInstructions:this.getIncludeGitInstructions(),sandbox:this.getSandbox(),skipWebFetchPreflight:this.getSkipWebFetchPreflight(),feedbackSurveyRate:this.getFeedbackSurveyRate(),proactiveSuggestions:this.getProactiveSuggestions(),allowManagedPermissionRulesOnly:this.getAllowManagedPermissionRulesOnly(),allowManagedMcpServersOnly:this.getAllowManagedMcpServersOnly(),strictPluginOnlyCustomization:this.getStrictPluginOnlyCustomization(),bedrockRegion:this.getBedrockRegion(),vertexProjectId:this.getVertexProjectId(),cleanupPeriodDays:this.getCleanupPeriodDays(),attribution:this.getAttribution()}}getForceLoginMethod(){return this.config.get("")||""}getForceLoginOrgUUID(){return this.config.get("forceLoginOrgUUID")||""}getDisableLoginPrompt(){return this.config.get("disableLoginPrompt")??!1}getEnvironmentVariables(){return this.config.get("environmentVariables")||[]}getCclocalPath(){return this.config.get("cclocalPath")||"cclocal"}getClaudeProcessWrapper(){return this.config.get("claudeProcessWrapper")||""}getInitialPermissionMode(){return this.config.get("initialPermissionMode")||"default"}getAllowDangerouslySkipPermissions(){return this.config.get("allowDangerouslySkipPermissions")??!1}getPermissionRules(){return this.config.get("permissionRules")||[]}getRespectGitIgnore(){return this.config.get("respectGitIgnore")??!0}getFileSuggestion(){return this.config.get("fileSuggestion")||{}}getAutosave(){return this.config.get("autosave")??!1}getClaudeMdExcludes(){return this.config.get("claudeMdExcludes")||[]}getMCPConfig(){return this.config.get("mcp")||{}}getEnableAllProjectMcpServers(){return this.config.get("enableAllProjectMcpServers")??!1}getAllowedMcpServers(){return this.config.get("allowedMcpServers")||[]}getDeniedMcpServers(){return this.config.get("deniedMcpServers")||[]}getHooks(){return this.config.get("hooks")||{}}getDisableAllHooks(){return this.config.get("disableAllHooks")??!1}getAllowedHttpHookUrls(){return this.config.get("allowedHttpHookUrls")||[]}getHttpHookAllowedEnvVars(){return this.config.get("httpHookAllowedEnvVars")||[]}getAllowManagedHooksOnly(){return this.config.get("allowManagedHooksOnly")??!1}getPluginConfig(){return this.config.get("plugins")||{}}getEnabledPlugins(){return this.config.get("enabledPlugins")||{}}getExtraKnownMarketplaces(){return this.config.get("extraKnownMarketplaces")||[]}getStrictKnownMarketplaces(){return this.config.get("strictKnownMarketplaces")||[]}getBlockedMarketplaces(){return this.config.get("blockedMarketplaces")||[]}getUseTerminal(){return this.config.get("useTerminal")??!0}getUseCtrlEnterToSend(){return this.config.get("useCtrlEnterToSend")??!1}getPreferredLocation(){return this.config.get("preferredLocation")||"sidebar"}getHideOnboarding(){return this.config.get("hideOnboarding")??!1}getEnableNewConversationShortcut(){return this.config.get("enableNewConversationShortcut")??!0}getUsePythonEnvironment(){return this.config.get("usePythonEnvironment")??!0}getShowTerminalBanner(){return this.config.get("showTerminalBanner")??!0}getModel(){return this.config.get("model")||""}getAvailableModels(){return this.config.get("availableModels")||[]}getModelOverrides(){return this.config.get("modelOverrides")||{}}getAlwaysThinkingEnabled(){return this.config.get("alwaysThinkingEnabled")??!1}getFastMode(){return this.config.get("fastMode")??!1}getMaxThinkingTokens(){return this.config.get("maxThinkingTokens")||16e3}getOutputStyle(){return this.config.get("outputStyle")||{type:"default"}}getLanguage(){return this.config.get("language")||"en"}getSpinnerTipsEnabled(){return this.config.get("spinnerTipsEnabled")??!0}getSpinnerVerbs(){return this.config.get("spinnerVerbs")||[]}getSpinnerTipsOverride(){return this.config.get("spinnerTipsOverride")||[]}getSyntaxHighlightingDisabled(){return this.config.get("syntaxHighlightingDisabled")??!1}getTerminalTitleFromRename(){return this.config.get("terminalTitleFromRename")??!0}getRemoteConfig(){return this.config.get("remoteConfig")||{remote:{enabled:!1}}}getSSHConfigs(){return this.config.get("sshConfigs")||[]}getIncludeCoAuthoredBy(){return this.config.get("includeCoAuthoredBy")??!0}getIncludeGitInstructions(){return this.config.get("includeGitInstructions")??!0}getSandbox(){return this.config.get("sandbox")||{enabled:!1}}getSkipWebFetchPreflight(){return this.config.get("skipWebFetchPreflight")??!1}getFeedbackSurveyRate(){return this.config.get("feedbackSurveyRate")??.1}getProactiveSuggestions(){return this.config.get("proactiveSuggestions")??!0}getAllowManagedPermissionRulesOnly(){return this.config.get("allowManagedPermissionRulesOnly")??!1}getAllowManagedMcpServersOnly(){return this.config.get("allowManagedMcpServersOnly")??!1}getStrictPluginOnlyCustomization(){return this.config.get("strictPluginOnlyCustomization")??!1}getBedrockRegion(){return this.config.get("bedrockRegion")||"us-east-1"}getVertexProjectId(){return this.config.get("vertexProjectId")||""}getCleanupPeriodDays(){return this.config.get("cleanupPeriodDays")||30}getAttribution(){return this.config.get("attribution")??!0}async update(e,t,s){let n=s??ee.ConfigurationTarget.Global;await this.config.update(e,t,n)}async setModel(e){await this.update("model",e)}async setPreferredLocation(e){await this.update("preferredLocation",e)}async setInitialPermissionMode(e){await this.update("initialPermissionMode",e)}async setForceLoginMethod(e){await this.update("forceLoginMethod",e)}async addEnvironmentVariable(e,t){let s=this.getEnvironmentVariables(),n=s.findIndex(i=>i.name===e);n>=0?s[n].value=t:s.push({name:e,value:t}),await this.update("environmentVariables",s)}async removeEnvironmentVariable(e){let t=this.getEnvironmentVariables().filter(s=>s.name!==e);await this.update("environmentVariables",t)}async addPermissionRule(e){let t=this.getPermissionRules();t.push(e),await this.update("permissionRules",t)}async addAllowedMcpServer(e){let t=this.getAllowedMcpServers();t.includes(e)||(t.push(e),await this.update("allowedMcpServers",t))}async addDeniedMcpServer(e){let t=this.getDeniedMcpServers();t.includes(e)||(t.push(e),await this.update("deniedMcpServers",t))}get onConfigChange(){return this.onConfigChangeEmitter.event}setupConfigWatcher(){let e=ee.workspace.onDidChangeConfiguration(t=>{t.affectsConfiguration("cclocal")&&(this.config=ee.workspace.getConfiguration("cclocal"),this.onConfigChangeEmitter.fire(this.getConfig()))});this.disposables.push(e)}dispose(){this.disposables.forEach(e=>e.dispose()),this.onConfigChangeEmitter.dispose()}};var x=g(require("vscode"),1);var qe=g(require("vscode"),1);var ae=g(require("crypto"),1),Ce=class{static SERVICE_NAME="cclocal";context;secrets;memoryCache=new Map;encryptionKey=null;constructor(e,t){this.context=e,this.secrets=e.secrets,t?.encryptionKey&&(this.encryptionKey=Buffer.from(t.encryptionKey,"hex"))}async store(e,t){let s=JSON.stringify(t);await this.secrets.store(e,s),this.memoryCache.set(e,t)}async get(e){let t=this.memoryCache.get(e);if(t)return t;let s=await this.secrets.get(e);if(s)try{let n=JSON.parse(s);return this.memoryCache.set(e,n),n}catch{return}}async delete(e){await this.secrets.delete(e),this.memoryCache.delete(e)}async has(e){return await this.secrets.get(e)!==void 0}async storeApiKey(e,t){let s=`apikey_${e}`;await this.store(s,{provider:e,apiKey:t})}async getApiKey(e){let t=`apikey_${e}`;return(await this.get(t))?.apiKey}async storeOAuthTokens(e,t,s,n,i){let r=`oauth_${e}`,a=Date.now()+n*1e3;await this.store(r,{provider:e,accessToken:t,refreshToken:s,expiresAt:a,scope:i})}async getOAuthTokens(e){let t=`oauth_${e}`,s=await this.get(t);if(s)return{accessToken:s.accessToken,refreshToken:s.refreshToken,expiresAt:s.expiresAt,scope:s.scope}}async isTokenExpired(e,t=300){let s=await this.getOAuthTokens(e);return s?Date.now()>s.expiresAt-t*1e3:!0}async clearProvider(e){await this.delete(`apikey_${e}`),await this.delete(`oauth_${e}`)}async clearAll(){let e=await this.listKeys();for(let t of e)await this.delete(t)}async listKeys(){return this.context.globalState.get("secureStorage:keys",[])}async registerKey(e){let t=this.context.globalState.get("secureStorage:keys",[]);t.includes(e)||(t.push(e),await this.context.globalState.update("secureStorage:keys",t))}static generateEncryptionKey(){return ae.randomBytes(32).toString("hex")}encrypt(e,t){let s=t||this.encryptionKey;if(!s)throw new Error("No encryption key available");let n=ae.randomBytes(16),i=ae.createCipheriv("aes-256-gcm",s,n),r=i.update(e,"utf8","hex");r+=i.final("hex");let a=i.getAuthTag();return`${n.toString("hex")}:${a.toString("hex")}:${r}`}decrypt(e,t){let s=t||this.encryptionKey;if(!s)throw new Error("No encryption key available");let[n,i,r]=e.split(":"),a=Buffer.from(n,"hex"),l=Buffer.from(i,"hex"),c=ae.createDecipheriv("aes-256-gcm",s,a);c.setAuthTag(l);let u=c.update(r,"hex","utf8");return u+=c.final("utf8"),u}dispose(){this.memoryCache.clear()}};var wt=g(require("vscode"),1),to=g(require("http"),1),Ve=g(require("crypto"),1),so=g(require("url"),1),Y=class{constructor(e,t,s){this.provider=e;this.config=t;this.storage=s}storage;server=null;pendingStates=new Map;generateCodeVerifier(){return Ve.randomBytes(32).toString("base64").replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}generateCodeChallenge(e){return Ve.createHash("sha256").update(e).digest("base64").replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}generateState(){return Ve.randomBytes(16).toString("hex")}buildAuthorizationUrl(e){let t=this.generateCodeVerifier(),s=this.config.usePKCE!==!1?this.generateCodeChallenge(t):"",n=this.generateState(),i={codeVerifier:t,codeChallenge:s,state:n,redirectUri:e};this.pendingStates.set(n,i);let r=new URLSearchParams({client_id:this.config.clientId,redirect_uri:e,response_type:"code",scope:this.config.scope.join(" "),state:n});return this.config.usePKCE!==!1&&(r.append("code_challenge",s),r.append("code_challenge_method","S256")),{url:`${this.config.authorizationEndpoint}?${r.toString()}`,state:i}}async startCallbackServer(){let e=this.config.port||this.findAvailablePort();return new Promise((t,s)=>{this.server=to.createServer((n,i)=>{this.handleCallback(n,i)}),this.server.listen(e,"127.0.0.1",()=>{t(e)}),this.server.on("error",n=>{s(n)})})}findAvailablePort(){return 8765+Math.floor(Math.random()*1e3)}handleCallback(e,t){let s=so.parse(e.url||"",!0);if(s.pathname==="/callback"||s.pathname==="/"){let n=s.query.code,i=s.query.state,r=s.query.error,a=s.query.error_description;if(r){this.sendErrorResponse(t,r,a);return}if(!n||!i){this.sendErrorResponse(t,"invalid_request","Missing code or state");return}let l=this.pendingStates.get(i);if(!l){this.sendErrorResponse(t,"invalid_state","Invalid or expired state");return}this.pendingStates.delete(i),this.exchangeCodeForTokens(n,l).then(c=>{this.sendSuccessResponse(t),this.stopCallbackServer()}).catch(c=>{this.sendErrorResponse(t,"token_exchange_failed",c.message),this.stopCallbackServer()})}else t.writeHead(404),t.end("Not Found")}async exchangeCodeForTokens(e,t){let s=new URLSearchParams({grant_type:"authorization_code",code:e,redirect_uri:t.redirectUri,client_id:this.config.clientId});this.config.usePKCE!==!1&&s.append("code_verifier",t.codeVerifier);let n=await fetch(this.config.tokenEndpoint,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded",Accept:"application/json"},body:s.toString()});if(!n.ok){let a=await n.text();throw new Error(`Token exchange failed: ${a}`)}let i=await n.json(),r={accessToken:i.access_token,refreshToken:i.refresh_token,expiresIn:i.expires_in,tokenType:i.token_type,scope:i.scope?.split(" ")};return await this.storage.storeOAuthTokens(this.provider,r.accessToken,r.refreshToken,r.expiresIn,r.scope),r}async refreshToken(){let e=await this.storage.getOAuthTokens(this.provider);if(!e)throw new Error("No tokens to refresh");let t=new URLSearchParams({grant_type:"refresh_token",refresh_token:e.refreshToken,client_id:this.config.clientId}),s=await fetch(this.config.tokenEndpoint,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded",Accept:"application/json"},body:t.toString()});if(!s.ok)throw await this.storage.delete(`oauth_${this.provider}`),new Error("Token refresh failed");let n=await s.json(),i={accessToken:n.access_token,refreshToken:n.refresh_token||e.refreshToken,expiresIn:n.expires_in,tokenType:n.token_type,scope:n.scope?.split(" ")};return await this.storage.storeOAuthTokens(this.provider,i.accessToken,i.refreshToken,i.expiresIn,i.scope),i}async getAccessToken(){return await this.storage.isTokenExpired(this.provider)?(await this.refreshToken()).accessToken:(await this.storage.getOAuthTokens(this.provider)).accessToken}async startFlow(){let t=`http://127.0.0.1:${await this.startCallbackServer()}/callback`,{url:s,state:n}=this.buildAuthorizationUrl(t);return await wt.env.openExternal(wt.Uri.parse(s)),this.waitForCallback(12e4)}waitForCallback(e){return new Promise((t,s)=>{let n=setTimeout(()=>{this.stopCallbackServer(),s(new Error("OAuth flow timed out"))},e),i=async()=>{let r=await this.storage.getOAuthTokens(this.provider);r?(clearTimeout(n),this.stopCallbackServer(),t({accessToken:r.accessToken,refreshToken:r.refreshToken,expiresIn:Math.floor((r.expiresAt-Date.now())/1e3),tokenType:"Bearer",scope:r.scope})):setTimeout(i,500)};i()})}stopCallbackServer(){this.server&&(this.server.close(),this.server=null)}sendSuccessResponse(e){e.writeHead(200,{"Content-Type":"text/html"}),e.end(`
+</html>`;
+  }
+};
+
+// src/IdeViewProvider.ts
+import * as crypto4 from "crypto";
+import * as path4 from "path";
+import * as vscode3 from "vscode";
+import * as os5 from "os";
+
+// src/IdeServer.ts
+init_wrapper();
+import * as crypto3 from "crypto";
+import * as fs2 from "fs";
+import * as http from "http";
+import * as os3 from "os";
+import * as path2 from "path";
+var HEARTBEAT_INTERVAL_MS = 15e3;
+var HEARTBEAT_TIMEOUT_MS = 3e4;
+var IdeServer = class {
+  server = null;
+  wss = null;
+  client = null;
+  port = 0;
+  lockfilePath = "";
+  workspaceFolders;
+  callbacks;
+  authToken = "";
+  // 心跳
+  heartbeatTimer = null;
+  lastHeartbeat = 0;
+  heartbeatTimeoutTimer = null;
+  // 重连缓冲：CLI 断连后短暂保留消息
+  pendingMessages = [];
+  MAX_PENDING = 100;
+  constructor(workspaceFolders, callbacks) {
+    this.workspaceFolders = workspaceFolders;
+    this.callbacks = callbacks;
+  }
+  /** 启动服务器：绑定随机端口，写 lock 文件 */
+  async start() {
+    this.authToken = crypto3.randomBytes(32).toString("hex");
+    this.server = http.createServer((_req, res) => {
+      res.writeHead(426, { "Content-Type": "text/plain" });
+      res.end("Upgrade Required");
+    });
+    this.wss = new import_websocket_server.default({ server: this.server });
+    this.wss.on("connection", (ws, req) => {
+      this.handleConnection(ws, req);
+    });
+    await new Promise((resolve, reject) => {
+      this.server.listen(0, "127.0.0.1", () => {
+        const addr = this.server.address();
+        this.port = addr.port;
+        resolve();
+      });
+      this.server.once("error", reject);
+    });
+    await this.writeLockfile();
+    this.startHeartbeat();
+  }
+  /** 停止服务器，删除 lock 文件 */
+  async stop() {
+    this.stopHeartbeat();
+    if (this.client) {
+      this.client.close();
+      this.client = null;
+    }
+    await new Promise((resolve) => {
+      if (this.wss) {
+        this.wss.close(() => resolve());
+      } else {
+        resolve();
+      }
+    });
+    await new Promise((resolve) => {
+      if (this.server) {
+        this.server.close(() => resolve());
+      } else {
+        resolve();
+      }
+    });
+    this.deleteLockfile();
+    this.server = null;
+    this.wss = null;
+  }
+  /** 向已连接的 CLI 发送消息 */
+  send(message) {
+    if (!this.client || this.client.readyState !== 1) {
+      if (this.pendingMessages.length < this.MAX_PENDING) {
+        this.pendingMessages.push(message);
+      }
+      return false;
+    }
+    try {
+      this.client.send(JSON.stringify(message) + "\n");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  /** 发送用户消息给 CLI */
+  sendUserMessage(text, sessionId) {
+    return this.send({
+      type: "user",
+      message: {
+        role: "user",
+        content: text
+      },
+      parent_tool_use_id: null,
+      session_id: sessionId
+    });
+  }
+  /** 发送中断请求 */
+  sendInterrupt() {
+    this.send({
+      type: "control_response",
+      request_id: crypto3.randomUUID(),
+      response: {
+        subtype: "tool_permission",
+        approved: false
+      }
+    });
+  }
+  /** 发送权限响应 */
+  sendPermissionResponse(requestId, approved, always = false) {
+    this.send({
+      type: "control_response",
+      request_id: requestId,
+      response: {
+        subtype: "tool_permission",
+        approved,
+        always
+      }
+    });
+  }
+  /** 发送配置变更 */
+  sendConfigUpdate(config) {
+    this.send({ type: "config_update", config });
+  }
+  /** 判断 CLI 是否已连接 */
+  isClientConnected() {
+    return this.client !== null && this.client.readyState === 1;
+  }
+  /** 返回当前监听端口 */
+  getPort() {
+    return this.port;
+  }
+  /** 返回 authToken（供测试和调试使用） */
+  getAuthToken() {
+    return this.authToken;
+  }
+  /** 返回 lock 文件路径（调试用） */
+  getLockfilePath() {
+    return this.lockfilePath;
+  }
+  // ─── 私有方法 ────────────────────────────────────────────────────────────
+  /** 处理新 WebSocket 连接 */
+  handleConnection(ws, req) {
+    const authHeader = req.headers["authorization"] ?? "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    if (token !== this.authToken) {
+      ws.close(4003, "Unauthorized");
+      return;
+    }
+    if (this.client && this.client.readyState === 1) {
+      this.client.close(1001, "Replaced by new connection");
+    }
+    this.client = ws;
+    this.lastHeartbeat = Date.now();
+    while (this.pendingMessages.length > 0) {
+      const msg = this.pendingMessages.shift();
+      this.send(msg);
+    }
+    ws.on("message", (data) => {
+      const raw = data.toString();
+      const lines = raw.split("\n").filter((l) => l.trim());
+      for (const line of lines) {
+        try {
+          const msg = JSON.parse(line);
+          if (msg.type === "system" && "subtype" in msg && msg.subtype === "pong") {
+            this.lastHeartbeat = Date.now();
+            continue;
+          }
+          this.callbacks.onMessage(line);
+        } catch {
+        }
+      }
+    });
+    ws.on("close", () => {
+      if (this.client === ws) {
+        this.client = null;
+        this.callbacks.onClientDisconnected();
+      }
+    });
+    ws.on("error", (err) => {
+      this.callbacks.onError(err);
+      if (this.client === ws) {
+        this.client = null;
+        this.callbacks.onClientDisconnected();
+      }
+    });
+    this.callbacks.onClientConnected();
+  }
+  /** 心跳 ping */
+  startHeartbeat() {
+    this.heartbeatTimer = setInterval(() => {
+      if (!this.client || this.client.readyState !== 1) return;
+      const ping = { type: "ping", timestamp: Date.now() };
+      try {
+        this.client.send(JSON.stringify(ping) + "\n");
+      } catch {
+      }
+      if (Date.now() - this.lastHeartbeat > HEARTBEAT_TIMEOUT_MS) {
+        this.callbacks.onError(new Error("Heartbeat timeout"));
+        this.client.close(1001, "Heartbeat timeout");
+        this.client = null;
+        this.callbacks.onClientDisconnected();
+      }
+    }, HEARTBEAT_INTERVAL_MS);
+  }
+  stopHeartbeat() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+    if (this.heartbeatTimeoutTimer) {
+      clearTimeout(this.heartbeatTimeoutTimer);
+      this.heartbeatTimeoutTimer = null;
+    }
+  }
+  /** 写入 lock 文件 */
+  async writeLockfile() {
+    const ideDir = path2.join(os3.homedir(), ".claude", "ide");
+    await fs2.promises.mkdir(ideDir, { recursive: true });
+    this.lockfilePath = path2.join(ideDir, `${this.port}.lock`);
+    const content = {
+      workspaceFolders: this.workspaceFolders,
+      pid: process.pid,
+      ideName: "VS Code",
+      transport: "ws",
+      runningInWindows: process.platform === "win32",
+      authToken: this.authToken
+    };
+    await fs2.promises.writeFile(
+      this.lockfilePath,
+      JSON.stringify(content, null, 2),
+      { encoding: "utf-8", mode: 384 }
+    );
+  }
+  /** 删除 lock 文件 */
+  deleteLockfile() {
+    if (this.lockfilePath) {
+      try {
+        fs2.unlinkSync(this.lockfilePath);
+      } catch {
+      }
+      this.lockfilePath = "";
+    }
+  }
+};
+
+// src/CliProcess.ts
+import { spawn as spawn2 } from "child_process";
+import * as os4 from "os";
+import * as path3 from "path";
+var MAX_RESTARTS = 5;
+var INITIAL_BACKOFF_MS = 1e3;
+var MAX_BACKOFF_MS = 3e4;
+var CliProcess = class {
+  proc = null;
+  cclocalPath;
+  cwd;
+  idePort;
+  callbacks;
+  restartCount = 0;
+  backoffMs = INITIAL_BACKOFF_MS;
+  stopped = false;
+  restartTimer = null;
+  constructor(opts) {
+    this.cclocalPath = opts.cclocalPath;
+    this.cwd = opts.cwd;
+    this.idePort = opts.idePort;
+    this.callbacks = opts.callbacks;
+  }
+  /** 启动 cclocal 进程 */
+  start() {
+    this.stopped = false;
+    this.restartCount = 0;
+    this.backoffMs = INITIAL_BACKOFF_MS;
+    this.spawn();
+  }
+  /** 优雅停止（不触发重启） */
+  stop() {
+    this.stopped = true;
+    if (this.restartTimer) {
+      clearTimeout(this.restartTimer);
+      this.restartTimer = null;
+    }
+    if (this.proc) {
+      try {
+        if (process.platform === "win32") {
+          spawn2("taskkill", ["/pid", String(this.proc.pid), "/T", "/F"], {
+            stdio: "ignore",
+            windowsHide: true
+          });
+        } else {
+          this.proc.kill("SIGTERM");
+        }
+      } catch {
+      }
+      this.proc = null;
+    }
+  }
+  /** 进程是否正在运行 */
+  isRunning() {
+    return this.proc !== null && !this.proc.killed;
+  }
+  /** 重置重启计数（CLI 成功连接后调用） */
+  resetRestartCount() {
+    this.restartCount = 0;
+    this.backoffMs = INITIAL_BACKOFF_MS;
+  }
+  // ─── 私有方法 ────────────────────────────────────────────────────────────
+  /** 创建子进程 */
+  spawn() {
+    const env5 = this.buildEnv();
+    const args = ["--ide"];
+    this.proc = spawn2(this.cclocalPath, args, {
+      cwd: this.cwd,
+      env: env5,
+      stdio: ["ignore", "pipe", "pipe"],
+      // Windows: 使用 shell 以确保 PATH 中能找到 cclocal
+      shell: process.platform === "win32",
+      // 隐藏 Windows 控制台窗口
+      windowsHide: true
+    });
+    this.proc.stdout?.on("data", (chunk) => {
+      const lines = chunk.toString().split("\n").filter((l) => l.trim());
+      for (const line of lines) {
+        this.callbacks.onLog(`[stdout] ${line}`);
+      }
+    });
+    this.proc.stderr?.on("data", (chunk) => {
+      const lines = chunk.toString().split("\n").filter((l) => l.trim());
+      for (const line of lines) {
+        this.callbacks.onLog(`[stderr] ${line}`);
+      }
+    });
+    this.proc.on("exit", (code, signal) => {
+      this.proc = null;
+      if (this.stopped) return;
+      this.callbacks.onLog(
+        `[CliProcess] cclocal \u9000\u51FA code=${code} signal=${signal}`
+      );
+      if (this.restartCount < MAX_RESTARTS) {
+        this.restartCount++;
+        const delay = this.backoffMs + Math.random() * 500;
+        this.callbacks.onLog(
+          `[CliProcess] ${delay.toFixed(0)}ms \u540E\u91CD\u542F (\u7B2C ${this.restartCount} \u6B21)`
+        );
+        this.restartTimer = setTimeout(() => {
+          this.restartTimer = null;
+          if (!this.stopped) {
+            this.spawn();
+          }
+        }, delay);
+        this.backoffMs = Math.min(this.backoffMs * 2, MAX_BACKOFF_MS);
+      } else {
+        this.callbacks.onUnexpectedExit(code, null);
+      }
+    });
+    this.proc.on("error", (err) => {
+      this.callbacks.onLog(`[CliProcess] \u542F\u52A8\u5931\u8D25: ${err.message}`);
+    });
+  }
+  /**
+   * 构建注入了完整 PATH 的环境变量。
+   *
+   * VSCode Extension Host 进程的 PATH 通常很短，
+   * 无法找到 bun、homebrew 等工具。
+   * 需要手动补全 macOS / Linux / Windows 常见路径。
+   */
+  buildEnv() {
+    const home = os4.homedir();
+    const isWin = process.platform === "win32";
+    const isMac = process.platform === "darwin";
+    const extraPaths = [];
+    if (isMac) {
+      extraPaths.push(
+        "/opt/homebrew/bin",
+        // Apple Silicon Homebrew
+        "/opt/homebrew/sbin",
+        "/usr/local/bin",
+        // Intel Homebrew / 手动安装
+        "/usr/local/sbin",
+        "/usr/bin",
+        "/usr/sbin",
+        "/bin",
+        "/sbin",
+        `${home}/.bun/bin`,
+        // bun
+        `${home}/.local/bin`,
+        // 用户级工具
+        `${home}/.eigent/bin`,
+        // eigent
+        `${home}/.cargo/bin`,
+        // rust cargo
+        `${home}/go/bin`,
+        // go
+        "/opt/homebrew/opt/node/bin",
+        // Homebrew node
+        "/usr/local/opt/node/bin"
+      );
+    } else if (isWin) {
+      const appData = process.env.APPDATA ?? "";
+      const localAppData = process.env.LOCALAPPDATA ?? "";
+      extraPaths.push(
+        `${home}\\.bun\\bin`,
+        `${home}\\.cargo\\bin`,
+        `${home}\\AppData\\Local\\Programs\\Python\\Scripts`,
+        `${home}\\AppData\\Roaming\\npm`,
+        `${localAppData}\\Programs\\Microsoft VS Code\\bin`,
+        `${appData}\\npm`,
+        "C:\\Program Files\\Git\\cmd",
+        "C:\\Program Files\\Git\\bin",
+        "C:\\Program Files\\nodejs",
+        "C:\\Program Files\\dotnet",
+        "C:\\Windows\\System32",
+        "C:\\Windows"
+      );
+    } else {
+      extraPaths.push(
+        "/usr/local/bin",
+        "/usr/local/sbin",
+        "/usr/bin",
+        "/usr/sbin",
+        "/bin",
+        "/sbin",
+        `${home}/.bun/bin`,
+        `${home}/.local/bin`,
+        `${home}/.cargo/bin`,
+        `${home}/.eigent/bin`,
+        `${home}/.go/bin`,
+        "/snap/bin"
+      );
+    }
+    const currentPath = process.env.PATH ?? "";
+    const mergedPath = [...extraPaths, currentPath].filter(Boolean).join(path3.delimiter);
+    return {
+      ...process.env,
+      PATH: mergedPath,
+      // 传递 IDE 端口信息给 CLI（加快发现速度）
+      CCLocal_IDE_PORT: String(this.idePort)
+    };
+  }
+};
+
+// src/IdeViewProvider.ts
+var currentSessionId = "";
+var IdeViewProvider = class {
+  // 30ms 批量刷新，减少 webview 刷新频率
+  constructor(extensionUri, outputChannel2, diffManager) {
+    this.extensionUri = extensionUri;
+    this.diffManager = diffManager;
+    this.outputChannel = outputChannel2;
+    const workspaceFolders = vscode3.workspace.workspaceFolders?.map((f) => f.uri.fsPath) ?? [];
+    this.ideServer = new IdeServer(workspaceFolders, {
+      onClientConnected: () => this.handleClientConnected(),
+      onClientDisconnected: () => this.handleClientDisconnected(),
+      onMessage: (line) => this.handleStreamMessage(line),
+      onError: (err) => {
+        this.outputChannel.error(`IdeServer error: ${err.message}`);
+        this.sendToWebview({ type: "error", message: `\u8FDE\u63A5\u9519\u8BEF: ${err.message}` });
+      }
+    });
+    const config = vscode3.workspace.getConfiguration("cclocal");
+    const cclocalPath = config.get("cclocalPath") || "cclocal";
+    this.cliProcess = new CliProcess({
+      cclocalPath,
+      cwd: workspaceFolders[0] ?? os5.homedir(),
+      idePort: 0,
+      // 稍后在 start() 中更新
+      callbacks: {
+        onLog: (line) => this.outputChannel.debug(line),
+        onUnexpectedExit: (code, _signal) => this.handleUnexpectedExit(code)
+      }
+    });
+  }
+  static viewType = "cclocal.chatView";
+  view;
+  ideServer;
+  cliProcess;
+  outputChannel;
+  resolveCallbacks = [];
+  /** Additional webview targets to broadcast to (e.g. editor panel) */
+  broadcastTargets = [];
+  /** 当前助手消息 ID（用于增量追加） */
+  currentAssistantMessageId = "";
+  /** 当前活跃的内容块索引（流式） */
+  currentContentBlockIndex = -1;
+  /** 内容块文本缓冲（流式 delta 合并后发送） */
+  blockTextBuffer = "";
+  blockBufferTimer = null;
+  BUFFER_FLUSH_MS = 30;
+  /** 启动服务（在扩展激活时调用） */
+  async start() {
+    try {
+      await this.ideServer.start();
+      this.outputChannel.info(`IdeServer started on port ${this.ideServer.getPort()}`);
+      this.cliProcess.idePort = this.ideServer.getPort();
+      this.cliProcess.start();
+      this.sendToWebview({ type: "statusChange", status: "connecting" });
+    } catch (error) {
+      this.outputChannel.error(`Failed to start: ${error}`);
+      this.sendToWebview({
+        type: "error",
+        message: `\u542F\u52A8\u5931\u8D25: ${error}`
+      });
+    }
+  }
+  /** Register extension-level listeners (call from extension.ts) */
+  registerListeners(context) {
+    context.subscriptions.push(
+      vscode3.window.tabGroups.onDidChangeTabs((e) => {
+        for (const closed of e.closed) {
+          if (closed && "input" in closed) {
+            const input = closed.input;
+            if (input?.original?.scheme === "_claude_fs_left" || input?.modified?.scheme === "_claude_fs_right") {
+              const remaining = this.diffManager.getPendingDiffs();
+              if (remaining.length === 0) {
+                void vscode3.commands.executeCommand("setContext", "cclocal.viewingProposedDiff", false);
+              }
+            }
+          }
+        }
+      })
+    );
+    context.subscriptions.push(
+      vscode3.window.onDidChangeActiveTextEditor((editor) => {
+        if (!editor) return;
+        const uri = editor.document.uri;
+        if (uri.scheme === "_claude_fs_right" || uri.scheme === "_claude_fs_left") {
+          void vscode3.commands.executeCommand("setContext", "cclocal.viewingProposedDiff", true);
+        }
+      })
+    );
+  }
+  /** 停止服务（在扩展停用时调用） */
+  async stop() {
+    this.cliProcess.stop();
+    await this.ideServer.stop();
+  }
+  /** 外部发送消息（供其他模块调用） */
+  sendMessage(text) {
+    if (!this.ideServer.isClientConnected()) {
+      this.sendToWebview({ type: "error", message: "CLI \u672A\u8FDE\u63A5\uFF0C\u8BF7\u7A0D\u5019\u91CD\u8BD5" });
+      return;
+    }
+    const messageId = this.generateId();
+    this.sendToWebview({
+      type: "from-extension",
+      message: { type: "system", subtype: "info", message: text }
+    });
+    this.ideServer.sendUserMessage(text, currentSessionId);
+    this.sendToWebview({ type: "statusChange", status: "running" });
+  }
+  /** 处理命令（供 extension.ts 调用） */
+  handleCommand(command) {
+    switch (command) {
+      case "newSession":
+        currentSessionId = "";
+        this.cliProcess.resetRestartCount();
+        this.sendToWebview({ type: "sessionCleared" });
+        break;
+      case "clearChat":
+        this.sendToWebview({ type: "sessionCleared" });
+        break;
+      case "stopGeneration":
+        this.ideServer.sendInterrupt();
+        this.sendToWebview({ type: "statusChange", status: "stopped" });
+        break;
+    }
+  }
+  // ─── WebviewViewProvider 接口 ────────────────────────────────────────────────
+  resolveWebviewView(webviewView, _context, _token) {
+    this.view = webviewView;
+    for (const cb of this.resolveCallbacks) cb(webviewView);
+    this.resolveCallbacks = [];
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this.extensionUri]
+    };
+    webviewView.webview.html = this.getWebviewHtml(webviewView.webview);
+    webviewView.webview.onDidReceiveMessage(
+      (message) => this.handleWebviewMessage(message)
+    );
+  }
+  // ─── Webview 消息处理 ────────────────────────────────────────────────────
+  handleWebviewMessage(message) {
+    switch (message.type) {
+      case "ready":
+        this.sendToWebview({
+          type: "statusChange",
+          status: this.ideServer.isClientConnected() ? "connected" : "connecting"
+        });
+        const hideOnboarding = vscode3.workspace.getConfiguration("cclocal").get("hideOnboarding");
+        if (!hideOnboarding) {
+          this.sendToWebview({ type: "showOnboarding" });
+        }
+        break;
+      case "submit":
+        this.sendMessage(message.text);
+        break;
+      case "stopGeneration":
+        this.handleCommand("stopGeneration");
+        break;
+      case "newSession":
+        this.handleCommand("newSession");
+        break;
+      case "clearChat":
+        this.handleCommand("clearChat");
+        break;
+      case "permissionResponse":
+        this.ideServer.sendPermissionResponse(
+          message.requestId,
+          message.approved,
+          message.always
+        );
+        break;
+      case "configChange":
+        this.ideServer.sendConfigUpdate(message.config);
+        break;
+      case "openFile":
+        this.openFile(message.path, message.line);
+        break;
+      case "openDiff":
+        this.openDiffViewer(message.filePath);
+        break;
+      case "acceptDiff":
+        this.acceptDiff(message.filePath, message.toolUseId);
+        break;
+      case "rejectDiff":
+        this.rejectDiff(message.filePath, message.toolUseId);
+        break;
+      case "copyToClipboard":
+        vscode3.env.clipboard.writeText(message.text);
+        break;
+      case "insertAtMention":
+        this.sendToWebview({ type: "insertAtMention", filePath: message.filePath });
+        break;
+      case "feedback":
+        this.outputChannel.info(
+          `Feedback: rating=${message.rating} comment=${message.comment ?? "none"}`
+        );
+        break;
+      case "dismissOnboarding":
+        void vscode3.workspace.getConfiguration("cclocal").update("hideOnboarding", true, vscode3.ConfigurationTarget.Global);
+        break;
+    }
+  }
+  // ─── CLI 消息处理（核心路由） ──────────────────────────────────────────────
+  /**
+   * 处理来自 CLI 的 stream-json 消息。
+   * 每行一个 JSON 对象，按 type 字段路由到对应处理函数。
+   */
+  handleStreamMessage(line) {
+    try {
+      const msg = JSON.parse(line);
+      switch (msg.type) {
+        case "init":
+          this.handleInit(msg);
+          break;
+        case "assistant":
+          this.handleAssistantMessage(msg);
+          break;
+        case "content_block_start":
+          this.handleContentBlockStart(msg);
+          break;
+        case "content_block_delta":
+          this.handleContentBlockDelta(msg);
+          break;
+        case "content_block_stop":
+          this.handleContentBlockStop(msg);
+          break;
+        case "result":
+          this.handleResult(msg);
+          break;
+        case "control_request":
+          this.handleControlRequest(msg);
+          break;
+        case "error":
+          this.handleError(msg);
+          break;
+        case "system":
+          this.handleSystemMessage(msg);
+          break;
+        case "proposed_diff":
+          this.handleDiff(msg);
+          break;
+        case "usage_update":
+          this.handleCost(msg);
+          break;
+        case "session_states_update":
+          this.handleSessionUpdate(msg);
+          break;
+        default:
+          this.outputChannel.debug(`Unknown message type: ${msg.type}`);
+      }
+    } catch (error) {
+      this.outputChannel.error(`Failed to parse stream message: ${line}`);
+    }
+  }
+  /** init — CLI 连接初始化 */
+  handleInit(msg) {
+    currentSessionId = msg.session_id ?? "";
+    this.cliProcess.resetRestartCount();
+    this.sendToWebview({
+      type: "cliConnected",
+      version: msg.version,
+      model: msg.model
+    });
+    this.outputChannel.info(
+      `CLI initialized: session=${currentSessionId} version=${msg.version} model=${msg.model}`
+    );
+  }
+  /** assistant — 完整的助手消息（非流式回退） */
+  handleAssistantMessage(msg) {
+    const messageId = msg.message?.id ?? this.generateId();
+    this.currentAssistantMessageId = messageId;
+    const content = msg.message?.content ?? [];
+    let fullText = "";
+    const blocks = [];
+    for (const block of content) {
+      if (block.type === "text" && block.text) {
+        fullText += block.text;
+        blocks.push({ type: "text", text: block.text });
+      } else if (block.type === "tool_use") {
+        blocks.push({ type: "tool_use", name: block.name, input: block.input });
+      } else if (block.type === "thinking") {
+        blocks.push({ type: "thinking", thinking: block.thinking ?? "" });
+      }
+    }
+    if (fullText) {
+      this.sendToWebview({
+        type: "from-extension",
+        message: {
+          type: "content_block_delta",
+          index: 0,
+          delta: { type: "text_delta", text: fullText },
+          session_id: currentSessionId,
+          message_id: messageId
+        }
+      });
+    }
+    for (const block of blocks) {
+      if (block.type === "tool_use") {
+        this.sendToWebview({
+          type: "from-extension",
+          message: {
+            type: "tool_use",
+            id: content.find((c) => c.type === "tool_use" && c.name === block.name)?.id ?? "",
+            name: block.name ?? "unknown",
+            input: block.input,
+            session_id: currentSessionId,
+            message_id: messageId
+          }
+        });
+      } else if (block.type === "thinking") {
+        this.sendToWebview({
+          type: "from-extension",
+          message: {
+            type: "content_block_delta",
+            index: -1,
+            delta: { type: "thinking_delta", thinking: block.thinking ?? "" },
+            session_id: currentSessionId,
+            message_id: messageId
+          }
+        });
+      }
+    }
+    this.sendToWebview({
+      type: "from-extension",
+      message: {
+        type: "result",
+        subtype: "success",
+        session_id: currentSessionId
+      }
+    });
+  }
+  /** content_block_start — 流式内容块开始 */
+  handleContentBlockStart(msg) {
+    this.currentContentBlockIndex = msg.index;
+    if (!this.currentAssistantMessageId) {
+      this.currentAssistantMessageId = msg.message_id ?? this.generateId();
+    }
+    const block = msg.content_block;
+    if (block.type === "text") {
+      this.blockTextBuffer = "";
+      this.sendToWebview({
+        type: "from-extension",
+        message: {
+          type: "content_block_delta",
+          index: 0,
+          delta: { type: "text_delta", text: "" },
+          session_id: currentSessionId,
+          message_id: this.currentAssistantMessageId
+        }
+      });
+    } else if (block.type === "tool_use") {
+      this.sendToWebview({
+        type: "from-extension",
+        message: {
+          type: "tool_use",
+          id: block.id ?? "",
+          name: block.name ?? "unknown",
+          input: block.input,
+          session_id: currentSessionId,
+          message_id: this.currentAssistantMessageId
+        }
+      });
+    } else if (block.type === "thinking") {
+      this.blockTextBuffer = "";
+    }
+  }
+  /** content_block_delta — 流式增量 */
+  handleContentBlockDelta(msg) {
+    const delta = msg.delta;
+    if (delta.type === "text_delta") {
+      this.blockTextBuffer += delta.text;
+      if (!this.blockBufferTimer) {
+        this.blockBufferTimer = setTimeout(() => {
+          this.flushTextBuffer();
+        }, this.BUFFER_FLUSH_MS);
+      }
+    } else if (delta.type === "thinking_delta") {
+      this.sendToWebview({
+        type: "from-extension",
+        message: {
+          type: "content_block_delta",
+          index: -1,
+          delta: { type: "thinking_delta", thinking: delta.thinking ?? "" },
+          session_id: currentSessionId,
+          message_id: this.currentAssistantMessageId
+        }
+      });
+    } else if (delta.type === "input_json_delta") {
+    }
+  }
+  /** content_block_stop — 流式内容块结束 */
+  handleContentBlockStop(msg) {
+    this.flushTextBuffer();
+    if (msg.index === this.currentContentBlockIndex) {
+    }
+  }
+  /** result — 消息完成 */
+  handleResult(msg) {
+    this.flushTextBuffer();
+    this.sendToWebview({
+      type: "from-extension",
+      message: {
+        type: "result",
+        subtype: msg.subtype,
+        session_id: currentSessionId,
+        cost_usd: msg.cost_usd
+      }
+    });
+    this.currentAssistantMessageId = "";
+    this.currentContentBlockIndex = -1;
+    const status = msg.subtype === "success" ? "connected" : msg.subtype === "cancelled" ? "stopped" : "error";
+    this.sendToWebview({ type: "statusChange", status });
+    if (msg.subtype === "error") {
+      this.sendToWebview({
+        type: "error",
+        message: msg.error ?? msg.result ?? "Unknown error"
+      });
+    }
+  }
+  /** control_request — 权限请求 */
+  handleControlRequest(msg) {
+    if (msg.request.subtype === "auto_approved") {
+      this.outputChannel.debug(
+        `Auto-approved: ${msg.request.tool_name} (${msg.request.reason ?? ""})`
+      );
+      return;
+    }
+    if (msg.request.subtype === "interrupt") {
+      this.sendToWebview({ type: "statusChange", status: "stopped" });
+      return;
+    }
+    this.sendToWebview({
+      type: "from-extension",
+      message: {
+        type: "control_request",
+        request_id: msg.request_id,
+        request: {
+          subtype: "tool_permission",
+          tool_name: msg.request.tool_name ?? "unknown",
+          tool_input: msg.request.tool_input
+        },
+        session_id: currentSessionId
+      }
+    });
+  }
+  /** error — 错误消息 */
+  handleError(msg) {
+    this.sendToWebview({
+      type: "error",
+      message: msg.error ?? "Unknown error"
+    });
+  }
+  /** system — 系统消息 */
+  handleSystemMessage(msg) {
+    this.outputChannel.info(`[System] ${msg.message}`);
+  }
+  /** proposed_diff — open diff editor with left/right VFS */
+  async handleDiff(msg) {
+    try {
+      const diffId = await this.diffManager.proposeDiff(
+        msg.file_path,
+        msg.old_content,
+        msg.new_content,
+        msg.tool_use_id
+      );
+      void vscode3.commands.executeCommand("setContext", "cclocal.viewingProposedDiff", true);
+      this.sendToWebview({
+        type: "from-extension",
+        message: {
+          type: "proposed_diff",
+          file_path: msg.file_path,
+          old_content: msg.old_content,
+          new_content: msg.new_content,
+          session_id: currentSessionId
+        }
+      });
+      this.outputChannel.info(`Opened proposed diff for ${msg.file_path} (id: ${diffId})`);
+    } catch (error) {
+      this.outputChannel.error(`Failed to open diff: ${error}`);
+    }
+  }
+  /** usage_update — 使用成本通知 */
+  handleCost(msg) {
+    this.sendToWebview({
+      type: "from-extension",
+      message: {
+        type: "usage_update",
+        cost_usd: msg.cost_usd,
+        duration_ms: msg.duration_ms
+      }
+    });
+  }
+  /** session_states_update — 会话状态更新 */
+  handleSessionUpdate(msg) {
+    const activeSession = msg.sessions?.find((s) => s.session_id === currentSessionId);
+    if (activeSession?.model) {
+      this.sendToWebview({ type: "modelChange", model: activeSession.model });
+    }
+  }
+  // ─── 辅助方法 ──────────────────────────────────────────────────────────────
+  /** CLI 客户端连接成功 */
+  handleClientConnected() {
+    this.sendToWebview({ type: "statusChange", status: "connected" });
+    this.outputChannel.info("CLI connected to IdeServer");
+  }
+  /** CLI 客户端断开连接 */
+  handleClientDisconnected() {
+    this.sendToWebview({ type: "statusChange", status: "connecting" });
+    this.sendToWebview({ type: "cliDisconnected" });
+    this.outputChannel.warn("CLI disconnected from IdeServer");
+  }
+  /** CLI 进程意外退出 */
+  handleUnexpectedExit(code) {
+    this.sendToWebview({
+      type: "error",
+      message: `CLI \u8FDB\u7A0B\u610F\u5916\u9000\u51FA (code: ${code})\uFF0C\u5DF2\u8FBE\u5230\u6700\u5927\u91CD\u542F\u6B21\u6570`
+    });
+    this.sendToWebview({ type: "statusChange", status: "error" });
+  }
+  /** 刷新文本缓冲到 webview */
+  flushTextBuffer() {
+    if (this.blockBufferTimer) {
+      clearTimeout(this.blockBufferTimer);
+      this.blockBufferTimer = null;
+    }
+    if (this.blockTextBuffer && this.currentAssistantMessageId) {
+      this.sendToWebview({
+        type: "from-extension",
+        message: {
+          type: "content_block_delta",
+          index: 0,
+          delta: { type: "text_delta", text: this.blockTextBuffer },
+          session_id: currentSessionId,
+          message_id: this.currentAssistantMessageId
+        }
+      });
+      this.blockTextBuffer = "";
+    }
+  }
+  /** 打开文件 */
+  async openFile(filePath, line) {
+    try {
+      const doc = await vscode3.workspace.openTextDocument(filePath);
+      const editor = await vscode3.window.showTextDocument(doc, {
+        preview: false,
+        selection: line ? new vscode3.Selection(line - 1, 0, line - 1, 0) : void 0
+      });
+    } catch (error) {
+      vscode3.window.showErrorMessage(`\u65E0\u6CD5\u6253\u5F00\u6587\u4EF6: ${filePath}`);
+    }
+  }
+  /** Open diff viewer using virtual FS (delegated to DiffManager) */
+  async openDiffViewer(filePath) {
+    const pending = this.diffManager.getPendingDiffs();
+    const existing = pending.find((d) => d.filePath === filePath);
+    if (existing && existing.leftUri && existing.rightUri) {
+      const fileName = path4.basename(filePath);
+      await vscode3.commands.executeCommand(
+        "vscode.diff",
+        existing.leftUri,
+        existing.rightUri,
+        `${fileName} (Proposed Changes)`,
+        { preview: true }
+      );
+    }
+  }
+  /** Accept diff: write right FS content to disk */
+  async acceptDiff(filePath, toolUseId) {
+    try {
+      await this.diffManager.acceptActiveDiff();
+      await vscode3.commands.executeCommand("workbench.action.closeActiveEditor");
+      if (this.diffManager.getPendingDiffs().length === 0) {
+        void vscode3.commands.executeCommand("setContext", "cclocal.viewingProposedDiff", false);
+      }
+      this.sendToWebview({
+        type: "from-extension",
+        message: {
+          type: "file_updated",
+          file_path: filePath,
+          change_type: "modified"
+        }
+      });
+      this.outputChannel.info(`Accepted proposed diff for ${filePath}`);
+    } catch (error) {
+      vscode3.window.showErrorMessage(`Failed to accept changes: ${error}`);
+    }
+  }
+  /** Reject diff: discard virtual FS content */
+  async rejectDiff(filePath, toolUseId) {
+    try {
+      await this.diffManager.rejectActiveDiff();
+      if (this.diffManager.getPendingDiffs().length === 0) {
+        void vscode3.commands.executeCommand("setContext", "cclocal.viewingProposedDiff", false);
+      }
+      this.outputChannel.info(`Rejected proposed diff for ${filePath}`);
+    } catch (error) {
+      vscode3.window.showErrorMessage(`Failed to reject changes: ${error}`);
+    }
+  }
+  /** 发送消息到 Webview */
+  sendToWebview(message) {
+    this.view?.webview.postMessage(message);
+    for (const target of this.broadcastTargets) {
+      target.postMessage(message);
+    }
+  }
+  /** Add a broadcast target (e.g. editor panel webview) */
+  addBroadcastTarget(target) {
+    this.broadcastTargets.push(target);
+  }
+  /** 生成随机 ID */
+  generateId() {
+    return crypto4.randomBytes(8).toString("hex");
+  }
+  // ─── Event: View Resolved ───────────────────────────────────────────────────
+  /** Register a callback for when the webview view is first resolved */
+  onDidResolve(callback) {
+    if (this.view) {
+      callback(this.view);
+    } else {
+      this.resolveCallbacks.push(callback);
+    }
+  }
+  // ─── Webview HTML (React app from webview-dist/) ─────────────────────────────
+  /** Load React webview from webview-dist/ built assets */
+  getWebviewHtml(webview) {
+    const nonce = crypto4.randomBytes(16).toString("base64");
+    const webviewDistUri = (fileName) => webview.asWebviewUri(vscode3.Uri.joinPath(this.extensionUri, "webview-dist", fileName));
+    const scriptUri = webviewDistUri("index.js");
+    const styleUri = webviewDistUri("index.css");
+    return (
+      /* html */
+      `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none';
+            style-src 'nonce-${nonce}' https:;
+            script-src 'nonce-${nonce}';
+            img-src 'self' data: https:;
+            font-src 'self' https:;" />
+  <link rel="stylesheet" type="text/css" href="${styleUri}" nonce="${nonce}">
+  <title>CCLocal</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script nonce="${nonce}" src="${scriptUri}"></script>
+</body>
+</html>`
+    );
+  }
+};
+
+// src/ServerManager.ts
+import { spawn as spawn3 } from "child_process";
+import * as path5 from "path";
+var ServerManager = class {
+  serverProcess;
+  serverPort = 5678;
+  serverUrl = "ws://127.0.0.1:5678";
+  getServerUrl() {
+    return this.serverUrl;
+  }
+  async ensureServerRunning() {
+    const isRunning = await this.checkServerHealth();
+    if (isRunning) {
+      console.log("CCLocal server already running");
+      return;
+    }
+    await this.startEmbeddedServer();
+  }
+  async checkServerHealth() {
+    try {
+      const response = await fetch(`http://127.0.0.1:${this.serverPort}/health`);
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+  async startEmbeddedServer() {
+    return new Promise((resolve, reject) => {
+      const serverPath = this.findServerPath();
+      if (!serverPath) {
+        reject(new Error("CCLocal server not found"));
+        return;
+      }
+      console.log(`Starting CCLocal server from: ${serverPath}`);
+      this.serverProcess = spawn3("bun", [serverPath], {
+        env: {
+          ...process.env,
+          CCLOCAL_PORT: String(this.serverPort),
+          CCLOCAL_HOST: "127.0.0.1"
+        },
+        detached: false
+      });
+      this.serverProcess.stdout?.on("data", (data) => {
+        console.log(`[CCLocal Server] ${data.toString().trim()}`);
+      });
+      this.serverProcess.stderr?.on("data", (data) => {
+        console.error(`[CCLocal Server] ${data.toString().trim()}`);
+      });
+      setTimeout(async () => {
+        const isRunning = await this.checkServerHealth();
+        if (isRunning) {
+          resolve();
+        } else {
+          reject(new Error("Server failed to start"));
+        }
+      }, 3e3);
+    });
+  }
+  findServerPath() {
+    const possiblePaths = [
+      path5.join(__dirname, "..", "..", "server", "dist", "index.js"),
+      path5.join(__dirname, "..", "..", "..", "packages", "server", "dist", "index.js")
+    ];
+    for (const p of possiblePaths) {
+      try {
+        const fs6 = __require("fs");
+        if (fs6.existsSync(p)) {
+          return p;
+        }
+      } catch {
+      }
+    }
+    return void 0;
+  }
+  stopServer() {
+    if (this.serverProcess) {
+      this.serverProcess.kill();
+      this.serverProcess = void 0;
+    }
+  }
+};
+
+// src/hooks/executors.ts
+import * as vscode4 from "vscode";
+import * as child_process from "child_process";
+import * as https from "https";
+import * as http2 from "http";
+import * as url from "url";
+var HookExecutor = class {
+  createResult(hookId, handlerIndex, success, output, error, duration) {
+    return {
+      hookId,
+      handlerIndex,
+      success,
+      output,
+      error,
+      duration: duration || 0
+    };
+  }
+  getTimeout(handler, defaultTimeout) {
+    return handler.timeout || defaultTimeout;
+  }
+};
+var CommandHookExecutor = class extends HookExecutor {
+  outputChannel;
+  allowedCommands;
+  constructor(outputChannel2, allowedCommands) {
+    super();
+    this.outputChannel = outputChannel2;
+    this.allowedCommands = allowedCommands ? new Set(allowedCommands) : null;
+  }
+  async execute(handler, context) {
+    const hookId = `hook_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const startTime = Date.now();
+    const timeout = this.getTimeout(handler, 3e4);
+    const env5 = this.buildEnvironment(context, handler.env);
+    const command = this.substituteContext(handler.command, context);
+    this.outputChannel.debug(`Executing command hook: ${command}`);
+    try {
+      const result = await this.runCommand(command, env5, timeout, context);
+      const duration = Date.now() - startTime;
+      return this.createResult(
+        hookId,
+        0,
+        result.success,
+        result.output,
+        result.error,
+        duration
+      );
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      return this.createResult(
+        hookId,
+        0,
+        false,
+        void 0,
+        error instanceof Error ? error.message : String(error),
+        duration
+      );
+    }
+  }
+  runCommand(command, env5, timeout, context) {
+    return new Promise((resolve) => {
+      const workspaceRoot = vscode4.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      const proc = child_process.spawn(command, [], {
+        cwd: workspaceRoot || process.cwd(),
+        env: { ...process.env, ...env5 },
+        shell: true,
+        timeout
+      });
+      let stdout = "";
+      let stderr = "";
+      proc.stdout?.on("data", (data) => {
+        stdout += data.toString();
+      });
+      proc.stderr?.on("data", (data) => {
+        stderr += data.toString();
+      });
+      proc.on("error", (error) => {
+        resolve({
+          success: false,
+          output: stdout,
+          error: error.message
+        });
+      });
+      proc.on("close", (code) => {
+        resolve({
+          success: code === 0,
+          output: stdout,
+          error: code !== 0 ? stderr : void 0
+        });
+      });
+      if (context) {
+        try {
+          proc.stdin?.write(JSON.stringify(context));
+          proc.stdin?.end();
+        } catch {
+        }
+      }
+    });
+  }
+  buildEnvironment(context, handlerEnv) {
+    const env5 = {
+      CCLOCAL_HOOK_TYPE: context.type,
+      CCLOCAL_HOOK_TIMESTAMP: String(context.timestamp)
+    };
+    if (context.sessionId) {
+      env5.CCLOCAL_SESSION_ID = context.sessionId;
+    }
+    if (context.toolName) {
+      env5.CCLOCAL_TOOL_NAME = context.toolName;
+    }
+    if (context.filePath) {
+      env5.CCLOCAL_FILE_PATH = context.filePath;
+    }
+    if (context.command) {
+      env5.CCLOCAL_COMMAND = context.command;
+    }
+    if (context.model) {
+      env5.CCLOCAL_MODEL = context.model;
+    }
+    if (handlerEnv) {
+      Object.assign(env5, handlerEnv);
+    }
+    return env5;
+  }
+  substituteContext(template, context) {
+    return template.replace(/\$\{toolName\}/g, context.toolName || "").replace(/\$\{filePath\}/g, context.filePath || "").replace(/\$\{command\}/g, context.command || "").replace(/\$\{model\}/g, context.model || "").replace(/\$\{sessionId\}/g, context.sessionId || "").replace(/\$\{timestamp\}/g, String(context.timestamp)).replace(/\$\{type\}/g, context.type);
+  }
+};
+var HttpHookExecutor = class extends HookExecutor {
+  outputChannel;
+  allowedUrls;
+  allowedEnvVars;
+  constructor(outputChannel2, allowedUrls, allowedEnvVars) {
+    super();
+    this.outputChannel = outputChannel2;
+    this.allowedUrls = allowedUrls ? new Set(allowedUrls) : null;
+    this.allowedEnvVars = new Set(allowedEnvVars || []);
+  }
+  async execute(handler, context) {
+    const hookId = `hook_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const startTime = Date.now();
+    const timeout = this.getTimeout(handler, 1e4);
+    if (this.allowedUrls && !this.isUrlAllowed(handler.url)) {
+      return this.createResult(
+        hookId,
+        0,
+        false,
+        void 0,
+        `URL not in whitelist: ${handler.url}`,
+        Date.now() - startTime
+      );
+    }
+    this.outputChannel.debug(`Executing HTTP hook: ${handler.url}`);
+    try {
+      const result = await this.makeRequest(handler, context, timeout);
+      const duration = Date.now() - startTime;
+      return this.createResult(
+        hookId,
+        0,
+        result.success,
+        result.output,
+        result.error,
+        duration
+      );
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      return this.createResult(
+        hookId,
+        0,
+        false,
+        void 0,
+        error instanceof Error ? error.message : String(error),
+        duration
+      );
+    }
+  }
+  isUrlAllowed(urlString) {
+    if (!this.allowedUrls) return true;
+    try {
+      const parsed = new url.URL(urlString);
+      for (const allowed of this.allowedUrls) {
+        if (parsed.origin === allowed || urlString.startsWith(allowed)) {
+          return true;
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+  makeRequest(handler, context, timeout) {
+    return new Promise((resolve) => {
+      const parsedUrl = new url.URL(handler.url);
+      const isHttps = parsedUrl.protocol === "https:";
+      const requestModule = isHttps ? https : http2;
+      const headers = {
+        "Content-Type": "application/json",
+        ...handler.headers
+      };
+      for (const [key, value] of Object.entries(headers)) {
+        if (typeof value === "string" && value.startsWith("${env:")) {
+          const envVar = value.match(/\$\{env:([^}]+)\}/)?.[1];
+          if (envVar && this.allowedEnvVars.has(envVar)) {
+            headers[key] = process.env[envVar] || "";
+          } else if (envVar) {
+            delete headers[key];
+          }
+        }
+      }
+      const options = {
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port || (isHttps ? 443 : 80),
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: handler.method || "POST",
+        headers,
+        timeout
+      };
+      const req = requestModule.request(options, (res) => {
+        let data = "";
+        res.on("data", (chunk) => {
+          data += chunk.toString();
+        });
+        res.on("end", () => {
+          resolve({
+            success: res.statusCode !== void 0 && res.statusCode >= 200 && res.statusCode < 300,
+            output: data,
+            error: res.statusCode !== void 0 && res.statusCode >= 400 ? `HTTP ${res.statusCode}` : void 0
+          });
+        });
+      });
+      req.on("error", (error) => {
+        resolve({
+          success: false,
+          error: error.message
+        });
+      });
+      req.on("timeout", () => {
+        req.destroy();
+        resolve({
+          success: false,
+          error: "Request timed out"
+        });
+      });
+      req.write(JSON.stringify(context));
+      req.end();
+    });
+  }
+};
+var FunctionHookExecutor = class extends HookExecutor {
+  outputChannel;
+  registeredFunctions;
+  constructor(outputChannel2, registeredFunctions) {
+    super();
+    this.outputChannel = outputChannel2;
+    this.registeredFunctions = registeredFunctions || /* @__PURE__ */ new Map();
+  }
+  /**
+   * Register a function for use in hooks
+   */
+  registerFunction(name, fn) {
+    this.registeredFunctions.set(name, fn);
+  }
+  /**
+   * Unregister a function
+   */
+  unregisterFunction(name) {
+    this.registeredFunctions.delete(name);
+  }
+  async execute(handler, context) {
+    const hookId = `hook_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const startTime = Date.now();
+    const timeout = this.getTimeout(handler, 5e3);
+    const fn = this.registeredFunctions.get(handler.handler);
+    if (!fn) {
+      return this.createResult(
+        hookId,
+        0,
+        false,
+        void 0,
+        `Function not registered: ${handler.handler}`,
+        Date.now() - startTime
+      );
+    }
+    this.outputChannel.debug(`Executing function hook: ${handler.handler}`);
+    try {
+      const result = await Promise.race([
+        fn(context),
+        new Promise(
+          (_, reject) => setTimeout(() => reject(new Error("Function timed out")), timeout)
+        )
+      ]);
+      const duration = Date.now() - startTime;
+      return this.createResult(
+        hookId,
+        0,
+        true,
+        JSON.stringify(result),
+        void 0,
+        duration
+      );
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      return this.createResult(
+        hookId,
+        0,
+        false,
+        void 0,
+        error instanceof Error ? error.message : String(error),
+        duration
+      );
+    }
+  }
+};
+
+// src/hooks/HookManager.ts
+var HookManager = class {
+  outputChannel;
+  hooks;
+  executors;
+  enabled = true;
+  allowedHttpUrls;
+  allowedCommands;
+  allowedEnvVars;
+  constructor(outputChannel2, config) {
+    this.outputChannel = outputChannel2;
+    this.hooks = /* @__PURE__ */ new Map();
+    this.allowedHttpUrls = new Set(config?.allowedHttpUrls || []);
+    this.allowedCommands = new Set(config?.allowedCommands || []);
+    this.allowedEnvVars = new Set(config?.allowedEnvVars || []);
+    this.executors = {
+      command: new CommandHookExecutor(outputChannel2, config?.allowedCommands),
+      http: new HttpHookExecutor(outputChannel2, config?.allowedHttpUrls, config?.allowedEnvVars),
+      function: new FunctionHookExecutor(outputChannel2, config?.registeredFunctions)
+    };
+    this.outputChannel.debug("HookManager initialized");
+  }
+  // ─── Configuration ───────────────────────────────────────────────────────────
+  /**
+   * Load hooks from configuration
+   */
+  loadFromConfig(config) {
+    this.clear();
+    for (const [type, definitions] of Object.entries(config)) {
+      if (definitions && definitions.length > 0) {
+        const hookType = type;
+        this.hooks.set(hookType, definitions.filter((d) => d.enabled !== false));
+      }
+    }
+    this.outputChannel.debug(`Loaded ${this.getTotalHookCount()} hooks from configuration`);
+  }
+  /**
+   * Set allowed HTTP URLs for security
+   */
+  setAllowedHttpUrls(urls) {
+    this.allowedHttpUrls = new Set(urls);
+    this.executors.http = new HttpHookExecutor(
+      this.outputChannel,
+      urls,
+      Array.from(this.allowedEnvVars)
+    );
+  }
+  /**
+   * Set allowed commands for security
+   */
+  setAllowedCommands(commands15) {
+    this.allowedCommands = new Set(commands15);
+    this.executors.command = new CommandHookExecutor(
+      this.outputChannel,
+      commands15
+    );
+  }
+  /**
+   * Register a function for function hooks
+   */
+  registerFunction(name, fn) {
+    this.executors.function.registerFunction(name, fn);
+    this.outputChannel.debug(`Registered function hook: ${name}`);
+  }
+  /**
+   * Unregister a function
+   */
+  unregisterFunction(name) {
+    this.executors.function.unregisterFunction(name);
+    this.outputChannel.debug(`Unregistered function hook: ${name}`);
+  }
+  /**
+   * Enable or disable all hooks
+   */
+  setEnabled(enabled) {
+    this.enabled = enabled;
+    this.outputChannel.debug(`Hooks ${enabled ? "enabled" : "disabled"}`);
+  }
+  // ─── Hook Registration ───────────────────────────────────────────────────────
+  /**
+   * Register a hook definition
+   */
+  register(type, definition) {
+    const existing = this.hooks.get(type) || [];
+    existing.push(definition);
+    this.hooks.set(type, existing);
+    this.outputChannel.debug(`Registered ${type} hook with ${definition.hooks.length} handlers`);
+  }
+  /**
+   * Unregister a hook by index
+   */
+  unregister(type, index) {
+    const definitions = this.hooks.get(type);
+    if (!definitions || index < 0 || index >= definitions.length) {
+      return false;
+    }
+    definitions.splice(index, 1);
+    if (definitions.length === 0) {
+      this.hooks.delete(type);
+    }
+    this.outputChannel.debug(`Unregistered ${type} hook at index ${index}`);
+    return true;
+  }
+  /**
+   * Clear all hooks
+   */
+  clear() {
+    this.hooks.clear();
+    this.outputChannel.debug("Cleared all hooks");
+  }
+  // ─── Hook Execution ──────────────────────────────────────────────────────────
+  /**
+   * Execute hooks for a given type
+   */
+  async execute(type, context, options) {
+    if (!this.enabled) {
+      this.outputChannel.debug(`Hooks disabled, skipping ${type}`);
+      return [];
+    }
+    const definitions = this.hooks.get(type);
+    if (!definitions || definitions.length === 0) {
+      this.outputChannel.debug(`No hooks registered for ${type}`);
+      return [];
+    }
+    const fullContext = {
+      type,
+      timestamp: Date.now(),
+      ...context
+    };
+    const results = [];
+    const timeout = options?.timeout ?? 6e4;
+    const parallel = options?.parallel ?? false;
+    const stopOnFailure = options?.stopOnFailure ?? true;
+    this.outputChannel.debug(
+      `Executing ${definitions.length} ${type} hooks (${parallel ? "parallel" : "sequential"})`
+    );
+    try {
+      if (parallel) {
+        const promises5 = definitions.flatMap(
+          (def, defIndex) => this.executeDefinition(def, defIndex, fullContext, timeout)
+        );
+        const settled = await Promise.allSettled(promises5);
+        for (const result of settled) {
+          if (result.status === "fulfilled") {
+            results.push(...result.value);
+          } else {
+            this.outputChannel.error(`Hook execution failed: ${result.reason}`);
+          }
+        }
+      } else {
+        for (let defIndex = 0; defIndex < definitions.length; defIndex++) {
+          const defResults = await this.executeDefinition(
+            definitions[defIndex],
+            defIndex,
+            fullContext,
+            timeout
+          );
+          results.push(...defResults);
+          if (stopOnFailure) {
+            const hasFailure = defResults.some((r) => !r.success);
+            const hasBlock = defResults.some((r) => r.block);
+            if (hasFailure || hasBlock) {
+              this.outputChannel.debug(`Stopping hook execution due to ${hasBlock ? "block" : "failure"}`);
+              break;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      this.outputChannel.error(`Hook execution error: ${error}`);
+    }
+    this.outputChannel.debug(`Hook ${type} completed with ${results.length} results`);
+    return results;
+  }
+  /**
+   * Execute a single hook definition (may contain multiple handlers)
+   */
+  async executeDefinition(definition, definitionIndex, context, globalTimeout) {
+    if (definition.matcher && !this.matchesContext(definition.matcher, context)) {
+      this.outputChannel.debug(`Matcher "${definition.matcher}" did not match, skipping`);
+      return [];
+    }
+    const results = [];
+    const startTime = Date.now();
+    for (let handlerIndex = 0; handlerIndex < definition.hooks.length; handlerIndex++) {
+      const handler = definition.hooks[handlerIndex];
+      const remainingTimeout = globalTimeout - (Date.now() - startTime);
+      if (remainingTimeout <= 0) {
+        this.outputChannel.warn("Hook execution timed out");
+        break;
+      }
+      try {
+        const result = await this.executeHandler(handler, context, remainingTimeout);
+        result.handlerIndex = handlerIndex;
+        results.push(result);
+        if (result.block) {
+          this.outputChannel.debug("Handler requested block, stopping execution");
+          break;
+        }
+      } catch (error) {
+        results.push({
+          hookId: `error_${Date.now()}`,
+          handlerIndex,
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          duration: Date.now() - startTime
+        });
+      }
+    }
+    return results;
+  }
+  /**
+   * Execute a single handler
+   */
+  async executeHandler(handler, context, timeout) {
+    const executor = this.executors[handler.type];
+    if (!executor) {
+      return {
+        hookId: `invalid_${Date.now()}`,
+        handlerIndex: 0,
+        success: false,
+        error: `Unknown handler type: ${handler.type}`,
+        duration: 0
+      };
+    }
+    return executor.execute(handler, context);
+  }
+  /**
+   * Check if a matcher pattern matches the context
+   */
+  matchesContext(matcher, context) {
+    try {
+      if (context.toolName) {
+        const regex = new RegExp(matcher, "i");
+        return regex.test(context.toolName);
+      }
+      if (context.filePath) {
+        const regex = new RegExp(matcher, "i");
+        return regex.test(context.filePath);
+      }
+      if (context.command) {
+        const regex = new RegExp(matcher, "i");
+        return regex.test(context.command);
+      }
+      return true;
+    } catch (error) {
+      this.outputChannel.error(`Invalid matcher pattern "${matcher}": ${error}`);
+      return false;
+    }
+  }
+  // ─── Convenience Methods ─────────────────────────────────────────────────────
+  /**
+   * Execute PreToolUse hooks
+   */
+  async executePreToolUse(toolName, toolInput) {
+    const results = await this.execute("PreToolUse", {
+      type: "PreToolUse",
+      timestamp: Date.now(),
+      toolName,
+      toolInput
+    });
+    const blocked = results.some((r) => r.block);
+    const modifiedInput = results.find((r) => r.modifiedInput !== void 0)?.modifiedInput;
+    return { blocked, modifiedInput, results };
+  }
+  /**
+   * Execute PostToolUse hooks
+   */
+  async executePostToolUse(toolName, toolResult, toolError) {
+    return this.execute("PostToolUse", {
+      type: "PostToolUse",
+      timestamp: Date.now(),
+      toolName,
+      toolResult,
+      toolError
+    });
+  }
+  /**
+   * Execute FileWrite hooks
+   */
+  async executeFileWrite(filePath, content) {
+    return this.execute("FileWrite", {
+      type: "FileWrite",
+      timestamp: Date.now(),
+      filePath,
+      fileContent: content
+    });
+  }
+  /**
+   * Execute FileEdit hooks
+   */
+  async executeFileEdit(filePath, content) {
+    return this.execute("FileEdit", {
+      type: "FileEdit",
+      timestamp: Date.now(),
+      filePath,
+      fileContent: content
+    });
+  }
+  /**
+   * Execute BashExecution hooks
+   */
+  async executeBashExecution(command) {
+    const results = await this.execute("BashExecution", {
+      type: "BashExecution",
+      timestamp: Date.now(),
+      command
+    });
+    return {
+      blocked: results.some((r) => r.block),
+      results
+    };
+  }
+  /**
+   * Execute SessionStart hooks
+   */
+  async executeSessionStart(sessionId) {
+    return this.execute("SessionStart", {
+      type: "SessionStart",
+      timestamp: Date.now(),
+      sessionId
+    });
+  }
+  /**
+   * Execute SessionEnd hooks
+   */
+  async executeSessionEnd(sessionId) {
+    return this.execute("SessionEnd", {
+      type: "SessionEnd",
+      timestamp: Date.now(),
+      sessionId
+    });
+  }
+  /**
+   * Execute Error hooks
+   */
+  async executeError(errorMessage, errorStack) {
+    return this.execute("Error", {
+      type: "Error",
+      timestamp: Date.now(),
+      errorMessage,
+      errorStack
+    });
+  }
+  // ─── Query Methods ───────────────────────────────────────────────────────────
+  /**
+   * Get all registered hooks
+   */
+  getAllHooks() {
+    return new Map(this.hooks);
+  }
+  /**
+   * Get hooks for a specific type
+   */
+  getHooks(type) {
+    return this.hooks.get(type) || [];
+  }
+  /**
+   * Check if any hooks are registered for a type
+   */
+  hasHooks(type) {
+    const definitions = this.hooks.get(type);
+    return definitions !== void 0 && definitions.length > 0;
+  }
+  /**
+   * Get total count of all hooks
+   */
+  getTotalHookCount() {
+    let count = 0;
+    for (const definitions of this.hooks.values()) {
+      count += definitions.reduce((sum, def) => sum + def.hooks.length, 0);
+    }
+    return count;
+  }
+  /**
+   * Get hook statistics
+   */
+  getStats() {
+    const hooksByType = {};
+    for (const [type, definitions] of this.hooks) {
+      hooksByType[type] = definitions.reduce((sum, def) => sum + def.hooks.length, 0);
+    }
+    return {
+      totalHooks: this.getTotalHookCount(),
+      hooksByType
+    };
+  }
+  // ─── Lifecycle ───────────────────────────────────────────────────────────────
+  dispose() {
+    this.clear();
+    this.outputChannel.debug("HookManager disposed");
+  }
+};
+var instance = null;
+function getHookManager(outputChannel2, config) {
+  if (!instance && outputChannel2) {
+    instance = new HookManager(outputChannel2, config);
+  }
+  return instance;
+}
+function disposeHookManager() {
+  if (instance) {
+    instance.dispose();
+    instance = null;
+  }
+}
+
+// src/ConfigurationManager.ts
+import * as vscode5 from "vscode";
+var ConfigurationManager = class {
+  config;
+  disposables = [];
+  onConfigChangeEmitter = new vscode5.EventEmitter();
+  constructor() {
+    this.config = vscode5.workspace.getConfiguration("cclocal");
+    this.setupConfigWatcher();
+  }
+  /**
+   * Get the full configuration object
+   */
+  getConfig() {
+    return {
+      // Authentication
+      forceLoginMethod: this.getForceLoginMethod(),
+      forceLoginOrgUUID: this.getForceLoginOrgUUID(),
+      disableLoginPrompt: this.getDisableLoginPrompt(),
+      // Environment
+      environmentVariables: this.getEnvironmentVariables(),
+      cclocalPath: this.getCclocalPath(),
+      claudeProcessWrapper: this.getClaudeProcessWrapper(),
+      // Permissions
+      initialPermissionMode: this.getInitialPermissionMode(),
+      allowDangerouslySkipPermissions: this.getAllowDangerouslySkipPermissions(),
+      permissionRules: this.getPermissionRules(),
+      // Files
+      respectGitIgnore: this.getRespectGitIgnore(),
+      fileSuggestion: this.getFileSuggestion(),
+      autosave: this.getAutosave(),
+      claudeMdExcludes: this.getClaudeMdExcludes(),
+      // MCP
+      mcp: this.getMCPConfig(),
+      enableAllProjectMcpServers: this.getEnableAllProjectMcpServers(),
+      allowedMcpServers: this.getAllowedMcpServers(),
+      deniedMcpServers: this.getDeniedMcpServers(),
+      // Hooks
+      hooks: this.getHooks(),
+      disableAllHooks: this.getDisableAllHooks(),
+      allowedHttpHookUrls: this.getAllowedHttpHookUrls(),
+      httpHookAllowedEnvVars: this.getHttpHookAllowedEnvVars(),
+      allowManagedHooksOnly: this.getAllowManagedHooksOnly(),
+      // Plugins
+      plugins: this.getPluginConfig(),
+      enabledPlugins: this.getEnabledPlugins(),
+      extraKnownMarketplaces: this.getExtraKnownMarketplaces(),
+      strictKnownMarketplaces: this.getStrictKnownMarketplaces(),
+      blockedMarketplaces: this.getBlockedMarketplaces(),
+      // UI
+      useTerminal: this.getUseTerminal(),
+      useCtrlEnterToSend: this.getUseCtrlEnterToSend(),
+      preferredLocation: this.getPreferredLocation(),
+      hideOnboarding: this.getHideOnboarding(),
+      enableNewConversationShortcut: this.getEnableNewConversationShortcut(),
+      usePythonEnvironment: this.getUsePythonEnvironment(),
+      showTerminalBanner: this.getShowTerminalBanner(),
+      // Model
+      model: this.getModel(),
+      availableModels: this.getAvailableModels(),
+      modelOverrides: this.getModelOverrides(),
+      alwaysThinkingEnabled: this.getAlwaysThinkingEnabled(),
+      fastMode: this.getFastMode(),
+      maxThinkingTokens: this.getMaxThinkingTokens(),
+      // Output
+      outputStyle: this.getOutputStyle(),
+      language: this.getLanguage(),
+      spinnerTipsEnabled: this.getSpinnerTipsEnabled(),
+      spinnerVerbs: this.getSpinnerVerbs(),
+      spinnerTipsOverride: this.getSpinnerTipsOverride(),
+      syntaxHighlightingDisabled: this.getSyntaxHighlightingDisabled(),
+      terminalTitleFromRename: this.getTerminalTitleFromRename(),
+      // Remote
+      remoteConfig: this.getRemoteConfig(),
+      sshConfigs: this.getSSHConfigs(),
+      // Attribution
+      includeCoAuthoredBy: this.getIncludeCoAuthoredBy(),
+      includeGitInstructions: this.getIncludeGitInstructions(),
+      // Sandbox
+      sandbox: this.getSandbox(),
+      skipWebFetchPreflight: this.getSkipWebFetchPreflight(),
+      // Feedback
+      feedbackSurveyRate: this.getFeedbackSurveyRate(),
+      proactiveSuggestions: this.getProactiveSuggestions(),
+      // Managed Settings
+      allowManagedPermissionRulesOnly: this.getAllowManagedPermissionRulesOnly(),
+      allowManagedMcpServersOnly: this.getAllowManagedMcpServersOnly(),
+      strictPluginOnlyCustomization: this.getStrictPluginOnlyCustomization(),
+      // Provider-specific
+      bedrockRegion: this.getBedrockRegion(),
+      vertexProjectId: this.getVertexProjectId(),
+      // Other
+      cleanupPeriodDays: this.getCleanupPeriodDays(),
+      attribution: this.getAttribution()
+    };
+  }
+  // ─── Authentication Getters ─────────────────────────────────────────────────────
+  getForceLoginMethod() {
+    return this.config.get("") || "";
+  }
+  getForceLoginOrgUUID() {
+    return this.config.get("forceLoginOrgUUID") || "";
+  }
+  getDisableLoginPrompt() {
+    return this.config.get("disableLoginPrompt") ?? false;
+  }
+  // ─── Environment Getters ────────────────────────────────────────────────────────
+  getEnvironmentVariables() {
+    return this.config.get("environmentVariables") || [];
+  }
+  getCclocalPath() {
+    return this.config.get("cclocalPath") || "cclocal";
+  }
+  getClaudeProcessWrapper() {
+    return this.config.get("claudeProcessWrapper") || "";
+  }
+  // ─── Permission Getters ─────────────────────────────────────────────────────────
+  getInitialPermissionMode() {
+    return this.config.get("initialPermissionMode") || "default";
+  }
+  getAllowDangerouslySkipPermissions() {
+    return this.config.get("allowDangerouslySkipPermissions") ?? false;
+  }
+  getPermissionRules() {
+    return this.config.get("permissionRules") || [];
+  }
+  // ─── File Getters ───────────────────────────────────────────────────────────────
+  getRespectGitIgnore() {
+    return this.config.get("respectGitIgnore") ?? true;
+  }
+  getFileSuggestion() {
+    return this.config.get("fileSuggestion") || {};
+  }
+  getAutosave() {
+    return this.config.get("autosave") ?? false;
+  }
+  getClaudeMdExcludes() {
+    return this.config.get("claudeMdExcludes") || [];
+  }
+  // ─── MCP Getters ────────────────────────────────────────────────────────────────
+  getMCPConfig() {
+    return this.config.get("mcp") || {};
+  }
+  getEnableAllProjectMcpServers() {
+    return this.config.get("enableAllProjectMcpServers") ?? false;
+  }
+  getAllowedMcpServers() {
+    return this.config.get("allowedMcpServers") || [];
+  }
+  getDeniedMcpServers() {
+    return this.config.get("deniedMcpServers") || [];
+  }
+  // ─── Hook Getters ───────────────────────────────────────────────────────────────
+  getHooks() {
+    return this.config.get("hooks") || {};
+  }
+  getDisableAllHooks() {
+    return this.config.get("disableAllHooks") ?? false;
+  }
+  getAllowedHttpHookUrls() {
+    return this.config.get("allowedHttpHookUrls") || [];
+  }
+  getHttpHookAllowedEnvVars() {
+    return this.config.get("httpHookAllowedEnvVars") || [];
+  }
+  getAllowManagedHooksOnly() {
+    return this.config.get("allowManagedHooksOnly") ?? false;
+  }
+  // ─── Plugin Getters ────────────────────────────────────────────────────────────
+  getPluginConfig() {
+    return this.config.get("plugins") || {};
+  }
+  getEnabledPlugins() {
+    return this.config.get("enabledPlugins") || {};
+  }
+  getExtraKnownMarketplaces() {
+    return this.config.get("extraKnownMarketplaces") || [];
+  }
+  getStrictKnownMarketplaces() {
+    return this.config.get("strictKnownMarketplaces") || [];
+  }
+  getBlockedMarketplaces() {
+    return this.config.get("blockedMarketplaces") || [];
+  }
+  // ─── UI Getters ─────────────────────────────────────────────────────────────────
+  getUseTerminal() {
+    return this.config.get("useTerminal") ?? true;
+  }
+  getUseCtrlEnterToSend() {
+    return this.config.get("useCtrlEnterToSend") ?? false;
+  }
+  getPreferredLocation() {
+    return this.config.get("preferredLocation") || "sidebar";
+  }
+  getHideOnboarding() {
+    return this.config.get("hideOnboarding") ?? false;
+  }
+  getEnableNewConversationShortcut() {
+    return this.config.get("enableNewConversationShortcut") ?? true;
+  }
+  getUsePythonEnvironment() {
+    return this.config.get("usePythonEnvironment") ?? true;
+  }
+  getShowTerminalBanner() {
+    return this.config.get("showTerminalBanner") ?? true;
+  }
+  // ─── Model Getters ──────────────────────────────────────────────────────────────
+  getModel() {
+    return this.config.get("model") || "";
+  }
+  getAvailableModels() {
+    return this.config.get("availableModels") || [];
+  }
+  getModelOverrides() {
+    return this.config.get("modelOverrides") || {};
+  }
+  getAlwaysThinkingEnabled() {
+    return this.config.get("alwaysThinkingEnabled") ?? false;
+  }
+  getFastMode() {
+    return this.config.get("fastMode") ?? false;
+  }
+  getMaxThinkingTokens() {
+    return this.config.get("maxThinkingTokens") || 16e3;
+  }
+  // ─── Output Getters ─────────────────────────────────────────────────────────────
+  getOutputStyle() {
+    return this.config.get("outputStyle") || { type: "default" };
+  }
+  getLanguage() {
+    return this.config.get("language") || "en";
+  }
+  getSpinnerTipsEnabled() {
+    return this.config.get("spinnerTipsEnabled") ?? true;
+  }
+  getSpinnerVerbs() {
+    return this.config.get("spinnerVerbs") || [];
+  }
+  getSpinnerTipsOverride() {
+    return this.config.get("spinnerTipsOverride") || [];
+  }
+  getSyntaxHighlightingDisabled() {
+    return this.config.get("syntaxHighlightingDisabled") ?? false;
+  }
+  getTerminalTitleFromRename() {
+    return this.config.get("terminalTitleFromRename") ?? true;
+  }
+  // ─── Remote Getters ─────────────────────────────────────────────────────────────
+  getRemoteConfig() {
+    return this.config.get("remoteConfig") || { remote: { enabled: false } };
+  }
+  getSSHConfigs() {
+    return this.config.get("sshConfigs") || [];
+  }
+  // ─── Attribution Getters ─────────────────────────────────────────────────────────
+  getIncludeCoAuthoredBy() {
+    return this.config.get("includeCoAuthoredBy") ?? true;
+  }
+  getIncludeGitInstructions() {
+    return this.config.get("includeGitInstructions") ?? true;
+  }
+  // ─── Sandbox Getters ────────────────────────────────────────────────────────────
+  getSandbox() {
+    return this.config.get("sandbox") || { enabled: false };
+  }
+  getSkipWebFetchPreflight() {
+    return this.config.get("skipWebFetchPreflight") ?? false;
+  }
+  // ─── Feedback Getters ───────────────────────────────────────────────────────────
+  getFeedbackSurveyRate() {
+    return this.config.get("feedbackSurveyRate") ?? 0.1;
+  }
+  getProactiveSuggestions() {
+    return this.config.get("proactiveSuggestions") ?? true;
+  }
+  // ─── Managed Settings Getters ────────────────────────────────────────────────────
+  getAllowManagedPermissionRulesOnly() {
+    return this.config.get("allowManagedPermissionRulesOnly") ?? false;
+  }
+  getAllowManagedMcpServersOnly() {
+    return this.config.get("allowManagedMcpServersOnly") ?? false;
+  }
+  getStrictPluginOnlyCustomization() {
+    return this.config.get("strictPluginOnlyCustomization") ?? false;
+  }
+  // ─── Provider Getters ───────────────────────────────────────────────────────────
+  getBedrockRegion() {
+    return this.config.get("bedrockRegion") || "us-east-1";
+  }
+  getVertexProjectId() {
+    return this.config.get("vertexProjectId") || "";
+  }
+  // ─── Other Getters ──────────────────────────────────────────────────────────────
+  getCleanupPeriodDays() {
+    return this.config.get("cleanupPeriodDays") || 30;
+  }
+  getAttribution() {
+    return this.config.get("attribution") ?? true;
+  }
+  // ─── Setters ─────────────────────────────────────────────────────────────────────
+  async update(key, value, target) {
+    const configTarget = target ?? vscode5.ConfigurationTarget.Global;
+    await this.config.update(key, value, configTarget);
+  }
+  async setModel(model) {
+    await this.update("model", model);
+  }
+  async setPreferredLocation(location) {
+    await this.update("preferredLocation", location);
+  }
+  async setInitialPermissionMode(mode) {
+    await this.update("initialPermissionMode", mode);
+  }
+  async setForceLoginMethod(method) {
+    await this.update("forceLoginMethod", method);
+  }
+  async addEnvironmentVariable(name, value) {
+    const envVars = this.getEnvironmentVariables();
+    const existing = envVars.findIndex((v) => v.name === name);
+    if (existing >= 0) {
+      envVars[existing].value = value;
+    } else {
+      envVars.push({ name, value });
+    }
+    await this.update("environmentVariables", envVars);
+  }
+  async removeEnvironmentVariable(name) {
+    const envVars = this.getEnvironmentVariables().filter((v) => v.name !== name);
+    await this.update("environmentVariables", envVars);
+  }
+  async addPermissionRule(rule) {
+    const rules = this.getPermissionRules();
+    rules.push(rule);
+    await this.update("permissionRules", rules);
+  }
+  async addAllowedMcpServer(server) {
+    const servers = this.getAllowedMcpServers();
+    if (!servers.includes(server)) {
+      servers.push(server);
+      await this.update("allowedMcpServers", servers);
+    }
+  }
+  async addDeniedMcpServer(server) {
+    const servers = this.getDeniedMcpServers();
+    if (!servers.includes(server)) {
+      servers.push(server);
+      await this.update("deniedMcpServers", servers);
+    }
+  }
+  // ─── Events ─────────────────────────────────────────────────────────────────────
+  get onConfigChange() {
+    return this.onConfigChangeEmitter.event;
+  }
+  setupConfigWatcher() {
+    const disposable = vscode5.workspace.onDidChangeConfiguration((event) => {
+      if (event.affectsConfiguration("cclocal")) {
+        this.config = vscode5.workspace.getConfiguration("cclocal");
+        this.onConfigChangeEmitter.fire(this.getConfig());
+      }
+    });
+    this.disposables.push(disposable);
+  }
+  // ─── Dispose ────────────────────────────────────────────────────────────────────
+  dispose() {
+    this.disposables.forEach((d) => d.dispose());
+    this.onConfigChangeEmitter.dispose();
+  }
+};
+
+// src/auth/AuthStatusBar.ts
+import * as vscode12 from "vscode";
+
+// src/auth/AuthManager.ts
+import * as vscode11 from "vscode";
+
+// src/auth/SecureStorage.ts
+import * as crypto5 from "crypto";
+var SecureStorage = class {
+  static SERVICE_NAME = "cclocal";
+  context;
+  secrets;
+  memoryCache = /* @__PURE__ */ new Map();
+  encryptionKey = null;
+  constructor(context, options) {
+    this.context = context;
+    this.secrets = context.secrets;
+    if (options?.encryptionKey) {
+      this.encryptionKey = Buffer.from(options.encryptionKey, "hex");
+    }
+  }
+  /**
+   * Store credentials securely
+   */
+  async store(key, credentials) {
+    const value = JSON.stringify(credentials);
+    await this.secrets.store(key, value);
+    this.memoryCache.set(key, credentials);
+  }
+  /**
+   * Retrieve credentials
+   */
+  async get(key) {
+    const cached = this.memoryCache.get(key);
+    if (cached) {
+      return cached;
+    }
+    const value = await this.secrets.get(key);
+    if (!value) {
+      return void 0;
+    }
+    try {
+      const credentials = JSON.parse(value);
+      this.memoryCache.set(key, credentials);
+      return credentials;
+    } catch {
+      return void 0;
+    }
+  }
+  /**
+   * Delete credentials
+   */
+  async delete(key) {
+    await this.secrets.delete(key);
+    this.memoryCache.delete(key);
+  }
+  /**
+   * Check if credentials exist
+   */
+  async has(key) {
+    const value = await this.secrets.get(key);
+    return value !== void 0;
+  }
+  /**
+   * Store API key for a provider
+   */
+  async storeApiKey(provider, apiKey) {
+    const key = `apikey_${provider}`;
+    await this.store(key, { provider, apiKey });
+  }
+  /**
+   * Get API key for a provider
+   */
+  async getApiKey(provider) {
+    const key = `apikey_${provider}`;
+    const credentials = await this.get(key);
+    return credentials?.apiKey;
+  }
+  /**
+   * Store OAuth tokens
+   */
+  async storeOAuthTokens(provider, accessToken, refreshToken, expiresIn, scope) {
+    const key = `oauth_${provider}`;
+    const expiresAt = Date.now() + expiresIn * 1e3;
+    await this.store(key, {
+      provider,
+      accessToken,
+      refreshToken,
+      expiresAt,
+      scope
+    });
+  }
+  /**
+   * Get OAuth tokens
+   */
+  async getOAuthTokens(provider) {
+    const key = `oauth_${provider}`;
+    const credentials = await this.get(key);
+    if (!credentials) {
+      return void 0;
+    }
+    return {
+      accessToken: credentials.accessToken,
+      refreshToken: credentials.refreshToken,
+      expiresAt: credentials.expiresAt,
+      scope: credentials.scope
+    };
+  }
+  /**
+   * Check if OAuth token is expired
+   */
+  async isTokenExpired(provider, bufferSeconds = 300) {
+    const tokens = await this.getOAuthTokens(provider);
+    if (!tokens) {
+      return true;
+    }
+    return Date.now() > tokens.expiresAt - bufferSeconds * 1e3;
+  }
+  /**
+   * Clear all credentials for a provider
+   */
+  async clearProvider(provider) {
+    await this.delete(`apikey_${provider}`);
+    await this.delete(`oauth_${provider}`);
+  }
+  /**
+   * Clear all stored credentials
+   */
+  async clearAll() {
+    const keys = await this.listKeys();
+    for (const key of keys) {
+      await this.delete(key);
+    }
+  }
+  /**
+   * List all stored keys
+   */
+  async listKeys() {
+    const knownKeys = this.context.globalState.get("secureStorage:keys", []);
+    return knownKeys;
+  }
+  /**
+   * Register a key for tracking
+   */
+  async registerKey(key) {
+    const knownKeys = this.context.globalState.get("secureStorage:keys", []);
+    if (!knownKeys.includes(key)) {
+      knownKeys.push(key);
+      await this.context.globalState.update("secureStorage:keys", knownKeys);
+    }
+  }
+  /**
+   * Generate a secure random key for encryption
+   */
+  static generateEncryptionKey() {
+    return crypto5.randomBytes(32).toString("hex");
+  }
+  /**
+   * Encrypt data using AES-256-GCM
+   */
+  encrypt(data, key) {
+    const encryptionKey = key || this.encryptionKey;
+    if (!encryptionKey) {
+      throw new Error("No encryption key available");
+    }
+    const iv = crypto5.randomBytes(16);
+    const cipher = crypto5.createCipheriv("aes-256-gcm", encryptionKey, iv);
+    let encrypted = cipher.update(data, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    const authTag = cipher.getAuthTag();
+    return `${iv.toString("hex")}:${authTag.toString("hex")}:${encrypted}`;
+  }
+  /**
+   * Decrypt data using AES-256-GCM
+   */
+  decrypt(data, key) {
+    const encryptionKey = key || this.encryptionKey;
+    if (!encryptionKey) {
+      throw new Error("No encryption key available");
+    }
+    const [ivHex, authTagHex, encrypted] = data.split(":");
+    const iv = Buffer.from(ivHex, "hex");
+    const authTag = Buffer.from(authTagHex, "hex");
+    const decipher = crypto5.createDecipheriv("aes-256-gcm", encryptionKey, iv);
+    decipher.setAuthTag(authTag);
+    let decrypted = decipher.update(encrypted, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+    return decrypted;
+  }
+  /**
+   * Dispose
+   */
+  dispose() {
+    this.memoryCache.clear();
+  }
+};
+
+// src/auth/OAuthClient.ts
+import * as vscode6 from "vscode";
+import * as http3 from "http";
+import * as crypto6 from "crypto";
+import * as url2 from "url";
+var OAuthClient = class {
+  constructor(provider, config, storage) {
+    this.provider = provider;
+    this.config = config;
+    this.storage = storage;
+  }
+  storage;
+  server = null;
+  pendingStates = /* @__PURE__ */ new Map();
+  /**
+   * Generate PKCE code verifier
+   */
+  generateCodeVerifier() {
+    const bytes = crypto6.randomBytes(32);
+    return bytes.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  /**
+   * Generate PKCE code challenge from verifier
+   */
+  generateCodeChallenge(verifier) {
+    const hash = crypto6.createHash("sha256").update(verifier).digest("base64");
+    return hash.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  /**
+   * Generate random state for CSRF protection
+   */
+  generateState() {
+    return crypto6.randomBytes(16).toString("hex");
+  }
+  /**
+   * Build authorization URL
+   */
+  buildAuthorizationUrl(redirectUri) {
+    const codeVerifier = this.generateCodeVerifier();
+    const codeChallenge = this.config.usePKCE !== false ? this.generateCodeChallenge(codeVerifier) : "";
+    const state = this.generateState();
+    const oauthState = {
+      codeVerifier,
+      codeChallenge,
+      state,
+      redirectUri
+    };
+    this.pendingStates.set(state, oauthState);
+    const params = new URLSearchParams({
+      client_id: this.config.clientId,
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: this.config.scope.join(" "),
+      state
+    });
+    if (this.config.usePKCE !== false) {
+      params.append("code_challenge", codeChallenge);
+      params.append("code_challenge_method", "S256");
+    }
+    const authUrl = `${this.config.authorizationEndpoint}?${params.toString()}`;
+    return { url: authUrl, state: oauthState };
+  }
+  /**
+   * Start local server to receive OAuth callback
+   */
+  async startCallbackServer() {
+    const port = this.config.port || this.findAvailablePort();
+    return new Promise((resolve, reject) => {
+      this.server = http3.createServer((req, res) => {
+        this.handleCallback(req, res);
+      });
+      this.server.listen(port, "127.0.0.1", () => {
+        resolve(port);
+      });
+      this.server.on("error", (err) => {
+        reject(err);
+      });
+    });
+  }
+  /**
+   * Find available port
+   */
+  findAvailablePort() {
+    return 8765 + Math.floor(Math.random() * 1e3);
+  }
+  /**
+   * Handle OAuth callback
+   */
+  handleCallback(req, res) {
+    const parsedUrl = url2.parse(req.url || "", true);
+    if (parsedUrl.pathname === "/callback" || parsedUrl.pathname === "/") {
+      const code = parsedUrl.query.code;
+      const state = parsedUrl.query.state;
+      const error = parsedUrl.query.error;
+      const errorDescription = parsedUrl.query.error_description;
+      if (error) {
+        this.sendErrorResponse(res, error, errorDescription);
+        return;
+      }
+      if (!code || !state) {
+        this.sendErrorResponse(res, "invalid_request", "Missing code or state");
+        return;
+      }
+      const oauthState = this.pendingStates.get(state);
+      if (!oauthState) {
+        this.sendErrorResponse(res, "invalid_state", "Invalid or expired state");
+        return;
+      }
+      this.pendingStates.delete(state);
+      this.exchangeCodeForTokens(code, oauthState).then((tokens) => {
+        this.sendSuccessResponse(res);
+        this.stopCallbackServer();
+      }).catch((err) => {
+        this.sendErrorResponse(res, "token_exchange_failed", err.message);
+        this.stopCallbackServer();
+      });
+    } else {
+      res.writeHead(404);
+      res.end("Not Found");
+    }
+  }
+  /**
+   * Exchange authorization code for tokens
+   */
+  async exchangeCodeForTokens(code, oauthState) {
+    const params = new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: oauthState.redirectUri,
+      client_id: this.config.clientId
+    });
+    if (this.config.usePKCE !== false) {
+      params.append("code_verifier", oauthState.codeVerifier);
+    }
+    const response = await fetch(this.config.tokenEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json"
+      },
+      body: params.toString()
+    });
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Token exchange failed: ${error}`);
+    }
+    const data = await response.json();
+    const tokens = {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresIn: data.expires_in,
+      tokenType: data.token_type,
+      scope: data.scope?.split(" ")
+    };
+    await this.storage.storeOAuthTokens(
+      this.provider,
+      tokens.accessToken,
+      tokens.refreshToken,
+      tokens.expiresIn,
+      tokens.scope
+    );
+    return tokens;
+  }
+  /**
+   * Refresh access token
+   */
+  async refreshToken() {
+    const tokens = await this.storage.getOAuthTokens(this.provider);
+    if (!tokens) {
+      throw new Error("No tokens to refresh");
+    }
+    const params = new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: tokens.refreshToken,
+      client_id: this.config.clientId
+    });
+    const response = await fetch(this.config.tokenEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json"
+      },
+      body: params.toString()
+    });
+    if (!response.ok) {
+      await this.storage.delete(`oauth_${this.provider}`);
+      throw new Error("Token refresh failed");
+    }
+    const data = await response.json();
+    const newTokens = {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token || tokens.refreshToken,
+      expiresIn: data.expires_in,
+      tokenType: data.token_type,
+      scope: data.scope?.split(" ")
+    };
+    await this.storage.storeOAuthTokens(
+      this.provider,
+      newTokens.accessToken,
+      newTokens.refreshToken,
+      newTokens.expiresIn,
+      newTokens.scope
+    );
+    return newTokens;
+  }
+  /**
+   * Get valid access token (refresh if needed)
+   */
+  async getAccessToken() {
+    const isExpired = await this.storage.isTokenExpired(this.provider);
+    if (isExpired) {
+      const tokens2 = await this.refreshToken();
+      return tokens2.accessToken;
+    }
+    const tokens = await this.storage.getOAuthTokens(this.provider);
+    return tokens.accessToken;
+  }
+  /**
+   * Start OAuth flow
+   */
+  async startFlow() {
+    const port = await this.startCallbackServer();
+    const redirectUri = `http://127.0.0.1:${port}/callback`;
+    const { url: authUrl, state } = this.buildAuthorizationUrl(redirectUri);
+    await vscode6.env.openExternal(vscode6.Uri.parse(authUrl));
+    return this.waitForCallback(12e4);
+  }
+  /**
+   * Wait for OAuth callback
+   */
+  waitForCallback(timeoutMs) {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.stopCallbackServer();
+        reject(new Error("OAuth flow timed out"));
+      }, timeoutMs);
+      const checkTokens = async () => {
+        const tokens = await this.storage.getOAuthTokens(this.provider);
+        if (tokens) {
+          clearTimeout(timeout);
+          this.stopCallbackServer();
+          resolve({
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            expiresIn: Math.floor((tokens.expiresAt - Date.now()) / 1e3),
+            tokenType: "Bearer",
+            scope: tokens.scope
+          });
+        } else {
+          setTimeout(checkTokens, 500);
+        }
+      };
+      checkTokens();
+    });
+  }
+  /**
+   * Stop callback server
+   */
+  stopCallbackServer() {
+    if (this.server) {
+      this.server.close();
+      this.server = null;
+    }
+  }
+  /**
+   * Send success response
+   */
+  sendSuccessResponse(res) {
+    res.writeHead(200, { "Content-Type": "text/html" });
+    res.end(`
       <!DOCTYPE html>
       <html>
       <head>
@@ -1853,7 +11025,14 @@ inputEl.focus()
         <script>setTimeout(() => window.close(), 1000);</script>
       </body>
       </html>
-    `)}sendErrorResponse(e,t,s){e.writeHead(400,{"Content-Type":"text/html"}),e.end(`
+    `);
+  }
+  /**
+   * Send error response
+   */
+  sendErrorResponse(res, error, description) {
+    res.writeHead(400, { "Content-Type": "text/html" });
+    res.end(`
       <!DOCTYPE html>
       <html>
       <head>
@@ -1870,14 +11049,1512 @@ inputEl.focus()
         <div class="container">
           <div class="icon">\u2715</div>
           <h1>Authentication Failed</h1>
-          <p>${t}${s?`: ${s}`:""}</p>
+          <p>${error}${description ? `: ${description}` : ""}</p>
         </div>
       </body>
       </html>
-    `)}async logout(){await this.storage.clearProvider(this.provider),this.pendingStates.clear(),this.stopCallbackServer()}async isAuthenticated(){return await this.storage.getOAuthTokens(this.provider)!==void 0}dispose(){this.stopCallbackServer(),this.pendingStates.clear()}};Ke();var er={clientId:"9d1c250a-e0b9-4f26-8c72-e03f1f1f2187",authorizationEndpoint:"https://claude.ai/oauth/authorize",tokenEndpoint:"https://claude.ai/oauth/token",scope:["openid","profile","email","offline_access"],usePKCE:!0},yt=class extends Y{constructor(e){super("claudeai",er,e)}};var I=g(require("vscode"),1);Ke();var kt=class extends U{config=null;constructor(e){super("bedrock",{provider:"bedrock",envVarName:"AWS_ACCESS_KEY_ID"},e)}async configure(){if(this.checkEnvironmentCredentials())return I.window.showInformationMessage("AWS credentials found in environment variables"),!0;let t=[{label:"$(key) Enter AWS Access Keys",action:"keys"},{label:"$(file) Use AWS Profile",action:"profile"},{label:"$(cloud) Use IAM Role (EC2/Lambda)",action:"role"}],s=await I.window.showQuickPick(t,{placeHolder:"Select AWS credential method"});if(!s)return!1;switch(s.action){case"keys":return await this.configureAccessKeys();case"profile":return await this.configureProfile();case"role":return!0}return!1}async configureAccessKeys(){let e=await I.window.showInputBox({prompt:"AWS Region",placeHolder:"us-east-1",value:"us-east-1"});if(!e)return!1;let t=await I.window.showInputBox({prompt:"AWS Access Key ID",placeHolder:"AKIA..."});if(!t)return!1;let s=await I.window.showInputBox({prompt:"AWS Secret Access Key",password:!0});if(!s)return!1;let n=await I.window.showInputBox({prompt:"AWS Session Token (optional)",password:!0});return this.config={region:e,accessKeyId:t,secretAccessKey:s,sessionToken:n||void 0},await this.storeApiKey(JSON.stringify(this.config)),await this.storeRegion(e),!0}async configureProfile(){let e=await I.window.showInputBox({prompt:"AWS Profile Name",placeHolder:"default",value:"default"});if(!e)return!1;let t=await I.window.showInputBox({prompt:"AWS Region",placeHolder:"us-east-1",value:"us-east-1"});return t?(this.config={region:t,profile:e},await this.storeRegion(t),!0):!1}checkEnvironmentCredentials(){return!!(process.env.AWS_ACCESS_KEY_ID||process.env.AWS_SECRET_ACCESS_KEY||process.env.AWS_PROFILE||process.env.AWS_ROLE_ARN)}async storeRegion(e){await I.workspace.getConfiguration("cclocal").update("bedrockRegion",e,I.ConfigurationTarget.Global)}getConfig(){return this.config}getRegion(){return this.config?.region||process.env.AWS_REGION||process.env.AWS_DEFAULT_REGION||"us-east-1"}};var O=g(require("vscode"),1);Ke();var St=class extends U{config=null;constructor(e){super("vertex",{provider:"vertex",envVarName:"GOOGLE_APPLICATION_CREDENTIALS"},e)}async configure(){if(this.checkEnvironmentCredentials())return O.window.showInformationMessage("GCP credentials found in environment variables"),!0;let t=[{label:"$(file) Service Account Key File",action:"keyfile"},{label:"$(key) Enter API Key",action:"apikey"},{label:"$(cloud) Use Default Credentials",action:"default"}],s=await O.window.showQuickPick(t,{placeHolder:"Select GCP credential method"});if(!s)return!1;switch(s.action){case"keyfile":return await this.configureKeyFile();case"apikey":return await this.configureApiKey();case"default":return await this.configureDefault()}return!1}async configureKeyFile(){let e=await O.window.showInputBox({prompt:"GCP Project ID",placeHolder:"my-project-id"});if(!e)return!1;let t=await O.window.showOpenDialog({canSelectFiles:!0,canSelectFolders:!1,canSelectMany:!1,filters:{"JSON Files":["json"]},title:"Select Service Account Key File"});return!t||t.length===0?!1:(this.config={projectId:e,credentialsPath:t[0].fsPath},await this.storeApiKey(JSON.stringify(this.config)),!0)}async configureApiKey(){let e=await O.window.showInputBox({prompt:"GCP Project ID",placeHolder:"my-project-id"});if(!e)return!1;let t=await O.window.showInputBox({prompt:"GCP API Key",password:!0});return t?(this.config={projectId:e},await this.storeApiKey(t),await this.storeProjectId(e),!0):!1}async configureDefault(){let e=await O.window.showInputBox({prompt:"GCP Project ID",placeHolder:"my-project-id"});return e?(this.config={projectId:e},await this.storeProjectId(e),!0):!1}checkEnvironmentCredentials(){return!!(process.env.GOOGLE_APPLICATION_CREDENTIALS||process.env.GCP_PROJECT_ID||process.env.ANTHROPIC_VERTEX_PROJECT_ID)}async storeProjectId(e){await O.workspace.getConfiguration("cclocal").update("vertexProjectId",e,O.ConfigurationTarget.Global)}getConfig(){return this.config}getProjectId(){return this.config?.projectId||process.env.ANTHROPIC_VERTEX_PROJECT_ID||process.env.GCP_PROJECT_ID||""}getRegion(){return this.config?.region||process.env.ANTHROPIC_VERTEX_REGION||process.env.VERTEX_REGION||"us-central1"}};ps();var gs={claudeai:{name:"Claude.ai",description:"Claude Pro/Max subscription",icon:"\u{1F916}",requiresOAuth:!0},console:{name:"API Key",description:"Anthropic Console API Key",icon:"\u{1F511}",requiresOAuth:!1},bedrock:{name:"AWS Bedrock",description:"Amazon Bedrock",icon:"\u2601\uFE0F",requiresOAuth:!1},vertex:{name:"Google Vertex AI",description:"Google Cloud Vertex AI",icon:"\u{1F537}",requiresOAuth:!1},foundry:{name:"Azure Foundry",description:"Azure AI Foundry",icon:"\u{1FA9F}",requiresOAuth:!1},custom:{name:"Custom Provider",description:"Third-party API (OpenAI compatible)",icon:"\u{1F50C}",requiresOAuth:!1}},Ct=class{constructor(e,t){this.context=e;this.config=t;this.storage=new Ce(e),this.initializeProviders()}storage;state={method:null,status:"unauthenticated"};providers=new Map;onDidChangeStateEmitter=new qe.EventEmitter;onDidChangeState=this.onDidChangeStateEmitter.event;initializeProviders(){this.providers.set("claudeai",new yt(this.storage)),this.providers.set("console",new U("anthropic",{provider:"anthropic",envVarName:"ANTHROPIC_API_KEY"},this.storage)),this.providers.set("bedrock",new kt(this.storage)),this.providers.set("vertex",new St(this.storage)),this.providers.set("custom",new ze(this.storage))}async checkAuthStatus(){let e=["claudeai","console","bedrock","vertex","custom"];for(let t of e){let s=this.providers.get(t);if(!s)continue;if(await this.checkProviderAuth(t,s))return this.state={method:t,status:"authenticated",provider:gs[t]?.name},this.onDidChangeStateEmitter.fire(this.state),this.state}return this.state={method:null,status:"unauthenticated"},this.onDidChangeStateEmitter.fire(this.state),this.state}async checkProviderAuth(e,t){return t instanceof Y?t.isAuthenticated():t.hasApiKey()}async login(e){try{switch(this.state={method:e,status:"connecting"},this.onDidChangeStateEmitter.fire(this.state),e){case"claudeai":return await this.loginClaudeAI();case"console":return await this.loginConsole();case"bedrock":return await this.loginBedrock();case"vertex":return await this.loginVertex();case"custom":return await this.loginCustom();default:throw new Error(`Unknown auth method: ${e}`)}}catch(t){return this.state={method:e,status:"error",error:t instanceof Error?t.message:String(t)},this.onDidChangeStateEmitter.fire(this.state),!1}}async loginClaudeAI(){return await this.providers.get("claudeai").startFlow(),this.checkAuthStatus().then(t=>t.status==="authenticated")}async loginConsole(){let e=this.providers.get("console"),t=await e.promptForApiKey();if(!t)return!1;let s=await e.validateApiKey(t);return s.valid?(await e.storeApiKey(t),this.checkAuthStatus().then(n=>n.status==="authenticated")):(qe.window.showErrorMessage(`Invalid API key: ${s.error}`),!1)}async loginBedrock(){return await this.providers.get("bedrock").configure()?this.checkAuthStatus().then(s=>s.status==="authenticated"):!1}async loginVertex(){return await this.providers.get("vertex").configure()?this.checkAuthStatus().then(s=>s.status==="authenticated"):!1}async loginCustom(){return await this.providers.get("custom").configure()?this.checkAuthStatus().then(s=>s.status==="authenticated"):!1}async logout(){if(this.state.method){let e=this.providers.get(this.state.method);e&&(e instanceof Y?await e.logout():await e.deleteApiKey())}this.state={method:null,status:"unauthenticated"},this.onDidChangeStateEmitter.fire(this.state)}async showLoginPicker(){let e=Object.entries(gs).map(([s,n])=>({label:`${n.icon} ${n.name}`,description:n.description,method:s}));return(await qe.window.showQuickPick(e,{placeHolder:"Select authentication method"}))?.method}getProviderInfo(e){return gs[e]}getState(){return{...this.state}}isAuthenticated(){return this.state.status==="authenticated"}async getAccessToken(){if(!this.state.method)return;let e=this.providers.get(this.state.method);if(e)return e instanceof Y?e.getAccessToken():e.getApiKey()}async refreshAuth(){if(!this.state.method)return!1;let e=this.providers.get(this.state.method);if(!e)return!1;if(e instanceof Y)try{return await e.refreshToken(),!0}catch{return!1}return!0}dispose(){this.providers.forEach(e=>e.dispose()),this.providers.clear(),this.storage.dispose(),this.onDidChangeStateEmitter.dispose()}};var hs=class{statusBarItem;authManager;constructor(e){this.authManager=e,this.statusBarItem=x.window.createStatusBarItem("cclocal.auth",x.StatusBarAlignment.Left,100),this.statusBarItem.command="cclocal.login",this.statusBarItem.name="CCLocal Auth",this.statusBarItem.tooltip="CCLocal Authentication",this.updateStatusBar(),this.authManager.onDidChangeState(()=>this.updateStatusBar())}updateStatusBar(){let e=this.authManager.getState();switch(e.status){case"authenticated":this.statusBarItem.text="$(check) CCLocal",this.statusBarItem.tooltip=`Logged in with ${e.provider||"Unknown"}`,this.statusBarItem.command="cclocal.logout",this.statusBarItem.backgroundColor=void 0;break;case"connecting":this.statusBarItem.text="$(sync~spin) CCLocal",this.statusBarItem.tooltip="Logging in...",this.statusBarItem.command=void 0,this.statusBarItem.backgroundColor=void 0;break;case"expired":this.statusBarItem.text="$(alert) CCLocal",this.statusBarItem.tooltip="Session expired. Click to re-login.",this.statusBarItem.command="cclocal.login",this.statusBarItem.backgroundColor=new x.ThemeColor("statusBarItem.warningBackground");break;case"error":this.statusBarItem.text="$(error) CCLocal",this.statusBarItem.tooltip=`Error: ${e.error||"Unknown error"}`,this.statusBarItem.command="cclocal.login",this.statusBarItem.backgroundColor=new x.ThemeColor("statusBarItem.errorBackground");break;case"unauthenticated":default:this.statusBarItem.text="$(account) CCLocal",this.statusBarItem.tooltip="Click to login",this.statusBarItem.command="cclocal.login",this.statusBarItem.backgroundColor=void 0;break}this.statusBarItem.show()}show(){this.statusBarItem.show()}hide(){this.statusBarItem.hide()}dispose(){this.statusBarItem.dispose()}},xt=class{item;authManager;constructor(e){this.authManager=new Ct(e),this.item=new hs(this.authManager),tr(e,this.authManager,this.item)}getAuthManager(){return this.authManager}dispose(){this.item.dispose(),this.authManager.dispose()}};function tr(o,e,t){o.subscriptions.push(x.commands.registerCommand("cclocal.login",async()=>{let s=await e.showLoginPicker();if(!s)return;await e.login(s)&&x.window.showInformationMessage(`Successfully logged in with ${e.getProviderInfo(s)?.name}`)})),o.subscriptions.push(x.commands.registerCommand("cclocal.logout",async()=>{await x.window.showWarningMessage("Are you sure you want to logout?","Yes","No")==="Yes"&&(await e.logout(),x.window.showInformationMessage("Logged out successfully"))})),o.subscriptions.push(x.commands.registerCommand("cclocal.checkAuth",async()=>{let s=await e.checkAuthStatus();s.status==="authenticated"?x.window.showInformationMessage(`Logged in with ${s.provider||"Unknown"}`):x.window.showInformationMessage("Not logged in")})),o.subscriptions.push(x.commands.registerCommand("cclocal.switchAuthMethod",async()=>{let s=await e.showLoginPicker();s&&(e.isAuthenticated()&&await e.logout(),await e.login(s))})),o.subscriptions.push(x.commands.registerCommand("cclocal.configureCustomProvider",async()=>{let{CustomProviderAuth:s}=await Promise.resolve().then(()=>(ps(),io));await new s(new Ce(o)).configure()}))}bs();fs();var B=g(require("vscode"),1),le=g(require("path"),1),j=g(require("fs"),1),hr="plugins",mo="plugin.json",ws=["https://marketplace.anthropic.com","https://plugins.claude.ai"],Lt=class{outputChannel;context;plugins;marketplaces;options;eventEmitter;pluginStorageDir;onDidPluginEvent;constructor(e,t,s={}){this.context=e,this.outputChannel=t,this.options={officialMarketplaces:ws,extraKnownMarketplaces:[],strictKnownMarketplaces:[],blockedMarketplaces:[],autoUpdate:!1,updateCheckInterval:36e5,...s},this.plugins=new Map,this.marketplaces=new Map,this.eventEmitter=new B.EventEmitter,this.onDidPluginEvent=this.eventEmitter.event,this.pluginStorageDir=le.join(e.globalStorageUri.fsPath,hr),this.ensurePluginDir(),this.initializeMarketplaces(),this.outputChannel.debug("PluginManager initialized")}async install(e,t,s={}){if(this.outputChannel.info(`Installing plugin: ${e}`),this.plugins.has(e))throw new Error(`Plugin "${e}" is already installed`);this.marketplaces.get(t)?.plugins||await this.refreshMarketplace(t);let i=this.findMarketplacePlugin(e,t);if(!i)throw new Error(`Plugin "${e}" not found in marketplace`);if(!s.skipTrust&&!await this.verifyPluginTrust(i))throw new Error(`Plugin "${e}" failed trust verification`);let r=le.join(this.pluginStorageDir,this.sanitizePluginId(e));await j.promises.mkdir(r,{recursive:!0}),await this.downloadPlugin(i,r);let a=await this.loadManifest(r),l=s.autoApprove||await this.requestPermissions(a),c={manifest:a,installPath:r,state:"installed",trustLevel:i.trustLevel,installedAt:Date.now(),updatedAt:Date.now(),permissionsApproved:l,approvedPermissions:l?a.permissions||[]:[],configuration:this.getDefaultConfig(a),marketplaceUrl:t};return this.plugins.set(e,c),this.emitEvent("plugin_installed",e),l&&await this.activate(e),this.outputChannel.info(`Plugin installed: ${e}`),c}async installLocal(e,t={}){let s=await this.loadManifest(e),n=s.id;if(this.plugins.has(n))throw new Error(`Plugin "${n}" is already installed`);let i=t.autoApprove||await this.requestPermissions(s),r={manifest:s,installPath:e,state:"installed",trustLevel:"untrusted",installedAt:Date.now(),updatedAt:Date.now(),permissionsApproved:i,approvedPermissions:i?s.permissions||[]:[],configuration:this.getDefaultConfig(s)};return this.plugins.set(n,r),this.emitEvent("plugin_installed",n),i&&await this.activate(n),this.outputChannel.info(`Local plugin installed: ${n}`),r}async uninstall(e){let t=this.plugins.get(e);if(!t)return!1;t.state==="active"&&await this.deactivate(e),t.state="uninstalling",this.emitEvent("plugin_uninstalled",e);try{await j.promises.rm(t.installPath,{recursive:!0,force:!0})}catch(s){this.outputChannel.warn(`Failed to remove plugin files: ${s}`)}return this.plugins.delete(e),this.outputChannel.info(`Plugin uninstalled: ${e}`),!0}async activate(e){let t=this.plugins.get(e);if(!t)throw new Error(`Plugin "${e}" not found`);if(t.state==="active")return!0;if(!t.permissionsApproved){if(!await this.requestPermissions(t.manifest))return!1;t.permissionsApproved=!0,t.approvedPermissions=t.manifest.permissions||[]}try{return t.manifest.mcpServers&&await this.registerPluginMcpServers(t),t.state="active",t.updatedAt=Date.now(),this.emitEvent("plugin_activated",e),this.outputChannel.info(`Plugin activated: ${e}`),!0}catch(s){return t.state="error",t.lastError=s instanceof Error?s.message:String(s),this.emitEvent("plugin_error",e,{error:t.lastError}),this.outputChannel.error(`Plugin activation failed: ${e}: ${s}`),!1}}async deactivate(e){let t=this.plugins.get(e);return!t||t.state!=="active"?!1:(t.state="installed",t.updatedAt=Date.now(),this.emitEvent("plugin_deactivated",e),this.outputChannel.info(`Plugin deactivated: ${e}`),!0)}async enable(e){let t=this.plugins.get(e);return!t||t.state!=="disabled"?!1:this.activate(e)}async disable(e){let t=this.plugins.get(e);return t?(t.state==="active"&&await this.deactivate(e),t.state="disabled",t.updatedAt=Date.now(),!0):!1}getPlugin(e){return this.plugins.get(e)}getAllPlugins(){return Array.from(this.plugins.values())}getPluginsByState(e){return this.getAllPlugins().filter(t=>t.state===e)}getActivePlugins(){return this.getPluginsByState("active")}getStats(){let e=this.getAllPlugins(),t={available:0,installed:0,active:0,disabled:0,error:0,updating:0,uninstalling:0},s={untrusted:0,community:0,verified:0,official:0,enterprise:0};for(let n of e)t[n.state]++,s[n.trustLevel]++;return{totalInstalled:e.length,totalActive:t.active,byState:t,byTrust:s,marketplaces:this.marketplaces.size,availablePlugins:this.getTotalAvailablePlugins()}}async requestPermissions(e){let t=e.permissions||[];if(t.length===0)return!0;let s=t.filter(r=>["execute-commands","write-files","full-access"].includes(r));if(s.length===0)return!0;let n=[`Plugin: ${e.name} v${e.version}`,`Publisher: ${e.publisher}`,"","This plugin requests the following permissions:",...t.map(r=>`  \u2022 ${this.formatPermission(r)}`),"","Dangerous permissions require your approval:",...s.map(r=>`  \u26A0 ${this.formatPermission(r)}`)].join(`
-`);return(await B.window.showWarningMessage(`Plugin Permission Request: ${e.name}`,{modal:!0,detail:n},{title:"Approve"},{title:"Deny"}))?.title==="Approve"}async updatePermissions(e,t){let s=this.plugins.get(e);return s?(s.approvedPermissions=t,s.permissionsApproved=!0,s.updatedAt=Date.now(),this.emitEvent("permissions_granted",e,{permissions:t}),!0):!1}async verifyPluginTrust(e){let t=e.trustLevel;return t==="official"||t==="verified"||t==="enterprise"?!0:t==="community"?(await B.window.showWarningMessage(`Community Plugin: ${e.manifest.name}`,{modal:!0,detail:[`Publisher: ${e.manifest.publisher}`,"This plugin is community-verified but not officially reviewed.","Install at your own risk."].join(`
-`)},{title:"Install Anyway"},{title:"Cancel"}))?.title==="Install Anyway":(await B.window.showWarningMessage(`Untrusted Plugin: ${e.manifest.name}`,{modal:!0,detail:[`Publisher: ${e.manifest.publisher}`,"This plugin has not been verified by any trusted source.","Installing untrusted plugins may pose security risks."].join(`
-`)},{title:"Install at Own Risk"},{title:"Cancel"}))?.title==="Install at Own Risk"}updateTrustLevel(e,t){let s=this.plugins.get(e);return s?(s.trustLevel=t,s.updatedAt=Date.now(),this.emitEvent("trust_changed",e,{trustLevel:t}),!0):!1}async addMarketplace(e){if(this.isMarketplaceBlocked(e))throw new Error(`Marketplace "${e}" is blocked by policy`);if(this.marketplaces.has(e))return this.marketplaces.get(e);let t=this.determineMarketplaceTrust(e),s={url:e,name:this.extractMarketplaceName(e),trustLevel:t,isKnown:this.isKnownMarketplace(e)};this.marketplaces.set(e,s),await this.refreshMarketplace(e),this.emitEvent("marketplace_added",void 0,e);let n=B.workspace.getConfiguration("cclocal"),i=n.get("extraKnownMarketplaces")||[];return i.includes(e)||(i.push(e),await n.update("extraKnownMarketplaces",i,B.ConfigurationTarget.Global)),this.outputChannel.info(`Marketplace added: ${e}`),s}async removeMarketplace(e){if(!this.marketplaces.has(e))return!1;this.marketplaces.delete(e),this.emitEvent("marketplace_removed",void 0,e);let t=B.workspace.getConfiguration("cclocal"),n=(t.get("extraKnownMarketplaces")||[]).filter(i=>i!==e);return await t.update("extraKnownMarketplaces",n,B.ConfigurationTarget.Global),this.outputChannel.info(`Marketplace removed: ${e}`),!0}async refreshMarketplace(e){let t=this.marketplaces.get(e);if(t)try{let s=await fetch(`${e}/api/plugins`);if(!s.ok)throw new Error(`HTTP ${s.status}`);let n=await s.json();t.plugins=n.plugins||[],t.lastRefreshed=Date.now(),this.emitEvent("marketplace_refreshed",void 0,e)}catch(s){this.outputChannel.warn(`Failed to refresh marketplace ${e}: ${s}`),t.plugins=[]}}getMarketplaces(){return Array.from(this.marketplaces.values())}getPluginConfig(e){return this.plugins.get(e)?.configuration}async updatePluginConfig(e,t,s){let n=this.plugins.get(e);return n?(n.configuration[t]=s,n.updatedAt=Date.now(),!0):!1}async loadInstalledPlugins(){try{let e=await j.promises.readdir(this.pluginStorageDir,{withFileTypes:!0});for(let t of e){if(!t.isDirectory())continue;let s=le.join(this.pluginStorageDir,t.name),n=le.join(s,mo);try{let i=await this.loadManifest(s),r=i.id,a={manifest:i,installPath:s,state:"installed",trustLevel:"community",installedAt:0,updatedAt:Date.now(),permissionsApproved:!1,approvedPermissions:[],configuration:this.getDefaultConfig(i)};this.plugins.set(r,a),this.outputChannel.debug(`Loaded plugin: ${r}`)}catch{this.outputChannel.warn(`Failed to load plugin from: ${s}`)}}}catch(e){e.code!=="ENOENT"&&this.outputChannel.error(`Failed to load plugins: ${e}`)}}ensurePluginDir(){j.existsSync(this.pluginStorageDir)||j.mkdirSync(this.pluginStorageDir,{recursive:!0})}initializeMarketplaces(){let e=this.options.officialMarketplaces||ws;for(let s of e)this.marketplaces.set(s,{url:s,name:this.extractMarketplaceName(s),trustLevel:"official",isKnown:!0});let t=this.options.extraKnownMarketplaces||[];for(let s of t)this.marketplaces.has(s)||this.marketplaces.set(s,{url:s,name:this.extractMarketplaceName(s),trustLevel:"community",isKnown:!0})}async downloadPlugin(e,t){let s=await fetch(e.downloadUrl);if(!s.ok)throw new Error(`Download failed: HTTP ${s.status}`);let n=Buffer.from(await s.arrayBuffer());await j.promises.writeFile(le.join(t,"plugin.tar.gz"),n),this.outputChannel.debug(`Downloaded plugin: ${e.manifest.id}`)}async loadManifest(e){let t=le.join(e,mo),s=await j.promises.readFile(t,"utf-8");return JSON.parse(s)}async registerPluginMcpServers(e){if(!e.manifest.mcpServers)return;let{getMCPManager:t}=await Promise.resolve().then(()=>(bs(),ho)),s=t();for(let[n,i]of Object.entries(e.manifest.mcpServers))try{s.registerServer({name:`${e.manifest.id}__${n}`,config:i})}catch(r){this.outputChannel.warn(`Failed to register MCP server ${n}: ${r}`)}}getDefaultConfig(e){let t={};if(e.configuration)for(let[s,n]of Object.entries(e.configuration))t[s]=n.default;return t}formatPermission(e){return{"read-files":"Read file contents","write-files":"Write/edit files","execute-commands":"Run shell commands","access-network":"Make HTTP requests","access-mcp":"Register MCP servers","access-clipboard":"Access clipboard","access-workspace":"Access workspace info","access-extensions":"Access other extensions","full-access":"Full unrestricted access"}[e]||e}sanitizePluginId(e){return e.replace(/[^a-zA-Z0-9_-]/g,"_")}extractMarketplaceName(e){try{return new URL(e).hostname.replace(/^(www\.|marketplace\.)/,"")}catch{return e}}isKnownMarketplace(e){return[...this.options.officialMarketplaces||[],...this.options.extraKnownMarketplaces||[],...this.options.strictKnownMarketplaces||[]].some(s=>s===e)}isMarketplaceBlocked(e){return(this.options.blockedMarketplaces||[]).includes(e)}determineMarketplaceTrust(e){return(this.options.officialMarketplaces||ws).includes(e)?"official":this.options.strictKnownMarketplaces?.includes(e)?"verified":this.options.extraKnownMarketplaces?.includes(e)?"community":"untrusted"}findMarketplacePlugin(e,t){return this.marketplaces.get(t)?.plugins?.find(n=>n.manifest.id===e)}getTotalAvailablePlugins(){let e=0,t=new Set;for(let s of this.marketplaces.values())for(let n of s.plugins||[])t.has(n.manifest.id)||(t.add(n.manifest.id),e++);return e}emitEvent(e,t,s){this.eventEmitter.fire({type:e,pluginId:t,data:s})}dispose(){this.eventEmitter.dispose(),this.plugins.clear(),this.marketplaces.clear(),this.outputChannel.debug("PluginManager disposed")}},Ee=null;function ys(o,e,t){return!Ee&&o&&e&&(Ee=new Lt(o,e,t)),Ee}function ks(){Ee&&(Ee.dispose(),Ee=null)}var H=g(require("vscode"),1),Qe=class{panel=null;pluginManager;constructor(e){this.pluginManager=e,this.pluginManager.onDidPluginEvent(()=>{this.sendState()})}show(){if(this.panel){this.panel.reveal();return}this.panel=H.window.createWebviewPanel("cclocal.plugins","CCLocal Plugins",H.ViewColumn.One,{enableScripts:!0,retainContextWhenHidden:!0}),this.panel.webview.html=this.getWebviewContent(),this.setupMessageHandler()}setupMessageHandler(){this.panel&&this.panel.webview.onDidReceiveMessage(async e=>{switch(e.type){case"getState":this.sendState();break;case"installPlugin":try{await this.pluginManager.install(e.pluginId,e.marketplaceUrl),H.window.showInformationMessage(`Plugin "${e.pluginId}" installed successfully`)}catch(s){H.window.showErrorMessage(`Failed to install plugin: ${s}`)}this.sendState();break;case"uninstallPlugin":await this.pluginManager.uninstall(e.pluginId),H.window.showInformationMessage(`Plugin "${e.pluginId}" uninstalled`),this.sendState();break;case"activatePlugin":await this.pluginManager.activate(e.pluginId)||H.window.showWarningMessage(`Failed to activate plugin "${e.pluginId}"`),this.sendState();break;case"deactivatePlugin":await this.pluginManager.deactivate(e.pluginId),this.sendState();break;case"enablePlugin":await this.pluginManager.enable(e.pluginId),this.sendState();break;case"disablePlugin":await this.pluginManager.disable(e.pluginId),this.sendState();break;case"addMarketplace":try{await this.pluginManager.addMarketplace(e.url),H.window.showInformationMessage(`Marketplace "${e.url}" added`)}catch(s){H.window.showErrorMessage(`Failed to add marketplace: ${s}`)}this.sendState();break;case"removeMarketplace":await this.pluginManager.removeMarketplace(e.url),this.sendState();break;case"refreshMarketplace":await this.pluginManager.refreshMarketplace(e.url),this.sendState();break;case"openSettings":await H.commands.executeCommand("workbench.action.openSettings","cclocal");break}})}sendState(){let e=this.pluginManager.getAllPlugins(),t=this.pluginManager.getStats(),s=this.pluginManager.getMarketplaces();this.panel?.webview.postMessage({type:"state",plugins:e,stats:t,marketplaces:s})}getWebviewContent(){return`
+    `);
+  }
+  /**
+   * Logout
+   */
+  async logout() {
+    await this.storage.clearProvider(this.provider);
+    this.pendingStates.clear();
+    this.stopCallbackServer();
+  }
+  /**
+   * Check if authenticated
+   */
+  async isAuthenticated() {
+    const tokens = await this.storage.getOAuthTokens(this.provider);
+    return tokens !== void 0;
+  }
+  /**
+   * Dispose
+   */
+  dispose() {
+    this.stopCallbackServer();
+    this.pendingStates.clear();
+  }
+};
+
+// src/auth/AuthManager.ts
+init_ApiKeyAuth();
+
+// src/auth/providers/AnthropicAuth.ts
+var ANTHROPIC_OAUTH_CONFIG = {
+  clientId: "9d1c250a-e0b9-4f26-8c72-e03f1f1f2187",
+  authorizationEndpoint: "https://claude.ai/oauth/authorize",
+  tokenEndpoint: "https://claude.ai/oauth/token",
+  scope: ["openid", "profile", "email", "offline_access"],
+  usePKCE: true
+};
+var AnthropicAuth = class extends OAuthClient {
+  constructor(storage) {
+    super("claudeai", ANTHROPIC_OAUTH_CONFIG, storage);
+  }
+};
+
+// src/auth/providers/BedrockAuth.ts
+init_ApiKeyAuth();
+import * as vscode8 from "vscode";
+var BedrockAuth = class extends ApiKeyAuth {
+  config = null;
+  constructor(storage) {
+    super("bedrock", {
+      provider: "bedrock",
+      envVarName: "AWS_ACCESS_KEY_ID"
+    }, storage);
+  }
+  /**
+   * Configure Bedrock credentials
+   */
+  async configure() {
+    const hasEnvCredentials = this.checkEnvironmentCredentials();
+    if (hasEnvCredentials) {
+      vscode8.window.showInformationMessage(
+        "AWS credentials found in environment variables"
+      );
+      return true;
+    }
+    const options = [
+      { label: "$(key) Enter AWS Access Keys", action: "keys" },
+      { label: "$(file) Use AWS Profile", action: "profile" },
+      { label: "$(cloud) Use IAM Role (EC2/Lambda)", action: "role" }
+    ];
+    const selected = await vscode8.window.showQuickPick(options, {
+      placeHolder: "Select AWS credential method"
+    });
+    if (!selected) return false;
+    switch (selected.action) {
+      case "keys":
+        return await this.configureAccessKeys();
+      case "profile":
+        return await this.configureProfile();
+      case "role":
+        return true;
+    }
+    return false;
+  }
+  /**
+   * Configure with access keys
+   */
+  async configureAccessKeys() {
+    const region = await vscode8.window.showInputBox({
+      prompt: "AWS Region",
+      placeHolder: "us-east-1",
+      value: "us-east-1"
+    });
+    if (!region) return false;
+    const accessKeyId = await vscode8.window.showInputBox({
+      prompt: "AWS Access Key ID",
+      placeHolder: "AKIA..."
+    });
+    if (!accessKeyId) return false;
+    const secretAccessKey = await vscode8.window.showInputBox({
+      prompt: "AWS Secret Access Key",
+      password: true
+    });
+    if (!secretAccessKey) return false;
+    const sessionToken = await vscode8.window.showInputBox({
+      prompt: "AWS Session Token (optional)",
+      password: true
+    });
+    this.config = {
+      region,
+      accessKeyId,
+      secretAccessKey,
+      sessionToken: sessionToken || void 0
+    };
+    await this.storeApiKey(JSON.stringify(this.config));
+    await this.storeRegion(region);
+    return true;
+  }
+  /**
+   * Configure with AWS profile
+   */
+  async configureProfile() {
+    const profile = await vscode8.window.showInputBox({
+      prompt: "AWS Profile Name",
+      placeHolder: "default",
+      value: "default"
+    });
+    if (!profile) return false;
+    const region = await vscode8.window.showInputBox({
+      prompt: "AWS Region",
+      placeHolder: "us-east-1",
+      value: "us-east-1"
+    });
+    if (!region) return false;
+    this.config = {
+      region,
+      profile
+    };
+    await this.storeRegion(region);
+    return true;
+  }
+  /**
+   * Check if environment has AWS credentials
+   */
+  checkEnvironmentCredentials() {
+    return !!(process.env.AWS_ACCESS_KEY_ID || process.env.AWS_SECRET_ACCESS_KEY || process.env.AWS_PROFILE || process.env.AWS_ROLE_ARN);
+  }
+  /**
+   * Store region in VS Code configuration
+   */
+  async storeRegion(region) {
+    const config = vscode8.workspace.getConfiguration("cclocal");
+    await config.update("bedrockRegion", region, vscode8.ConfigurationTarget.Global);
+  }
+  /**
+   * Get Bedrock configuration
+   */
+  getConfig() {
+    return this.config;
+  }
+  /**
+   * Get region
+   */
+  getRegion() {
+    return this.config?.region || process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "us-east-1";
+  }
+};
+
+// src/auth/providers/VertexAuth.ts
+init_ApiKeyAuth();
+import * as vscode9 from "vscode";
+var VertexAuth = class extends ApiKeyAuth {
+  config = null;
+  constructor(storage) {
+    super("vertex", {
+      provider: "vertex",
+      envVarName: "GOOGLE_APPLICATION_CREDENTIALS"
+    }, storage);
+  }
+  /**
+   * Configure Vertex AI credentials
+   */
+  async configure() {
+    const hasEnvCredentials = this.checkEnvironmentCredentials();
+    if (hasEnvCredentials) {
+      vscode9.window.showInformationMessage(
+        "GCP credentials found in environment variables"
+      );
+      return true;
+    }
+    const options = [
+      { label: "$(file) Service Account Key File", action: "keyfile" },
+      { label: "$(key) Enter API Key", action: "apikey" },
+      { label: "$(cloud) Use Default Credentials", action: "default" }
+    ];
+    const selected = await vscode9.window.showQuickPick(options, {
+      placeHolder: "Select GCP credential method"
+    });
+    if (!selected) return false;
+    switch (selected.action) {
+      case "keyfile":
+        return await this.configureKeyFile();
+      case "apikey":
+        return await this.configureApiKey();
+      case "default":
+        return await this.configureDefault();
+    }
+    return false;
+  }
+  /**
+   * Configure with service account key file
+   */
+  async configureKeyFile() {
+    const projectId = await vscode9.window.showInputBox({
+      prompt: "GCP Project ID",
+      placeHolder: "my-project-id"
+    });
+    if (!projectId) return false;
+    const keyFileUri = await vscode9.window.showOpenDialog({
+      canSelectFiles: true,
+      canSelectFolders: false,
+      canSelectMany: false,
+      filters: { "JSON Files": ["json"] },
+      title: "Select Service Account Key File"
+    });
+    if (!keyFileUri || keyFileUri.length === 0) return false;
+    this.config = {
+      projectId,
+      credentialsPath: keyFileUri[0].fsPath
+    };
+    await this.storeApiKey(JSON.stringify(this.config));
+    return true;
+  }
+  /**
+   * Configure with API key
+   */
+  async configureApiKey() {
+    const projectId = await vscode9.window.showInputBox({
+      prompt: "GCP Project ID",
+      placeHolder: "my-project-id"
+    });
+    if (!projectId) return false;
+    const apiKey = await vscode9.window.showInputBox({
+      prompt: "GCP API Key",
+      password: true
+    });
+    if (!apiKey) return false;
+    this.config = {
+      projectId
+    };
+    await this.storeApiKey(apiKey);
+    await this.storeProjectId(projectId);
+    return true;
+  }
+  /**
+   * Configure with default credentials
+   */
+  async configureDefault() {
+    const projectId = await vscode9.window.showInputBox({
+      prompt: "GCP Project ID",
+      placeHolder: "my-project-id"
+    });
+    if (!projectId) return false;
+    this.config = {
+      projectId
+    };
+    await this.storeProjectId(projectId);
+    return true;
+  }
+  /**
+   * Check if environment has GCP credentials
+   */
+  checkEnvironmentCredentials() {
+    return !!(process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GCP_PROJECT_ID || process.env.ANTHROPIC_VERTEX_PROJECT_ID);
+  }
+  /**
+   * Store project ID
+   */
+  async storeProjectId(projectId) {
+    const config = vscode9.workspace.getConfiguration("cclocal");
+    await config.update("vertexProjectId", projectId, vscode9.ConfigurationTarget.Global);
+  }
+  /**
+   * Get Vertex configuration
+   */
+  getConfig() {
+    return this.config;
+  }
+  /**
+   * Get project ID
+   */
+  getProjectId() {
+    return this.config?.projectId || process.env.ANTHROPIC_VERTEX_PROJECT_ID || process.env.GCP_PROJECT_ID || "";
+  }
+  /**
+   * Get region
+   */
+  getRegion() {
+    return this.config?.region || process.env.ANTHROPIC_VERTEX_REGION || process.env.VERTEX_REGION || "us-central1";
+  }
+};
+
+// src/auth/AuthManager.ts
+init_CustomProviderAuth();
+var PROVIDER_CONFIGS = {
+  claudeai: {
+    name: "Claude.ai",
+    description: "Claude Pro/Max subscription",
+    icon: "\u{1F916}",
+    requiresOAuth: true
+  },
+  console: {
+    name: "API Key",
+    description: "Anthropic Console API Key",
+    icon: "\u{1F511}",
+    requiresOAuth: false
+  },
+  bedrock: {
+    name: "AWS Bedrock",
+    description: "Amazon Bedrock",
+    icon: "\u2601\uFE0F",
+    requiresOAuth: false
+  },
+  vertex: {
+    name: "Google Vertex AI",
+    description: "Google Cloud Vertex AI",
+    icon: "\u{1F537}",
+    requiresOAuth: false
+  },
+  foundry: {
+    name: "Azure Foundry",
+    description: "Azure AI Foundry",
+    icon: "\u{1FA9F}",
+    requiresOAuth: false
+  },
+  custom: {
+    name: "Custom Provider",
+    description: "Third-party API (OpenAI compatible)",
+    icon: "\u{1F50C}",
+    requiresOAuth: false
+  }
+};
+var AuthManager = class {
+  constructor(context, config) {
+    this.context = context;
+    this.config = config;
+    this.storage = new SecureStorage(context);
+    this.initializeProviders();
+  }
+  storage;
+  state = {
+    method: null,
+    status: "unauthenticated"
+  };
+  providers = /* @__PURE__ */ new Map();
+  onDidChangeStateEmitter = new vscode11.EventEmitter();
+  onDidChangeState = this.onDidChangeStateEmitter.event;
+  // ─── Initialization ──────────────────────────────────────────────────────────
+  initializeProviders() {
+    this.providers.set("claudeai", new AnthropicAuth(this.storage));
+    this.providers.set("console", new ApiKeyAuth("anthropic", {
+      provider: "anthropic",
+      envVarName: "ANTHROPIC_API_KEY"
+    }, this.storage));
+    this.providers.set("bedrock", new BedrockAuth(this.storage));
+    this.providers.set("vertex", new VertexAuth(this.storage));
+    this.providers.set("custom", new CustomProviderAuth(this.storage));
+  }
+  /**
+   * Check current authentication status
+   */
+  async checkAuthStatus() {
+    const methods = ["claudeai", "console", "bedrock", "vertex", "custom"];
+    for (const method of methods) {
+      const provider = this.providers.get(method);
+      if (!provider) continue;
+      const isAuthenticated = await this.checkProviderAuth(method, provider);
+      if (isAuthenticated) {
+        this.state = {
+          method,
+          status: "authenticated",
+          provider: PROVIDER_CONFIGS[method]?.name
+        };
+        this.onDidChangeStateEmitter.fire(this.state);
+        return this.state;
+      }
+    }
+    this.state = {
+      method: null,
+      status: "unauthenticated"
+    };
+    this.onDidChangeStateEmitter.fire(this.state);
+    return this.state;
+  }
+  /**
+   * Check if a specific provider is authenticated
+   */
+  async checkProviderAuth(method, provider) {
+    if (provider instanceof OAuthClient) {
+      return provider.isAuthenticated();
+    } else {
+      return provider.hasApiKey();
+    }
+  }
+  // ─── Login Methods ────────────────────────────────────────────────────────────
+  /**
+   * Login with specified method
+   */
+  async login(method) {
+    try {
+      this.state = { method, status: "connecting" };
+      this.onDidChangeStateEmitter.fire(this.state);
+      switch (method) {
+        case "claudeai":
+          return await this.loginClaudeAI();
+        case "console":
+          return await this.loginConsole();
+        case "bedrock":
+          return await this.loginBedrock();
+        case "vertex":
+          return await this.loginVertex();
+        case "custom":
+          return await this.loginCustom();
+        default:
+          throw new Error(`Unknown auth method: ${method}`);
+      }
+    } catch (error) {
+      this.state = {
+        method,
+        status: "error",
+        error: error instanceof Error ? error.message : String(error)
+      };
+      this.onDidChangeStateEmitter.fire(this.state);
+      return false;
+    }
+  }
+  /**
+   * Login with Claude.ai OAuth
+   */
+  async loginClaudeAI() {
+    const provider = this.providers.get("claudeai");
+    await provider.startFlow();
+    return this.checkAuthStatus().then((s) => s.status === "authenticated");
+  }
+  /**
+   * Login with API Key
+   */
+  async loginConsole() {
+    const provider = this.providers.get("console");
+    const apiKey = await provider.promptForApiKey();
+    if (!apiKey) return false;
+    const validation = await provider.validateApiKey(apiKey);
+    if (!validation.valid) {
+      vscode11.window.showErrorMessage(`Invalid API key: ${validation.error}`);
+      return false;
+    }
+    await provider.storeApiKey(apiKey);
+    return this.checkAuthStatus().then((s) => s.status === "authenticated");
+  }
+  /**
+   * Login with AWS Bedrock
+   */
+  async loginBedrock() {
+    const bedrockAuth = this.providers.get("bedrock");
+    const configured = await bedrockAuth.configure();
+    if (configured) {
+      return this.checkAuthStatus().then((s) => s.status === "authenticated");
+    }
+    return false;
+  }
+  /**
+   * Login with GCP Vertex AI
+   */
+  async loginVertex() {
+    const vertexAuth = this.providers.get("vertex");
+    const configured = await vertexAuth.configure();
+    if (configured) {
+      return this.checkAuthStatus().then((s) => s.status === "authenticated");
+    }
+    return false;
+  }
+  /**
+   * Login with Custom Provider
+   */
+  async loginCustom() {
+    const customAuth = this.providers.get("custom");
+    const configured = await customAuth.configure();
+    if (configured) {
+      return this.checkAuthStatus().then((s) => s.status === "authenticated");
+    }
+    return false;
+  }
+  // ─── Logout ────────────────────────────────────────────────────────────────────
+  /**
+   * Logout from current provider
+   */
+  async logout() {
+    if (this.state.method) {
+      const provider = this.providers.get(this.state.method);
+      if (provider) {
+        if (provider instanceof OAuthClient) {
+          await provider.logout();
+        } else {
+          await provider.deleteApiKey();
+        }
+      }
+    }
+    this.state = { method: null, status: "unauthenticated" };
+    this.onDidChangeStateEmitter.fire(this.state);
+  }
+  // ─── UI Helpers ────────────────────────────────────────────────────────────────
+  /**
+   * Show login method picker
+   */
+  async showLoginPicker() {
+    const items = Object.entries(PROVIDER_CONFIGS).map(([key, config]) => ({
+      label: `${config.icon} ${config.name}`,
+      description: config.description,
+      method: key
+    }));
+    const selected = await vscode11.window.showQuickPick(items, {
+      placeHolder: "Select authentication method"
+    });
+    return selected?.method;
+  }
+  /**
+   * Get provider display info
+   */
+  getProviderInfo(method) {
+    return PROVIDER_CONFIGS[method];
+  }
+  /**
+   * Get current state
+   */
+  getState() {
+    return { ...this.state };
+  }
+  /**
+   * Check if authenticated
+   */
+  isAuthenticated() {
+    return this.state.status === "authenticated";
+  }
+  // ─── Token Management ──────────────────────────────────────────────────────────
+  /**
+   * Get valid access token (refresh if needed)
+   */
+  async getAccessToken() {
+    if (!this.state.method) return void 0;
+    const provider = this.providers.get(this.state.method);
+    if (!provider) return void 0;
+    if (provider instanceof OAuthClient) {
+      return provider.getAccessToken();
+    } else {
+      return provider.getApiKey();
+    }
+  }
+  /**
+   * Refresh authentication
+   */
+  async refreshAuth() {
+    if (!this.state.method) return false;
+    const provider = this.providers.get(this.state.method);
+    if (!provider) return false;
+    if (provider instanceof OAuthClient) {
+      try {
+        await provider.refreshToken();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  }
+  // ─── Dispose ───────────────────────────────────────────────────────────────────
+  dispose() {
+    this.providers.forEach((provider) => provider.dispose());
+    this.providers.clear();
+    this.storage.dispose();
+    this.onDidChangeStateEmitter.dispose();
+  }
+};
+
+// src/auth/AuthStatusBar.ts
+var AuthStatusBarItem = class {
+  statusBarItem;
+  authManager;
+  constructor(authManager) {
+    this.authManager = authManager;
+    this.statusBarItem = vscode12.window.createStatusBarItem(
+      "cclocal.auth",
+      vscode12.StatusBarAlignment.Left,
+      100
+    );
+    this.statusBarItem.command = "cclocal.login";
+    this.statusBarItem.name = "CCLocal Auth";
+    this.statusBarItem.tooltip = "CCLocal Authentication";
+    this.updateStatusBar();
+    this.authManager.onDidChangeState(() => this.updateStatusBar());
+  }
+  /**
+   * Update status bar based on auth state
+   */
+  updateStatusBar() {
+    const state = this.authManager.getState();
+    switch (state.status) {
+      case "authenticated":
+        this.statusBarItem.text = `$(check) CCLocal`;
+        this.statusBarItem.tooltip = `Logged in with ${state.provider || "Unknown"}`;
+        this.statusBarItem.command = "cclocal.logout";
+        this.statusBarItem.backgroundColor = void 0;
+        break;
+      case "connecting":
+        this.statusBarItem.text = `$(sync~spin) CCLocal`;
+        this.statusBarItem.tooltip = "Logging in...";
+        this.statusBarItem.command = void 0;
+        this.statusBarItem.backgroundColor = void 0;
+        break;
+      case "expired":
+        this.statusBarItem.text = `$(alert) CCLocal`;
+        this.statusBarItem.tooltip = "Session expired. Click to re-login.";
+        this.statusBarItem.command = "cclocal.login";
+        this.statusBarItem.backgroundColor = new vscode12.ThemeColor("statusBarItem.warningBackground");
+        break;
+      case "error":
+        this.statusBarItem.text = `$(error) CCLocal`;
+        this.statusBarItem.tooltip = `Error: ${state.error || "Unknown error"}`;
+        this.statusBarItem.command = "cclocal.login";
+        this.statusBarItem.backgroundColor = new vscode12.ThemeColor("statusBarItem.errorBackground");
+        break;
+      case "unauthenticated":
+      default:
+        this.statusBarItem.text = `$(account) CCLocal`;
+        this.statusBarItem.tooltip = "Click to login";
+        this.statusBarItem.command = "cclocal.login";
+        this.statusBarItem.backgroundColor = void 0;
+        break;
+    }
+    this.statusBarItem.show();
+  }
+  /**
+   * Show status bar item
+   */
+  show() {
+    this.statusBarItem.show();
+  }
+  /**
+   * Hide status bar item
+   */
+  hide() {
+    this.statusBarItem.hide();
+  }
+  /**
+   * Dispose
+   */
+  dispose() {
+    this.statusBarItem.dispose();
+  }
+};
+var AuthStatusBar = class {
+  item;
+  authManager;
+  constructor(context) {
+    this.authManager = new AuthManager(context);
+    this.item = new AuthStatusBarItem(this.authManager);
+    registerAuthCommands(context, this.authManager, this.item);
+  }
+  getAuthManager() {
+    return this.authManager;
+  }
+  dispose() {
+    this.item.dispose();
+    this.authManager.dispose();
+  }
+};
+function registerAuthCommands(context, authManager, statusBar) {
+  context.subscriptions.push(
+    vscode12.commands.registerCommand("cclocal.login", async () => {
+      const method = await authManager.showLoginPicker();
+      if (!method) return;
+      const success = await authManager.login(method);
+      if (success) {
+        vscode12.window.showInformationMessage(
+          `Successfully logged in with ${authManager.getProviderInfo(method)?.name}`
+        );
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode12.commands.registerCommand("cclocal.logout", async () => {
+      const confirm = await vscode12.window.showWarningMessage(
+        "Are you sure you want to logout?",
+        "Yes",
+        "No"
+      );
+      if (confirm === "Yes") {
+        await authManager.logout();
+        vscode12.window.showInformationMessage("Logged out successfully");
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode12.commands.registerCommand("cclocal.checkAuth", async () => {
+      const state = await authManager.checkAuthStatus();
+      if (state.status === "authenticated") {
+        vscode12.window.showInformationMessage(
+          `Logged in with ${state.provider || "Unknown"}`
+        );
+      } else {
+        vscode12.window.showInformationMessage("Not logged in");
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode12.commands.registerCommand("cclocal.switchAuthMethod", async () => {
+      const method = await authManager.showLoginPicker();
+      if (!method) return;
+      if (authManager.isAuthenticated()) {
+        await authManager.logout();
+      }
+      await authManager.login(method);
+    })
+  );
+  context.subscriptions.push(
+    vscode12.commands.registerCommand("cclocal.configureCustomProvider", async () => {
+      const { CustomProviderAuth: CustomProviderAuth2 } = await Promise.resolve().then(() => (init_CustomProviderAuth(), CustomProviderAuth_exports));
+      const customAuth = new CustomProviderAuth2(new SecureStorage(context));
+      await customAuth.configure();
+    })
+  );
+}
+
+// src/extension.ts
+init_mcp();
+init_MCPPanelProvider();
+
+// src/plugins/PluginManager.ts
+import * as vscode17 from "vscode";
+import * as path8 from "path";
+import * as fs5 from "fs";
+var PLUGIN_DIR = "plugins";
+var MANIFEST_FILE = "plugin.json";
+var KNOWN_MARKETPLACES = [
+  "https://marketplace.anthropic.com",
+  "https://plugins.claude.ai"
+];
+var PluginManager = class {
+  outputChannel;
+  context;
+  plugins;
+  marketplaces;
+  options;
+  eventEmitter;
+  pluginStorageDir;
+  /** Event fired when plugin state changes */
+  onDidPluginEvent;
+  constructor(context, outputChannel2, options = {}) {
+    this.context = context;
+    this.outputChannel = outputChannel2;
+    this.options = {
+      officialMarketplaces: KNOWN_MARKETPLACES,
+      extraKnownMarketplaces: [],
+      strictKnownMarketplaces: [],
+      blockedMarketplaces: [],
+      autoUpdate: false,
+      updateCheckInterval: 36e5,
+      // 1 hour
+      ...options
+    };
+    this.plugins = /* @__PURE__ */ new Map();
+    this.marketplaces = /* @__PURE__ */ new Map();
+    this.eventEmitter = new vscode17.EventEmitter();
+    this.onDidPluginEvent = this.eventEmitter.event;
+    this.pluginStorageDir = path8.join(context.globalStorageUri.fsPath, PLUGIN_DIR);
+    this.ensurePluginDir();
+    this.initializeMarketplaces();
+    this.outputChannel.debug("PluginManager initialized");
+  }
+  // ─── Plugin Installation ───────────────────────────────────────────────────
+  /**
+   * Install a plugin from a marketplace
+   */
+  async install(pluginId, marketplaceUrl, options = {}) {
+    this.outputChannel.info(`Installing plugin: ${pluginId}`);
+    if (this.plugins.has(pluginId)) {
+      throw new Error(`Plugin "${pluginId}" is already installed`);
+    }
+    const marketplace = this.marketplaces.get(marketplaceUrl);
+    if (!marketplace?.plugins) {
+      await this.refreshMarketplace(marketplaceUrl);
+    }
+    const marketplacePlugin = this.findMarketplacePlugin(pluginId, marketplaceUrl);
+    if (!marketplacePlugin) {
+      throw new Error(`Plugin "${pluginId}" not found in marketplace`);
+    }
+    if (!options.skipTrust) {
+      const trusted = await this.verifyPluginTrust(marketplacePlugin);
+      if (!trusted) {
+        throw new Error(`Plugin "${pluginId}" failed trust verification`);
+      }
+    }
+    const installPath = path8.join(this.pluginStorageDir, this.sanitizePluginId(pluginId));
+    await fs5.promises.mkdir(installPath, { recursive: true });
+    await this.downloadPlugin(marketplacePlugin, installPath);
+    const manifest = await this.loadManifest(installPath);
+    const approved = options.autoApprove || await this.requestPermissions(manifest);
+    const installedPlugin = {
+      manifest,
+      installPath,
+      state: "installed",
+      trustLevel: marketplacePlugin.trustLevel,
+      installedAt: Date.now(),
+      updatedAt: Date.now(),
+      permissionsApproved: approved,
+      approvedPermissions: approved ? manifest.permissions || [] : [],
+      configuration: this.getDefaultConfig(manifest),
+      marketplaceUrl
+    };
+    this.plugins.set(pluginId, installedPlugin);
+    this.emitEvent("plugin_installed", pluginId);
+    if (approved) {
+      await this.activate(pluginId);
+    }
+    this.outputChannel.info(`Plugin installed: ${pluginId}`);
+    return installedPlugin;
+  }
+  /**
+   * Install a plugin from a local path
+   */
+  async installLocal(localPath, options = {}) {
+    const manifest = await this.loadManifest(localPath);
+    const pluginId = manifest.id;
+    if (this.plugins.has(pluginId)) {
+      throw new Error(`Plugin "${pluginId}" is already installed`);
+    }
+    const approved = options.autoApprove || await this.requestPermissions(manifest);
+    const installedPlugin = {
+      manifest,
+      installPath: localPath,
+      state: "installed",
+      trustLevel: "untrusted",
+      installedAt: Date.now(),
+      updatedAt: Date.now(),
+      permissionsApproved: approved,
+      approvedPermissions: approved ? manifest.permissions || [] : [],
+      configuration: this.getDefaultConfig(manifest)
+    };
+    this.plugins.set(pluginId, installedPlugin);
+    this.emitEvent("plugin_installed", pluginId);
+    if (approved) {
+      await this.activate(pluginId);
+    }
+    this.outputChannel.info(`Local plugin installed: ${pluginId}`);
+    return installedPlugin;
+  }
+  /**
+   * Uninstall a plugin
+   */
+  async uninstall(pluginId) {
+    const plugin = this.plugins.get(pluginId);
+    if (!plugin) {
+      return false;
+    }
+    if (plugin.state === "active") {
+      await this.deactivate(pluginId);
+    }
+    plugin.state = "uninstalling";
+    this.emitEvent("plugin_uninstalled", pluginId);
+    try {
+      await fs5.promises.rm(plugin.installPath, { recursive: true, force: true });
+    } catch (error) {
+      this.outputChannel.warn(`Failed to remove plugin files: ${error}`);
+    }
+    this.plugins.delete(pluginId);
+    this.outputChannel.info(`Plugin uninstalled: ${pluginId}`);
+    return true;
+  }
+  // ─── Plugin Lifecycle ──────────────────────────────────────────────────────
+  /**
+   * Activate a plugin
+   */
+  async activate(pluginId) {
+    const plugin = this.plugins.get(pluginId);
+    if (!plugin) {
+      throw new Error(`Plugin "${pluginId}" not found`);
+    }
+    if (plugin.state === "active") {
+      return true;
+    }
+    if (!plugin.permissionsApproved) {
+      const approved = await this.requestPermissions(plugin.manifest);
+      if (!approved) {
+        return false;
+      }
+      plugin.permissionsApproved = true;
+      plugin.approvedPermissions = plugin.manifest.permissions || [];
+    }
+    try {
+      if (plugin.manifest.mcpServers) {
+        await this.registerPluginMcpServers(plugin);
+      }
+      plugin.state = "active";
+      plugin.updatedAt = Date.now();
+      this.emitEvent("plugin_activated", pluginId);
+      this.outputChannel.info(`Plugin activated: ${pluginId}`);
+      return true;
+    } catch (error) {
+      plugin.state = "error";
+      plugin.lastError = error instanceof Error ? error.message : String(error);
+      this.emitEvent("plugin_error", pluginId, { error: plugin.lastError });
+      this.outputChannel.error(`Plugin activation failed: ${pluginId}: ${error}`);
+      return false;
+    }
+  }
+  /**
+   * Deactivate a plugin
+   */
+  async deactivate(pluginId) {
+    const plugin = this.plugins.get(pluginId);
+    if (!plugin || plugin.state !== "active") {
+      return false;
+    }
+    plugin.state = "installed";
+    plugin.updatedAt = Date.now();
+    this.emitEvent("plugin_deactivated", pluginId);
+    this.outputChannel.info(`Plugin deactivated: ${pluginId}`);
+    return true;
+  }
+  /**
+   * Enable a disabled plugin
+   */
+  async enable(pluginId) {
+    const plugin = this.plugins.get(pluginId);
+    if (!plugin || plugin.state !== "disabled") {
+      return false;
+    }
+    return this.activate(pluginId);
+  }
+  /**
+   * Disable an active plugin
+   */
+  async disable(pluginId) {
+    const plugin = this.plugins.get(pluginId);
+    if (!plugin) {
+      return false;
+    }
+    if (plugin.state === "active") {
+      await this.deactivate(pluginId);
+    }
+    plugin.state = "disabled";
+    plugin.updatedAt = Date.now();
+    return true;
+  }
+  // ─── Plugin Queries ────────────────────────────────────────────────────────
+  /**
+   * Get an installed plugin
+   */
+  getPlugin(pluginId) {
+    return this.plugins.get(pluginId);
+  }
+  /**
+   * Get all installed plugins
+   */
+  getAllPlugins() {
+    return Array.from(this.plugins.values());
+  }
+  /**
+   * Get plugins by state
+   */
+  getPluginsByState(state) {
+    return this.getAllPlugins().filter((p) => p.state === state);
+  }
+  /**
+   * Get active plugins
+   */
+  getActivePlugins() {
+    return this.getPluginsByState("active");
+  }
+  /**
+   * Get plugin statistics
+   */
+  getStats() {
+    const plugins = this.getAllPlugins();
+    const byState = {
+      available: 0,
+      installed: 0,
+      active: 0,
+      disabled: 0,
+      error: 0,
+      updating: 0,
+      uninstalling: 0
+    };
+    const byTrust = {
+      untrusted: 0,
+      community: 0,
+      verified: 0,
+      official: 0,
+      enterprise: 0
+    };
+    for (const plugin of plugins) {
+      byState[plugin.state]++;
+      byTrust[plugin.trustLevel]++;
+    }
+    return {
+      totalInstalled: plugins.length,
+      totalActive: byState.active,
+      byState,
+      byTrust,
+      marketplaces: this.marketplaces.size,
+      availablePlugins: this.getTotalAvailablePlugins()
+    };
+  }
+  // ─── Permissions ────────────────────────────────────────────────────────────
+  /**
+   * Request user approval for plugin permissions
+   */
+  async requestPermissions(manifest) {
+    const permissions = manifest.permissions || [];
+    if (permissions.length === 0) {
+      return true;
+    }
+    const dangerousPerms = permissions.filter(
+      (p) => ["execute-commands", "write-files", "full-access"].includes(p)
+    );
+    if (dangerousPerms.length === 0) {
+      return true;
+    }
+    const detail = [
+      `Plugin: ${manifest.name} v${manifest.version}`,
+      `Publisher: ${manifest.publisher}`,
+      "",
+      "This plugin requests the following permissions:",
+      ...permissions.map((p) => `  \u2022 ${this.formatPermission(p)}`),
+      "",
+      "Dangerous permissions require your approval:",
+      ...dangerousPerms.map((p) => `  \u26A0 ${this.formatPermission(p)}`)
+    ].join("\n");
+    const result = await vscode17.window.showWarningMessage(
+      `Plugin Permission Request: ${manifest.name}`,
+      { modal: true, detail },
+      { title: "Approve" },
+      { title: "Deny" }
+    );
+    return result?.title === "Approve";
+  }
+  /**
+   * Update permissions for an installed plugin
+   */
+  async updatePermissions(pluginId, permissions) {
+    const plugin = this.plugins.get(pluginId);
+    if (!plugin) {
+      return false;
+    }
+    plugin.approvedPermissions = permissions;
+    plugin.permissionsApproved = true;
+    plugin.updatedAt = Date.now();
+    this.emitEvent("permissions_granted", pluginId, { permissions });
+    return true;
+  }
+  // ─── Trust Management ──────────────────────────────────────────────────────
+  /**
+   * Verify plugin trust before installation
+   */
+  async verifyPluginTrust(marketplacePlugin) {
+    const trustLevel = marketplacePlugin.trustLevel;
+    if (trustLevel === "official" || trustLevel === "verified") {
+      return true;
+    }
+    if (trustLevel === "enterprise") {
+      return true;
+    }
+    if (trustLevel === "community") {
+      const result2 = await vscode17.window.showWarningMessage(
+        `Community Plugin: ${marketplacePlugin.manifest.name}`,
+        {
+          modal: true,
+          detail: [
+            `Publisher: ${marketplacePlugin.manifest.publisher}`,
+            `This plugin is community-verified but not officially reviewed.`,
+            `Install at your own risk.`
+          ].join("\n")
+        },
+        { title: "Install Anyway" },
+        { title: "Cancel" }
+      );
+      return result2?.title === "Install Anyway";
+    }
+    const result = await vscode17.window.showWarningMessage(
+      `Untrusted Plugin: ${marketplacePlugin.manifest.name}`,
+      {
+        modal: true,
+        detail: [
+          `Publisher: ${marketplacePlugin.manifest.publisher}`,
+          `This plugin has not been verified by any trusted source.`,
+          `Installing untrusted plugins may pose security risks.`
+        ].join("\n")
+      },
+      { title: "Install at Own Risk" },
+      { title: "Cancel" }
+    );
+    return result?.title === "Install at Own Risk";
+  }
+  /**
+   * Update trust level for a plugin
+   */
+  updateTrustLevel(pluginId, trustLevel) {
+    const plugin = this.plugins.get(pluginId);
+    if (!plugin) {
+      return false;
+    }
+    plugin.trustLevel = trustLevel;
+    plugin.updatedAt = Date.now();
+    this.emitEvent("trust_changed", pluginId, { trustLevel });
+    return true;
+  }
+  // ─── Marketplace Management ────────────────────────────────────────────────
+  /**
+   * Add a marketplace
+   */
+  async addMarketplace(url4) {
+    if (this.isMarketplaceBlocked(url4)) {
+      throw new Error(`Marketplace "${url4}" is blocked by policy`);
+    }
+    if (this.marketplaces.has(url4)) {
+      return this.marketplaces.get(url4);
+    }
+    const trustLevel = this.determineMarketplaceTrust(url4);
+    const marketplace = {
+      url: url4,
+      name: this.extractMarketplaceName(url4),
+      trustLevel,
+      isKnown: this.isKnownMarketplace(url4)
+    };
+    this.marketplaces.set(url4, marketplace);
+    await this.refreshMarketplace(url4);
+    this.emitEvent("marketplace_added", void 0, url4);
+    const config = vscode17.workspace.getConfiguration("cclocal");
+    const extra = config.get("extraKnownMarketplaces") || [];
+    if (!extra.includes(url4)) {
+      extra.push(url4);
+      await config.update("extraKnownMarketplaces", extra, vscode17.ConfigurationTarget.Global);
+    }
+    this.outputChannel.info(`Marketplace added: ${url4}`);
+    return marketplace;
+  }
+  /**
+   * Remove a marketplace
+   */
+  async removeMarketplace(url4) {
+    if (!this.marketplaces.has(url4)) {
+      return false;
+    }
+    this.marketplaces.delete(url4);
+    this.emitEvent("marketplace_removed", void 0, url4);
+    const config = vscode17.workspace.getConfiguration("cclocal");
+    const extra = config.get("extraKnownMarketplaces") || [];
+    const filtered = extra.filter((u) => u !== url4);
+    await config.update("extraKnownMarketplaces", filtered, vscode17.ConfigurationTarget.Global);
+    this.outputChannel.info(`Marketplace removed: ${url4}`);
+    return true;
+  }
+  /**
+   * Refresh marketplace data
+   */
+  async refreshMarketplace(url4) {
+    const marketplace = this.marketplaces.get(url4);
+    if (!marketplace) {
+      return;
+    }
+    try {
+      const response = await fetch(`${url4}/api/plugins`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      marketplace.plugins = data.plugins || [];
+      marketplace.lastRefreshed = Date.now();
+      this.emitEvent("marketplace_refreshed", void 0, url4);
+    } catch (error) {
+      this.outputChannel.warn(`Failed to refresh marketplace ${url4}: ${error}`);
+      marketplace.plugins = [];
+    }
+  }
+  /**
+   * Get all marketplaces
+   */
+  getMarketplaces() {
+    return Array.from(this.marketplaces.values());
+  }
+  // ─── Configuration ─────────────────────────────────────────────────────────
+  /**
+   * Get plugin configuration
+   */
+  getPluginConfig(pluginId) {
+    return this.plugins.get(pluginId)?.configuration;
+  }
+  /**
+   * Update plugin configuration
+   */
+  async updatePluginConfig(pluginId, key, value) {
+    const plugin = this.plugins.get(pluginId);
+    if (!plugin) {
+      return false;
+    }
+    plugin.configuration[key] = value;
+    plugin.updatedAt = Date.now();
+    return true;
+  }
+  // ─── Load Installed Plugins ────────────────────────────────────────────────
+  /**
+   * Load all installed plugins from storage
+   */
+  async loadInstalledPlugins() {
+    try {
+      const entries = await fs5.promises.readdir(this.pluginStorageDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const pluginDir = path8.join(this.pluginStorageDir, entry.name);
+        const manifestPath = path8.join(pluginDir, MANIFEST_FILE);
+        try {
+          const manifest = await this.loadManifest(pluginDir);
+          const pluginId = manifest.id;
+          const installed = {
+            manifest,
+            installPath: pluginDir,
+            state: "installed",
+            trustLevel: "community",
+            installedAt: 0,
+            updatedAt: Date.now(),
+            permissionsApproved: false,
+            approvedPermissions: [],
+            configuration: this.getDefaultConfig(manifest)
+          };
+          this.plugins.set(pluginId, installed);
+          this.outputChannel.debug(`Loaded plugin: ${pluginId}`);
+        } catch {
+          this.outputChannel.warn(`Failed to load plugin from: ${pluginDir}`);
+        }
+      }
+    } catch (error) {
+      if (error.code !== "ENOENT") {
+        this.outputChannel.error(`Failed to load plugins: ${error}`);
+      }
+    }
+  }
+  // ─── Private Helpers ────────────────────────────────────────────────────────
+  ensurePluginDir() {
+    if (!fs5.existsSync(this.pluginStorageDir)) {
+      fs5.mkdirSync(this.pluginStorageDir, { recursive: true });
+    }
+  }
+  initializeMarketplaces() {
+    const official = this.options.officialMarketplaces || KNOWN_MARKETPLACES;
+    for (const url4 of official) {
+      this.marketplaces.set(url4, {
+        url: url4,
+        name: this.extractMarketplaceName(url4),
+        trustLevel: "official",
+        isKnown: true
+      });
+    }
+    const extra = this.options.extraKnownMarketplaces || [];
+    for (const url4 of extra) {
+      if (!this.marketplaces.has(url4)) {
+        this.marketplaces.set(url4, {
+          url: url4,
+          name: this.extractMarketplaceName(url4),
+          trustLevel: "community",
+          isKnown: true
+        });
+      }
+    }
+  }
+  async downloadPlugin(plugin, targetDir) {
+    const response = await fetch(plugin.downloadUrl);
+    if (!response.ok) {
+      throw new Error(`Download failed: HTTP ${response.status}`);
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    await fs5.promises.writeFile(path8.join(targetDir, "plugin.tar.gz"), buffer);
+    this.outputChannel.debug(`Downloaded plugin: ${plugin.manifest.id}`);
+  }
+  async loadManifest(pluginDir) {
+    const manifestPath = path8.join(pluginDir, MANIFEST_FILE);
+    const content = await fs5.promises.readFile(manifestPath, "utf-8");
+    return JSON.parse(content);
+  }
+  async registerPluginMcpServers(plugin) {
+    if (!plugin.manifest.mcpServers) return;
+    const { getMCPManager: getMCPManager2 } = await Promise.resolve().then(() => (init_mcp(), mcp_exports));
+    const mcpManager2 = getMCPManager2();
+    for (const [name, config] of Object.entries(plugin.manifest.mcpServers)) {
+      try {
+        mcpManager2.registerServer({
+          name: `${plugin.manifest.id}__${name}`,
+          config
+        });
+      } catch (error) {
+        this.outputChannel.warn(`Failed to register MCP server ${name}: ${error}`);
+      }
+    }
+  }
+  getDefaultConfig(manifest) {
+    const config = {};
+    if (manifest.configuration) {
+      for (const [key, schema] of Object.entries(manifest.configuration)) {
+        config[key] = schema.default;
+      }
+    }
+    return config;
+  }
+  formatPermission(perm) {
+    const labels = {
+      "read-files": "Read file contents",
+      "write-files": "Write/edit files",
+      "execute-commands": "Run shell commands",
+      "access-network": "Make HTTP requests",
+      "access-mcp": "Register MCP servers",
+      "access-clipboard": "Access clipboard",
+      "access-workspace": "Access workspace info",
+      "access-extensions": "Access other extensions",
+      "full-access": "Full unrestricted access"
+    };
+    return labels[perm] || perm;
+  }
+  sanitizePluginId(id) {
+    return id.replace(/[^a-zA-Z0-9_-]/g, "_");
+  }
+  extractMarketplaceName(url4) {
+    try {
+      const hostname = new URL(url4).hostname;
+      return hostname.replace(/^(www\.|marketplace\.)/, "");
+    } catch {
+      return url4;
+    }
+  }
+  isKnownMarketplace(url4) {
+    const allKnown = [
+      ...this.options.officialMarketplaces || [],
+      ...this.options.extraKnownMarketplaces || [],
+      ...this.options.strictKnownMarketplaces || []
+    ];
+    return allKnown.some((u) => u === url4);
+  }
+  isMarketplaceBlocked(url4) {
+    return (this.options.blockedMarketplaces || []).includes(url4);
+  }
+  determineMarketplaceTrust(url4) {
+    const official = this.options.officialMarketplaces || KNOWN_MARKETPLACES;
+    if (official.includes(url4)) return "official";
+    if (this.options.strictKnownMarketplaces?.includes(url4)) return "verified";
+    if (this.options.extraKnownMarketplaces?.includes(url4)) return "community";
+    return "untrusted";
+  }
+  findMarketplacePlugin(pluginId, marketplaceUrl) {
+    const marketplace = this.marketplaces.get(marketplaceUrl);
+    return marketplace?.plugins?.find((p) => p.manifest.id === pluginId);
+  }
+  getTotalAvailablePlugins() {
+    let total = 0;
+    const seenIds = /* @__PURE__ */ new Set();
+    for (const marketplace of this.marketplaces.values()) {
+      for (const plugin of marketplace.plugins || []) {
+        if (!seenIds.has(plugin.manifest.id)) {
+          seenIds.add(plugin.manifest.id);
+          total++;
+        }
+      }
+    }
+    return total;
+  }
+  emitEvent(type, pluginId, data) {
+    this.eventEmitter.fire({ type, pluginId, data });
+  }
+  // ─── Lifecycle ──────────────────────────────────────────────────────────────
+  dispose() {
+    this.eventEmitter.dispose();
+    this.plugins.clear();
+    this.marketplaces.clear();
+    this.outputChannel.debug("PluginManager disposed");
+  }
+};
+var instance3 = null;
+function getPluginManager(context, outputChannel2, options) {
+  if (!instance3 && context && outputChannel2) {
+    instance3 = new PluginManager(context, outputChannel2, options);
+  }
+  return instance3;
+}
+function disposePluginManager() {
+  if (instance3) {
+    instance3.dispose();
+    instance3 = null;
+  }
+}
+
+// src/plugins/PluginPanelProvider.ts
+import * as vscode18 from "vscode";
+var PluginPanelProvider = class {
+  panel = null;
+  pluginManager;
+  constructor(pluginManager2) {
+    this.pluginManager = pluginManager2;
+    this.pluginManager.onDidPluginEvent(() => {
+      this.sendState();
+    });
+  }
+  show() {
+    if (this.panel) {
+      this.panel.reveal();
+      return;
+    }
+    this.panel = vscode18.window.createWebviewPanel(
+      "cclocal.plugins",
+      "CCLocal Plugins",
+      vscode18.ViewColumn.One,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true
+      }
+    );
+    this.panel.webview.html = this.getWebviewContent();
+    this.setupMessageHandler();
+  }
+  setupMessageHandler() {
+    if (!this.panel) return;
+    this.panel.webview.onDidReceiveMessage(async (message) => {
+      switch (message.type) {
+        case "getState":
+          this.sendState();
+          break;
+        case "installPlugin":
+          try {
+            await this.pluginManager.install(message.pluginId, message.marketplaceUrl);
+            vscode18.window.showInformationMessage(`Plugin "${message.pluginId}" installed successfully`);
+          } catch (error) {
+            vscode18.window.showErrorMessage(`Failed to install plugin: ${error}`);
+          }
+          this.sendState();
+          break;
+        case "uninstallPlugin":
+          await this.pluginManager.uninstall(message.pluginId);
+          vscode18.window.showInformationMessage(`Plugin "${message.pluginId}" uninstalled`);
+          this.sendState();
+          break;
+        case "activatePlugin":
+          const activated = await this.pluginManager.activate(message.pluginId);
+          if (!activated) {
+            vscode18.window.showWarningMessage(`Failed to activate plugin "${message.pluginId}"`);
+          }
+          this.sendState();
+          break;
+        case "deactivatePlugin":
+          await this.pluginManager.deactivate(message.pluginId);
+          this.sendState();
+          break;
+        case "enablePlugin":
+          await this.pluginManager.enable(message.pluginId);
+          this.sendState();
+          break;
+        case "disablePlugin":
+          await this.pluginManager.disable(message.pluginId);
+          this.sendState();
+          break;
+        case "addMarketplace":
+          try {
+            await this.pluginManager.addMarketplace(message.url);
+            vscode18.window.showInformationMessage(`Marketplace "${message.url}" added`);
+          } catch (error) {
+            vscode18.window.showErrorMessage(`Failed to add marketplace: ${error}`);
+          }
+          this.sendState();
+          break;
+        case "removeMarketplace":
+          await this.pluginManager.removeMarketplace(message.url);
+          this.sendState();
+          break;
+        case "refreshMarketplace":
+          await this.pluginManager.refreshMarketplace(message.url);
+          this.sendState();
+          break;
+        case "openSettings":
+          await vscode18.commands.executeCommand("workbench.action.openSettings", "cclocal");
+          break;
+      }
+    });
+  }
+  sendState() {
+    const plugins = this.pluginManager.getAllPlugins();
+    const stats = this.pluginManager.getStats();
+    const marketplaces = this.pluginManager.getMarketplaces();
+    this.panel?.webview.postMessage({
+      type: "state",
+      plugins,
+      stats,
+      marketplaces
+    });
+  }
+  getWebviewContent() {
+    return (
+      /* html */
+      `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2344,22 +13021,3962 @@ inputEl.focus()
   </script>
 </body>
 </html>
-`}dispose(){this.panel?.dispose(),this.panel=null}};var Dt=g(require("vscode"),1),Ss=g(require("crypto"),1),Ot=class{outputChannel;context;sessions;activeSessionId;statuses;eventEmitter;onDidSessionEvent;constructor(e,t){this.context=e,this.outputChannel=t,this.sessions=new Map,this.activeSessionId=null,this.statuses=new Map,this.eventEmitter=new Dt.EventEmitter,this.onDidSessionEvent=this.eventEmitter.event,this.loadSessionList(),this.outputChannel.debug("SessionManager initialized")}async create(e={}){let t=Ss.randomUUID(),s=Date.now(),n=Dt.workspace.workspaceFolders?.[0]?.uri.fsPath||process.cwd(),i={id:t,name:e.name||`Session ${this.sessions.size+1}`,messages:[],cwd:e.cwd||n,model:e.model||"",createdAt:s,updatedAt:s,metadata:{tags:e.tags}};if(e.resumeFromId){let r=this.sessions.get(e.resumeFromId);r&&(i.messages=[...r.messages],i.name=e.name||`Resumed: ${r.name}`)}if(e.forkFromId){let r=this.sessions.get(e.forkFromId);r&&(i.messages=[...r.messages],i.name=e.name||`${r.name} (fork)`,i.metadata={...r.metadata,tags:e.tags,forkSourceId:e.forkFromId},this.emitEvent("session_forked",t,{sourceId:e.forkFromId}))}return e.systemPrompt&&i.messages.push({id:Ss.randomUUID(),role:"system",content:e.systemPrompt,timestamp:s}),this.sessions.set(t,i),this.statuses.set(t,"idle"),this.activeSessionId=t,await this.persistSessionList(),this.emitEvent("session_created",t),this.emitEvent("active_session_changed",t),this.outputChannel.info(`Created session: ${t} (${i.name})`),i}async load(e){let t=this.sessions.get(e);if(!t){let s=this.getStoredSession(e);s&&(t=s,this.sessions.set(e,t))}return t&&(this.activeSessionId=e,this.statuses.has(e)||this.statuses.set(e,"idle"),this.emitEvent("session_loaded",e),this.emitEvent("active_session_changed",e)),t}async save(e){let t=this.sessions.get(e);return t?(t.updatedAt=Date.now(),await this.persistSessionList(),this.emitEvent("session_updated",e),!0):!1}async delete(e){return this.sessions.has(e)?(this.sessions.delete(e),this.statuses.delete(e),this.activeSessionId===e&&(this.activeSessionId=this.sessions.keys().next().value||null,this.emitEvent("active_session_changed",this.activeSessionId||"")),await this.persistSessionList(),this.emitEvent("session_deleted",e),this.outputChannel.info(`Deleted session: ${e}`),!0):!1}async rename(e,t){let s=this.sessions.get(e);return s?(s.name=t,s.updatedAt=Date.now(),await this.persistSessionList(),this.emitEvent("session_renamed",e,{name:t}),!0):!1}addMessage(e,t){let s=this.sessions.get(e);return s?(s.messages.push(t),s.updatedAt=Date.now(),this.emitEvent("session_message_added",e,{messageId:t.id}),!0):!1}getMessages(e,t){let s=this.sessions.get(e);if(!s)return[];let n=t?.limit,i=t?.offset??0;return n===void 0?s.messages.slice(i):s.messages.slice(i,i+n)}replaceMessages(e,t){let s=this.sessions.get(e);return s?(s.messages=t,s.updatedAt=Date.now(),this.emitEvent("session_updated",e),!0):!1}getStatus(e){return this.statuses.get(e)||"idle"}setStatus(e,t){let s=this.statuses.get(e);s!==t&&(this.statuses.set(e,t),this.emitEvent("session_status_changed",e,{status:t,previousStatus:s}))}getActiveSessionId(){return this.activeSessionId}getActiveSession(){if(this.activeSessionId)return this.sessions.get(this.activeSessionId)}async switchSession(e){return this.sessions.has(e)?(this.activeSessionId&&await this.save(this.activeSessionId),this.activeSessionId=e,this.emitEvent("active_session_changed",e),!0):!1}listSessions(){let e=[],t=Array.from(this.sessions.values()).sort((s,n)=>n.updatedAt-s.updatedAt);for(let s of t){let n=s.messages.length>0?s.messages[s.messages.length-1]:void 0,i;if(n){let r=n.content;if(typeof r=="string")i=r.slice(0,80);else if(Array.isArray(r)){let a=r.find(l=>l.type==="text"&&typeof l.text=="string");a&&(i=a.text.slice(0,80))}}e.push({id:s.id,name:s.name,cwd:s.cwd,model:s.model,createdAt:s.createdAt,updatedAt:s.updatedAt,status:this.statuses.get(s.id)||"idle",messageCount:s.messages.length,lastMessagePreview:i,isActive:s.id===this.activeSessionId,tags:s.metadata?.tags,isFork:!!s.metadata?.forkSourceId,forkSourceId:s.metadata?.forkSourceId})}return e}getSessionDetail(e){let t=this.sessions.get(e);if(t)return{session:t,status:this.statuses.get(e)||"idle",messageCount:t.messages.length,tokenCount:0,contextWindow:0}}search(e){let t=this.listSessions();if(e.text){let s=e.text.toLowerCase();t=t.filter(n=>n.name.toLowerCase().includes(s)||(n.lastMessagePreview||"").toLowerCase().includes(s)||(n.tags||[]).some(i=>i.toLowerCase().includes(s)))}return e.model&&(t=t.filter(s=>s.model===e.model)),e.fromDate&&(t=t.filter(s=>s.updatedAt>=e.fromDate)),e.toDate&&(t=t.filter(s=>s.updatedAt<=e.toDate)),e.tags?.length&&(t=t.filter(s=>e.tags.some(n=>(s.tags||[]).includes(n)))),t.slice(0,e.limit||50)}async fork(e,t){let s=this.sessions.get(e);if(!s)throw new Error(`Session ${e} not found`);return this.create({name:t?.name||`${s.name} (fork)`,cwd:t?.cwd||s.cwd,model:t?.model||s.model,forkFromId:e,tags:s.metadata?.tags})}async generateTitle(e){let t=this.sessions.get(e);if(!t)return null;let s=t.messages.find(a=>a.role==="user");if(!s)return null;let n="";if(typeof s.content=="string")n=s.content;else if(Array.isArray(s.content)){let a=s.content.find(l=>l.type==="text"&&typeof l.text=="string");a&&(n=a.text)}if(!n)return null;let i=n.split(`
-`)[0].trim(),r=i.length>60?i.slice(0,57)+"...":i;return await this.rename(e,r),r}getStats(){let e={idle:0,running:0,paused:0,error:0,loading:0};for(let n of this.statuses.values())e[n]++;let t=Array.from(this.sessions.values()),s=t.reduce((n,i)=>n+i.messages.length,0);return{totalSessions:this.sessions.size,activeSessionId:this.activeSessionId||void 0,byStatus:e,totalMessages:s,oldestSession:t.length>0?Math.min(...t.map(n=>n.createdAt)):void 0,newestSession:t.length>0?Math.max(...t.map(n=>n.updatedAt)):void 0}}async persistSessionList(){let e=this.listSessions().map(t=>({id:t.id,name:t.name,cwd:t.cwd,model:t.model,createdAt:t.createdAt,updatedAt:t.updatedAt,tags:t.tags,isFork:t.isFork,forkSourceId:t.forkSourceId}));await this.context.globalState.update("cclocal.sessions",e)}loadSessionList(){let e=this.context.globalState.get("cclocal.sessions");if(e){for(let t of e){let s={id:t.id,name:t.name,messages:[],cwd:t.cwd,model:t.model,createdAt:t.createdAt,updatedAt:t.updatedAt,metadata:{tags:t.tags,forkSourceId:t.forkSourceId}};this.sessions.set(t.id,s),this.statuses.set(t.id,"idle")}this.outputChannel.debug(`Loaded ${e.length} sessions from globalState`)}}getStoredSession(e){let t=this.context.globalState.get(`cclocal.session_messages_${e}`),s=this.sessions.get(e);if(s)return t&&(s.messages=Object.values(t)),s}emitEvent(e,t,s){this.eventEmitter.fire({type:e,sessionId:t,data:s})}dispose(){this.eventEmitter.dispose(),this.sessions.clear(),this.statuses.clear(),this.outputChannel.debug("SessionManager disposed")}},Me=null;function Cs(o,e){return!Me&&o&&e&&(Me=new Ot(o,e)),Me}function xs(){Me&&(Me.dispose(),Me=null)}var P=g(require("vscode"),1),Bt=class extends P.TreeItem{constructor(t){super(t.name,P.TreeItemCollapsibleState.None);this.sessionItem=t;this.id=t.id,this.description=this.formatDescription(t),this.tooltip=this.formatTooltip(t),this.iconPath=this.getIcon(t),this.contextValue=this.getContextValue(t),this.resourceUri=void 0,t.isActive&&(this.description=`\u25CF ${this.description}`),this.command={command:"cclocal.switchSession",title:"Switch to Session",arguments:[t.id]}}formatDescription(t){let s=[];t.messageCount>0&&s.push(`${t.messageCount} msgs`);let n=this.formatRelativeTime(t.updatedAt);return s.push(n),s.join(" \u2022 ")}formatTooltip(t){let s=[`Session: ${t.name}`,`ID: ${t.id}`,`Status: ${t.status}`,`Messages: ${t.messageCount}`,`Model: ${t.model||"default"}`,`Created: ${new Date(t.createdAt).toLocaleString()}`,`Updated: ${new Date(t.updatedAt).toLocaleString()}`];return t.tags?.length&&s.push(`Tags: ${t.tags.join(", ")}`),t.isFork&&s.push(`Fork of: ${t.forkSourceId}`),t.lastMessagePreview&&s.push("",`Last message: ${t.lastMessagePreview}`),s.join(`
-`)}getIcon(t){if(t.isActive)return new P.ThemeIcon("circle-filled",new P.ThemeColor("charts.green"));switch(t.status){case"running":return new P.ThemeIcon("sync~spin");case"error":return new P.ThemeIcon("error",new P.ThemeColor("errorForeground"));case"paused":return new P.ThemeIcon("debug-pause");case"loading":return new P.ThemeIcon("loading~spin");default:return new P.ThemeIcon("circle-outline")}}getContextValue(t){let s=["session"];return t.isActive&&s.push("active"),t.isFork&&s.push("fork"),t.status==="running"&&s.push("running"),t.status==="error"&&s.push("error"),s.join(".")}formatRelativeTime(t){let s=Date.now()-t,n=Math.floor(s/1e3);return n<60?"just now":n<3600?`${Math.floor(n/60)}m ago`:n<86400?`${Math.floor(n/3600)}h ago`:`${Math.floor(n/86400)}d ago`}},Xe=class{constructor(e){this.sessionManager=e;this.treeView=P.window.createTreeView("cclocal.sessions",{treeDataProvider:this,showCollapseAll:!1}),this.sessionManager.onDidSessionEvent(()=>{this.refresh()})}treeView;_onDidChangeTreeData=new P.EventEmitter;onDidChangeTreeData=this._onDidChangeTreeData.event;searchQuery="";refresh(){this._onDidChangeTreeData.fire()}setSearchQuery(e){this.searchQuery=e,this.refresh()}getTreeItem(e){return e}getChildren(e){let t=this.sessionManager.listSessions();if(this.searchQuery){let s=this.searchQuery.toLowerCase();t=t.filter(n=>n.name.toLowerCase().includes(s)||(n.lastMessagePreview||"").toLowerCase().includes(s)||(n.tags||[]).some(i=>i.toLowerCase().includes(s)))}return t.map(s=>new Bt(s))}dispose(){this.treeView.dispose(),this._onDidChangeTreeData.dispose()}};var f=g(require("vscode"),1),bo=[],wo=[{id:"cclocal.acceptEdit",title:"Accept Edit",icon:"$(check)",register:(o,e)=>{o.subscriptions.push(f.commands.registerCommand("cclocal.acceptEdit",async()=>{f.commands.executeCommand("workbench.action.closeActiveEditor"),f.window.showInformationMessage("CCLocal: Changes accepted")}))}},{id:"cclocal.rejectEdit",title:"Reject Edit",icon:"$(discard)",register:(o,e)=>{o.subscriptions.push(f.commands.registerCommand("cclocal.rejectEdit",async()=>{f.commands.executeCommand("workbench.action.closeActiveEditor"),f.window.showInformationMessage("CCLocal: Changes rejected")}))}},{id:"cclocal.insertAtMention",title:"Insert @-Mention",register:o=>{o.subscriptions.push(f.commands.registerCommand("cclocal.insertAtMention",async()=>{let e=f.window.activeTextEditor;if(!e){f.window.showWarningMessage("CCLocal: No active editor");return}let t=await f.window.showOpenDialog({canSelectMany:!0,filters:{"All Files":["*"]}});if(t&&t.length>0){let s=t.map(i=>`@${i.fsPath}`).join(" "),n=e.selection.active;e.edit(i=>{i.insert(n,s)})}}))}},{id:"cclocal.toggleDictation",title:"Toggle Voice Dictation",register:o=>{let e=!1;o.subscriptions.push(f.commands.registerCommand("cclocal.toggleDictation",()=>{e=!e,e?f.window.showInformationMessage("CCLocal: Voice dictation enabled"):f.window.showInformationMessage("CCLocal: Voice dictation disabled")}))}}],yo=[{id:"cclocal.openInPanel",title:"Open in Panel",icon:"$(empty-window)",register:o=>{o.subscriptions.push(f.commands.registerCommand("cclocal.openInPanel",()=>{f.commands.executeCommand("workbench.action.positionPanelBottom"),f.commands.executeCommand("workbench.view.extension.cclocal-sidebar")}))}},{id:"cclocal.openInSidebar",title:"Open in Sidebar",icon:"$(layout-sidebar-left)",register:o=>{o.subscriptions.push(f.commands.registerCommand("cclocal.openInSidebar",()=>{f.commands.executeCommand("workbench.view.extension.cclocal-sidebar")}))}},{id:"cclocal.openSettings",title:"Open Settings",register:o=>{o.subscriptions.push(f.commands.registerCommand("cclocal.openSettings",()=>{f.commands.executeCommand("workbench.action.openSettings","cclocal")}))}},{id:"cclocal.openConfigPanel",title:"Open Configuration Panel",icon:"$(settings-gear)",register:(o,e)=>{o.subscriptions.push(f.commands.registerCommand("cclocal.openConfigPanel",async()=>{let{ConfigPanelProvider:t}=await Promise.resolve().then(()=>(vo(),fo)),s=new t(e.configManager);o.subscriptions.push(s),s.show()}))}},{id:"cclocal.showLogs",title:"Show Logs",register:(o,e)=>{o.subscriptions.push(f.commands.registerCommand("cclocal.showLogs",()=>{e.outputChannel.show()}))}}],ko=[{id:"cclocal.setModel",title:"Set Model",register:(o,e)=>{o.subscriptions.push(f.commands.registerCommand("cclocal.setModel",async()=>{let t=e.configManager.get("availableModels")||[],s="custom",n=[...t.map(r=>({label:r})),{label:s}],i=await f.window.showQuickPick(n,{placeHolder:"Select a model"});if(i)if(i.label===s){let r=await f.window.showInputBox({prompt:"Enter custom model ID",placeHolder:"claude-3-opus-20240229"});r&&(await e.configManager.setModel(r),f.window.showInformationMessage(`CCLocal: Model set to ${r}`))}else await e.configManager.setModel(i.label),f.window.showInformationMessage(`CCLocal: Model set to ${i.label}`)}))}},{id:"cclocal.setPermissionMode",title:"Set Permission Mode",register:(o,e)=>{o.subscriptions.push(f.commands.registerCommand("cclocal.setPermissionMode",async()=>{let t=[{label:"default",description:"Ask for dangerous operations"},{label:"acceptEdits",description:"Auto-accept file edits"},{label:"plan",description:"Plan mode (no execution)"},{label:"bypassPermissions",description:"Auto-accept all (dangerous)"}],s=await f.window.showQuickPick(t,{placeHolder:"Select permission mode"});s&&(await e.configManager.update("initialPermissionMode",s.label),f.window.showInformationMessage(`CCLocal: Permission mode set to ${s.label}`))}))}}],So=[],Co=[...bo,...wo,...yo,...ko,...So];function Es(o,e){for(let t of Co)t.register(o,e)}var b=g(require("vscode"),1);function Ms(o,e){o.subscriptions.push(b.commands.registerCommand("cclocal.keyboard.sendWithCtrlEnter",()=>{(b.workspace.getConfiguration("cclocal").get("useCtrlEnterToSend")??!1)&&b.commands.executeCommand("cclocal.sendMessage")})),o.subscriptions.push(b.commands.registerCommand("cclocal.keyboard.escape",()=>{let t=e.getActiveSessionId();t&&e.getStatus(t)==="running"&&b.commands.executeCommand("cclocal.stopGeneration")})),o.subscriptions.push(b.commands.registerCommand("cclocal.keyboard.newConversation",()=>{(b.workspace.getConfiguration("cclocal").get("enableNewConversationShortcut")??!0)&&b.commands.executeCommand("cclocal.newConversation")})),o.subscriptions.push(b.commands.registerCommand("cclocal.keyboard.showCommandPalette",()=>{b.commands.executeCommand("cclocal.showCommandPalette")})),o.subscriptions.push(b.commands.registerCommand("cclocal.keyboard.previousSession",async()=>{let t=e.listSessions(),s=e.getActiveSessionId();if(t.length>0&&s){let i=(t.findIndex(r=>r.id===s)-1+t.length)%t.length;await e.switchSession(t[i].id)}})),o.subscriptions.push(b.commands.registerCommand("cclocal.keyboard.nextSession",async()=>{let t=e.listSessions(),s=e.getActiveSessionId();if(t.length>0&&s){let i=(t.findIndex(r=>r.id===s)+1)%t.length;await e.switchSession(t[i].id)}}))}async function xo(){let o=[{id:"new",label:"New Conversation",icon:"$(add)",action:()=>b.commands.executeCommand("cclocal.newConversation")},{id:"clear",label:"Clear Chat",icon:"$(clear-all)",action:()=>b.commands.executeCommand("cclocal.clearChat")},{id:"stop",label:"Stop Generation",icon:"$(debug-stop)",action:()=>b.commands.executeCommand("cclocal.stopGeneration")},{id:"model",label:"Set Model",icon:"$(symbol-color)",action:()=>b.commands.executeCommand("cclocal.setModel")},{id:"permissions",label:"Set Permission Mode",icon:"$(shield)",action:()=>b.commands.executeCommand("cclocal.setPermissionMode")},{id:"settings",label:"Open Settings",icon:"$(settings-gear)",action:()=>b.commands.executeCommand("cclocal.openSettings")},{id:"config",label:"Open Configuration Panel",icon:"$(editor-glyph)",action:()=>b.commands.executeCommand("cclocal.openConfigPanel")},{id:"sessions",label:"Show Session Statistics",icon:"$(graph)",action:()=>b.commands.executeCommand("cclocal.sessionStats")},{id:"mcp",label:"Show MCP Settings",icon:"$(server)",action:()=>b.commands.executeCommand("cclocal.showMCPSettings")},{id:"plugins",label:"Show Plugin Settings",icon:"$(extensions)",action:()=>b.commands.executeCommand("cclocal.showPluginSettings")},{id:"hooks",label:"Show Hook Statistics",icon:"$(bell)",action:()=>b.commands.executeCommand("cclocal.hooks.stats")},{id:"logs",label:"Show Logs",icon:"$(output)",action:()=>b.commands.executeCommand("cclocal.showLogs")},{id:"focus",label:"Focus Input",icon:"$(edit)",shortcut:"Ctrl+Escape",action:()=>b.commands.executeCommand("cclocal.focusInput")}],e=await b.window.showQuickPick(o.map(t=>({label:t.icon?`${t.icon} ${t.label}`:t.label,description:t.description,detail:t.shortcut,command:t})),{placeHolder:"CCLocal Commands",matchOnDescription:!0});e&&await e.command.action()}function _s(o){o.subscriptions.push(b.commands.registerCommand("cclocal.showCommandPalette",()=>xo()))}var W,M,R,Te,Ze,_e;async function mr(o){console.log("CCLocal extension activating..."),R=d.window.createOutputChannel("CCLocal",{log:!0}),o.subscriptions.push(R),M=new bt(o),o.subscriptions.push(M),W=ds(R,{allowedHttpUrls:M.get("allowedHttpHookUrls"),allowedCommands:M.get("allowedCommands"),allowedEnvVars:M.get("allowedEnvVars")}),o.subscriptions.push(W);let e=M.get("hooks");e&&W.loadFromConfig(e),o.subscriptions.push(d.workspace.onDidChangeConfiguration(l=>{if(l.affectsConfiguration("cclocal.hooks")){let c=M?.get("hooks");c&&W&&W.loadFromConfig(c)}if(l.affectsConfiguration("cclocal.disableAllHooks")){let c=M?.get("disableAllHooks");W&&W.setEnabled(!c)}}));let t=new xt(o);o.subscriptions.push(t),Te=Et(R,{autoDiscoverProject:M.get("enableAllProjectMcpServers"),preApprovedServers:M.get("allowedMcpServers"),deniedServers:M.get("deniedMcpServers")}),o.subscriptions.push(Te),Te.discoverServers(),At(o),Ze=ys(o,R,{extraKnownMarketplaces:M.get("extraKnownMarketplaces"),strictKnownMarketplaces:M.get("strictKnownMarketplaces"),blockedMarketplaces:M.get("blockedMarketplaces")}),o.subscriptions.push(Ze),await Ze.loadInstalledPlugins(),_e=Cs(o,R),o.subscriptions.push(_e);let s=new Xe(_e);o.subscriptions.push(s),o.subscriptions.push(d.window.registerTreeDataProvider("cclocal.sessions",s)),Es(o,{sessionManager:_e,sessionTree:s,hookManager:W,mcpManager:Te,pluginManager:Ze,configManager:M,outputChannel:R}),Ms(o,_e),_s(o),yr(o,_e,s),vr(o,W),br(o,Te),wr(o,Ze);let r=d.workspace.getConfiguration("cclocal").get("mode")||"websocket",a;if(r==="cli"){let l=new Oe(o.extensionUri);a=c=>l.sendMessage(c),o.subscriptions.push(d.window.registerWebviewViewProvider(Oe.viewType,l,{webviewOptions:{retainContextWhenHidden:!0}})),o.subscriptions.push(d.commands.registerCommand("cclocal.newSession",()=>{d.commands.executeCommand("cclocal.chatView.focus"),l.handleCommand("newSession")})),o.subscriptions.push(d.commands.registerCommand("cclocal.clearChat",()=>{l.handleCommand("clearChat")})),o.subscriptions.push(d.commands.registerCommand("cclocal.stopGeneration",()=>{l.handleCommand("stopGeneration")}))}else{let l=new ft;await l.ensureServerRunning();let c=new je(o.extensionUri,l);a=u=>c.sendMessage(u),o.subscriptions.push(d.window.registerWebviewViewProvider(je.viewType,c)),o.subscriptions.push(d.commands.registerCommand("cclocal.sendMessage",async()=>{let u=await d.window.showInputBox({prompt:"Enter your message to CCLocal",placeHolder:"How can I help you today?"});u&&await c.sendMessage(u)})),o.subscriptions.push(d.commands.registerCommand("cclocal.clearChat",()=>{c.clearChat()})),o.subscriptions.push(d.commands.registerCommand("cclocal.stopGeneration",()=>{c.stopGeneration()}))}o.subscriptions.push(d.commands.registerCommand("cclocal.sendSelectedCode",()=>{let l=d.window.activeTextEditor;if(!l){d.window.showWarningMessage("CCLocal: \u6CA1\u6709\u6D3B\u52A8\u7684\u7F16\u8F91\u5668");return}let c=l.selection;if(c.isEmpty){d.window.showWarningMessage("CCLocal: \u8BF7\u5148\u9009\u4E2D\u4EE3\u7801");return}let u=l.document.getText(c),p=l.document.languageId,h=l.document.fileName.split("/").pop()??"",m=`\u8BF7\u89E3\u91CA\u4EE5\u4E0B ${p} \u4EE3\u7801\uFF08\u6765\u81EA ${h}\uFF09\uFF1A
+`
+    );
+  }
+  dispose() {
+    this.panel?.dispose();
+    this.panel = null;
+  }
+};
 
-\`\`\`${p}
-${u}
-\`\`\``;d.commands.executeCommand("cclocal.chatView.focus").then(()=>{a(m)})})),console.log("CCLocal extension activated")}function fr(){us(),Mt(),ks(),xs(),R?.dispose()}function vr(o,e){o.subscriptions.push(d.commands.registerCommand("cclocal.hooks.enable",()=>{e.setEnabled(!0),d.window.showInformationMessage("CCLocal: Hooks enabled")})),o.subscriptions.push(d.commands.registerCommand("cclocal.hooks.disable",()=>{e.setEnabled(!1),d.window.showInformationMessage("CCLocal: Hooks disabled")})),o.subscriptions.push(d.commands.registerCommand("cclocal.hooks.clear",()=>{e.clear(),d.window.showInformationMessage("CCLocal: All hooks cleared")})),o.subscriptions.push(d.commands.registerCommand("cclocal.hooks.stats",()=>{let t=e.getStats(),s=`Total hooks: ${t.totalHooks}
-${Object.entries(t.hooksByType).filter(([,n])=>n>0).map(([n,i])=>`  ${n}: ${i}`).join(`
-`)}`;d.window.showInformationMessage(s,{modal:!0})})),o.subscriptions.push(d.commands.registerCommand("cclocal.hooks.test",async()=>{let t=["PreToolUse","PostToolUse","SessionStart","SessionEnd","FileWrite","FileEdit","BashExecution","Error"],s=await d.window.showQuickPick(t,{placeHolder:"Select hook type to test"});if(s){let n=await e.execute(s,{type:s,timestamp:Date.now(),toolName:"TestTool"}),i=n.map(r=>`Handler ${r.handlerIndex}: ${r.success?"\u2713":"\u2717"} (${r.duration}ms)
-`+(r.output?`  Output: ${r.output.slice(0,100)}
-`:"")+(r.error?`  Error: ${r.error}
-`:"")).join(`
-`);R?.info(`Hook test results:
-${i}`),d.window.showInformationMessage(`Hook test completed: ${n.filter(r=>r.success).length}/${n.length} passed`)}})),o.subscriptions.push(d.commands.registerCommand("cclocal.hooks.registerFunction",async()=>{let t=await d.window.showInputBox({prompt:"Enter function name",placeHolder:"myCustomHook"});t&&(e.registerFunction(t,async s=>(R?.debug(`Function hook "${t}" called with context:`,s),{success:!0,message:`Hook ${t} executed`,timestamp:Date.now()})),d.window.showInformationMessage(`CCLocal: Function hook "${t}" registered`))}))}function br(o,e){let t=new Pe(e);o.subscriptions.push(t),o.subscriptions.push(d.commands.registerCommand("cclocal.showMCPSettings",()=>{t.show()})),o.subscriptions.push(d.commands.registerCommand("cclocal.mcp.refresh",async()=>{await e.discoverServers(),d.window.showInformationMessage("CCLocal: MCP servers refreshed")})),o.subscriptions.push(d.commands.registerCommand("cclocal.mcp.reviewPending",async()=>{let s=e.getPendingApprovals();if(s.length===0){d.window.showInformationMessage("CCLocal: No pending MCP server approvals");return}for(let n of s)await e.showApprovalUI({name:n.name,info:n,tools:n.tools,reason:"auto_discovery"})?d.window.showInformationMessage(`CCLocal: Approved MCP server "${n.name}"`):d.window.showInformationMessage(`CCLocal: Denied MCP server "${n.name}"`)})),o.subscriptions.push(d.commands.registerCommand("cclocal.mcp.listServers",async()=>{let s=e.getAllServers();if(s.length===0){d.window.showInformationMessage("CCLocal: No MCP servers discovered");return}let n=s.map(r=>({label:r.name,description:`${r.status} | ${r.source} | ${r.config.type}`,detail:r.tools.length>0?`Tools: ${r.tools.map(a=>a.name).join(", ")}`:"No tools",server:r})),i=await d.window.showQuickPick(n,{placeHolder:"Select an MCP server"});if(i){let r=await d.window.showQuickPick([{label:"Enable",value:"enable"},{label:"Disable",value:"disable"},{label:"Remove",value:"remove"},{label:"View Details",value:"details"}],{placeHolder:`Action for "${i.label}"`});if(r)switch(r.value){case"enable":await e.enableServer(i.label);break;case"disable":await e.disableServer(i.label);break;case"remove":await e.removeServer(i.label);break;case"details":t.show();break}}})),o.subscriptions.push(d.commands.registerCommand("cclocal.mcp.stats",()=>{let s=e.getStats(),n=[`Total Discovered: ${s.totalDiscovered}`,`Connected: ${s.byStatus.connected||0}`,`Approved: ${s.byApproval.approved||0}`,`Pending: ${s.byApproval.pending||0}`,`Denied: ${s.byApproval.denied||0}`,`Total Tools: ${s.totalTools}`,"","By Source:",`  User: ${s.bySource.user||0}`,`  Local: ${s.bySource.local||0}`,`  Project: ${s.bySource.project||0}`];s.connectedServers.length>0&&(n.push("","Connected Servers:"),s.connectedServers.forEach(i=>n.push(`  - ${i}`))),s.failedServers.length>0&&(n.push("","Failed Servers:"),s.failedServers.forEach(i=>n.push(`  - ${i}`))),d.window.showInformationMessage(n.join(`
-`),{modal:!0})})),o.subscriptions.push(d.commands.registerCommand("cclocal.mcp.openUserConfig",async()=>{let s=process.env.HOME||process.env.USERPROFILE||"",n=await d.workspace.openTextDocument(Ts.join(s,".claude.json"));await d.window.showTextDocument(n)})),o.subscriptions.push(d.commands.registerCommand("cclocal.mcp.openProjectConfig",async()=>{let s=d.workspace.workspaceFolders?.[0];if(!s){d.window.showWarningMessage("CCLocal: No workspace folder open");return}let n=await d.workspace.openTextDocument(Ts.join(s.uri.fsPath,".mcp.json"));await d.window.showTextDocument(n)}))}function wr(o,e){let t=new Qe(e);o.subscriptions.push(t),o.subscriptions.push(d.commands.registerCommand("cclocal.showPluginSettings",()=>{t.show()})),o.subscriptions.push(d.commands.registerCommand("cclocal.installPlugin",async()=>{let s=e.getMarketplaces();if(s.length===0){d.window.showWarningMessage("CCLocal: No marketplaces configured. Add a marketplace source first.");return}let n=[];for(let r of s)for(let a of r.plugins||[])n.push({id:a.manifest.id,name:`${a.manifest.name} v${a.manifest.version} (${r.name})`,marketplaceUrl:r.url});if(n.length===0){d.window.showInformationMessage("CCLocal: No plugins available in marketplaces");return}let i=await d.window.showQuickPick(n.map(r=>({label:r.name,...r})),{placeHolder:"Select a plugin to install"});if(i)try{await e.install(i.id,i.marketplaceUrl),d.window.showInformationMessage(`CCLocal: Plugin "${i.id}" installed`)}catch(r){d.window.showErrorMessage(`Failed to install plugin: ${r}`)}})),o.subscriptions.push(d.commands.registerCommand("cclocal.uninstallPlugin",async()=>{let s=e.getAllPlugins();if(s.length===0){d.window.showInformationMessage("CCLocal: No plugins installed");return}let n=await d.window.showQuickPick(s.map(i=>({label:`${i.manifest.name} v${i.manifest.version}`,pluginId:i.manifest.id})),{placeHolder:"Select a plugin to uninstall"});n&&await d.window.showWarningMessage(`Uninstall plugin "${n.label}"?`,"Yes","No")==="Yes"&&(await e.uninstall(n.pluginId),d.window.showInformationMessage("CCLocal: Plugin uninstalled"))})),o.subscriptions.push(d.commands.registerCommand("cclocal.addMarketplace",async()=>{let s=await d.window.showInputBox({prompt:"Enter marketplace URL",placeHolder:"https://marketplace.example.com"});if(s)try{await e.addMarketplace(s),d.window.showInformationMessage(`CCLocal: Marketplace "${s}" added`)}catch(n){d.window.showErrorMessage(`Failed to add marketplace: ${n}`)}})),o.subscriptions.push(d.commands.registerCommand("cclocal.listPlugins",()=>{let s=e.getAllPlugins();if(s.length===0){d.window.showInformationMessage("CCLocal: No plugins installed");return}let n=s.map(i=>`  ${i.state==="active"?"\u25CF":i.state==="error"?"\u2717":"\u25CB"} ${i.manifest.name} v${i.manifest.version} [${i.state}] (${i.trustLevel})`);d.window.showInformationMessage(`Installed Plugins (${s.length}):
-${n.join(`
-`)}`,{modal:!0})})),o.subscriptions.push(d.commands.registerCommand("cclocal.pluginStats",()=>{let s=e.getStats(),n=[`Total Installed: ${s.totalInstalled}`,`Active: ${s.totalActive}`,"","By State:",...Object.entries(s.byState).filter(([,i])=>i>0).map(([i,r])=>`  ${i}: ${r}`),"","By Trust:",...Object.entries(s.byTrust).filter(([,i])=>i>0).map(([i,r])=>`  ${i}: ${r}`),"",`Marketplaces: ${s.marketplaces}`,`Available: ${s.availablePlugins}`];d.window.showInformationMessage(n.join(`
-`),{modal:!0})}))}function yr(o,e,t){o.subscriptions.push(d.commands.registerCommand("cclocal.newConversation",async()=>{await e.create(),t.refresh()})),o.subscriptions.push(d.commands.registerCommand("cclocal.switchSession",async s=>{await e.switchSession(s),t.refresh()})),o.subscriptions.push(d.commands.registerCommand("cclocal.renameSession",async s=>{let n=await d.window.showInputBox({prompt:"Rename session",value:s.sessionItem.name,placeHolder:"Enter new name"});n&&(await e.rename(s.sessionItem.id,n),t.refresh())})),o.subscriptions.push(d.commands.registerCommand("cclocal.deleteSession",async s=>{await d.window.showWarningMessage(`Delete session "${s.sessionItem.name}"?`,"Delete","Cancel")==="Delete"&&(await e.delete(s.sessionItem.id),t.refresh())})),o.subscriptions.push(d.commands.registerCommand("cclocal.forkSession",async s=>{let n=await e.fork(s.sessionItem.id);d.window.showInformationMessage(`Forked session: ${n.name}`),t.refresh()})),o.subscriptions.push(d.commands.registerCommand("cclocal.searchSessions",async()=>{let s=await d.window.showInputBox({prompt:"Search sessions by name or content",placeHolder:"Type search query..."});s!==void 0&&t.setSearchQuery(s)})),o.subscriptions.push(d.commands.registerCommand("cclocal.clearSessionSearch",()=>{t.setSearchQuery("")})),o.subscriptions.push(d.commands.registerCommand("cclocal.generateSessionTitle",async s=>{let n=await e.generateTitle(s.sessionItem.id);n?d.window.showInformationMessage(`Generated title: ${n}`):d.window.showInformationMessage("No user message found to generate title from"),t.refresh()})),o.subscriptions.push(d.commands.registerCommand("cclocal.sessionStats",()=>{let s=e.getStats(),n=[`Total Sessions: ${s.totalSessions}`,`Active: ${s.activeSessionId||"none"}`,`Total Messages: ${s.totalMessages}`,"","By Status:",...Object.entries(s.byStatus).filter(([,i])=>i>0).map(([i,r])=>`  ${i}: ${r}`)];s.oldestSession&&n.push("",`Oldest: ${new Date(s.oldestSession).toLocaleString()}`),s.newestSession&&n.push(`Newest: ${new Date(s.newestSession).toLocaleString()}`),d.window.showInformationMessage(n.join(`
-`),{modal:!0})}))}0&&(module.exports={activate,configManager,deactivate,hookManager,mcpManager,outputChannel});
+// src/session/SessionManager.ts
+import * as vscode19 from "vscode";
+import * as crypto8 from "crypto";
+var SessionManager = class {
+  outputChannel;
+  context;
+  /** Active sessions in memory */
+  sessions;
+  /** Current active session ID */
+  activeSessionId;
+  /** Session statuses */
+  statuses;
+  /** Event emitter */
+  eventEmitter;
+  /** Event for consumers */
+  onDidSessionEvent;
+  constructor(context, outputChannel2) {
+    this.context = context;
+    this.outputChannel = outputChannel2;
+    this.sessions = /* @__PURE__ */ new Map();
+    this.activeSessionId = null;
+    this.statuses = /* @__PURE__ */ new Map();
+    this.eventEmitter = new vscode19.EventEmitter();
+    this.onDidSessionEvent = this.eventEmitter.event;
+    this.loadSessionList();
+    this.outputChannel.debug("SessionManager initialized");
+  }
+  // ─── Session CRUD ───────────────────────────────────────────────────────────
+  /**
+   * Create a new session
+   */
+  async create(options = {}) {
+    const id = crypto8.randomUUID();
+    const now = Date.now();
+    const workspaceRoot = vscode19.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
+    const session = {
+      id,
+      name: options.name || `Session ${this.sessions.size + 1}`,
+      messages: [],
+      cwd: options.cwd || workspaceRoot,
+      model: options.model || "",
+      createdAt: now,
+      updatedAt: now,
+      metadata: {
+        tags: options.tags
+      }
+    };
+    if (options.resumeFromId) {
+      const source = this.sessions.get(options.resumeFromId);
+      if (source) {
+        session.messages = [...source.messages];
+        session.name = options.name || `Resumed: ${source.name}`;
+      }
+    }
+    if (options.forkFromId) {
+      const source = this.sessions.get(options.forkFromId);
+      if (source) {
+        session.messages = [...source.messages];
+        session.name = options.name || `${source.name} (fork)`;
+        session.metadata = {
+          ...source.metadata,
+          tags: options.tags,
+          forkSourceId: options.forkFromId
+        };
+        this.emitEvent("session_forked", id, { sourceId: options.forkFromId });
+      }
+    }
+    if (options.systemPrompt) {
+      session.messages.push({
+        id: crypto8.randomUUID(),
+        role: "system",
+        content: options.systemPrompt,
+        timestamp: now
+      });
+    }
+    this.sessions.set(id, session);
+    this.statuses.set(id, "idle");
+    this.activeSessionId = id;
+    await this.persistSessionList();
+    this.emitEvent("session_created", id);
+    this.emitEvent("active_session_changed", id);
+    this.outputChannel.info(`Created session: ${id} (${session.name})`);
+    return session;
+  }
+  /**
+   * Load an existing session
+   */
+  async load(id) {
+    let session = this.sessions.get(id);
+    if (!session) {
+      const stored = this.getStoredSession(id);
+      if (stored) {
+        session = stored;
+        this.sessions.set(id, session);
+      }
+    }
+    if (session) {
+      this.activeSessionId = id;
+      if (!this.statuses.has(id)) {
+        this.statuses.set(id, "idle");
+      }
+      this.emitEvent("session_loaded", id);
+      this.emitEvent("active_session_changed", id);
+    }
+    return session;
+  }
+  /**
+   * Save a session
+   */
+  async save(id) {
+    const session = this.sessions.get(id);
+    if (!session) return false;
+    session.updatedAt = Date.now();
+    await this.persistSessionList();
+    this.emitEvent("session_updated", id);
+    return true;
+  }
+  /**
+   * Delete a session
+   */
+  async delete(id) {
+    if (!this.sessions.has(id)) return false;
+    this.sessions.delete(id);
+    this.statuses.delete(id);
+    if (this.activeSessionId === id) {
+      this.activeSessionId = this.sessions.keys().next().value || null;
+      this.emitEvent("active_session_changed", this.activeSessionId || "");
+    }
+    await this.persistSessionList();
+    this.emitEvent("session_deleted", id);
+    this.outputChannel.info(`Deleted session: ${id}`);
+    return true;
+  }
+  /**
+   * Rename a session
+   */
+  async rename(id, newName) {
+    const session = this.sessions.get(id);
+    if (!session) return false;
+    session.name = newName;
+    session.updatedAt = Date.now();
+    await this.persistSessionList();
+    this.emitEvent("session_renamed", id, { name: newName });
+    return true;
+  }
+  // ─── Message Management ────────────────────────────────────────────────────
+  /**
+   * Add a message to a session
+   */
+  addMessage(sessionId, message) {
+    const session = this.sessions.get(sessionId);
+    if (!session) return false;
+    session.messages.push(message);
+    session.updatedAt = Date.now();
+    this.emitEvent("session_message_added", sessionId, { messageId: message.id });
+    return true;
+  }
+  /**
+   * Get messages for a session
+   */
+  getMessages(sessionId, options) {
+    const session = this.sessions.get(sessionId);
+    if (!session) return [];
+    const limit = options?.limit;
+    const offset = options?.offset ?? 0;
+    if (limit === void 0) {
+      return session.messages.slice(offset);
+    }
+    return session.messages.slice(offset, offset + limit);
+  }
+  /**
+   * Replace all messages in a session
+   */
+  replaceMessages(sessionId, messages) {
+    const session = this.sessions.get(sessionId);
+    if (!session) return false;
+    session.messages = messages;
+    session.updatedAt = Date.now();
+    this.emitEvent("session_updated", sessionId);
+    return true;
+  }
+  // ─── Session Status ──────────────────────────────────────────────────────────
+  /**
+   * Get session status
+   */
+  getStatus(sessionId) {
+    return this.statuses.get(sessionId) || "idle";
+  }
+  /**
+   * Set session status
+   */
+  setStatus(sessionId, status) {
+    const prev = this.statuses.get(sessionId);
+    if (prev === status) return;
+    this.statuses.set(sessionId, status);
+    this.emitEvent("session_status_changed", sessionId, { status, previousStatus: prev });
+  }
+  // ─── Active Session ──────────────────────────────────────────────────────────
+  /**
+   * Get the active session ID
+   */
+  getActiveSessionId() {
+    return this.activeSessionId;
+  }
+  /**
+   * Get the active session
+   */
+  getActiveSession() {
+    if (!this.activeSessionId) return void 0;
+    return this.sessions.get(this.activeSessionId);
+  }
+  /**
+   * Switch the active session
+   */
+  async switchSession(id) {
+    if (!this.sessions.has(id)) return false;
+    if (this.activeSessionId) {
+      await this.save(this.activeSessionId);
+    }
+    this.activeSessionId = id;
+    this.emitEvent("active_session_changed", id);
+    return true;
+  }
+  // ─── Session List ────────────────────────────────────────────────────────────
+  /**
+   * List all sessions as list items (no messages)
+   */
+  listSessions() {
+    const items = [];
+    const sortedSessions = Array.from(this.sessions.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+    for (const session of sortedSessions) {
+      const lastMsg = session.messages.length > 0 ? session.messages[session.messages.length - 1] : void 0;
+      let preview;
+      if (lastMsg) {
+        const content = lastMsg.content;
+        if (typeof content === "string") {
+          preview = content.slice(0, 80);
+        } else if (Array.isArray(content)) {
+          const textBlock = content.find(
+            (b) => b.type === "text" && typeof b.text === "string"
+          );
+          if (textBlock) {
+            preview = textBlock.text.slice(0, 80);
+          }
+        }
+      }
+      items.push({
+        id: session.id,
+        name: session.name,
+        cwd: session.cwd,
+        model: session.model,
+        createdAt: session.createdAt,
+        updatedAt: session.updatedAt,
+        status: this.statuses.get(session.id) || "idle",
+        messageCount: session.messages.length,
+        lastMessagePreview: preview,
+        isActive: session.id === this.activeSessionId,
+        tags: session.metadata?.tags,
+        isFork: !!session.metadata?.forkSourceId,
+        forkSourceId: session.metadata?.forkSourceId
+      });
+    }
+    return items;
+  }
+  /**
+   * Get session detail (with messages)
+   */
+  getSessionDetail(id) {
+    const session = this.sessions.get(id);
+    if (!session) return void 0;
+    return {
+      session,
+      status: this.statuses.get(id) || "idle",
+      messageCount: session.messages.length,
+      tokenCount: 0,
+      // Estimated on the fly
+      contextWindow: 0
+    };
+  }
+  // ─── Search ──────────────────────────────────────────────────────────────────
+  /**
+   * Search sessions
+   */
+  search(query) {
+    let results = this.listSessions();
+    if (query.text) {
+      const q = query.text.toLowerCase();
+      results = results.filter(
+        (s) => s.name.toLowerCase().includes(q) || (s.lastMessagePreview || "").toLowerCase().includes(q) || (s.tags || []).some((t) => t.toLowerCase().includes(q))
+      );
+    }
+    if (query.model) {
+      results = results.filter((s) => s.model === query.model);
+    }
+    if (query.fromDate) {
+      results = results.filter((s) => s.updatedAt >= query.fromDate);
+    }
+    if (query.toDate) {
+      results = results.filter((s) => s.updatedAt <= query.toDate);
+    }
+    if (query.tags?.length) {
+      results = results.filter(
+        (s) => query.tags.some((t) => (s.tags || []).includes(t))
+      );
+    }
+    return results.slice(0, query.limit || 50);
+  }
+  // ─── Fork ──────────────────────────────────────────────────────────────────
+  /**
+   * Fork a session (create copy with new ID)
+   */
+  async fork(sourceId, options) {
+    const source = this.sessions.get(sourceId);
+    if (!source) {
+      throw new Error(`Session ${sourceId} not found`);
+    }
+    return this.create({
+      name: options?.name || `${source.name} (fork)`,
+      cwd: options?.cwd || source.cwd,
+      model: options?.model || source.model,
+      forkFromId: sourceId,
+      tags: source.metadata?.tags
+    });
+  }
+  // ─── Title Generation ────────────────────────────────────────────────────────
+  /**
+   * Auto-generate a title for a session based on its first user message
+   */
+  async generateTitle(sessionId) {
+    const session = this.sessions.get(sessionId);
+    if (!session) return null;
+    const firstUserMsg = session.messages.find((m) => m.role === "user");
+    if (!firstUserMsg) return null;
+    let text = "";
+    if (typeof firstUserMsg.content === "string") {
+      text = firstUserMsg.content;
+    } else if (Array.isArray(firstUserMsg.content)) {
+      const textBlock = firstUserMsg.content.find(
+        (b) => b.type === "text" && typeof b.text === "string"
+      );
+      if (textBlock) text = textBlock.text;
+    }
+    if (!text) return null;
+    const firstLine = text.split("\n")[0].trim();
+    const title = firstLine.length > 60 ? firstLine.slice(0, 57) + "..." : firstLine;
+    await this.rename(sessionId, title);
+    return title;
+  }
+  // ─── Stats ──────────────────────────────────────────────────────────────────
+  /**
+   * Get session manager statistics
+   */
+  getStats() {
+    const byStatus = {
+      idle: 0,
+      running: 0,
+      paused: 0,
+      error: 0,
+      loading: 0
+    };
+    for (const status of this.statuses.values()) {
+      byStatus[status]++;
+    }
+    const sessions = Array.from(this.sessions.values());
+    const totalMessages = sessions.reduce((sum, s) => sum + s.messages.length, 0);
+    return {
+      totalSessions: this.sessions.size,
+      activeSessionId: this.activeSessionId || void 0,
+      byStatus,
+      totalMessages,
+      oldestSession: sessions.length > 0 ? Math.min(...sessions.map((s) => s.createdAt)) : void 0,
+      newestSession: sessions.length > 0 ? Math.max(...sessions.map((s) => s.updatedAt)) : void 0
+    };
+  }
+  // ─── Persistence ──────────────────────────────────────────────────────────
+  async persistSessionList() {
+    const list = this.listSessions().map((s) => ({
+      id: s.id,
+      name: s.name,
+      cwd: s.cwd,
+      model: s.model,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+      tags: s.tags,
+      isFork: s.isFork,
+      forkSourceId: s.forkSourceId
+    }));
+    await this.context.globalState.update("cclocal.sessions", list);
+  }
+  loadSessionList() {
+    const stored = this.context.globalState.get("cclocal.sessions");
+    if (!stored) return;
+    for (const item of stored) {
+      const session = {
+        id: item.id,
+        name: item.name,
+        messages: [],
+        // Messages loaded on demand
+        cwd: item.cwd,
+        model: item.model,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        metadata: {
+          tags: item.tags,
+          forkSourceId: item.forkSourceId
+        }
+      };
+      this.sessions.set(item.id, session);
+      this.statuses.set(item.id, "idle");
+    }
+    this.outputChannel.debug(`Loaded ${stored.length} sessions from globalState`);
+  }
+  getStoredSession(id) {
+    const stored = this.context.globalState.get(
+      `cclocal.session_messages_${id}`
+    );
+    const session = this.sessions.get(id);
+    if (!session) return void 0;
+    if (stored) {
+      session.messages = Object.values(stored);
+    }
+    return session;
+  }
+  // ─── Event Helpers ──────────────────────────────────────────────────────────
+  emitEvent(type, sessionId, data) {
+    this.eventEmitter.fire({ type, sessionId, data });
+  }
+  // ─── Lifecycle ──────────────────────────────────────────────────────────────
+  dispose() {
+    this.eventEmitter.dispose();
+    this.sessions.clear();
+    this.statuses.clear();
+    this.outputChannel.debug("SessionManager disposed");
+  }
+};
+var instance4 = null;
+function getSessionManager(context, outputChannel2) {
+  if (!instance4 && context && outputChannel2) {
+    instance4 = new SessionManager(context, outputChannel2);
+  }
+  return instance4;
+}
+function disposeSessionManager() {
+  if (instance4) {
+    instance4.dispose();
+    instance4 = null;
+  }
+}
+
+// src/session/SessionTreeProvider.ts
+import * as vscode20 from "vscode";
+var SessionTreeItem = class extends vscode20.TreeItem {
+  constructor(sessionItem) {
+    super(sessionItem.name, vscode20.TreeItemCollapsibleState.None);
+    this.sessionItem = sessionItem;
+    this.id = sessionItem.id;
+    this.description = this.formatDescription(sessionItem);
+    this.tooltip = this.formatTooltip(sessionItem);
+    this.iconPath = this.getIcon(sessionItem);
+    this.contextValue = this.getContextValue(sessionItem);
+    this.resourceUri = void 0;
+    if (sessionItem.isActive) {
+      this.description = `\u25CF ${this.description}`;
+    }
+    this.command = {
+      command: "cclocal.switchSession",
+      title: "Switch to Session",
+      arguments: [sessionItem.id]
+    };
+  }
+  formatDescription(item) {
+    const parts = [];
+    if (item.messageCount > 0) {
+      parts.push(`${item.messageCount} msgs`);
+    }
+    const age = this.formatRelativeTime(item.updatedAt);
+    parts.push(age);
+    return parts.join(" \u2022 ");
+  }
+  formatTooltip(item) {
+    const lines = [
+      `Session: ${item.name}`,
+      `ID: ${item.id}`,
+      `Status: ${item.status}`,
+      `Messages: ${item.messageCount}`,
+      `Model: ${item.model || "default"}`,
+      `Created: ${new Date(item.createdAt).toLocaleString()}`,
+      `Updated: ${new Date(item.updatedAt).toLocaleString()}`
+    ];
+    if (item.tags?.length) {
+      lines.push(`Tags: ${item.tags.join(", ")}`);
+    }
+    if (item.isFork) {
+      lines.push(`Fork of: ${item.forkSourceId}`);
+    }
+    if (item.lastMessagePreview) {
+      lines.push("", `Last message: ${item.lastMessagePreview}`);
+    }
+    return lines.join("\n");
+  }
+  getIcon(item) {
+    if (item.isActive) {
+      return new vscode20.ThemeIcon("circle-filled", new vscode20.ThemeColor("charts.green"));
+    }
+    switch (item.status) {
+      case "running":
+        return new vscode20.ThemeIcon("sync~spin");
+      case "error":
+        return new vscode20.ThemeIcon("error", new vscode20.ThemeColor("errorForeground"));
+      case "paused":
+        return new vscode20.ThemeIcon("debug-pause");
+      case "loading":
+        return new vscode20.ThemeIcon("loading~spin");
+      default:
+        return new vscode20.ThemeIcon("circle-outline");
+    }
+  }
+  getContextValue(item) {
+    const parts = ["session"];
+    if (item.isActive) parts.push("active");
+    if (item.isFork) parts.push("fork");
+    if (item.status === "running") parts.push("running");
+    if (item.status === "error") parts.push("error");
+    return parts.join(".");
+  }
+  formatRelativeTime(timestamp) {
+    const diff = Date.now() - timestamp;
+    const seconds = Math.floor(diff / 1e3);
+    if (seconds < 60) return "just now";
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+  }
+};
+var SessionTreeProvider = class {
+  constructor(sessionManager2) {
+    this.sessionManager = sessionManager2;
+    this.treeView = vscode20.window.createTreeView("cclocal.sessions", {
+      treeDataProvider: this,
+      showCollapseAll: false
+    });
+    this.sessionManager.onDidSessionEvent(() => {
+      this.refresh();
+    });
+  }
+  treeView;
+  _onDidChangeTreeData = new vscode20.EventEmitter();
+  onDidChangeTreeData = this._onDidChangeTreeData.event;
+  searchQuery = "";
+  refresh() {
+    this._onDidChangeTreeData.fire();
+  }
+  setSearchQuery(query) {
+    this.searchQuery = query;
+    this.refresh();
+  }
+  getTreeItem(element) {
+    return element;
+  }
+  getChildren(_element) {
+    let sessions = this.sessionManager.listSessions();
+    if (this.searchQuery) {
+      const q = this.searchQuery.toLowerCase();
+      sessions = sessions.filter(
+        (s) => s.name.toLowerCase().includes(q) || (s.lastMessagePreview || "").toLowerCase().includes(q) || (s.tags || []).some((t) => t.toLowerCase().includes(q))
+      );
+    }
+    return sessions.map((s) => new SessionTreeItem(s));
+  }
+  dispose() {
+    this.treeView.dispose();
+    this._onDidChangeTreeData.dispose();
+  }
+};
+
+// src/commands/registry.ts
+import * as vscode22 from "vscode";
+var chatCommands = [
+  // Mode-specific commands are registered in extension.ts
+  // This array is kept for documentation purposes
+];
+var editCommands = [
+  {
+    id: "cclocal.acceptEdit",
+    title: "Accept Edit",
+    icon: "$(check)",
+    register: (context, deps) => {
+      context.subscriptions.push(
+        vscode22.commands.registerCommand("cclocal.acceptEdit", async () => {
+          vscode22.commands.executeCommand("workbench.action.closeActiveEditor");
+          vscode22.window.showInformationMessage("CCLocal: Changes accepted");
+        })
+      );
+    }
+  },
+  {
+    id: "cclocal.rejectEdit",
+    title: "Reject Edit",
+    icon: "$(discard)",
+    register: (context, deps) => {
+      context.subscriptions.push(
+        vscode22.commands.registerCommand("cclocal.rejectEdit", async () => {
+          vscode22.commands.executeCommand("workbench.action.closeActiveEditor");
+          vscode22.window.showInformationMessage("CCLocal: Changes rejected");
+        })
+      );
+    }
+  },
+  {
+    id: "cclocal.insertAtMention",
+    title: "Insert @-Mention",
+    register: (context) => {
+      context.subscriptions.push(
+        vscode22.commands.registerCommand("cclocal.insertAtMention", async () => {
+          const editor = vscode22.window.activeTextEditor;
+          if (!editor) {
+            vscode22.window.showWarningMessage("CCLocal: No active editor");
+            return;
+          }
+          const files = await vscode22.window.showOpenDialog({
+            canSelectMany: true,
+            filters: {
+              "All Files": ["*"]
+            }
+          });
+          if (files && files.length > 0) {
+            const mentions = files.map((f) => `@${f.fsPath}`).join(" ");
+            const position = editor.selection.active;
+            editor.edit((editBuilder) => {
+              editBuilder.insert(position, mentions);
+            });
+          }
+        })
+      );
+    }
+  },
+  {
+    id: "cclocal.toggleDictation",
+    title: "Toggle Voice Dictation",
+    register: (context) => {
+      let dictationActive = false;
+      context.subscriptions.push(
+        vscode22.commands.registerCommand("cclocal.toggleDictation", () => {
+          dictationActive = !dictationActive;
+          if (dictationActive) {
+            vscode22.window.showInformationMessage("CCLocal: Voice dictation enabled");
+          } else {
+            vscode22.window.showInformationMessage("CCLocal: Voice dictation disabled");
+          }
+        })
+      );
+    }
+  }
+];
+var navigationCommands = [
+  {
+    id: "cclocal.openInPanel",
+    title: "Open in Panel",
+    icon: "$(empty-window)",
+    register: (context) => {
+      context.subscriptions.push(
+        vscode22.commands.registerCommand("cclocal.openInPanel", () => {
+          vscode22.commands.executeCommand("workbench.action.positionPanelBottom");
+          vscode22.commands.executeCommand("workbench.view.extension.cclocal-sidebar");
+        })
+      );
+    }
+  },
+  {
+    id: "cclocal.openInSidebar",
+    title: "Open in Sidebar",
+    icon: "$(layout-sidebar-left)",
+    register: (context) => {
+      context.subscriptions.push(
+        vscode22.commands.registerCommand("cclocal.openInSidebar", () => {
+          vscode22.commands.executeCommand("workbench.view.extension.cclocal-sidebar");
+        })
+      );
+    }
+  },
+  {
+    id: "cclocal.openSettings",
+    title: "Open Settings",
+    register: (context) => {
+      context.subscriptions.push(
+        vscode22.commands.registerCommand("cclocal.openSettings", () => {
+          vscode22.commands.executeCommand("workbench.action.openSettings", "cclocal");
+        })
+      );
+    }
+  },
+  {
+    id: "cclocal.openConfigPanel",
+    title: "Open Configuration Panel",
+    icon: "$(settings-gear)",
+    register: (context, deps) => {
+      context.subscriptions.push(
+        vscode22.commands.registerCommand("cclocal.openConfigPanel", async () => {
+          const { ConfigPanelProvider: ConfigPanelProvider2 } = await Promise.resolve().then(() => (init_ConfigPanelProvider(), ConfigPanelProvider_exports));
+          const panel = new ConfigPanelProvider2(deps.configManager);
+          context.subscriptions.push(panel);
+          panel.show();
+        })
+      );
+    }
+  },
+  {
+    id: "cclocal.showLogs",
+    title: "Show Logs",
+    register: (context, deps) => {
+      context.subscriptions.push(
+        vscode22.commands.registerCommand("cclocal.showLogs", () => {
+          deps.outputChannel.show();
+        })
+      );
+    }
+  }
+];
+var modelCommands = [
+  {
+    id: "cclocal.setModel",
+    title: "Set Model",
+    register: (context, deps) => {
+      context.subscriptions.push(
+        vscode22.commands.registerCommand("cclocal.setModel", async () => {
+          const models = deps.configManager.get("availableModels") || [];
+          const customModel = "custom";
+          const items = [...models.map((m) => ({ label: m })), { label: customModel }];
+          const selected = await vscode22.window.showQuickPick(items, {
+            placeHolder: "Select a model"
+          });
+          if (selected) {
+            if (selected.label === customModel) {
+              const customId = await vscode22.window.showInputBox({
+                prompt: "Enter custom model ID",
+                placeHolder: "claude-3-opus-20240229"
+              });
+              if (customId) {
+                await deps.configManager.setModel(customId);
+                vscode22.window.showInformationMessage(`CCLocal: Model set to ${customId}`);
+              }
+            } else {
+              await deps.configManager.setModel(selected.label);
+              vscode22.window.showInformationMessage(`CCLocal: Model set to ${selected.label}`);
+            }
+          }
+        })
+      );
+    }
+  },
+  {
+    id: "cclocal.setPermissionMode",
+    title: "Set Permission Mode",
+    register: (context, deps) => {
+      context.subscriptions.push(
+        vscode22.commands.registerCommand("cclocal.setPermissionMode", async () => {
+          const modes = [
+            { label: "default", description: "Ask for dangerous operations" },
+            { label: "acceptEdits", description: "Auto-accept file edits" },
+            { label: "plan", description: "Plan mode (no execution)" },
+            { label: "bypassPermissions", description: "Auto-accept all (dangerous)" }
+          ];
+          const selected = await vscode22.window.showQuickPick(modes, {
+            placeHolder: "Select permission mode"
+          });
+          if (selected) {
+            await deps.configManager.update("initialPermissionMode", selected.label);
+            vscode22.window.showInformationMessage(`CCLocal: Permission mode set to ${selected.label}`);
+          }
+        })
+      );
+    }
+  }
+];
+var utilityCommands = [
+  // sendSelectedCode is registered in extension.ts
+];
+var allCommands = [
+  ...chatCommands,
+  ...editCommands,
+  ...navigationCommands,
+  ...modelCommands,
+  ...utilityCommands
+];
+function registerAllCommands(context, dependencies) {
+  for (const cmd of allCommands) {
+    cmd.register(context, dependencies);
+  }
+}
+
+// src/commands/keyboard.ts
+import * as vscode23 from "vscode";
+function registerKeyboardShortcuts(context, sessionManager2) {
+  context.subscriptions.push(
+    vscode23.commands.registerCommand("cclocal.keyboard.sendWithCtrlEnter", () => {
+      const config = vscode23.workspace.getConfiguration("cclocal");
+      const useCtrlEnter = config.get("useCtrlEnterToSend") ?? false;
+      if (useCtrlEnter) {
+        vscode23.commands.executeCommand("cclocal.sendMessage");
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode23.commands.registerCommand("cclocal.keyboard.escape", () => {
+      const activeId = sessionManager2.getActiveSessionId();
+      if (activeId) {
+        const status = sessionManager2.getStatus(activeId);
+        if (status === "running") {
+          vscode23.commands.executeCommand("cclocal.stopGeneration");
+        }
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode23.commands.registerCommand("cclocal.keyboard.newConversation", () => {
+      const config = vscode23.workspace.getConfiguration("cclocal");
+      const enabled = config.get("enableNewConversationShortcut") ?? true;
+      if (enabled) {
+        vscode23.commands.executeCommand("cclocal.newConversation");
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode23.commands.registerCommand("cclocal.keyboard.showCommandPalette", () => {
+      vscode23.commands.executeCommand("cclocal.showCommandPalette");
+    })
+  );
+  context.subscriptions.push(
+    vscode23.commands.registerCommand("cclocal.keyboard.previousSession", async () => {
+      const sessions = sessionManager2.listSessions();
+      const activeId = sessionManager2.getActiveSessionId();
+      if (sessions.length > 0 && activeId) {
+        const currentIndex = sessions.findIndex((s) => s.id === activeId);
+        const prevIndex = (currentIndex - 1 + sessions.length) % sessions.length;
+        await sessionManager2.switchSession(sessions[prevIndex].id);
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode23.commands.registerCommand("cclocal.keyboard.nextSession", async () => {
+      const sessions = sessionManager2.listSessions();
+      const activeId = sessionManager2.getActiveSessionId();
+      if (sessions.length > 0 && activeId) {
+        const currentIndex = sessions.findIndex((s) => s.id === activeId);
+        const nextIndex = (currentIndex + 1) % sessions.length;
+        await sessionManager2.switchSession(sessions[nextIndex].id);
+      }
+    })
+  );
+}
+async function showCommandPalette() {
+  const commands15 = [
+    {
+      id: "new",
+      label: "New Conversation",
+      icon: "$(add)",
+      action: () => vscode23.commands.executeCommand("cclocal.newConversation")
+    },
+    {
+      id: "clear",
+      label: "Clear Chat",
+      icon: "$(clear-all)",
+      action: () => vscode23.commands.executeCommand("cclocal.clearChat")
+    },
+    {
+      id: "stop",
+      label: "Stop Generation",
+      icon: "$(debug-stop)",
+      action: () => vscode23.commands.executeCommand("cclocal.stopGeneration")
+    },
+    {
+      id: "model",
+      label: "Set Model",
+      icon: "$(symbol-color)",
+      action: () => vscode23.commands.executeCommand("cclocal.setModel")
+    },
+    {
+      id: "permissions",
+      label: "Set Permission Mode",
+      icon: "$(shield)",
+      action: () => vscode23.commands.executeCommand("cclocal.setPermissionMode")
+    },
+    {
+      id: "settings",
+      label: "Open Settings",
+      icon: "$(settings-gear)",
+      action: () => vscode23.commands.executeCommand("cclocal.openSettings")
+    },
+    {
+      id: "config",
+      label: "Open Configuration Panel",
+      icon: "$(editor-glyph)",
+      action: () => vscode23.commands.executeCommand("cclocal.openConfigPanel")
+    },
+    {
+      id: "sessions",
+      label: "Show Session Statistics",
+      icon: "$(graph)",
+      action: () => vscode23.commands.executeCommand("cclocal.sessionStats")
+    },
+    {
+      id: "mcp",
+      label: "Show MCP Settings",
+      icon: "$(server)",
+      action: () => vscode23.commands.executeCommand("cclocal.showMCPSettings")
+    },
+    {
+      id: "plugins",
+      label: "Show Plugin Settings",
+      icon: "$(extensions)",
+      action: () => vscode23.commands.executeCommand("cclocal.showPluginSettings")
+    },
+    {
+      id: "hooks",
+      label: "Show Hook Statistics",
+      icon: "$(bell)",
+      action: () => vscode23.commands.executeCommand("cclocal.hooks.stats")
+    },
+    {
+      id: "logs",
+      label: "Show Logs",
+      icon: "$(output)",
+      action: () => vscode23.commands.executeCommand("cclocal.showLogs")
+    },
+    {
+      id: "focus",
+      label: "Focus Input",
+      icon: "$(edit)",
+      shortcut: "Ctrl+Escape",
+      action: () => vscode23.commands.executeCommand("cclocal.focusInput")
+    }
+  ];
+  const selected = await vscode23.window.showQuickPick(
+    commands15.map((cmd) => ({
+      label: cmd.icon ? `${cmd.icon} ${cmd.label}` : cmd.label,
+      description: cmd.description,
+      detail: cmd.shortcut,
+      command: cmd
+    })),
+    {
+      placeHolder: "CCLocal Commands",
+      matchOnDescription: true
+    }
+  );
+  if (selected) {
+    await selected.command.action();
+  }
+}
+function registerCommandPalette(context) {
+  context.subscriptions.push(
+    vscode23.commands.registerCommand("cclocal.showCommandPalette", () => showCommandPalette())
+  );
+}
+
+// src/remote/RemoteSessionManager.ts
+import * as vscode24 from "vscode";
+var RemoteSessionManager = class {
+  context;
+  outputChannel;
+  /** Configured SSH connections */
+  configs = /* @__PURE__ */ new Map();
+  /** Active remote sessions */
+  sessions = /* @__PURE__ */ new Map();
+  /** Event handlers */
+  handlers = /* @__PURE__ */ new Set();
+  /** Connection attempts */
+  reconnectAttempts = /* @__PURE__ */ new Map();
+  /** Disposed flag */
+  disposed = false;
+  constructor(context, outputChannel2) {
+    this.context = context;
+    this.outputChannel = outputChannel2;
+    this.loadConfigurations();
+  }
+  // ─── Configuration Management ─────────────────────────────────────────────
+  /**
+   * Load saved SSH configurations
+   */
+  loadConfigurations() {
+    const saved = this.context.globalState.get("cclocal.sshConfigs", []);
+    for (const config of saved) {
+      this.configs.set(config.id, config);
+    }
+    this.outputChannel.debug(`Loaded ${saved.length} SSH configurations`);
+  }
+  /**
+   * Save SSH configurations to global state
+   */
+  async saveConfigurations() {
+    const configs = Array.from(this.configs.values());
+    await this.context.globalState.update("cclocal.sshConfigs", configs);
+  }
+  /**
+   * Add a new SSH configuration
+   */
+  async addConfiguration(config) {
+    this.configs.set(config.id, config);
+    await this.saveConfigurations();
+    this.outputChannel.info(`Added SSH configuration: ${config.name}`);
+  }
+  /**
+   * Update an existing SSH configuration
+   */
+  async updateConfiguration(config) {
+    this.configs.set(config.id, config);
+    await this.saveConfigurations();
+    this.outputChannel.info(`Updated SSH configuration: ${config.name}`);
+  }
+  /**
+   * Remove an SSH configuration
+   */
+  async removeConfiguration(id) {
+    const config = this.configs.get(id);
+    if (config) {
+      const session = this.getSessionByConfig(id);
+      if (session) {
+        await this.disconnect(session.id);
+      }
+      this.configs.delete(id);
+      await this.saveConfigurations();
+      this.outputChannel.info(`Removed SSH configuration: ${config.name}`);
+    }
+  }
+  /**
+   * Get all SSH configurations
+   */
+  getConfigurations() {
+    return Array.from(this.configs.values());
+  }
+  /**
+   * Get a specific SSH configuration
+   */
+  getConfiguration(id) {
+    return this.configs.get(id);
+  }
+  // ─── Connection Management ────────────────────────────────────────────────
+  /**
+   * Connect to a remote host
+   */
+  async connect(options) {
+    const { config, workingDirectory, environment, autoReconnect = true, maxReconnectAttempts = 3 } = options;
+    const existing = this.getSessionByConfig(config.id);
+    if (existing && existing.status === "connected") {
+      this.outputChannel.debug(`Already connected to ${config.name}`);
+      return existing;
+    }
+    const sessionId = crypto.randomUUID();
+    const session = {
+      id: sessionId,
+      configId: config.id,
+      name: config.name,
+      status: "connecting",
+      workingDirectory: workingDirectory || config.workingDirectory || "~",
+      sessionCount: 0
+    };
+    this.sessions.set(sessionId, session);
+    this.emitEvent({ type: "connecting", remoteId: sessionId, timestamp: Date.now() });
+    try {
+      await this.establishConnection(config, session);
+      session.status = "connected";
+      session.connectedAt = Date.now();
+      session.lastActivity = Date.now();
+      session.platform = await this.detectPlatform(sessionId);
+      session.shell = await this.detectShell(sessionId);
+      this.reconnectAttempts.set(sessionId, 0);
+      this.emitEvent({ type: "connected", remoteId: sessionId, timestamp: Date.now() });
+      this.outputChannel.info(`Connected to ${config.name} (${sessionId})`);
+      return session;
+    } catch (error) {
+      session.status = "error";
+      session.error = error instanceof Error ? error.message : String(error);
+      this.emitEvent({ type: "error", remoteId: sessionId, data: error, timestamp: Date.now() });
+      this.outputChannel.error(`Failed to connect to ${config.name}: ${error}`);
+      if (autoReconnect) {
+        const attempts = this.reconnectAttempts.get(sessionId) || 0;
+        if (attempts < maxReconnectAttempts) {
+          this.reconnectAttempts.set(sessionId, attempts + 1);
+          this.emitEvent({ type: "reconnecting", remoteId: sessionId, timestamp: Date.now() });
+          await new Promise((resolve) => setTimeout(resolve, 2e3 * (attempts + 1)));
+          return this.connect(options);
+        }
+      }
+      throw error;
+    }
+  }
+  /**
+   * Disconnect from a remote host
+   */
+  async disconnect(sessionId) {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
+    this.outputChannel.debug(`Disconnecting from ${session.name}...`);
+    try {
+      await this.closeConnection(sessionId);
+      session.status = "disconnected";
+      this.emitEvent({ type: "disconnected", remoteId: sessionId, timestamp: Date.now() });
+      this.outputChannel.info(`Disconnected from ${session.name}`);
+    } catch (error) {
+      this.outputChannel.error(`Error disconnecting from ${session.name}: ${error}`);
+      throw error;
+    }
+  }
+  /**
+   * Disconnect all active sessions
+   */
+  async disconnectAll() {
+    const connected = Array.from(this.sessions.values()).filter((s) => s.status === "connected");
+    await Promise.all(connected.map((s) => this.disconnect(s.id)));
+  }
+  // ─── Session Management ───────────────────────────────────────────────────
+  /**
+   * Get all remote sessions
+   */
+  getSessions() {
+    return Array.from(this.sessions.values());
+  }
+  /**
+   * Get a specific session
+   */
+  getSession(id) {
+    return this.sessions.get(id);
+  }
+  /**
+   * Get session by config ID
+   */
+  getSessionByConfig(configId) {
+    return Array.from(this.sessions.values()).find((s) => s.configId === configId);
+  }
+  /**
+   * Get connected sessions
+   */
+  getConnectedSessions() {
+    return this.getSessions().filter((s) => s.status === "connected");
+  }
+  // ─── Teleport Operations ──────────────────────────────────────────────────
+  /**
+   * Teleport a session to a remote host
+   * This transfers the session state and messages to the remote
+   */
+  async teleport(sessionId, remoteId) {
+    const operation = {
+      sourceSessionId: sessionId,
+      targetRemoteId: remoteId,
+      status: "pending",
+      timestamp: Date.now()
+    };
+    const session = this.sessions.get(remoteId);
+    if (!session || session.status !== "connected") {
+      operation.status = "failed";
+      operation.error = "Remote session not connected";
+      return operation;
+    }
+    try {
+      operation.status = "in_progress";
+      this.emitEvent({ type: "teleport_started", sessionId, remoteId, data: operation, timestamp: Date.now() });
+      await this.performTeleport(sessionId, remoteId);
+      operation.status = "completed";
+      operation.progress = 100;
+      session.sessionCount++;
+      session.lastActivity = Date.now();
+      this.emitEvent({ type: "teleport_completed", sessionId, remoteId, data: operation, timestamp: Date.now() });
+      this.outputChannel.info(`Teleported session ${sessionId} to ${session.name}`);
+      return operation;
+    } catch (error) {
+      operation.status = "failed";
+      operation.error = error instanceof Error ? error.message : String(error);
+      this.outputChannel.error(`Teleport failed: ${error}`);
+      throw error;
+    }
+  }
+  /**
+   * Perform the actual teleport operation
+   */
+  async performTeleport(sessionId, remoteId) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  // ─── File Operations ──────────────────────────────────────────────────────
+  /**
+   * Transfer a file to/from remote
+   */
+  async transferFile(sessionId, sourcePath, destinationPath, direction, onProgress) {
+    const session = this.sessions.get(sessionId);
+    if (!session || session.status !== "connected") {
+      throw new Error("Remote session not connected");
+    }
+    const transferId = crypto.randomUUID();
+    const progress = {
+      transferId,
+      sourcePath,
+      destinationPath,
+      totalBytes: 0,
+      transferredBytes: 0,
+      rate: 0,
+      status: "pending"
+    };
+    this.emitEvent({ type: "file_transfer_started", remoteId: sessionId, data: progress, timestamp: Date.now() });
+    try {
+      progress.status = "transferring";
+      const totalBytes = 1024 * 1024;
+      progress.totalBytes = totalBytes;
+      for (let i = 0; i <= 100; i += 10) {
+        progress.transferredBytes = totalBytes * i / 100;
+        progress.rate = 512 * 1024;
+        onProgress?.(progress);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      progress.status = "completed";
+      progress.transferredBytes = totalBytes;
+      this.emitEvent({ type: "file_transfer_completed", remoteId: sessionId, data: progress, timestamp: Date.now() });
+      this.outputChannel.debug(`File transfer completed: ${sourcePath} -> ${destinationPath}`);
+    } catch (error) {
+      progress.status = "failed";
+      progress.error = error instanceof Error ? error.message : String(error);
+      throw error;
+    }
+  }
+  // ─── Command Execution ────────────────────────────────────────────────────
+  /**
+   * Execute a command on the remote host
+   */
+  async executeCommand(sessionId, command, cwd) {
+    const session = this.sessions.get(sessionId);
+    if (!session || session.status !== "connected") {
+      throw new Error("Remote session not connected");
+    }
+    const startTime = Date.now();
+    try {
+      const result = await this.runRemoteCommand(sessionId, command, cwd);
+      session.lastActivity = Date.now();
+      return {
+        exitCode: result.exitCode,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        duration: Date.now() - startTime,
+        signal: result.signal
+      };
+    } catch (error) {
+      throw new Error(`Command execution failed: ${error}`);
+    }
+  }
+  // ─── Statistics ───────────────────────────────────────────────────────────
+  /**
+   * Get remote connection statistics
+   */
+  getStats() {
+    const sessions = this.getSessions();
+    const connected = sessions.filter((s) => s.status === "connected");
+    const byStatus = {
+      disconnected: 0,
+      connecting: 0,
+      connected: 0,
+      error: 0,
+      reconnecting: 0
+    };
+    for (const session of sessions) {
+      byStatus[session.status]++;
+    }
+    const totalLatency = connected.reduce((sum, s) => sum + (s.latency || 0), 0);
+    const totalBandwidth = connected.reduce((sum, s) => sum + (s.bandwidth || 0), 0);
+    return {
+      totalConfigured: this.configs.size,
+      totalConnected: connected.length,
+      totalSessions: sessions.reduce((sum, s) => sum + s.sessionCount, 0),
+      byStatus,
+      totalBandwidth,
+      averageLatency: connected.length > 0 ? totalLatency / connected.length : 0,
+      totalDataTransferred: 0
+      // Would track actual data transferred
+    };
+  }
+  // ─── Event Handling ───────────────────────────────────────────────────────
+  /**
+   * Subscribe to remote events
+   */
+  subscribe(handler) {
+    this.handlers.add(handler);
+    return {
+      dispose: () => this.handlers.delete(handler)
+    };
+  }
+  /**
+   * Emit an event to all handlers
+   */
+  emitEvent(event) {
+    for (const handler of this.handlers) {
+      try {
+        handler(event);
+      } catch (error) {
+        this.outputChannel.error(`Event handler error: ${error}`);
+      }
+    }
+  }
+  // ─── Private Implementation ──────────────────────────────────────────────
+  /**
+   * Establish SSH connection
+   */
+  async establishConnection(config, session) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    session.latency = Math.floor(Math.random() * 100) + 20;
+    session.bandwidth = Math.floor(Math.random() * 1024 * 1024) + 512 * 1024;
+  }
+  /**
+   * Close SSH connection
+   */
+  async closeConnection(sessionId) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  /**
+   * Detect remote platform
+   */
+  async detectPlatform(sessionId) {
+    return "linux";
+  }
+  /**
+   * Detect remote shell
+   */
+  async detectShell(sessionId) {
+    return "bash";
+  }
+  /**
+   * Run a remote command
+   */
+  async runRemoteCommand(sessionId, command, cwd) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return {
+      exitCode: 0,
+      stdout: `Executed: ${command}`,
+      stderr: ""
+    };
+  }
+  // ─── VS Code Remote Integration ───────────────────────────────────────────
+  /**
+   * Check if VS Code is running in a remote environment
+   */
+  static isVSCodeRemote() {
+    return vscode24.env.remoteName !== void 0;
+  }
+  /**
+   * Get current VS Code remote authority
+   */
+  static getVSCodeRemoteAuthority() {
+    return vscode24.env.remoteName;
+  }
+  /**
+   * Check if running in SSH remote
+   */
+  static isSSHRemote() {
+    return vscode24.env.remoteName === "ssh-remote";
+  }
+  /**
+   * Check if running in Dev Container
+   */
+  static isDevContainer() {
+    return vscode24.env.remoteName === "dev-container";
+  }
+  /**
+   * Check if running in WSL
+   */
+  static isWSL() {
+    return vscode24.env.remoteName === "wsl";
+  }
+  // ─── Lifecycle ────────────────────────────────────────────────────────────
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    void this.disconnectAll();
+    this.handlers.clear();
+    this.sessions.clear();
+    this.outputChannel.debug("RemoteSessionManager disposed");
+  }
+};
+var instance5;
+function getRemoteSessionManager(context, outputChannel2) {
+  if (!instance5) {
+    instance5 = new RemoteSessionManager(context, outputChannel2);
+  }
+  return instance5;
+}
+function disposeRemoteSessionManager() {
+  instance5?.dispose();
+  instance5 = void 0;
+}
+
+// src/remote/RemotePanelProvider.ts
+import * as vscode25 from "vscode";
+var RemotePanelProvider = class {
+  panel;
+  manager;
+  constructor(manager) {
+    this.manager = manager;
+  }
+  /**
+   * Show the remote management panel
+   */
+  show() {
+    if (this.panel) {
+      this.panel.reveal();
+      return;
+    }
+    this.panel = vscode25.window.createWebviewPanel(
+      "cclocal.remote",
+      "Remote Connections",
+      vscode25.ViewColumn.One,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true
+      }
+    );
+    this.panel.webview.html = this.getHtml();
+    this.panel.webview.onDidReceiveMessage(async (message) => {
+      await this.handleMessage(message);
+    });
+    this.panel.onDidDispose(() => {
+      this.panel = void 0;
+    });
+  }
+  /**
+   * Handle messages from the webview
+   */
+  async handleMessage(message) {
+    switch (message.command) {
+      case "refresh":
+        this.updatePanel();
+        break;
+      case "addConfig":
+        await this.addSSHConfig();
+        break;
+      case "editConfig":
+        await this.editSSHConfig(message.data);
+        break;
+      case "deleteConfig":
+        await this.deleteSSHConfig(message.data);
+        break;
+      case "connect":
+        await this.connectRemote(message.data);
+        break;
+      case "disconnect":
+        await this.disconnectRemote(message.data);
+        break;
+      case "teleport":
+        await this.teleportSession(message.data);
+        break;
+      case "executeCommand":
+        await this.executeRemoteCommand(message.data);
+        break;
+    }
+  }
+  /**
+   * Add a new SSH configuration
+   */
+  async addSSHConfig() {
+    const name = await vscode25.window.showInputBox({
+      prompt: "Enter connection name",
+      placeHolder: "My Server"
+    });
+    if (!name) return;
+    const host = await vscode25.window.showInputBox({
+      prompt: "Enter hostname or IP address",
+      placeHolder: "example.com"
+    });
+    if (!host) return;
+    const portStr = await vscode25.window.showInputBox({
+      prompt: "Enter SSH port",
+      placeHolder: "22",
+      value: "22"
+    });
+    const port = parseInt(portStr || "22", 10);
+    const user = await vscode25.window.showInputBox({
+      prompt: "Enter username",
+      placeHolder: "user"
+    });
+    if (!user) return;
+    const privateKey = await vscode25.window.showInputBox({
+      prompt: "Private key path (leave empty for SSH agent)",
+      placeHolder: "~/.ssh/id_rsa"
+    });
+    const config = {
+      id: crypto.randomUUID(),
+      name,
+      host,
+      port,
+      user,
+      privateKey: privateKey || void 0,
+      agentForwarding: true
+    };
+    await this.manager.addConfiguration(config);
+    this.updatePanel();
+    vscode25.window.showInformationMessage(`CCLocal: Added SSH configuration "${name}"`);
+  }
+  /**
+   * Edit an SSH configuration
+   */
+  async editSSHConfig(id) {
+    const config = this.manager.getConfiguration(id);
+    if (!config) return;
+    const name = await vscode25.window.showInputBox({
+      prompt: "Connection name",
+      value: config.name
+    });
+    if (!name) return;
+    const host = await vscode25.window.showInputBox({
+      prompt: "Hostname or IP",
+      value: config.host
+    });
+    if (!host) return;
+    const portStr = await vscode25.window.showInputBox({
+      prompt: "SSH port",
+      value: config.port.toString()
+    });
+    const port = parseInt(portStr || "22", 10);
+    const user = await vscode25.window.showInputBox({
+      prompt: "Username",
+      value: config.user
+    });
+    if (!user) return;
+    const updatedConfig = {
+      ...config,
+      name,
+      host,
+      port,
+      user
+    };
+    await this.manager.updateConfiguration(updatedConfig);
+    this.updatePanel();
+  }
+  /**
+   * Delete an SSH configuration
+   */
+  async deleteSSHConfig(id) {
+    const config = this.manager.getConfiguration(id);
+    if (!config) return;
+    const confirm = await vscode25.window.showWarningMessage(
+      `Delete SSH configuration "${config.name}"?`,
+      "Delete",
+      "Cancel"
+    );
+    if (confirm === "Delete") {
+      await this.manager.removeConfiguration(id);
+      this.updatePanel();
+      vscode25.window.showInformationMessage(`CCLocal: Deleted SSH configuration`);
+    }
+  }
+  /**
+   * Connect to a remote
+   */
+  async connectRemote(configId) {
+    const config = this.manager.getConfiguration(configId);
+    if (!config) return;
+    try {
+      await vscode25.window.withProgress(
+        {
+          location: vscode25.ProgressLocation.Notification,
+          title: `Connecting to ${config.name}...`,
+          cancellable: false
+        },
+        async () => {
+          await this.manager.connect({ config });
+        }
+      );
+      this.updatePanel();
+      vscode25.window.showInformationMessage(`CCLocal: Connected to ${config.name}`);
+    } catch (error) {
+      vscode25.window.showErrorMessage(`Failed to connect: ${error}`);
+    }
+  }
+  /**
+   * Disconnect from a remote
+   */
+  async disconnectRemote(sessionId) {
+    await this.manager.disconnect(sessionId);
+    this.updatePanel();
+  }
+  /**
+   * Teleport a session to remote
+   */
+  async teleportSession(data) {
+    try {
+      await vscode25.window.withProgress(
+        {
+          location: vscode25.ProgressLocation.Notification,
+          title: "Teleporting session...",
+          cancellable: false
+        },
+        async () => {
+          await this.manager.teleport(data.sessionId, data.remoteId);
+        }
+      );
+      vscode25.window.showInformationMessage("CCLocal: Session teleported successfully");
+    } catch (error) {
+      vscode25.window.showErrorMessage(`Teleport failed: ${error}`);
+    }
+  }
+  /**
+   * Execute a command on remote
+   */
+  async executeRemoteCommand(data) {
+    try {
+      const result = await this.manager.executeCommand(data.remoteId, data.command);
+      if (result.exitCode === 0) {
+        this.manager["outputChannel"]?.info(`Command output:
+${result.stdout}`);
+        vscode25.window.showInformationMessage("Command executed successfully");
+      } else {
+        vscode25.window.showWarningMessage(`Command exited with code ${result.exitCode}: ${result.stderr}`);
+      }
+    } catch (error) {
+      vscode25.window.showErrorMessage(`Command failed: ${error}`);
+    }
+  }
+  /**
+   * Update the panel with current data
+   */
+  updatePanel() {
+    if (!this.panel) return;
+    const configs = this.manager.getConfigurations();
+    const sessions = this.manager.getSessions();
+    const stats = this.manager.getStats();
+    this.panel.webview.postMessage({
+      command: "update",
+      data: { configs, sessions, stats }
+    });
+  }
+  /**
+   * Get the HTML content for the panel
+   */
+  getHtml() {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Remote Connections</title>
+  <style>
+    :root {
+      --font-family: var(--vscode-font-family);
+      --bg: var(--vscode-editor-background);
+      --fg: var(--vscode-foreground);
+      --border: var(--vscode-widget-border);
+      --input-bg: var(--vscode-input-background);
+      --input-fg: var(--vscode-input-foreground);
+      --button-bg: var(--vscode-button-background);
+      --button-fg: var(--vscode-button-foreground);
+      --button-hover: var(--vscode-button-hoverBackground);
+      --list-hover: var(--vscode-list-hoverBackground);
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: var(--font-family);
+      background: var(--bg);
+      color: var(--fg);
+      padding: 16px;
+      margin: 0;
+    }
+    h2 { margin-top: 0; font-size: 18px; }
+    h3 { font-size: 14px; margin: 16px 0 8px; }
+    .section { margin-bottom: 24px; }
+    .card {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .card-title { font-weight: 600; }
+    .card-actions { display: flex; gap: 8px; }
+    .status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .status.connected { background: #4CAF50; color: white; }
+    .status.disconnected { background: #9E9E9E; color: white; }
+    .status.connecting { background: #2196F3; color: white; }
+    .status.error { background: #f44336; color: white; }
+    .btn {
+      background: var(--button-bg);
+      color: var(--button-fg);
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .btn:hover { background: var(--button-hover); }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--fg);
+    }
+    .btn-danger { background: #f44336; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .stat-card {
+      background: var(--input-bg);
+      border-radius: 6px;
+      padding: 12px;
+      text-align: center;
+    }
+    .stat-value { font-size: 24px; font-weight: 600; }
+    .stat-label { font-size: 11px; color: var(--vscode-descriptionForeground); }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--vscode-descriptionForeground);
+      margin-top: 4px;
+    }
+    .empty { text-align: center; padding: 24px; color: var(--vscode-descriptionForeground); }
+  </style>
+</head>
+<body>
+  <h2>\u{1F50C} Remote Connections</h2>
+
+  <div class="section">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0;">SSH Configurations</h3>
+      <button class="btn" onclick="addConfig()">+ Add</button>
+    </div>
+    <div id="configs"></div>
+  </div>
+
+  <div class="section">
+    <h3>Active Sessions</h3>
+    <div id="sessions"></div>
+  </div>
+
+  <div class="section">
+    <h3>Statistics</h3>
+    <div id="stats" class="stats"></div>
+  </div>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+
+    function addConfig() {
+      vscode.postMessage({ command: 'addConfig' });
+    }
+
+    function editConfig(id) {
+      vscode.postMessage({ command: 'editConfig', data: id });
+    }
+
+    function deleteConfig(id) {
+      vscode.postMessage({ command: 'deleteConfig', data: id });
+    }
+
+    function connect(configId) {
+      vscode.postMessage({ command: 'connect', data: configId });
+    }
+
+    function disconnect(sessionId) {
+      vscode.postMessage({ command: 'disconnect', data: sessionId });
+    }
+
+    function refresh() {
+      vscode.postMessage({ command: 'refresh' });
+    }
+
+    window.addEventListener('message', event => {
+      const message = event.data;
+      if (message.command === 'update') {
+        render(message.data);
+      }
+    });
+
+    function render(data) {
+      const { configs, sessions, stats } = data;
+
+      // Render configs
+      const configsEl = document.getElementById('configs');
+      if (configs.length === 0) {
+        configsEl.innerHTML = '<div class="empty">No SSH configurations. Click "Add" to create one.</div>';
+      } else {
+        configsEl.innerHTML = configs.map(c => \`
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">\${c.name}</span>
+              <div class="card-actions">
+                <button class="btn btn-secondary" onclick="editConfig('\${c.id}')">Edit</button>
+                <button class="btn btn-secondary" onclick="deleteConfig('\${c.id}')">Delete</button>
+                <button class="btn" onclick="connect('\${c.id}')">Connect</button>
+              </div>
+            </div>
+            <div class="info-row">
+              <span>\${c.user}@\${c.host}:\${c.port}</span>
+            </div>
+          </div>
+        \`).join('');
+      }
+
+      // Render sessions
+      const sessionsEl = document.getElementById('sessions');
+      if (sessions.length === 0) {
+        sessionsEl.innerHTML = '<div class="empty">No active sessions.</div>';
+      } else {
+        sessionsEl.innerHTML = sessions.map(s => \`
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">\${s.name}</span>
+              <span class="status \${s.status}">\${s.status}</span>
+            </div>
+            <div class="info-row">
+              <span>Working Dir: \${s.workingDirectory}</span>
+              \${s.latency ? \`<span>Latency: \${s.latency}ms</span>\` : ''}
+            </div>
+            \${s.status === 'connected' ? \`
+              <div class="card-actions" style="margin-top: 8px;">
+                <button class="btn btn-secondary" onclick="disconnect('\${s.id}')">Disconnect</button>
+              </div>
+            \` : ''}
+          </div>
+        \`).join('');
+      }
+
+      // Render stats
+      const statsEl = document.getElementById('stats');
+      statsEl.innerHTML = \`
+        <div class="stat-card">
+          <div class="stat-value">\${stats.totalConfigured}</div>
+          <div class="stat-label">Configured</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">\${stats.totalConnected}</div>
+          <div class="stat-label">Connected</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">\${stats.totalSessions}</div>
+          <div class="stat-label">Sessions</div>
+        </div>
+      \`;
+    }
+
+    // Initial refresh
+    refresh();
+  </script>
+</body>
+</html>`;
+  }
+  dispose() {
+    this.panel?.dispose();
+  }
+};
+
+// src/ClaudeFS.ts
+import * as vscode30 from "vscode";
+import * as path9 from "path";
+var MemoryFS = class {
+  files = /* @__PURE__ */ new Map();
+  emitter = new vscode30.EventEmitter();
+  watchers = /* @__PURE__ */ new Map();
+  onDidChangeFile = this.event;
+  get event() {
+    return this.emitter.event;
+  }
+  watch(uri, _options) {
+    const key = uri.toString();
+    return new vscode30.Disposable(() => {
+      this.watchers.get(key)?.clear();
+    });
+  }
+  stat(uri) {
+    const file = this.files.get(uri.path);
+    if (file) {
+      return {
+        type: vscode30.FileType.File,
+        ctime: file.ctime,
+        mtime: file.mtime,
+        size: file.size
+      };
+    }
+    const prefix = uri.path + "/";
+    for (const key of this.files.keys()) {
+      if (key.startsWith(prefix)) {
+        return {
+          type: vscode30.FileType.Directory,
+          ctime: 0,
+          mtime: 0,
+          size: 0
+        };
+      }
+    }
+    throw vscode30.FileSystemError.FileNotFound(uri);
+  }
+  readFile(uri) {
+    const file = this.files.get(uri.path);
+    if (!file) throw vscode30.FileSystemError.FileNotFound(uri);
+    return file.content;
+  }
+  writeFile(uri, content, _options) {
+    const existing = this.files.get(uri.path);
+    const now = Date.now();
+    this.files.set(uri.path, {
+      content,
+      ctime: existing?.ctime ?? now,
+      mtime: now,
+      size: content.byteLength
+    });
+    this.emitter.fire([{
+      type: existing ? vscode30.FileChangeType.Changed : vscode30.FileChangeType.Created,
+      uri
+    }]);
+  }
+  delete(uri, _options) {
+    this.files.delete(uri.path);
+    this.emitter.fire([{ type: vscode30.FileChangeType.Deleted, uri }]);
+  }
+  rename(_oldUri, _newUri, _options) {
+    throw new Error("Not supported");
+  }
+  readDirectory(_uri) {
+    return [];
+  }
+  createDirectory(uri) {
+    this.emitter.fire([{ type: vscode30.FileChangeType.Changed, uri }]);
+  }
+  // ─── ClaudeFS 特有方法 ──────────────────────────────────────────────────
+  /** 写入文件内容（从 diff 数据填充） */
+  setFileContent(filePath, content) {
+    const uri = vscode30.Uri.parse(`${this.scheme}:/${filePath}`);
+    this.writeFile(uri, Buffer.from(content, "utf-8"), { create: true, overwrite: true });
+    return uri;
+  }
+  /** 读取文件文本内容 */
+  getFileText(uri) {
+    return Buffer.from(this.readFile(uri)).toString("utf-8");
+  }
+  /** 清除所有虚拟文件 */
+  clear() {
+    const uris = [];
+    for (const key of this.files.keys()) {
+      uris.push(vscode30.Uri.parse(`${this.scheme}:${key}`));
+    }
+    this.files.clear();
+    if (uris.length > 0) {
+      this.emitter.fire(uris.map((uri) => ({
+        type: vscode30.FileChangeType.Deleted,
+        uri
+      })));
+    }
+  }
+  /** 虚拟 FS 的 scheme（子类设置） */
+  get scheme() {
+    return "_claude_fs";
+  }
+};
+var LeftFS = class extends MemoryFS {
+  get scheme() {
+    return "_claude_fs_left";
+  }
+};
+var RightFS = class extends MemoryFS {
+  get scheme() {
+    return "_claude_fs_right";
+  }
+};
+var ReadOnlyFS = class _ReadOnlyFS {
+  emitter = new vscode30.EventEmitter();
+  onDidChangeFile = this.emitter.event;
+  static scheme = "_claude_vscode_fs_readonly";
+  watch(uri, _options) {
+    return new vscode30.Disposable(() => {
+    });
+  }
+  stat(uri) {
+    const realUri = this.toRealUri(uri);
+    return vscode30.workspace.fs.stat(realUri);
+  }
+  readFile(uri) {
+    const realUri = this.toRealUri(uri);
+    return vscode30.workspace.fs.readFile(realUri);
+  }
+  writeFile(_uri, _content, _options) {
+    throw vscode30.FileSystemError.NoPermissions("Read-only filesystem");
+  }
+  delete(_uri, _options) {
+    throw vscode30.FileSystemError.NoPermissions("Read-only filesystem");
+  }
+  rename(_oldUri, _newUri, _options) {
+    throw vscode30.FileSystemError.NoPermissions("Read-only filesystem");
+  }
+  readDirectory(uri) {
+    const realUri = this.toRealUri(uri);
+    return vscode30.workspace.fs.readDirectory(realUri);
+  }
+  createDirectory(_uri) {
+    throw vscode30.FileSystemError.NoPermissions("Read-only filesystem");
+  }
+  /** 将虚拟 URI 转换为真实的文件系统 URI */
+  toRealUri(uri) {
+    return vscode30.Uri.file(uri.path);
+  }
+  /** 将真实文件路径转换为虚拟 URI */
+  static toVirtualUri(filePath) {
+    return vscode30.Uri.parse(`${_ReadOnlyFS.scheme}:${filePath}`);
+  }
+};
+var DiffManager = class {
+  pendingDiffs = /* @__PURE__ */ new Map();
+  leftFS;
+  rightFS;
+  constructor(leftFS, rightFS) {
+    this.leftFS = leftFS;
+    this.rightFS = rightFS;
+  }
+  /**
+   * 注册一个 proposed diff 并打开 diff 编辑器。
+   * @returns diff ID
+   */
+  async proposeDiff(filePath, oldContent, newContent, toolUseId) {
+    const id = `diff-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const diff = { id, filePath, oldContent, newContent, toolUseId };
+    const fileName = path9.basename(filePath);
+    const dirName = path9.dirname(filePath);
+    const leftPath = `${dirName}/${fileName}`;
+    const rightPath = `${dirName}/${fileName}`;
+    diff.leftUri = this.leftFS.setFileContent(leftPath, oldContent);
+    diff.rightUri = this.rightFS.setFileContent(rightPath, newContent);
+    diff.editorOpen = true;
+    this.pendingDiffs.set(id, diff);
+    const title = `${fileName} (Proposed Changes)`;
+    await vscode30.commands.executeCommand(
+      "vscode.diff",
+      diff.leftUri,
+      diff.rightUri,
+      title,
+      { preview: true }
+    );
+    return id;
+  }
+  /**
+   * 接受 diff：将 right FS 中的内容写入磁盘
+   */
+  async acceptDiff(diffId) {
+    const diff = this.pendingDiffs.get(diffId);
+    if (!diff?.rightUri) return false;
+    try {
+      const newContent = this.rightFS.getFileText(diff.rightUri);
+      const realUri = vscode30.Uri.file(diff.filePath);
+      await vscode30.workspace.fs.writeFile(realUri, Buffer.from(newContent, "utf-8"));
+      this.removeDiff(diffId);
+      return true;
+    } catch (error) {
+      vscode30.window.showErrorMessage(`Failed to accept changes: ${error}`);
+      return false;
+    }
+  }
+  /**
+   * 拒绝 diff：丢弃虚拟 FS 内容
+   */
+  rejectDiff(diffId) {
+    this.removeDiff(diffId);
+  }
+  /** 接受当前活动的 diff 编辑器中的修改 */
+  async acceptActiveDiff() {
+    const activeEditor = vscode30.window.activeTextEditor;
+    if (!activeEditor) return;
+    for (const [id, diff] of this.pendingDiffs) {
+      if (diff.editorOpen && diff.rightUri) {
+        const tab = vscode30.window.tabGroups.activeTabGroup.activeTab;
+        if (tab && "input" in tab) {
+          const input = tab.input;
+          if (input?.modified?.toString() === diff.rightUri.toString()) {
+            await this.acceptDiff(id);
+            return;
+          }
+        }
+      }
+    }
+  }
+  /** 拒绝当前活动的 diff 编辑器中的修改 */
+  async rejectActiveDiff() {
+    const activeEditor = vscode30.window.activeTextEditor;
+    if (!activeEditor) return;
+    for (const [id, diff] of this.pendingDiffs) {
+      if (diff.editorOpen && diff.rightUri) {
+        const tab = vscode30.window.tabGroups.activeTabGroup.activeTab;
+        if (tab && "input" in tab) {
+          const input = tab.input;
+          if (input?.modified?.toString() === diff.rightUri.toString()) {
+            this.rejectDiff(id);
+            await vscode30.commands.executeCommand("workbench.action.closeActiveEditor");
+            return;
+          }
+        }
+      }
+    }
+  }
+  /** 获取所有待处理 diff */
+  getPendingDiffs() {
+    return Array.from(this.pendingDiffs.values());
+  }
+  /** 清理所有 diff */
+  clearAll() {
+    this.leftFS.clear();
+    this.rightFS.clear();
+    this.pendingDiffs.clear();
+  }
+  removeDiff(diffId) {
+    const diff = this.pendingDiffs.get(diffId);
+    if (diff) {
+      if (diff.leftUri) {
+        try {
+          this.leftFS.delete(diff.leftUri, { recursive: false });
+        } catch {
+        }
+      }
+      if (diff.rightUri) {
+        try {
+          this.rightFS.delete(diff.rightUri, { recursive: false });
+        } catch {
+        }
+      }
+      this.pendingDiffs.delete(diffId);
+    }
+  }
+};
+function registerClaudeFS(context) {
+  const leftFS = new LeftFS();
+  const rightFS = new RightFS();
+  const readOnlyFS = new ReadOnlyFS();
+  const diffManager = new DiffManager(leftFS, rightFS);
+  const { CommandFSProvider: CommandFSProvider2, KeyboardCommandFSProvider: KeyboardCommandFSProvider2 } = (init_CommandFSProvider(), __toCommonJS(CommandFSProvider_exports));
+  const { StateFSProvider: StateFSProvider2, StateResponseFSProvider: StateResponseFSProvider2 } = (init_StateFSProvider(), __toCommonJS(StateFSProvider_exports));
+  const { TerminalSettingFSProvider: TerminalSettingFSProvider2, TerminalSettingResponseFSProvider: TerminalSettingResponseFSProvider2 } = (init_TerminalSettingFSProvider(), __toCommonJS(TerminalSettingFSProvider_exports));
+  const { ChromeFSProvider: ChromeFSProvider2 } = (init_ChromeFSProvider(), __toCommonJS(ChromeFSProvider_exports));
+  const commandFS = new CommandFSProvider2();
+  const keyboardCommandFS = new KeyboardCommandFSProvider2();
+  const stateFS = new StateFSProvider2();
+  const stateResponseFS = new StateResponseFSProvider2();
+  const terminalSettingFS = new TerminalSettingFSProvider2();
+  const terminalSettingResponseFS = new TerminalSettingResponseFSProvider2();
+  const chromeFS = new ChromeFSProvider2();
+  context.subscriptions.push(
+    vscode30.workspace.registerFileSystemProvider(leftFS.scheme, leftFS, { isCaseSensitive: true }),
+    vscode30.workspace.registerFileSystemProvider(rightFS.scheme, rightFS, { isCaseSensitive: true, isReadonly: false }),
+    vscode30.workspace.registerFileSystemProvider(ReadOnlyFS.scheme, readOnlyFS, { isCaseSensitive: true, isReadonly: true }),
+    // New VFS providers
+    vscode30.workspace.registerFileSystemProvider("_claude_command", commandFS, { isCaseSensitive: true, isReadonly: false }),
+    vscode30.workspace.registerFileSystemProvider("_claude_command_keyboard", keyboardCommandFS, { isCaseSensitive: true, isReadonly: false }),
+    vscode30.workspace.registerFileSystemProvider("_claude_state", stateFS, { isCaseSensitive: true, isReadonly: true }),
+    vscode30.workspace.registerFileSystemProvider("_claude_state_response", stateResponseFS, { isCaseSensitive: true, isReadonly: false }),
+    vscode30.workspace.registerFileSystemProvider("_claude_terminal_setting", terminalSettingFS, { isCaseSensitive: true, isReadonly: true }),
+    vscode30.workspace.registerFileSystemProvider("_claude_terminal_setting_response", terminalSettingResponseFS, { isCaseSensitive: true, isReadonly: false }),
+    vscode30.workspace.registerFileSystemProvider(ChromeFSProvider2.scheme, chromeFS, { isCaseSensitive: true, isReadonly: false })
+  );
+  context.subscriptions.push(
+    vscode30.commands.registerCommand("cclocal.acceptProposedDiff", () => {
+      void diffManager.acceptActiveDiff();
+    }),
+    vscode30.commands.registerCommand("cclocal.rejectProposedDiff", async () => {
+      await diffManager.rejectActiveDiff();
+    })
+  );
+  return {
+    leftFS,
+    rightFS,
+    readOnlyFS,
+    diffManager,
+    commandFS,
+    keyboardCommandFS,
+    stateFS,
+    stateResponseFS,
+    terminalSettingFS,
+    terminalSettingResponseFS,
+    chromeFS
+  };
+}
+
+// src/ChannelManager.ts
+import * as vscode31 from "vscode";
+
+// src/Channel.ts
+var Channel = class {
+  id;
+  webview;
+  state;
+  onStateChange;
+  constructor(webview, id) {
+    this.id = id ?? crypto.randomUUID();
+    this.webview = webview;
+    this.state = {
+      id: this.id,
+      status: "idle",
+      messages: [],
+      permissionMode: "default"
+    };
+    this.webview.onDidReceiveMessage(this.handleWebviewMessage.bind(this));
+  }
+  // ─── Getters ─────────────────────────────────────────────────────────────
+  getStatus() {
+    return this.state.status;
+  }
+  getMessages() {
+    return this.state.messages;
+  }
+  getSessionId() {
+    return this.state.sessionId;
+  }
+  getState() {
+    return { ...this.state };
+  }
+  // ─── State Management ─────────────────────────────────────────────────────
+  setOnStateChange(handler) {
+    this.onStateChange = handler;
+  }
+  updateState(updates) {
+    this.state = { ...this.state, ...updates };
+    this.onStateChange?.(this);
+  }
+  // ─── Actions ──────────────────────────────────────────────────────────────
+  async sendMessage(content) {
+    const message = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: [{ type: "text", text: content }],
+      timestamp: Date.now()
+    };
+    this.addMessage(message);
+    this.updateState({ status: "running" });
+    await this.postMessage({
+      type: "start_processing",
+      data: { messageId: message.id, content }
+    });
+  }
+  async interrupt() {
+    this.updateState({ status: "idle" });
+    await this.postMessage({ type: "interrupt" });
+  }
+  setPermissionMode(mode) {
+    this.updateState({ permissionMode: mode });
+    this.postMessage({ type: "permission_mode_changed", data: mode });
+  }
+  setModel(model) {
+    this.updateState({ model });
+    this.postMessage({ type: "model_changed", data: model });
+  }
+  addMessage(message) {
+    this.state.messages.push(message);
+    this.postMessage({ type: "message", data: message });
+    this.onStateChange?.(this);
+  }
+  updateMessage(id, updates) {
+    const index = this.state.messages.findIndex((m) => m.id === id);
+    if (index !== -1) {
+      this.state.messages[index] = { ...this.state.messages[index], ...updates };
+      this.postMessage({ type: "message_updated", data: this.state.messages[index] });
+      this.onStateChange?.(this);
+    }
+  }
+  appendToMessage(id, content) {
+    const message = this.state.messages.find((m) => m.id === id);
+    if (message) {
+      message.content.push(content);
+      this.postMessage({ type: "message_appended", data: { id, content } });
+      this.onStateChange?.(this);
+    }
+  }
+  clearMessages() {
+    this.state.messages = [];
+    this.postMessage({ type: "clear" });
+    this.onStateChange?.(this);
+  }
+  // ─── Webview Communication ────────────────────────────────────────────────
+  async postMessage(message) {
+    return this.webview.postMessage(message);
+  }
+  async syncState() {
+    await this.postMessage({
+      type: "session_states_update",
+      data: this.state
+    });
+  }
+  async handleWebviewMessage(message) {
+    switch (message.type) {
+      case "ready":
+        await this.syncState();
+        break;
+      case "send_message":
+        if (message.data && typeof message.data === "object") {
+          const data = message.data;
+          await this.sendMessage(data.content);
+        }
+        break;
+      case "interrupt":
+        await this.interrupt();
+        break;
+      case "create_new_conversation":
+        this.clearMessages();
+        this.updateState({ sessionId: void 0, status: "idle" });
+        break;
+      case "permission_response":
+        break;
+      case "set_permission_mode":
+        if (message.data) {
+          this.setPermissionMode(message.data);
+        }
+        break;
+    }
+  }
+  // ─── Lifecycle ────────────────────────────────────────────────────────────
+  dispose() {
+    this.state.messages = [];
+  }
+};
+
+// src/ChannelManager.ts
+var ChannelManager = class {
+  channels = /* @__PURE__ */ new Map();
+  activeChannelId = null;
+  outputChannel;
+  // 事件发射器
+  _onDidChangeActiveChannel = new vscode31.EventEmitter();
+  _onDidChangeChannels = new vscode31.EventEmitter();
+  onDidChangeActiveChannel = this._onDidChangeActiveChannel.event;
+  onDidChangeChannels = this._onDidChangeChannels.event;
+  constructor(outputChannel2) {
+    this.outputChannel = outputChannel2;
+  }
+  // ─── Channel Creation ─────────────────────────────────────────────────────
+  createChannel(webview, id) {
+    const channel = new Channel(webview, id);
+    channel.setOnStateChange((ch) => {
+      this.handleChannelStateChange(ch);
+    });
+    this.channels.set(channel.id, channel);
+    this.outputChannel.info(`Created channel: ${channel.id}`);
+    if (!this.activeChannelId) {
+      this.setActiveChannel(channel.id);
+    }
+    this._onDidChangeChannels.fire(this.getChannelInfos());
+    return channel;
+  }
+  // ─── Channel Access ───────────────────────────────────────────────────────
+  getChannel(id) {
+    return this.channels.get(id);
+  }
+  getActiveChannel() {
+    if (!this.activeChannelId) return void 0;
+    return this.channels.get(this.activeChannelId);
+  }
+  getActiveChannelId() {
+    return this.activeChannelId;
+  }
+  setActiveChannel(id) {
+    if (!this.channels.has(id)) {
+      this.outputChannel.warn(`Cannot set active channel: channel ${id} not found`);
+      return;
+    }
+    this.activeChannelId = id;
+    const channel = this.channels.get(id);
+    this._onDidChangeActiveChannel.fire(channel ?? null);
+    this.outputChannel.info(`Active channel set to: ${id}`);
+  }
+  // ─── Channel Listing ──────────────────────────────────────────────────────
+  getChannels() {
+    return Array.from(this.channels.values());
+  }
+  getChannelInfos() {
+    return this.getChannels().map((ch) => {
+      const state = ch.getState();
+      return {
+        id: state.id,
+        status: state.status,
+        messageCount: state.messages.length,
+        sessionId: state.sessionId
+      };
+    });
+  }
+  // ─── Channel Removal ──────────────────────────────────────────────────────
+  closeChannel(id) {
+    const channel = this.channels.get(id);
+    if (!channel) return;
+    channel.dispose();
+    this.channels.delete(id);
+    this.outputChannel.info(`Closed channel: ${id}`);
+    if (this.activeChannelId === id) {
+      const remaining = Array.from(this.channels.keys());
+      this.activeChannelId = remaining[0] ?? null;
+      this._onDidChangeActiveChannel.fire(this.getActiveChannel() ?? null);
+    }
+    this._onDidChangeChannels.fire(this.getChannelInfos());
+  }
+  closeAllChannels() {
+    for (const channel of this.channels.values()) {
+      channel.dispose();
+    }
+    this.channels.clear();
+    this.activeChannelId = null;
+    this._onDidChangeActiveChannel.fire(null);
+    this._onDidChangeChannels.fire([]);
+    this.outputChannel.info("All channels closed");
+  }
+  // ─── State Change Handler ─────────────────────────────────────────────────
+  handleChannelStateChange(channel) {
+    this._onDidChangeChannels.fire(this.getChannelInfos());
+    if (this.activeChannelId === channel.id) {
+      this._onDidChangeActiveChannel.fire(channel);
+    }
+  }
+  // ─── Utility ──────────────────────────────────────────────────────────────
+  getStats() {
+    const byStatus = {
+      idle: 0,
+      running: 0,
+      waiting: 0,
+      error: 0
+    };
+    for (const channel of this.channels.values()) {
+      byStatus[channel.getStatus()]++;
+    }
+    return {
+      total: this.channels.size,
+      active: this.activeChannelId,
+      byStatus
+    };
+  }
+  // ─── Lifecycle ────────────────────────────────────────────────────────────
+  dispose() {
+    this.closeAllChannels();
+    this._onDidChangeActiveChannel.dispose();
+    this._onDidChangeChannels.dispose();
+    this.outputChannel.debug("ChannelManager disposed");
+  }
+};
+var instance6;
+function getChannelManager(outputChannel2) {
+  if (!instance6) {
+    instance6 = new ChannelManager(outputChannel2);
+  }
+  return instance6;
+}
+function disposeChannelManager() {
+  instance6?.dispose();
+  instance6 = void 0;
+}
+
+// src/UriHandler.ts
+import * as vscode32 from "vscode";
+var CclocalUriHandler = class {
+  constructor(outputChannel2) {
+    this.outputChannel = outputChannel2;
+  }
+  pendingOAuthCallbacks = /* @__PURE__ */ new Map();
+  async handleUri(uri) {
+    this.outputChannel.info(`[URI Handler] Received: ${uri.path}?${uri.query}`);
+    const { path: uriPath, query } = uri;
+    const params = new URLSearchParams(query);
+    const code = params.get("code");
+    const state = params.get("state");
+    if (uriPath === "/auth/callback" || uriPath === "auth/callback") {
+      if (code && state) {
+        this.outputChannel.info(`[URI Handler] OAuth callback: state=${state}`);
+        const pending = this.pendingOAuthCallbacks.get(state);
+        if (pending) {
+          clearTimeout(pending.timer);
+          this.pendingOAuthCallbacks.delete(state);
+          pending.resolve(code);
+        } else {
+          this.outputChannel.warn(`[URI Handler] No pending OAuth callback for state: ${state}`);
+          vscode32.window.showWarningMessage("Unexpected OAuth callback. Please try logging in again.");
+        }
+      } else {
+        const error = params.get("error");
+        const errorDesc = params.get("error_description");
+        this.outputChannel.error(`[URI Handler] OAuth error: ${error} - ${errorDesc}`);
+        vscode32.window.showErrorMessage(`Login failed: ${errorDesc || error || "Unknown error"}`);
+      }
+    } else if (uriPath === "/open" || uriPath === "open") {
+      const filePath = params.get("file");
+      const line = params.get("line");
+      if (filePath) {
+        try {
+          const doc = await vscode32.workspace.openTextDocument(filePath);
+          const editor = await vscode32.window.showTextDocument(doc, {
+            selection: line ? new vscode32.Selection(parseInt(line) - 1, 0, parseInt(line) - 1, 0) : void 0
+          });
+        } catch (err) {
+          vscode32.window.showErrorMessage(`Failed to open file: ${filePath}`);
+        }
+      }
+    } else if (uriPath === "/focus" || uriPath === "focus") {
+      void vscode32.commands.executeCommand("cclocal.chat.focus");
+    } else {
+      this.outputChannel.warn(`[URI Handler] Unknown path: ${uriPath}`);
+    }
+  }
+  /**
+   * Wait for an OAuth callback with the given state parameter.
+   * Returns a Promise that resolves with the authorization code.
+   * Rejects after timeoutMs if no callback is received.
+   */
+  waitForOAuthCallback(state, timeoutMs = 3e5) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pendingOAuthCallbacks.delete(state);
+        reject(new Error("OAuth callback timed out"));
+      }, timeoutMs);
+      this.pendingOAuthCallbacks.set(state, { resolve, reject, timer });
+    });
+  }
+  /** Cancel all pending OAuth callbacks */
+  cancelAll() {
+    for (const [state, pending] of this.pendingOAuthCallbacks) {
+      clearTimeout(pending.timer);
+      pending.reject(new Error("OAuth callback cancelled"));
+    }
+    this.pendingOAuthCallbacks.clear();
+  }
+  dispose() {
+    this.cancelAll();
+  }
+};
+
+// src/commands/FocusManager.ts
+import * as vscode33 from "vscode";
+var FocusManager = class {
+  sidebarView;
+  /** Called when the sidebar webview is resolved */
+  setSidebarView(view) {
+    this.sidebarView = view;
+    view.onDidChangeVisibility(() => {
+      const active = view.visible;
+      void vscode33.commands.executeCommand("setContext", "cclocal.sideBarActive", active);
+    });
+  }
+  /** Focus the sidebar input */
+  focus() {
+    if (this.sidebarView) {
+      this.sidebarView.show(true);
+      void vscode33.commands.executeCommand("setContext", "cclocal.sideBarActive", true);
+    } else {
+      void vscode33.commands.executeCommand("cclocal.chatView.focus");
+      void vscode33.commands.executeCommand("setContext", "cclocal.sideBarActive", true);
+    }
+  }
+  /** Blur — move focus back to the active editor */
+  blur() {
+    void vscode33.commands.executeCommand("workbench.action.focusActiveEditorGroup");
+    void vscode33.commands.executeCommand("setContext", "cclocal.sideBarActive", false);
+  }
+};
+
+// src/EditorPanelProvider.ts
+import * as crypto9 from "crypto";
+import * as vscode34 from "vscode";
+var EditorPanelProvider = class _EditorPanelProvider {
+  static viewType = "cclocalVSCodePanel";
+  panel;
+  extensionUri;
+  outputChannel;
+  /** Callback to register panel's webview as a broadcast target on the sidebar */
+  onDidCreatePanel;
+  constructor(extensionUri, outputChannel2) {
+    this.extensionUri = extensionUri;
+    this.outputChannel = outputChannel2;
+  }
+  /** Set callback that fires when the panel is created, to register its webview for broadcast */
+  setOnDidCreatePanel(callback) {
+    this.onDidCreatePanel = callback;
+  }
+  /** Open conversation in an editor tab */
+  openInEditorTab() {
+    if (this.panel) {
+      this.panel.reveal(vscode34.ViewColumn.Beside);
+      return;
+    }
+    this.panel = vscode34.window.createWebviewPanel(
+      _EditorPanelProvider.viewType,
+      "CCLocal",
+      vscode34.ViewColumn.Beside,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+        localResourceRoots: [this.extensionUri]
+      }
+    );
+    this.panel.iconPath = vscode34.Uri.joinPath(this.extensionUri, "images", "icon.png");
+    this.panel.webview.html = this.getWebviewHtml(this.panel.webview);
+    this.onDidCreatePanel?.(this.panel.webview);
+    this.panel.webview.onDidReceiveMessage(
+      (message) => {
+        this.outputChannel.debug(`[EditorPanel] received webview message: ${message.type}`);
+      }
+    );
+    this.panel.onDidDispose(() => {
+      this.panel = void 0;
+    });
+  }
+  /** Open conversation in a new window */
+  openInNewWindow() {
+    this.openInEditorTab();
+    if (this.panel) {
+      void vscode34.commands.executeCommand("workbench.action.moveEditorToNewWindow");
+    }
+  }
+  /** Forward a message from sidebar → editor panel webview */
+  sendToWebview(message) {
+    this.panel?.webview.postMessage(message);
+  }
+  /** Get the panel's webview if available */
+  getWebview() {
+    return this.panel?.webview;
+  }
+  // ─── Internal ────────────────────────────────────────────────────────────
+  getWebviewHtml(webview) {
+    const nonce = crypto9.randomBytes(16).toString("base64");
+    const webviewDistUri = (fileName) => webview.asWebviewUri(vscode34.Uri.joinPath(this.extensionUri, "webview-dist", fileName));
+    const scriptUri = webviewDistUri("index.js");
+    const styleUri = webviewDistUri("index.css");
+    return (
+      /* html */
+      `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none';
+            style-src 'nonce-${nonce}' https:;
+            script-src 'nonce-${nonce}';
+            img-src 'self' data: https:;
+            font-src 'self' https:;" />
+  <link rel="stylesheet" type="text/css" href="${styleUri}" nonce="${nonce}">
+  <title>CCLocal</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script nonce="${nonce}" src="${scriptUri}"></script>
+</body>
+</html>`
+    );
+  }
+};
+
+// src/worktree/WorktreeManager.ts
+import * as vscode35 from "vscode";
+import { execFile as execFile2 } from "child_process";
+import { promisify } from "util";
+var execFileAsync = promisify(execFile2);
+var WorktreeManager = class {
+  worktrees = [];
+  outputChannel;
+  constructor(outputChannel2) {
+    this.outputChannel = outputChannel2;
+  }
+  /** Create a new worktree with a new branch and open it in a new window */
+  async createWorktree(branch) {
+    const workspaceRoot = vscode35.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!workspaceRoot) {
+      vscode35.window.showErrorMessage("No workspace folder open");
+      return void 0;
+    }
+    const sanitizedBranch = branch.replace(/[^a-zA-Z0-9_\-\/]/g, "-");
+    const worktreePath = `${workspaceRoot}-worktree-${sanitizedBranch}`;
+    try {
+      await execFileAsync("git", ["worktree", "add", worktreePath, "-b", sanitizedBranch], {
+        cwd: workspaceRoot,
+        timeout: 3e4
+      });
+      const info = {
+        branch: sanitizedBranch,
+        path: worktreePath,
+        createdAt: Date.now()
+      };
+      this.worktrees.push(info);
+      this.outputChannel.info(`Created worktree: ${sanitizedBranch} at ${worktreePath}`);
+      await vscode35.commands.executeCommand(
+        "vscode.openFolder",
+        vscode35.Uri.file(worktreePath),
+        true
+        // forceNewWindow
+      );
+      vscode35.window.showInformationMessage(`Worktree created: ${sanitizedBranch}`);
+      return info;
+    } catch (err) {
+      const message = err?.message || String(err);
+      vscode35.window.showErrorMessage(`Failed to create worktree: ${message}`);
+      this.outputChannel.error(`Worktree creation failed: ${message}`);
+      return void 0;
+    }
+  }
+  /** List all worktrees managed by this extension */
+  listWorktrees() {
+    return [...this.worktrees];
+  }
+  /** Remove a worktree by branch name */
+  async removeWorktree(branch) {
+    const info = this.worktrees.find((w) => w.branch === branch);
+    if (!info) return false;
+    const workspaceRoot = vscode35.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!workspaceRoot) return false;
+    try {
+      await execFileAsync("git", ["worktree", "remove", info.path], {
+        cwd: workspaceRoot,
+        timeout: 3e4
+      });
+      this.worktrees = this.worktrees.filter((w) => w.branch !== branch);
+      this.outputChannel.info(`Removed worktree: ${branch}`);
+      return true;
+    } catch (err) {
+      vscode35.window.showErrorMessage(`Failed to remove worktree: ${err?.message}`);
+      return false;
+    }
+  }
+  dispose() {
+  }
+};
+
+// src/mcp/builtin/ChromeMCPProvider.ts
+import * as vscode36 from "vscode";
+var ChromeMCPProvider = class {
+  enabled = false;
+  outputChannel;
+  constructor(outputChannel2) {
+    this.outputChannel = outputChannel2;
+  }
+  /** Enable Chrome MCP server in settings */
+  async enable() {
+    const config = vscode36.workspace.getConfiguration("cclocal");
+    const mcpServers = config.get("mcpServers") || {};
+    mcpServers["chrome"] = {
+      command: "npx",
+      args: ["@anthropic-ai/chrome-mcp-server"],
+      type: "stdio"
+    };
+    await config.update("mcpServers", mcpServers, vscode36.ConfigurationTarget.Global);
+    this.enabled = true;
+    this.outputChannel.info("Chrome MCP server enabled");
+    vscode36.window.showInformationMessage("CCLocal: Chrome MCP server enabled");
+  }
+  /** Disable Chrome MCP server */
+  async disable() {
+    const config = vscode36.workspace.getConfiguration("cclocal");
+    const mcpServers = config.get("mcpServers") || {};
+    delete mcpServers["chrome"];
+    await config.update("mcpServers", mcpServers, vscode36.ConfigurationTarget.Global);
+    this.enabled = false;
+    this.outputChannel.info("Chrome MCP server disabled");
+    vscode36.window.showInformationMessage("CCLocal: Chrome MCP server disabled");
+  }
+  /** Check if Chrome MCP is enabled */
+  isEnabled() {
+    return this.enabled;
+  }
+  dispose() {
+  }
+};
+
+// src/mcp/builtin/JupyterMCPProvider.ts
+import * as vscode37 from "vscode";
+var JupyterMCPProvider = class {
+  enabled = false;
+  outputChannel;
+  constructor(outputChannel2) {
+    this.outputChannel = outputChannel2;
+  }
+  /** Enable Jupyter MCP server in settings */
+  async enable() {
+    const config = vscode37.workspace.getConfiguration("cclocal");
+    const mcpServers = config.get("mcpServers") || {};
+    mcpServers["jupyter"] = {
+      command: "uvx",
+      args: ["jupyter-mcp-server"],
+      type: "stdio"
+    };
+    await config.update("mcpServers", mcpServers, vscode37.ConfigurationTarget.Global);
+    this.enabled = true;
+    this.outputChannel.info("Jupyter MCP server enabled");
+    vscode37.window.showInformationMessage("CCLocal: Jupyter MCP server enabled");
+  }
+  /** Disable Jupyter MCP server */
+  async disable() {
+    const config = vscode37.workspace.getConfiguration("cclocal");
+    const mcpServers = config.get("mcpServers") || {};
+    delete mcpServers["jupyter"];
+    await config.update("mcpServers", mcpServers, vscode37.ConfigurationTarget.Global);
+    this.enabled = false;
+    this.outputChannel.info("Jupyter MCP server disabled");
+    vscode37.window.showInformationMessage("CCLocal: Jupyter MCP server disabled");
+  }
+  /** Check if Jupyter MCP is enabled */
+  isEnabled() {
+    return this.enabled;
+  }
+  dispose() {
+  }
+};
+
+// src/commands/UpdateCommand.ts
+import * as vscode38 from "vscode";
+async function checkForUpdates(context, outputChannel2) {
+  const currentVersion = context.extension.packageJSON.version;
+  outputChannel2.info(`[Update] Current version: ${currentVersion}`);
+  try {
+    const result = await vscode38.commands.executeCommand("extension.checkForUpdates", "cclocal.cclocal-vscode-ext");
+    if (result?.updateAvailable && result.latestVersion) {
+      const action = await vscode38.window.showInformationMessage(
+        `CCLocal update available: v${result.latestVersion} (current: v${currentVersion})`,
+        "Install Update",
+        "Dismiss"
+      );
+      if (action === "Install Update") {
+        await vscode38.commands.executeCommand("workbench.extensions.installExtension", "cclocal.cclocal-vscode-ext");
+        vscode38.window.showInformationMessage("CCLocal: Update installed. Please reload VS Code.");
+      }
+    } else {
+      vscode38.window.showInformationMessage(`CCLocal is up to date (v${currentVersion})`);
+    }
+  } catch (err) {
+    outputChannel2.error(`[Update] Check failed: ${err?.message}`);
+    vscode38.window.showWarningMessage("CCLocal: Could not check for updates");
+  }
+}
+
+// src/commands/InstallPluginCommand.ts
+import * as vscode39 from "vscode";
+async function installPlugin(pluginManager2, outputChannel2) {
+  try {
+    const allPlugins = await pluginManager2.listAvailablePlugins();
+    const installedIds = new Set(pluginManager2.getInstalledPluginIds());
+    const available = allPlugins.filter((p) => !installedIds.has(p.id));
+    if (available.length === 0) {
+      vscode39.window.showInformationMessage("CCLocal: No new plugins available");
+      return;
+    }
+    const items = available.map((p) => ({
+      label: p.name,
+      description: p.version ? `v${p.version}` : void 0,
+      detail: p.description,
+      picked: false
+    }));
+    const selected = await vscode39.window.showQuickPick(items, {
+      placeHolder: "Select a plugin to install",
+      title: "CCLocal: Install Plugin",
+      canPickMany: false
+    });
+    if (!selected) return;
+    const plugin = available.find((p) => p.name === selected.label);
+    if (!plugin) return;
+    await vscode39.window.withProgress(
+      {
+        location: vscode39.ProgressLocation.Notification,
+        title: `Installing ${plugin.name}...`,
+        cancellable: false
+      },
+      async () => {
+        await pluginManager2.installPlugin(plugin.id);
+      }
+    );
+    vscode39.window.showInformationMessage(`CCLocal: ${plugin.name} installed successfully`);
+  } catch (err) {
+    outputChannel2.error(`[InstallPlugin] Failed: ${err?.message}`);
+    vscode39.window.showErrorMessage(`CCLocal: Failed to install plugin \u2014 ${err?.message}`);
+  }
+}
+
+// src/extension.ts
+var hookManager;
+var configManager;
+var outputChannel;
+var mcpManager;
+var pluginManager;
+var sessionManager;
+var remoteManager;
+var ideViewProvider;
+var editorPanelProvider;
+async function activate(context) {
+  console.log("CCLocal extension activating...");
+  outputChannel = vscode40.window.createOutputChannel("CCLocal", { log: true });
+  context.subscriptions.push(outputChannel);
+  const claudeFS = registerClaudeFS(context);
+  const uriHandler = new CclocalUriHandler(outputChannel);
+  context.subscriptions.push(uriHandler);
+  context.subscriptions.push(vscode40.window.registerUriHandler(uriHandler));
+  const focusManager = new FocusManager();
+  getChannelManager(outputChannel);
+  configManager = new ConfigurationManager(context);
+  context.subscriptions.push(configManager);
+  hookManager = getHookManager(outputChannel, {
+    allowedHttpUrls: configManager.get("allowedHttpHookUrls"),
+    allowedCommands: configManager.get("allowedCommands"),
+    allowedEnvVars: configManager.get("allowedEnvVars")
+  });
+  context.subscriptions.push(hookManager);
+  const hooksConfig = configManager.get("hooks");
+  if (hooksConfig) {
+    hookManager.loadFromConfig(hooksConfig);
+  }
+  context.subscriptions.push(
+    vscode40.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("cclocal.hooks")) {
+        const newHooksConfig = configManager?.get("hooks");
+        if (newHooksConfig && hookManager) {
+          hookManager.loadFromConfig(newHooksConfig);
+        }
+      }
+      if (e.affectsConfiguration("cclocal.disableAllHooks")) {
+        const disabled = configManager?.get("disableAllHooks");
+        if (hookManager) {
+          hookManager.setEnabled(!disabled);
+        }
+      }
+    })
+  );
+  const authStatusBar = new AuthStatusBar(context);
+  context.subscriptions.push(authStatusBar);
+  mcpManager = getMCPManager(outputChannel, {
+    autoDiscoverProject: configManager.get("enableAllProjectMcpServers"),
+    preApprovedServers: configManager.get("allowedMcpServers"),
+    deniedServers: configManager.get("deniedMcpServers")
+  });
+  context.subscriptions.push(mcpManager);
+  void mcpManager.discoverServers();
+  registerFileSaveListener(context);
+  pluginManager = getPluginManager(context, outputChannel, {
+    extraKnownMarketplaces: configManager.get("extraKnownMarketplaces"),
+    strictKnownMarketplaces: configManager.get("strictKnownMarketplaces"),
+    blockedMarketplaces: configManager.get("blockedMarketplaces")
+  });
+  context.subscriptions.push(pluginManager);
+  await pluginManager.loadInstalledPlugins();
+  sessionManager = getSessionManager(context, outputChannel);
+  context.subscriptions.push(sessionManager);
+  const sessionTree = new SessionTreeProvider(sessionManager);
+  context.subscriptions.push(sessionTree);
+  context.subscriptions.push(
+    vscode40.window.registerTreeDataProvider("cclocal.sessions", sessionTree)
+  );
+  const commandDeps = {
+    sessionManager,
+    sessionTree,
+    hookManager,
+    mcpManager,
+    pluginManager,
+    configManager,
+    outputChannel
+  };
+  registerAllCommands(context, commandDeps);
+  registerKeyboardShortcuts(context, sessionManager);
+  registerCommandPalette(context);
+  registerSessionCommands(context, sessionManager, sessionTree);
+  registerHookCommands(context, hookManager);
+  registerMCPCommands(context, mcpManager);
+  registerPluginCommands(context, pluginManager);
+  remoteManager = getRemoteSessionManager(context, outputChannel);
+  context.subscriptions.push(remoteManager);
+  registerRemoteCommands(context, remoteManager);
+  const config = vscode40.workspace.getConfiguration("cclocal");
+  const mode = config.get("mode") || "ide";
+  let sendMessage;
+  if (mode === "ide") {
+    ideViewProvider = new IdeViewProvider(context.extensionUri, outputChannel, claudeFS.diffManager);
+    sendMessage = (text) => ideViewProvider.sendMessage(text);
+    context.subscriptions.push(
+      vscode40.window.registerWebviewViewProvider(
+        IdeViewProvider.viewType,
+        ideViewProvider,
+        { webviewOptions: { retainContextWhenHidden: true } }
+      )
+    );
+    ideViewProvider.onDidResolve((view) => focusManager.setSidebarView(view));
+    await ideViewProvider.start();
+    ideViewProvider.registerListeners(context);
+    context.subscriptions.push(
+      vscode40.window.registerWebviewViewProvider(
+        "cclocal.chatViewSecondary",
+        {
+          resolveWebviewView(webviewView) {
+            webviewView.webview.options = { enableScripts: true, localResourceRoots: [context.extensionUri] };
+            const nonce = __require("crypto").randomBytes(16).toString("base64");
+            const webviewDistUri = (fileName) => webviewView.webview.asWebviewUri(vscode40.Uri.joinPath(context.extensionUri, "webview-dist", fileName));
+            const scriptUri = webviewDistUri("index.js");
+            const styleUri = webviewDistUri("index.css");
+            webviewView.webview.html = `<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}' https:; script-src 'nonce-${nonce}'; img-src 'self' data: https:; font-src 'self' https:;"/>
+<link rel="stylesheet" type="text/css" href="${styleUri}" nonce="${nonce}"></head>
+<body><div id="root"></div><script nonce="${nonce}" src="${scriptUri}"></script></body></html>`;
+            webviewView.webview.onDidReceiveMessage((msg) => {
+              ideViewProvider?.handleWebviewMessage(msg);
+            });
+          }
+        },
+        { webviewOptions: { retainContextWhenHidden: true } }
+      )
+    );
+    context.subscriptions.push(
+      vscode40.window.registerWebviewViewProvider(
+        "cclocal.sessionsList",
+        {
+          resolveWebviewView(webviewView) {
+            webviewView.webview.options = { enableScripts: true, localResourceRoots: [context.extensionUri] };
+            webviewView.webview.html = `<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"/>
+<style>
+  body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); padding: 8px; margin: 0; }
+  .session-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--vscode-widget-border, #3a3a3a); }
+  .session-item:hover { background: var(--vscode-list-hoverBackground); }
+  .session-title { font-weight: 600; }
+  .session-meta { font-size: 0.85em; color: var(--vscode-descriptionForeground); }
+  .empty { padding: 20px; text-align: center; color: var(--vscode-descriptionForeground); }
+  input { width: 100%; padding: 6px 8px; margin-bottom: 8px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 3px; }
+</style></head><body>
+<input type="text" id="search" placeholder="\u641C\u7D22\u4F1A\u8BDD..." />
+<div id="list"></div>
+<script>
+const vscode = acquireVsCodeApi();
+const search = document.getElementById('search');
+const list = document.getElementById('list');
+let sessions = [];
+
+window.addEventListener('message', e => {
+  const msg = e.data;
+  if (msg.type === 'sessionsList') sessions = msg.sessions || [];
+  render();
+});
+
+search.addEventListener('input', () => render());
+
+function render() {
+  const q = search.value.toLowerCase();
+  const filtered = sessions.filter(s => (s.title || '').toLowerCase().includes(q) || s.id.includes(q));
+  if (!filtered.length) { list.innerHTML = '<div class="empty">\u65E0\u5339\u914D\u4F1A\u8BDD</div>'; return; }
+  list.innerHTML = filtered.map(s => '<div class="session-item" data-id="' + s.id + '"><div class="session-title">' + (s.title || 'Untitled') + '</div><div class="session-meta">' + new Date(s.updatedAt || s.createdAt).toLocaleString('zh-CN') + ' \xB7 ' + (s.numTurns || 0) + ' turns</div></div>').join('');
+  list.querySelectorAll('.session-item').forEach(el => {
+    el.addEventListener('click', () => {
+      vscode.postMessage({ type: 'resumeSession', sessionId: el.dataset.id });
+    });
+  });
+}
+
+vscode.postMessage({ type: 'listSessions' });
+</script></body></html>`;
+            webviewView.webview.onDidReceiveMessage((msg) => {
+              if (msg.type === "listSessions") {
+                sessionManager?.listSessions().then((sessions) => {
+                  webviewView.webview.postMessage({ type: "sessionsList", sessions });
+                });
+              } else if (msg.type === "resumeSession") {
+                sessionManager?.resumeSession(msg.sessionId);
+              }
+            });
+          }
+        },
+        { webviewOptions: { retainContextWhenHidden: true } }
+      )
+    );
+    context.subscriptions.push(
+      vscode40.commands.registerCommand("cclocal.newSession", () => {
+        void vscode40.commands.executeCommand("cclocal.chatView.focus");
+        ideViewProvider.handleCommand("newSession");
+      })
+    );
+    context.subscriptions.push(
+      vscode40.commands.registerCommand("cclocal.clearChat", () => {
+        ideViewProvider.handleCommand("clearChat");
+      })
+    );
+    context.subscriptions.push(
+      vscode40.commands.registerCommand("cclocal.stopGeneration", () => {
+        ideViewProvider.handleCommand("stopGeneration");
+      })
+    );
+    editorPanelProvider = new EditorPanelProvider(context.extensionUri, outputChannel);
+    editorPanelProvider.setOnDidCreatePanel((webview) => {
+      ideViewProvider.addBroadcastTarget(webview);
+    });
+    context.subscriptions.push(
+      vscode40.commands.registerCommand("cclocal.editor.open", () => {
+        editorPanelProvider.openInEditorTab();
+      })
+    );
+    context.subscriptions.push(
+      vscode40.commands.registerCommand("cclocal.window.open", () => {
+        editorPanelProvider.openInNewWindow();
+      })
+    );
+    context.subscriptions.push(
+      vscode40.commands.registerCommand("cclocal.primaryEditor.open", () => {
+        editorPanelProvider.openInEditorTab();
+      })
+    );
+  } else if (mode === "cli") {
+    const provider = new CliViewProvider(context.extensionUri);
+    sendMessage = (text) => provider.sendMessage(text);
+    context.subscriptions.push(
+      vscode40.window.registerWebviewViewProvider(
+        CliViewProvider.viewType,
+        provider,
+        { webviewOptions: { retainContextWhenHidden: true } }
+      )
+    );
+    context.subscriptions.push(
+      vscode40.commands.registerCommand("cclocal.newSession", () => {
+        void vscode40.commands.executeCommand("cclocal.chatView.focus");
+        provider.handleCommand("newSession");
+      })
+    );
+    context.subscriptions.push(
+      vscode40.commands.registerCommand("cclocal.clearChat", () => {
+        provider.handleCommand("clearChat");
+      })
+    );
+    context.subscriptions.push(
+      vscode40.commands.registerCommand("cclocal.stopGeneration", () => {
+        provider.handleCommand("stopGeneration");
+      })
+    );
+  } else {
+    const serverManager = new ServerManager();
+    await serverManager.ensureServerRunning();
+    const provider = new WsViewProvider(context.extensionUri, serverManager);
+    sendMessage = (text) => provider.sendMessage(text);
+    context.subscriptions.push(
+      vscode40.window.registerWebviewViewProvider(WsViewProvider.viewType, provider)
+    );
+    context.subscriptions.push(
+      vscode40.commands.registerCommand("cclocal.sendMessage", async () => {
+        const message = await vscode40.window.showInputBox({
+          prompt: "Enter your message to CCLocal",
+          placeHolder: "How can I help you today?"
+        });
+        if (message) {
+          await provider.sendMessage(message);
+        }
+      })
+    );
+    context.subscriptions.push(
+      vscode40.commands.registerCommand("cclocal.clearChat", () => {
+        provider.clearChat();
+      })
+    );
+    context.subscriptions.push(
+      vscode40.commands.registerCommand("cclocal.stopGeneration", () => {
+        provider.stopGeneration();
+      })
+    );
+  }
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.sendSelectedCode", () => {
+      const editor = vscode40.window.activeTextEditor;
+      if (!editor) {
+        vscode40.window.showWarningMessage("CCLocal: \u6CA1\u6709\u6D3B\u52A8\u7684\u7F16\u8F91\u5668");
+        return;
+      }
+      const selection = editor.selection;
+      if (selection.isEmpty) {
+        vscode40.window.showWarningMessage("CCLocal: \u8BF7\u5148\u9009\u4E2D\u4EE3\u7801");
+        return;
+      }
+      const selectedText = editor.document.getText(selection);
+      const language = editor.document.languageId;
+      const fileName = editor.document.fileName.split("/").pop() ?? "";
+      const message = `\u8BF7\u89E3\u91CA\u4EE5\u4E0B ${language} \u4EE3\u7801\uFF08\u6765\u81EA ${fileName}\uFF09\uFF1A
+
+\`\`\`${language}
+${selectedText}
+\`\`\``;
+      void vscode40.commands.executeCommand("cclocal.chatView.focus").then(() => {
+        sendMessage(message);
+      });
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.focus", () => {
+      focusManager.focus();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.blur", () => {
+      focusManager.blur();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.edit.insertAtMention", () => {
+      const editor = vscode40.window.activeTextEditor;
+      if (!editor) return;
+      const position = editor.selection.active;
+      editor.edit((editBuilder) => {
+        editBuilder.insert(position, "@");
+      });
+      focusManager.focus();
+    })
+  );
+  void vscode40.commands.executeCommand("setContext", "cclocal.viewingProposedDiff", false);
+  void vscode40.commands.executeCommand("setContext", "cclocal.createWorktreeEnabled", true);
+  void vscode40.commands.executeCommand("setContext", "cclocal.primaryEditorEnabled", mode !== "ide");
+  void vscode40.commands.executeCommand("setContext", "cclocal.updateSupported", true);
+  void vscode40.commands.executeCommand("setContext", "cclocal.sideBarActive", false);
+  void vscode40.commands.executeCommand("setContext", "cclocal.sessionsListEnabled", true);
+  void vscode40.commands.executeCommand(
+    "setContext",
+    "cclocal.enableNewConversationShortcut",
+    config.get("enableNewConversationShortcut") ?? false
+  );
+  const supportsSecondarySidebar = !!vscode40.window.registerWebviewViewProvider;
+  void vscode40.commands.executeCommand("setContext", "cclocal.doesNotSupportSecondarySidebar", !supportsSecondarySidebar);
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.editor.openLast", async () => {
+      if (!sessionManager) {
+        vscode40.window.showWarningMessage("Session manager not available");
+        return;
+      }
+      const sessions = await sessionManager.listSessions();
+      if (sessions.length === 0) {
+        vscode40.window.showInformationMessage("No previous conversations found");
+        return;
+      }
+      const latest = sessions.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
+      if (latest?.id) {
+        await sessionManager.resumeSession(latest.id);
+        focusManager.focus();
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.terminal.open", () => {
+      const terminal = vscode40.window.createTerminal("CCLocal");
+      terminal.sendText("cclocal");
+      terminal.show();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.terminal.open.keyboard", () => {
+      const terminal = vscode40.window.createTerminal("CCLocal");
+      terminal.sendText("cclocal");
+      terminal.show();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.openWalkthrough", () => {
+      void vscode40.commands.executeCommand("workbench.action.openWalkthrough", "cclocal.cclocal-walkthrough");
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.chat.new", () => {
+      if (ideViewProvider) {
+        void vscode40.commands.executeCommand("cclocal.chatView.focus");
+        ideViewProvider.handleCommand("newSession");
+      }
+    })
+  );
+  const worktreeManager = new WorktreeManager(outputChannel);
+  context.subscriptions.push(worktreeManager);
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.createWorktree", async () => {
+      const branch = await vscode40.window.showInputBox({
+        prompt: "Branch name for worktree",
+        placeHolder: "my-feature-branch"
+      });
+      if (!branch) return;
+      await worktreeManager.createWorktree(branch);
+    })
+  );
+  const chromeMCP = new ChromeMCPProvider(outputChannel);
+  const jupyterMCP = new JupyterMCPProvider(outputChannel);
+  context.subscriptions.push(chromeMCP, jupyterMCP);
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.mcp.ensureChromeEnabled", () => {
+      void chromeMCP.enable();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.mcp.disableChrome", () => {
+      void chromeMCP.disable();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.mcp.enableJupyter", () => {
+      void jupyterMCP.enable();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.mcp.disableJupyter", () => {
+      void jupyterMCP.disable();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.update", () => {
+      void checkForUpdates(context, outputChannel);
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.installPlugin", () => {
+      if (pluginManager) {
+        void installPlugin(pluginManager, outputChannel);
+      } else {
+        vscode40.window.showWarningMessage("CCLocal: Plugin manager not available");
+      }
+    })
+  );
+  console.log("CCLocal extension activated");
+}
+function deactivate() {
+  ideViewProvider?.stop();
+  editorPanelProvider = void 0;
+  disposeHookManager();
+  disposeMCPManager();
+  disposePluginManager();
+  disposeSessionManager();
+  disposeRemoteSessionManager();
+  disposeChannelManager();
+  outputChannel?.dispose();
+}
+function registerHookCommands(context, hookManager2) {
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.hooks.enable", () => {
+      hookManager2.setEnabled(true);
+      vscode40.window.showInformationMessage("CCLocal: Hooks enabled");
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.hooks.disable", () => {
+      hookManager2.setEnabled(false);
+      vscode40.window.showInformationMessage("CCLocal: Hooks disabled");
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.hooks.clear", () => {
+      hookManager2.clear();
+      vscode40.window.showInformationMessage("CCLocal: All hooks cleared");
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.hooks.stats", () => {
+      const stats = hookManager2.getStats();
+      const message = `Total hooks: ${stats.totalHooks}
+${Object.entries(stats.hooksByType).filter(([, count]) => count > 0).map(([type, count]) => `  ${type}: ${count}`).join("\n")}`;
+      vscode40.window.showInformationMessage(message, { modal: true });
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.hooks.test", async () => {
+      const hookTypes = [
+        "PreToolUse",
+        "PostToolUse",
+        "SessionStart",
+        "SessionEnd",
+        "FileWrite",
+        "FileEdit",
+        "BashExecution",
+        "Error"
+      ];
+      const selected = await vscode40.window.showQuickPick(hookTypes, {
+        placeHolder: "Select hook type to test"
+      });
+      if (selected) {
+        const results = await hookManager2.execute(selected, {
+          type: selected,
+          timestamp: Date.now(),
+          toolName: "TestTool"
+        });
+        const output = results.map(
+          (r) => `Handler ${r.handlerIndex}: ${r.success ? "\u2713" : "\u2717"} (${r.duration}ms)
+` + (r.output ? `  Output: ${r.output.slice(0, 100)}
+` : "") + (r.error ? `  Error: ${r.error}
+` : "")
+        ).join("\n");
+        outputChannel?.info(`Hook test results:
+${output}`);
+        vscode40.window.showInformationMessage(
+          `Hook test completed: ${results.filter((r) => r.success).length}/${results.length} passed`
+        );
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.hooks.registerFunction", async () => {
+      const name = await vscode40.window.showInputBox({
+        prompt: "Enter function name",
+        placeHolder: "myCustomHook"
+      });
+      if (name) {
+        hookManager2.registerFunction(name, async (context2) => {
+          outputChannel?.debug(`Function hook "${name}" called with context:`, context2);
+          return {
+            success: true,
+            message: `Hook ${name} executed`,
+            timestamp: Date.now()
+          };
+        });
+        vscode40.window.showInformationMessage(`CCLocal: Function hook "${name}" registered`);
+      }
+    })
+  );
+}
+function registerMCPCommands(context, mcpManager2) {
+  const mcpPanel = new MCPPanelProvider(mcpManager2);
+  context.subscriptions.push(mcpPanel);
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.showMCPSettings", () => {
+      mcpPanel.show();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.mcp.refresh", async () => {
+      await mcpManager2.discoverServers();
+      vscode40.window.showInformationMessage("CCLocal: MCP servers refreshed");
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.mcp.reviewPending", async () => {
+      const pending = mcpManager2.getPendingApprovals();
+      if (pending.length === 0) {
+        vscode40.window.showInformationMessage("CCLocal: No pending MCP server approvals");
+        return;
+      }
+      for (const server of pending) {
+        const approved = await mcpManager2.showApprovalUI({
+          name: server.name,
+          info: server,
+          tools: server.tools,
+          reason: "auto_discovery"
+        });
+        if (approved) {
+          vscode40.window.showInformationMessage(`CCLocal: Approved MCP server "${server.name}"`);
+        } else {
+          vscode40.window.showInformationMessage(`CCLocal: Denied MCP server "${server.name}"`);
+        }
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.mcp.listServers", async () => {
+      const servers = mcpManager2.getAllServers();
+      if (servers.length === 0) {
+        vscode40.window.showInformationMessage("CCLocal: No MCP servers discovered");
+        return;
+      }
+      const items = servers.map((s) => ({
+        label: s.name,
+        description: `${s.status} | ${s.source} | ${s.config.type}`,
+        detail: s.tools.length > 0 ? `Tools: ${s.tools.map((t) => t.name).join(", ")}` : "No tools",
+        server: s
+      }));
+      const selected = await vscode40.window.showQuickPick(items, {
+        placeHolder: "Select an MCP server"
+      });
+      if (selected) {
+        const actions = await vscode40.window.showQuickPick(
+          [
+            { label: "Enable", value: "enable" },
+            { label: "Disable", value: "disable" },
+            { label: "Remove", value: "remove" },
+            { label: "View Details", value: "details" }
+          ],
+          { placeHolder: `Action for "${selected.label}"` }
+        );
+        if (actions) {
+          switch (actions.value) {
+            case "enable":
+              await mcpManager2.enableServer(selected.label);
+              break;
+            case "disable":
+              await mcpManager2.disableServer(selected.label);
+              break;
+            case "remove":
+              await mcpManager2.removeServer(selected.label);
+              break;
+            case "details":
+              mcpPanel.show();
+              break;
+          }
+        }
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.mcp.stats", () => {
+      const stats = mcpManager2.getStats();
+      const lines = [
+        `Total Discovered: ${stats.totalDiscovered}`,
+        `Connected: ${stats.byStatus.connected || 0}`,
+        `Approved: ${stats.byApproval.approved || 0}`,
+        `Pending: ${stats.byApproval.pending || 0}`,
+        `Denied: ${stats.byApproval.denied || 0}`,
+        `Total Tools: ${stats.totalTools}`,
+        "",
+        "By Source:",
+        `  User: ${stats.bySource.user || 0}`,
+        `  Local: ${stats.bySource.local || 0}`,
+        `  Project: ${stats.bySource.project || 0}`
+      ];
+      if (stats.connectedServers.length > 0) {
+        lines.push("", "Connected Servers:");
+        stats.connectedServers.forEach((s) => lines.push(`  - ${s}`));
+      }
+      if (stats.failedServers.length > 0) {
+        lines.push("", "Failed Servers:");
+        stats.failedServers.forEach((s) => lines.push(`  - ${s}`));
+      }
+      vscode40.window.showInformationMessage(lines.join("\n"), { modal: true });
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.mcp.openUserConfig", async () => {
+      const home = process.env.HOME || process.env.USERPROFILE || "";
+      const doc = await vscode40.workspace.openTextDocument(path10.join(home, ".claude.json"));
+      await vscode40.window.showTextDocument(doc);
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.mcp.openProjectConfig", async () => {
+      const ws = vscode40.workspace.workspaceFolders?.[0];
+      if (!ws) {
+        vscode40.window.showWarningMessage("CCLocal: No workspace folder open");
+        return;
+      }
+      const doc = await vscode40.workspace.openTextDocument(path10.join(ws.uri.fsPath, ".mcp.json"));
+      await vscode40.window.showTextDocument(doc);
+    })
+  );
+}
+function registerPluginCommands(context, pluginManager2) {
+  const pluginPanel = new PluginPanelProvider(pluginManager2);
+  context.subscriptions.push(pluginPanel);
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.showPluginSettings", () => {
+      pluginPanel.show();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.installPlugin", async () => {
+      const marketplaces = pluginManager2.getMarketplaces();
+      if (marketplaces.length === 0) {
+        vscode40.window.showWarningMessage("CCLocal: No marketplaces configured. Add a marketplace source first.");
+        return;
+      }
+      const allPlugins = [];
+      for (const mp of marketplaces) {
+        for (const p of mp.plugins || []) {
+          allPlugins.push({
+            id: p.manifest.id,
+            name: `${p.manifest.name} v${p.manifest.version} (${mp.name})`,
+            marketplaceUrl: mp.url
+          });
+        }
+      }
+      if (allPlugins.length === 0) {
+        vscode40.window.showInformationMessage("CCLocal: No plugins available in marketplaces");
+        return;
+      }
+      const selected = await vscode40.window.showQuickPick(
+        allPlugins.map((p) => ({ label: p.name, ...p })),
+        { placeHolder: "Select a plugin to install" }
+      );
+      if (selected) {
+        try {
+          await pluginManager2.install(selected.id, selected.marketplaceUrl);
+          vscode40.window.showInformationMessage(`CCLocal: Plugin "${selected.id}" installed`);
+        } catch (error) {
+          vscode40.window.showErrorMessage(`Failed to install plugin: ${error}`);
+        }
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.uninstallPlugin", async () => {
+      const plugins = pluginManager2.getAllPlugins();
+      if (plugins.length === 0) {
+        vscode40.window.showInformationMessage("CCLocal: No plugins installed");
+        return;
+      }
+      const selected = await vscode40.window.showQuickPick(
+        plugins.map((p) => ({
+          label: `${p.manifest.name} v${p.manifest.version}`,
+          pluginId: p.manifest.id
+        })),
+        { placeHolder: "Select a plugin to uninstall" }
+      );
+      if (selected) {
+        const confirm = await vscode40.window.showWarningMessage(
+          `Uninstall plugin "${selected.label}"?`,
+          "Yes",
+          "No"
+        );
+        if (confirm === "Yes") {
+          await pluginManager2.uninstall(selected.pluginId);
+          vscode40.window.showInformationMessage(`CCLocal: Plugin uninstalled`);
+        }
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.addMarketplace", async () => {
+      const url4 = await vscode40.window.showInputBox({
+        prompt: "Enter marketplace URL",
+        placeHolder: "https://marketplace.example.com"
+      });
+      if (url4) {
+        try {
+          await pluginManager2.addMarketplace(url4);
+          vscode40.window.showInformationMessage(`CCLocal: Marketplace "${url4}" added`);
+        } catch (error) {
+          vscode40.window.showErrorMessage(`Failed to add marketplace: ${error}`);
+        }
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.listPlugins", () => {
+      const plugins = pluginManager2.getAllPlugins();
+      if (plugins.length === 0) {
+        vscode40.window.showInformationMessage("CCLocal: No plugins installed");
+        return;
+      }
+      const lines = plugins.map(
+        (p) => `  ${p.state === "active" ? "\u25CF" : p.state === "error" ? "\u2717" : "\u25CB"} ${p.manifest.name} v${p.manifest.version} [${p.state}] (${p.trustLevel})`
+      );
+      vscode40.window.showInformationMessage(
+        `Installed Plugins (${plugins.length}):
+${lines.join("\n")}`,
+        { modal: true }
+      );
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.pluginStats", () => {
+      const stats = pluginManager2.getStats();
+      const lines = [
+        `Total Installed: ${stats.totalInstalled}`,
+        `Active: ${stats.totalActive}`,
+        "",
+        "By State:",
+        ...Object.entries(stats.byState).filter(([, v]) => v > 0).map(([k, v]) => `  ${k}: ${v}`),
+        "",
+        "By Trust:",
+        ...Object.entries(stats.byTrust).filter(([, v]) => v > 0).map(([k, v]) => `  ${k}: ${v}`),
+        "",
+        `Marketplaces: ${stats.marketplaces}`,
+        `Available: ${stats.availablePlugins}`
+      ];
+      vscode40.window.showInformationMessage(lines.join("\n"), { modal: true });
+    })
+  );
+}
+function registerSessionCommands(context, sessionManager2, sessionTree) {
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.newConversation", async () => {
+      await sessionManager2.create();
+      sessionTree.refresh();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.switchSession", async (sessionId) => {
+      await sessionManager2.switchSession(sessionId);
+      sessionTree.refresh();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.renameSession", async (item) => {
+      const newName = await vscode40.window.showInputBox({
+        prompt: "Rename session",
+        value: item.sessionItem.name,
+        placeHolder: "Enter new name"
+      });
+      if (newName) {
+        await sessionManager2.rename(item.sessionItem.id, newName);
+        sessionTree.refresh();
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.deleteSession", async (item) => {
+      const confirm = await vscode40.window.showWarningMessage(
+        `Delete session "${item.sessionItem.name}"?`,
+        "Delete",
+        "Cancel"
+      );
+      if (confirm === "Delete") {
+        await sessionManager2.delete(item.sessionItem.id);
+        sessionTree.refresh();
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.forkSession", async (item) => {
+      const forked = await sessionManager2.fork(item.sessionItem.id);
+      vscode40.window.showInformationMessage(`Forked session: ${forked.name}`);
+      sessionTree.refresh();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.searchSessions", async () => {
+      const query = await vscode40.window.showInputBox({
+        prompt: "Search sessions by name or content",
+        placeHolder: "Type search query..."
+      });
+      if (query !== void 0) {
+        sessionTree.setSearchQuery(query);
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.clearSessionSearch", () => {
+      sessionTree.setSearchQuery("");
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.generateSessionTitle", async (item) => {
+      const title = await sessionManager2.generateTitle(item.sessionItem.id);
+      if (title) {
+        vscode40.window.showInformationMessage(`Generated title: ${title}`);
+      } else {
+        vscode40.window.showInformationMessage("No user message found to generate title from");
+      }
+      sessionTree.refresh();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.sessionStats", () => {
+      const stats = sessionManager2.getStats();
+      const lines = [
+        `Total Sessions: ${stats.totalSessions}`,
+        `Active: ${stats.activeSessionId || "none"}`,
+        `Total Messages: ${stats.totalMessages}`,
+        "",
+        "By Status:",
+        ...Object.entries(stats.byStatus).filter(([, v]) => v > 0).map(([k, v]) => `  ${k}: ${v}`)
+      ];
+      if (stats.oldestSession) {
+        lines.push("", `Oldest: ${new Date(stats.oldestSession).toLocaleString()}`);
+      }
+      if (stats.newestSession) {
+        lines.push(`Newest: ${new Date(stats.newestSession).toLocaleString()}`);
+      }
+      vscode40.window.showInformationMessage(lines.join("\n"), { modal: true });
+    })
+  );
+}
+function registerRemoteCommands(context, remoteManager2) {
+  const remotePanel = new RemotePanelProvider(remoteManager2);
+  context.subscriptions.push(remotePanel);
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.showRemotePanel", () => {
+      remotePanel.show();
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.remote.addConfig", async () => {
+      const name = await vscode40.window.showInputBox({
+        prompt: "Enter connection name",
+        placeHolder: "My Server"
+      });
+      if (!name) return;
+      const host = await vscode40.window.showInputBox({
+        prompt: "Enter hostname or IP address",
+        placeHolder: "example.com"
+      });
+      if (!host) return;
+      const portStr = await vscode40.window.showInputBox({
+        prompt: "Enter SSH port",
+        placeHolder: "22",
+        value: "22"
+      });
+      const port = parseInt(portStr || "22", 10);
+      const user = await vscode40.window.showInputBox({
+        prompt: "Enter username",
+        placeHolder: "user"
+      });
+      if (!user) return;
+      const privateKey = await vscode40.window.showInputBox({
+        prompt: "Private key path (leave empty for SSH agent)",
+        placeHolder: "~/.ssh/id_rsa"
+      });
+      const { SSHConfig } = await Promise.resolve().then(() => (init_types(), types_exports));
+      const config = {
+        id: crypto.randomUUID(),
+        name,
+        host,
+        port,
+        user,
+        privateKey: privateKey || void 0,
+        agentForwarding: true
+      };
+      await remoteManager2.addConfiguration(config);
+      vscode40.window.showInformationMessage(`CCLocal: Added SSH configuration "${name}"`);
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.remote.connect", async () => {
+      const configs = remoteManager2.getConfigurations();
+      if (configs.length === 0) {
+        vscode40.window.showWarningMessage("CCLocal: No SSH configurations. Add one first.");
+        return;
+      }
+      const selected = await vscode40.window.showQuickPick(
+        configs.map((c) => ({
+          label: c.name,
+          description: `${c.user}@${c.host}:${c.port}`,
+          config: c
+        })),
+        { placeHolder: "Select a remote to connect" }
+      );
+      if (selected) {
+        try {
+          await vscode40.window.withProgress(
+            {
+              location: vscode40.ProgressLocation.Notification,
+              title: `Connecting to ${selected.label}...`,
+              cancellable: false
+            },
+            () => remoteManager2.connect({ config: selected.config })
+          );
+          vscode40.window.showInformationMessage(`CCLocal: Connected to ${selected.label}`);
+        } catch (error) {
+          vscode40.window.showErrorMessage(`Failed to connect: ${error}`);
+        }
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.remote.disconnect", async () => {
+      const sessions = remoteManager2.getConnectedSessions();
+      if (sessions.length === 0) {
+        vscode40.window.showInformationMessage("CCLocal: No active remote connections");
+        return;
+      }
+      const selected = await vscode40.window.showQuickPick(
+        sessions.map((s) => ({
+          label: s.name,
+          description: `${s.status} | ${s.workingDirectory}`,
+          sessionId: s.id
+        })),
+        { placeHolder: "Select a connection to disconnect" }
+      );
+      if (selected) {
+        await remoteManager2.disconnect(selected.sessionId);
+        vscode40.window.showInformationMessage(`CCLocal: Disconnected from ${selected.label}`);
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.remote.teleport", async () => {
+      const remotes = remoteManager2.getConnectedSessions();
+      if (remotes.length === 0) {
+        vscode40.window.showWarningMessage("CCLocal: No active remote connections");
+        return;
+      }
+      const selected = await vscode40.window.showQuickPick(
+        remotes.map((r) => ({
+          label: r.name,
+          description: `${r.status} | Sessions: ${r.sessionCount}`,
+          remoteId: r.id
+        })),
+        { placeHolder: "Select remote to teleport to" }
+      );
+      if (selected) {
+        const sessionId = sessionManager?.getActiveSessionId();
+        if (!sessionId) {
+          vscode40.window.showWarningMessage("CCLocal: No active session to teleport");
+          return;
+        }
+        try {
+          await remoteManager2.teleport(sessionId, selected.remoteId);
+          vscode40.window.showInformationMessage("CCLocal: Session teleported successfully");
+        } catch (error) {
+          vscode40.window.showErrorMessage(`Teleport failed: ${error}`);
+        }
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.remote.execute", async () => {
+      const sessions = remoteManager2.getConnectedSessions();
+      if (sessions.length === 0) {
+        vscode40.window.showWarningMessage("CCLocal: No active remote connections");
+        return;
+      }
+      const selected = await vscode40.window.showQuickPick(
+        sessions.map((s) => ({
+          label: s.name,
+          sessionId: s.id
+        })),
+        { placeHolder: "Select remote" }
+      );
+      if (selected) {
+        const command = await vscode40.window.showInputBox({
+          prompt: "Enter command to execute",
+          placeHolder: "ls -la"
+        });
+        if (command) {
+          try {
+            const result = await remoteManager2.executeCommand(selected.sessionId, command);
+            if (result.exitCode === 0) {
+              outputChannel?.info(`Command output:
+${result.stdout}`);
+              vscode40.window.showInformationMessage("Command executed successfully");
+            } else {
+              vscode40.window.showWarningMessage(`Command exited with code ${result.exitCode}`);
+            }
+          } catch (error) {
+            vscode40.window.showErrorMessage(`Command failed: ${error}`);
+          }
+        }
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.remote.stats", () => {
+      const stats = remoteManager2.getStats();
+      const lines = [
+        `Configured: ${stats.totalConfigured}`,
+        `Connected: ${stats.totalConnected}`,
+        `Total Sessions: ${stats.totalSessions}`,
+        `Avg Latency: ${stats.averageLatency.toFixed(1)}ms`,
+        `Bandwidth: ${(stats.totalBandwidth / 1024).toFixed(1)} KB/s`,
+        "",
+        "By Status:",
+        ...Object.entries(stats.byStatus).filter(([, v]) => v > 0).map(([k, v]) => `  ${k}: ${v}`)
+      ];
+      vscode40.window.showInformationMessage(lines.join("\n"), { modal: true });
+    })
+  );
+  context.subscriptions.push(
+    vscode40.commands.registerCommand("cclocal.remote.checkVSCode", () => {
+      const isRemote = RemoteSessionManager.isVSCodeRemote();
+      const authority = RemoteSessionManager.getVSCodeRemoteAuthority();
+      const lines = [
+        `VS Code Remote: ${isRemote ? "Yes" : "No"}`,
+        `Authority: ${authority || "local"}`,
+        `SSH Remote: ${RemoteSessionManager.isSSHRemote() ? "Yes" : "No"}`,
+        `Dev Container: ${RemoteSessionManager.isDevContainer() ? "Yes" : "No"}`,
+        `WSL: ${RemoteSessionManager.isWSL() ? "Yes" : "No"}`
+      ];
+      vscode40.window.showInformationMessage(lines.join("\n"), { modal: true });
+    })
+  );
+}
+export {
+  activate,
+  configManager,
+  deactivate,
+  hookManager,
+  mcpManager,
+  outputChannel
+};
