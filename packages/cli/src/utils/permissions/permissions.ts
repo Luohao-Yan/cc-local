@@ -846,6 +846,33 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
           // All fallback models exhausted — degrade to manual approval rather
           // than blocking everything.
           if (classifierResult.allClassifierModelsFailed) {
+            // For read-only commands (e.g. ls, cat, grep), allow execution even
+            // when the classifier is unavailable. The tool's isReadOnly() method
+            // already performs rigorous static analysis (checkReadOnlyConstraints
+            // in BashTool). This preserves auto-mode UX for safe commands while
+            // keeping write operations gated.
+            try {
+              const parsedInput = tool.inputSchema.parse(input)
+              if (tool.isReadOnly(parsedInput)) {
+                logForDebugging(
+                  `Auto mode classifier unavailable, ${tool.name} is read-only — allowing execution`,
+                  { level: 'warn' },
+                )
+                return {
+                  behavior: 'allow',
+                  updatedInput: input,
+                  decisionReason: {
+                    type: 'other',
+                    reason:
+                      'Auto mode classifier unavailable — read-only command allowed as safe fallback',
+                  },
+                }
+              }
+            } catch {
+              // Schema parse failed — can't determine read-only status safely,
+              // fall through to manual approval.
+            }
+
             logForDebugging(
               'Auto mode classifier all models failed, falling back to manual approval',
               { level: 'warn' },
@@ -853,7 +880,7 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
             if (context.addNotification) {
               context.addNotification({
                 key: 'auto-mode-classifier-fallback-exhausted',
-                text: 'Auto-mode classifier is unavailable (all fallback models failed). Bash commands will require manual approval until the classifier recovers.',
+                text: 'Auto-mode classifier is unavailable (all fallback models failed). Write commands will require manual approval until the classifier recovers.',
                 priority: 'immediate',
                 color: 'warning',
               })
