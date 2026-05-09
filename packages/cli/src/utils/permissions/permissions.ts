@@ -843,54 +843,77 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
         // When classifier is unavailable (API error), behavior depends on
         // the tengu_iron_gate_closed gate.
         if (classifierResult.unavailable) {
-          // All fallback models exhausted — degrade to manual approval rather
-          // than blocking everything.
+          // All fallback models exhausted — degrade permission mode to
+          // acceptEdits rather than pretending auto mode still works.
           if (classifierResult.allClassifierModelsFailed) {
-            // For read-only commands (e.g. ls, cat, grep), allow execution even
-            // when the classifier is unavailable. The tool's isReadOnly() method
-            // already performs rigorous static analysis (checkReadOnlyConstraints
-            // in BashTool). This preserves auto-mode UX for safe commands while
-            // keeping write operations gated.
+            // Check if we've already degraded to avoid spamming notifications
+            const currentMode = appState.toolPermissionContext.mode
+            if (currentMode !== 'acceptEdits') {
+              logForDebugging(
+                'Auto mode classifier unavailable — degrading permission mode to acceptEdits',
+                { level: 'warn' },
+              )
+              // Persist the mode downgrade so future tool uses skip the classifier
+              context.setAppState(prev => ({
+                ...prev,
+                toolPermissionContext: {
+                  ...prev.toolPermissionContext,
+                  mode: 'acceptEdits',
+                },
+              }))
+              if (context.addNotification) {
+                context.addNotification({
+                  key: 'auto-mode-classifier-degraded-to-accept-edits',
+                  text: 'Auto mode classifier is unavailable for this provider. Permission mode has been downgraded to acceptEdits (file edits and filesystem commands are auto-approved).',
+                  priority: 'immediate',
+                  color: 'warning',
+                })
+              }
+            }
+
+            // Re-run permission check in acceptEdits mode so the tool's
+            // checkPermissions can apply mode-specific rules (e.g. BashTool
+            // auto-allows mkdir/touch/rm/mv/cp/sed in acceptEdits mode).
             try {
               const parsedInput = tool.inputSchema.parse(input)
-              if (tool.isReadOnly(parsedInput)) {
-                logForDebugging(
-                  `Auto mode classifier unavailable, ${tool.name} is read-only — allowing execution`,
-                  { level: 'warn' },
-                )
+              const acceptEditsResult = await tool.checkPermissions(
+                parsedInput,
+                {
+                  ...context,
+                  getAppState: () => {
+                    const state = context.getAppState()
+                    return {
+                      ...state,
+                      toolPermissionContext: {
+                        ...state.toolPermissionContext,
+                        mode: 'acceptEdits' as const,
+                      },
+                    }
+                  },
+                },
+              )
+              if (acceptEditsResult.behavior === 'allow') {
                 return {
                   behavior: 'allow',
-                  updatedInput: input,
+                  updatedInput:
+                    acceptEditsResult.updatedInput ?? input,
                   decisionReason: {
-                    type: 'other',
-                    reason:
-                      'Auto mode classifier unavailable — read-only command allowed as safe fallback',
+                    type: 'mode',
+                    mode: 'acceptEdits',
                   },
                 }
               }
             } catch {
-              // Schema parse failed — can't determine read-only status safely,
-              // fall through to manual approval.
+              // checkPermissions failed — fall through to manual approval
             }
 
-            logForDebugging(
-              'Auto mode classifier all models failed, falling back to manual approval',
-              { level: 'warn' },
-            )
-            if (context.addNotification) {
-              context.addNotification({
-                key: 'auto-mode-classifier-fallback-exhausted',
-                text: 'Auto-mode classifier is unavailable (all fallback models failed). Write commands will require manual approval until the classifier recovers.',
-                priority: 'immediate',
-                color: 'warning',
-              })
-            }
+            // acceptEdits didn't allow this command — fall back to manual approval
             return {
               ...result,
               decisionReason: {
                 type: 'other',
                 reason:
-                  'Auto mode classifier is unavailable — all fallback models failed. Falling back to manual approval.',
+                  'Auto mode classifier is unavailable — permission mode degraded to acceptEdits. This command requires manual approval.',
               },
             }
           }

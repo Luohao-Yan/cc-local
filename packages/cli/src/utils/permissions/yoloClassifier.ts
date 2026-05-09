@@ -1575,18 +1575,6 @@ function getClassifierModelCandidates(): string[] {
     }
   }
 
-  // Priority 4: Built-in defaults for third-party APIs
-  if (!isAnthropicOfficialApi()) {
-    const defaultFallbacks = ['gpt-4o-mini', 'deepseek-chat', 'qwen-turbo']
-    for (const m of defaultFallbacks) {
-      if (!candidates.includes(m)) candidates.push(m)
-    }
-  }
-
-  // Priority 5: Anthropic fallback
-  const anthropicFallback = 'claude-sonnet-4-6'
-  if (!candidates.includes(anthropicFallback)) candidates.push(anthropicFallback)
-
   // Filter out unhealthy models
   return candidates.filter(m => classifierModelHealth.isHealthy(m))
 }
