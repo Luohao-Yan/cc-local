@@ -219,10 +219,15 @@ export function modelSupportsAutoMode(model: string): boolean {
  * - Claude API / Foundry: advanced-tool-use-2025-11-20
  * - Vertex AI / Bedrock: tool-search-tool-2025-10-19
  */
-export function getToolSearchBetaHeader(): string {
+export function getToolSearchBetaHeader(): string | null {
   const provider = getAPIProvider()
   if (provider === 'vertex' || provider === 'bedrock') {
     return TOOL_SEARCH_BETA_HEADER_3P
+  }
+  // Third-party providers (DeepSeek, OpenRouter, etc.) don't support
+  // tool-search beta headers at all.
+  if (provider !== 'firstParty' && provider !== 'foundry') {
+    return null
   }
   return TOOL_SEARCH_BETA_HEADER_1P
 }
@@ -394,8 +399,14 @@ export const getModelBetas = memoize((model: string): string[] => {
   if (getActiveAPIFormat() === 'openai') {
     return []
   }
+  // Third-party providers speaking Anthropic format (e.g. DeepSeek /anthropic)
+  // don't support Anthropic-specific beta headers either.
+  const provider = getAPIProvider()
+  if (provider !== 'firstParty' && provider !== 'foundry') {
+    return []
+  }
   const modelBetas = getAllModelBetas(model)
-  if (getAPIProvider() === 'bedrock') {
+  if (provider === 'bedrock') {
     return modelBetas.filter(b => !BEDROCK_EXTRA_PARAMS_HEADERS.has(b))
   }
   return modelBetas
@@ -424,6 +435,12 @@ export function getMergedBetas(
   options?: { isAgenticQuery?: boolean },
 ): string[] {
   const baseBetas = [...getModelBetas(model)]
+
+  // Third-party providers don't support any Anthropic beta headers.
+  const provider = getAPIProvider()
+  if (provider !== 'firstParty' && provider !== 'foundry') {
+    return baseBetas
+  }
 
   // Agentic queries always need claude-code and cli-internal beta headers.
   // For non-Haiku models these are already in baseBetas; for Haiku they're

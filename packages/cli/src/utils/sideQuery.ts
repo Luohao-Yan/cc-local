@@ -194,11 +194,11 @@ export async function sideQuery(opts: SideQueryOptions): Promise<BetaMessage> {
       messages,
       ...(tools && { tools }),
       ...(tool_choice && { tool_choice }),
-      ...(output_format && { output_config: { format: output_format } }),
+      ...(output_format && modelSupportsStructuredOutputs(model) && { output_config: { format: output_format } }),
       ...(temperature !== undefined && { temperature }),
       ...(stop_sequences && { stop_sequences }),
       ...(thinkingConfig && { thinking: thinkingConfig }),
-      metadata: getAPIMetadata(),
+      ...(getAPIMetadata() && { metadata: getAPIMetadata()! }),
     }
     const openAIParams = convertAnthropicToOpenAI(anthropicParams) as OpenAI.ChatCompletionCreateParamsNonStreaming
     const openAIResponse = await createOpenAIChatCompletion(openAIParams, {
@@ -220,12 +220,12 @@ export async function sideQuery(opts: SideQueryOptions): Promise<BetaMessage> {
       messages,
       ...(tools && { tools }),
       ...(tool_choice && { tool_choice }),
-      ...(output_format && { output_config: { format: output_format } }),
+      ...(output_format && modelSupportsStructuredOutputs(model) && { output_config: { format: output_format } }),
       ...(temperature !== undefined && { temperature }),
       ...(stop_sequences && { stop_sequences }),
       ...(thinkingConfig && { thinking: thinkingConfig }),
       ...(betas.length > 0 && { betas }),
-      metadata: getAPIMetadata(),
+      ...(getAPIMetadata() && { metadata: getAPIMetadata()! }),
     },
     { signal },
   )

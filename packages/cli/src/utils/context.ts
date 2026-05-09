@@ -195,6 +195,10 @@ export function getModelMaxOutputTokens(model: string): {
   } else if (m.includes('3-7-sonnet')) {
     defaultTokens = 32_000
     upperLimit = 64_000
+  } else if (m.includes('deepseek')) {
+    // DeepSeek models typically support 4K–8K max output tokens
+    defaultTokens = 4_096
+    upperLimit = 8_192
   } else {
     defaultTokens = MAX_OUTPUT_TOKENS_DEFAULT
     upperLimit = MAX_OUTPUT_TOKENS_UPPER_LIMIT

@@ -836,5 +836,12 @@ export function getMarketingNameForModel(modelId: string): string | undefined {
 }
 
 export function normalizeModelStringForAPI(model: string): string {
-  return model.replace(/\[(1|2)m\]/gi, '')
+  // Strip [1m]/[2m] suffix only for Anthropic models (internal context-window marker).
+  // Anthropic's official API rejects model names with this suffix.
+  // Third-party providers (DeepSeek, OpenRouter, etc.) may include [1m]
+  // as part of the actual model identifier and must not be stripped.
+  if (/^claude-/i.test(model) || /^anthropic\./i.test(model)) {
+    return model.replace(/\[(1|2)m\]/gi, '')
+  }
+  return model
 }

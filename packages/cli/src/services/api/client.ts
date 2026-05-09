@@ -102,28 +102,37 @@ export async function getAnthropicClient({
   const remoteSessionId = process.env.CLAUDE_CODE_REMOTE_SESSION_ID
   const clientApp = process.env.CLAUDE_AGENT_SDK_CLIENT_APP
   const customHeaders = getCustomHeaders()
+  const provider = getAPIProvider()
+  const isFirstParty = provider === 'firstParty' || provider === 'foundry'
+
+  // For third-party providers (DeepSeek, OpenRouter, etc.), only send standard
+  // headers. Anthropic-specific headers risk rejection by strict proxies
+  // (inc-4029 class). See client.ts buildFetch comment.
   const defaultHeaders: { [key: string]: string } = {
-    'x-app': 'cli',
     'User-Agent': getUserAgent(),
-    'X-Claude-Code-Session-Id': getSessionId(),
-    ...customHeaders,
-    ...(containerId ? { 'x-claude-remote-container-id': containerId } : {}),
-    ...(remoteSessionId
-      ? { 'x-claude-remote-session-id': remoteSessionId }
+    ...(isFirstParty
+      ? {
+          'x-app': 'cli',
+          'X-Claude-Code-Session-Id': getSessionId(),
+          ...(containerId ? { 'x-claude-remote-container-id': containerId } : {}),
+          ...(remoteSessionId
+            ? { 'x-claude-remote-session-id': remoteSessionId }
+            : {}),
+          ...(clientApp ? { 'x-client-app': clientApp } : {}),
+        }
       : {}),
-    // SDK consumers can identify their app/library for backend analytics
-    ...(clientApp ? { 'x-client-app': clientApp } : {}),
+    ...customHeaders,
   }
 
   // Log API client configuration for HFI debugging
   logForDebugging(
-    `[API:request] Creating client, ANTHROPIC_CUSTOM_HEADERS present: ${!!process.env.ANTHROPIC_CUSTOM_HEADERS}, has Authorization header: ${!!customHeaders['Authorization']}`,
+    `[API:request] Creating client, provider=${provider}, ANTHROPIC_CUSTOM_HEADERS present: ${!!process.env.ANTHROPIC_CUSTOM_HEADERS}, has Authorization header: ${!!customHeaders['Authorization']}`,
   )
 
-  // Add additional protection header if enabled via env var
-  const additionalProtectionEnabled = isEnvTruthy(
-    process.env.CLAUDE_CODE_ADDITIONAL_PROTECTION,
-  )
+  // Add additional protection header if enabled via env var (1P only)
+  const additionalProtectionEnabled =
+    isFirstParty &&
+    isEnvTruthy(process.env.CLAUDE_CODE_ADDITIONAL_PROTECTION)
   if (additionalProtectionEnabled) {
     defaultHeaders['x-anthropic-additional-protection'] = 'true'
   }

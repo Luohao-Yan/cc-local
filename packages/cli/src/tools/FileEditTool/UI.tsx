@@ -146,6 +146,31 @@ export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'
           <Text color="error">File not found</Text>
         </MessageResponse>;
     }
+    if (errorMessage?.includes('String to replace not found in file')) {
+      return <MessageResponse>
+          <Text color="error">String not found in file — the text doesn't match current content</Text>
+        </MessageResponse>;
+    }
+    if (errorMessage?.includes('File has been modified since read') || errorMessage?.includes('File has been modified since last read')) {
+      return <MessageResponse>
+          <Text color="error">File was modified after last read — read it again before editing</Text>
+        </MessageResponse>;
+    }
+    if (errorMessage?.includes('replace_all is false') || errorMessage?.includes('replace_all:false')) {
+      return <MessageResponse>
+          <Text color="error">Multiple matches found — set replace_all:true or provide more context</Text>
+        </MessageResponse>;
+    }
+    if (errorMessage?.includes('Cannot create new file - file already exists')) {
+      return <MessageResponse>
+          <Text color="error">File already exists — use Update instead of Create</Text>
+        </MessageResponse>;
+    }
+    if (errorMessage?.includes('File is too large to edit')) {
+      return <MessageResponse>
+          <Text color="error">File too large to edit</Text>
+        </MessageResponse>;
+    }
     return <MessageResponse>
         <Text color="error">Error editing file</Text>
       </MessageResponse>;

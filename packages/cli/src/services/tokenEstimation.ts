@@ -305,7 +305,7 @@ export async function countTokensViaHaikuFallback(
     messages: messagesToSend,
     tools: tools.length > 0 ? tools : undefined,
     ...(filteredBetas.length > 0 && { betas: filteredBetas }),
-    metadata: getAPIMetadata(),
+    ...(getAPIMetadata() && { metadata: getAPIMetadata()! }),
     ...getExtraBodyParams(),
     // Enable thinking if messages contain thinking blocks
     ...(containsThinking && {

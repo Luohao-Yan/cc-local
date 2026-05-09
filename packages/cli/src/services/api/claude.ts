@@ -340,6 +340,13 @@ export function getPromptCachingEnabled(model: string): boolean {
   // Global disable takes precedence
   if (isEnvTruthy(process.env.DISABLE_PROMPT_CACHING)) return false
 
+  // Third-party providers (DeepSeek, OpenRouter, etc.) don't support
+  // Anthropic prompt caching.
+  const provider = getAPIProvider()
+  if (provider !== 'firstParty' && provider !== 'foundry') {
+    return false
+  }
+
   // Check if we should disable for small/fast model
   if (isEnvTruthy(process.env.DISABLE_PROMPT_CACHING_HAIKU)) {
     const smallFastModel = getSmallFastModel()
@@ -507,6 +514,12 @@ export function configureTaskBudgetParams(
 }
 
 export function getAPIMetadata() {
+  // Third-party providers (DeepSeek, etc.) don't accept Anthropic metadata.
+  const provider = getAPIProvider()
+  if (provider !== 'firstParty' && provider !== 'foundry') {
+    return undefined
+  }
+
   // https://docs.google.com/document/d/1dURO9ycXXQCBS0V4Vhl4poDBRgkelFc5t2BNPoEgH5Q/edit?tab=t.0#heading=h.5g7nec5b09w5
   // user_id must match pattern ^[a-zA-Z0-9_-]+ - use device_id directly (hex string)
   let extra: JsonObject = {}
@@ -573,7 +586,7 @@ export async function verifyApiKey(
             messages,
             temperature: 1,
             ...(betas.length > 0 && { betas }),
-            metadata: getAPIMetadata(),
+            ...(getAPIMetadata() && { metadata: getAPIMetadata()! }),
             ...getExtraBodyParams(),
           })
           return true
@@ -1726,7 +1739,7 @@ async function* queryModel(
       tools: allTools,
       tool_choice: options.toolChoice,
       ...(useBetas && { betas: betasParams }),
-      metadata: getAPIMetadata(),
+      ...(getAPIMetadata() && { metadata: getAPIMetadata()! }),
       max_tokens: maxOutputTokens,
       thinking,
       ...(temperature !== undefined && { temperature }),

@@ -109,6 +109,7 @@ export function isSearchOrReadBashCommand(command: string): {
       isList: false
     };
   }
+
   if (partsWithOperators.length === 0) {
     return {
       isSearch: false,
@@ -169,6 +170,24 @@ export function isSearchOrReadBashCommand(command: string): {
     isRead: hasRead,
     isList: hasList
   };
+}
+
+function detectIncompatibleMacOSCommand(command: string): string | null {
+  if (process.platform !== 'darwin') return null
+  const trimmed = command.trim()
+  // cat -A is GNU-specific; BSD cat on macOS does not support -A
+  if (/\bcat\s+.*\b-A\b/.test(trimmed)) {
+    return "Command uses GNU-specific flag 'cat -A' which is not available on macOS. Use 'cat -e' instead."
+  }
+  // sed -i without backup suffix is GNU-specific; BSD sed requires -i ''
+  if (/\bsed\s+(-[^\s]*\s+)*-i\s+(?!["'])/.test(trimmed)) {
+    return "Command uses GNU-specific 'sed -i' without backup suffix, which is not available on macOS. Use 'sed -i \\'\\' ' instead."
+  }
+  // readlink -f is GNU-specific; macOS has realpath
+  if (/\breadlink\s+.*\b-f\b/.test(trimmed)) {
+    return "Command uses GNU-specific 'readlink -f' which is not available on macOS. Use 'realpath' instead."
+  }
+  return null
 }
 
 /**
@@ -532,6 +551,16 @@ export const BashTool = buildTool({
         };
       }
     }
+
+    const incompatible = detectIncompatibleMacOSCommand(input.command)
+    if (incompatible) {
+      return {
+        result: false,
+        message: incompatible,
+        errorCode: 11,
+      }
+    }
+
     return {
       result: true
     };

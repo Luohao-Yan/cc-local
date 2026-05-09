@@ -315,12 +315,18 @@ export const FileEditTool = buildTool({
     // Use findActualString to handle quote normalization
     const actualOldString = findActualString(file, old_string)
     if (!actualOldString) {
+      const suggestion = buildEditSuggestion(file, old_string)
+      let message = `String to replace not found in file.\nString: ${old_string}`
+      if (suggestion) {
+        message += `\n\n${suggestion}`
+      }
       return {
         result: false,
         behavior: 'ask',
-        message: `String to replace not found in file.\nString: ${old_string}`,
+        message,
         meta: {
           isFilePathAbsolute: String(isAbsolute(file_path)),
+          suggestedContext: suggestion,
         },
         errorCode: 8,
       }
@@ -441,7 +447,7 @@ export const FileEditTool = buildTool({
 
     // 2. Load current state and confirm no changes since last read
     // Please avoid async operations between here and writing to disk to preserve atomicity
-    const {
+    let {
       content: originalFileContents,
       fileExists,
       encoding,
@@ -462,7 +468,18 @@ export const FileEditTool = buildTool({
         const contentUnchanged =
           isFullRead && originalFileContents === lastRead.content
         if (!contentUnchanged) {
-          throw new Error(FILE_UNEXPECTEDLY_MODIFIED_ERROR)
+          // Auto-retry once: re-read the file and update state
+          const reRead = readFileForEdit(absoluteFilePath)
+          originalFileContents = reRead.content
+          fileExists = reRead.fileExists
+          encoding = reRead.encoding
+          endings = reRead.lineEndings
+          readFileState.set(absoluteFilePath, {
+            content: reRead.content,
+            timestamp: getFileModificationTime(absoluteFilePath),
+            offset: undefined,
+            limit: undefined,
+          })
         }
       }
     }
@@ -622,4 +639,52 @@ function readFileForEdit(absoluteFilePath: string): {
     }
     throw e
   }
+}
+
+
+/**
+ * Build a suggestion message when old_string is not found in the file.
+ * Searches for the first line (or a short prefix) of old_string in the file
+ * and returns surrounding context to help the model correct its edit.
+ */
+function buildEditSuggestion(fileContent: string, oldString: string): string | null {
+  if (!oldString.trim()) return null
+
+  // Try searching for the first line of oldString
+  const firstLine = oldString.split('\n')[0]!.trim()
+  if (firstLine.length >= 3) {
+    const idx = fileContent.indexOf(firstLine)
+    if (idx !== -1) {
+      const lines = fileContent.slice(0, idx).split('\n')
+      const lineNumber = lines.length
+      const startLine = Math.max(0, lineNumber - 3)
+      const endLine = lineNumber + 3
+      const allLines = fileContent.split('\n')
+      const context = allLines
+        .slice(startLine, endLine)
+        .map((l, i) => `${startLine + i + 1}: ${l}`)
+        .join('\n')
+      return `Did you mean this? File content around line ${lineNumber}:\n\n${context}`
+    }
+  }
+
+  // Fallback: search for a shorter prefix (first 30 chars)
+  const prefix = oldString.slice(0, 30).trim()
+  if (prefix.length >= 5) {
+    const idx = fileContent.indexOf(prefix)
+    if (idx !== -1) {
+      const lines = fileContent.slice(0, idx).split('\n')
+      const lineNumber = lines.length
+      const startLine = Math.max(0, lineNumber - 2)
+      const endLine = lineNumber + 2
+      const allLines = fileContent.split('\n')
+      const context = allLines
+        .slice(startLine, endLine)
+        .map((l, i) => `${startLine + i + 1}: ${l}`)
+        .join('\n')
+      return `File content around line ${lineNumber}:\n\n${context}`
+    }
+  }
+
+  return null
 }

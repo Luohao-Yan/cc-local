@@ -365,5 +365,27 @@ export function getSimplePrompt(): string {
     ...prependBullets(instructionItems),
     getSimpleSandboxSection(),
     ...(getCommitAndPRInstructions() ? ['', getCommitAndPRInstructions()] : []),
+    ...(getPlatformCompatibilityNote() ? ['', getPlatformCompatibilityNote()!] : []),
   ].join('\n')
+}
+
+function getPlatformCompatibilityNote(): string | null {
+  const platform = process.platform
+  if (platform === 'darwin') {
+    return [
+      '# Platform Notes (macOS)',
+      'This system runs macOS with BSD userland tools. Avoid GNU-specific flags:',
+      '- Use `cat -e` instead of `cat -A`',
+      "- Use `sed -i ''` instead of `sed -i` (always provide empty backup suffix)",
+      '- Use `realpath` instead of `readlink -f`',
+      '- `date` does not support GNU `-d` flag; use `date -v` or Python/Perl for date math',
+    ].join('\n')
+  }
+  if (platform === 'win32') {
+    return [
+      '# Platform Notes (Windows)',
+      'This system runs Windows. Use PowerShell-compatible syntax when possible.',
+    ].join('\n')
+  }
+  return null
 }

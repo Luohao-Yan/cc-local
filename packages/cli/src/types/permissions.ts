@@ -368,6 +368,8 @@ export type YoloClassifierResult = {
   }
   /** Path where error prompts were dumped (only set when unavailable due to API error) */
   errorDumpPath?: string
+  /** True when all candidate classifier models were tried and all failed */
+  allClassifierModelsFailed?: boolean
   /** Which classifier stage produced the final decision (2-stage XML only) */
   stage?: 'fast' | 'thinking'
   /** Token usage from stage 1 (fast) when stage 2 was also run */

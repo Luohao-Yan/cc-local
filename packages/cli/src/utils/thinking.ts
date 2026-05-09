@@ -112,6 +112,12 @@ export function modelSupportsThinking(model: string): boolean {
   if (provider === 'foundry' || provider === 'firstParty') {
     return !canonical.includes('claude-3-')
   }
+  // DeepSeek v4 supports reasoning (formatConverter.ts and openaiStreamAdapter.ts
+  // both have explicit DeepSeek v4 reasoning_content handling). Enable thinking
+  // so the API can return reasoning content on the /anthropic endpoint.
+  if (canonical.includes('deepseek-v4') || canonical.includes('deepseek-r')) {
+    return true
+  }
   // 3P (Bedrock/Vertex): only Opus 4+ and Sonnet 4+
   return canonical.includes('sonnet-4') || canonical.includes('opus-4')
 }

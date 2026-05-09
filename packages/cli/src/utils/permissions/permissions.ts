@@ -843,6 +843,31 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
         // When classifier is unavailable (API error), behavior depends on
         // the tengu_iron_gate_closed gate.
         if (classifierResult.unavailable) {
+          // All fallback models exhausted — degrade to manual approval rather
+          // than blocking everything.
+          if (classifierResult.allClassifierModelsFailed) {
+            logForDebugging(
+              'Auto mode classifier all models failed, falling back to manual approval',
+              { level: 'warn' },
+            )
+            if (context.addNotification) {
+              context.addNotification({
+                key: 'auto-mode-classifier-fallback-exhausted',
+                text: 'Auto-mode classifier is unavailable (all fallback models failed). Bash commands will require manual approval until the classifier recovers.',
+                priority: 'immediate',
+                color: 'warning',
+              })
+            }
+            return {
+              ...result,
+              decisionReason: {
+                type: 'other',
+                reason:
+                  'Auto mode classifier is unavailable — all fallback models failed. Falling back to manual approval.',
+              },
+            }
+          }
+
           if (
             getFeatureValue_CACHED_WITH_REFRESH(
               'tengu_iron_gate_closed',
