@@ -2250,26 +2250,26 @@ export function normalizeMessagesForAPI(
           }
 
           // Find a previous assistant message with the same message ID and merge.
-          // Walk backwards, skipping tool results and different-ID assistants,
-          // since concurrent agents (teammates) can interleave streaming content
-          // blocks from multiple API responses with different message IDs.
-          for (let i = result.length - 1; i >= 0; i--) {
+          // Use a by-ID lookup instead of backward walk, since concurrent agents
+          // (teammates) can interleave streaming content blocks from multiple API
+          // responses with different message IDs, and the backward walk breaks
+          // when it encounters a non-assistant, non-tool-result message.
+          let merged = false
+          for (let i = 0; i < result.length; i++) {
             const msg = result[i]!
-
-            if (msg.type !== 'assistant' && !isToolResultMessage(msg)) {
+            if (
+              msg.type === 'assistant' &&
+              msg.message.id === normalizedMessage.message.id
+            ) {
+              result[i] = mergeAssistantMessages(msg, normalizedMessage)
+              merged = true
               break
-            }
-
-            if (msg.type === 'assistant') {
-              if (msg.message.id === normalizedMessage.message.id) {
-                result[i] = mergeAssistantMessages(msg, normalizedMessage)
-                return
-              }
-              continue
             }
           }
 
-          result.push(normalizedMessage)
+          if (!merged) {
+            result.push(normalizedMessage)
+          }
           return
         }
         case 'attachment': {
@@ -2829,8 +2829,11 @@ export function filterUnresolvedToolUses(messages: Message[]): Message[] {
     return messages
   }
 
-  // Filter out assistant messages whose tool_use blocks are all unresolved
-  return messages.filter(msg => {
+  // Collect tool_use IDs from assistant messages that will be removed
+  const removedToolUseIds = new Set<string>()
+
+  // First pass: filter out assistant messages whose tool_use blocks are all unresolved
+  const filteredMessages = messages.filter(msg => {
     if (msg.type !== 'assistant') return true
     const content = msg.message.content
     if (!Array.isArray(content)) return true
@@ -2842,8 +2845,39 @@ export function filterUnresolvedToolUses(messages: Message[]): Message[] {
     }
     if (toolUseBlockIds.length === 0) return true
     // Remove message only if ALL its tool_use blocks are unresolved
-    return !toolUseBlockIds.every(id => unresolvedIds.has(id))
+    const shouldRemove = toolUseBlockIds.every(id => unresolvedIds.has(id))
+    if (shouldRemove) {
+      for (const b of content) {
+        if (b.type === 'tool_use') {
+          removedToolUseIds.add(b.id)
+        }
+      }
+    }
+    return !shouldRemove
   })
+
+  // Second pass: strip orphaned tool_result blocks from user messages
+  // that reference tool_use IDs from removed assistant messages
+  return filteredMessages.map(msg => {
+    if (msg.type === 'user') {
+      const content = msg.message.content
+      if (Array.isArray(content)) {
+        const hasOrphanedResult = content.some(
+          block => block.type === 'tool_result' && removedToolUseIds.has(block.tool_use_id),
+        )
+        if (hasOrphanedResult) {
+          const strippedContent = content.filter(
+            block => !(block.type === 'tool_result' && removedToolUseIds.has(block.tool_use_id)),
+          )
+          if (strippedContent.length > 0) {
+            return { ...msg, message: { ...msg.message, content: strippedContent } }
+          }
+          return null
+        }
+      }
+    }
+    return msg
+  }).filter((m): m is Message => m !== null)
 }
 
 export function getAssistantMessageText(message: Message): string | null {

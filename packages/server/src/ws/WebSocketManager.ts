@@ -215,9 +215,19 @@ export class WebSocketManager {
 
   private handleMessage(client: WSClient, data: { type: string; payload?: unknown }): void {
     switch (data.type) {
-      case 'auth':
-        this.handleAuth(client, data.payload as { clientType: 'cli' | 'vscode' })
+      case 'auth': {
+        const payload = data.payload as Record<string, unknown> | null
+        if (!payload || typeof payload.clientType !== 'string') {
+          this.sendToClient(client.socket, {
+            type: 'error',
+            payload: { message: 'Invalid auth payload' },
+            timestamp: Date.now(),
+          })
+          break
+        }
+        this.handleAuth(client, payload as { clientType: 'cli' | 'vscode' })
         break
+      }
 
       case 'ping':
         // 更新活动时间
@@ -228,13 +238,48 @@ export class WebSocketManager {
         })
         break
 
-      case 'message':
-        this.handleChatMessage(client, data.payload as { sessionId: string; content: string })
+      case 'message': {
+        const payload = data.payload as Record<string, unknown> | null
+        if (!payload || typeof payload.sessionId !== 'string' || typeof payload.content !== 'string') {
+          this.sendToClient(client.socket, {
+            type: 'error',
+            payload: { message: 'Invalid message payload: sessionId and content required' },
+            timestamp: Date.now(),
+          })
+          break
+        }
+        void this.handleChatMessage(
+          client,
+          payload as { sessionId: string; content: string },
+        ).catch((error) => {
+          console.error('handleChatMessage error:', error)
+          this.sendToClient(client.socket, {
+            type: 'error',
+            payload: { message: error instanceof Error ? error.message : String(error) },
+            timestamp: Date.now(),
+          })
+        })
         break
+      }
 
-      case 'cancel':
-        this.handleCancel(client, data.payload as { sessionId: string })
+      case 'cancel': {
+        const payload = data.payload as Record<string, unknown> | null
+        if (!payload || typeof payload.sessionId !== 'string') {
+          this.sendToClient(client.socket, {
+            type: 'error',
+            payload: { message: 'Invalid cancel payload: sessionId required' },
+            timestamp: Date.now(),
+          })
+          break
+        }
+        void this.handleCancel(
+          client,
+          payload as { sessionId: string },
+        ).catch((error) => {
+          console.error('handleCancel error:', error)
+        })
         break
+      }
 
       default:
         this.sendToClient(client.socket, {

@@ -21,7 +21,11 @@ async function main() {
 
   // 初始化组件
   const authManager = new AuthManager()
-  const sessionManager = new SessionManager()
+  const sessionManager = new SessionManager({
+    apiKey: process.env.ANTHROPIC_API_KEY || process.env.CCLOCAL_API_KEY,
+    baseUrl: process.env.ANTHROPIC_BASE_URL || process.env.CCLOCAL_BASE_URL,
+    apiFormat: (process.env.CCLOCAL_API_FORMAT as 'anthropic' | 'openai') || undefined,
+  })
   const wsManager = new WebSocketManager({ authManager, sessionManager })
   const authSummary = authManager.getAuthSummary()
 

@@ -97,6 +97,7 @@ export class IDEBridge extends EventEmitter {
   private ideInfo: IDEInfo | null = null
   private connected = false
   private reconnectAttempts = 0
+  private _intentionalDisconnect = false
   private reconnectTimer?: ReturnType<typeof setTimeout>
   private pingTimer?: ReturnType<typeof setInterval>
   private pongTimer?: ReturnType<typeof setTimeout>
@@ -196,6 +197,7 @@ export class IDEBridge extends EventEmitter {
    */
   async disconnect(): Promise<void> {
     this.stopPing()
+    this._intentionalDisconnect = true
     this.clearReconnectTimer()
 
     if (this.ws) {
@@ -238,6 +240,8 @@ export class IDEBridge extends EventEmitter {
         reject(new Error('Message timeout'))
       }, 30000)
 
+      // Store pending entry but do NOT resolve yet —
+      // the response handler in handleMessage() will resolve it.
       this.pendingRequests.set(id, { resolve, reject, timeout })
 
       this.ws.send(JSON.stringify(message), (error) => {
@@ -245,9 +249,9 @@ export class IDEBridge extends EventEmitter {
           clearTimeout(timeout)
           this.pendingRequests.delete(id)
           reject(error)
-        } else {
-          resolve(id)
         }
+        // On success, just let the pending entry stay —
+        // it will be resolved by handleMessage() when the IDE responds.
       })
     })
   }
@@ -256,19 +260,32 @@ export class IDEBridge extends EventEmitter {
    * 发送请求并等待响应
    */
   async request<T = unknown>(type: IDEMessageType, payload: unknown): Promise<T> {
-    const id = await this.send(type, payload)
+    // send() now returns a Promise that resolves with the IDE's response payload,
+    // not just the message ID.
+    const id = this.generateId()
+    const message = { id, type, payload, timestamp: Date.now() }
 
     return new Promise((resolve, reject) => {
-      const existing = this.pendingRequests.get(id)
-      if (existing) {
-        // Update the handlers to resolve with typed response
-        const originalResolve = existing.resolve
-        existing.resolve = (value: unknown) => {
-          originalResolve(value)
-          resolve(value as T)
-        }
+      if (!this.ws || !this.connected) {
+        reject(new Error('Not connected to IDE'))
+        return
       }
-    })
+
+      const timeout = setTimeout(() => {
+        this.pendingRequests.delete(id)
+        reject(new Error('Request timeout'))
+      }, 30000)
+
+      this.pendingRequests.set(id, { resolve: resolve as (value: unknown) => void, reject, timeout })
+
+      this.ws!.send(JSON.stringify(message), (error) => {
+        if (error) {
+          clearTimeout(timeout)
+          this.pendingRequests.delete(id)
+          reject(error)
+        }
+      })
+    }) as Promise<T>
   }
 
   /**
@@ -363,6 +380,12 @@ export class IDEBridge extends EventEmitter {
     this.connected = false
     this.stopPing()
     this.emit('disconnected')
+
+    // Do not reconnect if disconnect() was called intentionally
+    if (this._intentionalDisconnect) {
+      this._intentionalDisconnect = false
+      return
+    }
 
     // 尝试重连
     if (this.reconnectAttempts < (this.config.maxReconnectAttempts || 5)) {

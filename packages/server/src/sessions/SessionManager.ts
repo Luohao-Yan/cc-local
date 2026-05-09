@@ -5,6 +5,7 @@
 
 import { randomUUID } from 'crypto'
 import { QueryEngine, getSessionStore, toolRegistry } from '@cclocal/core'
+import { clearTodosForSession, clearTasksForSession } from '@cclocal/core'
 import type { Session, Message, MessageOptions, StreamEvent } from '@cclocal/shared'
 import type { SessionStore } from '@cclocal/core'
 
@@ -32,6 +33,13 @@ interface SessionManagerOptions {
   store?: SessionStore
   createQueryEngine?: (options: ConstructorParameters<typeof QueryEngine>[0]) => QueryEngine
   now?: () => number
+  /** API credentials forwarded to QueryEngine instances */
+  apiKey?: string
+  baseUrl?: string
+  apiFormat?: 'anthropic' | 'openai'
+  headers?: Record<string, string>
+  fetchOptions?: Record<string, unknown>
+  fetch?: typeof fetch
 }
 
 export class SessionManager {
@@ -39,11 +47,23 @@ export class SessionManager {
   private readonly store: SessionStore
   private readonly createQueryEngine: (options: ConstructorParameters<typeof QueryEngine>[0]) => QueryEngine
   private readonly now: () => number
+  private readonly apiKey?: string
+  private readonly baseUrl?: string
+  private readonly apiFormat?: 'anthropic' | 'openai'
+  private readonly headers?: Record<string, string>
+  private readonly fetchOptions?: Record<string, unknown>
+  private readonly fetch?: typeof fetch
 
   constructor(options: SessionManagerOptions = {}) {
     this.store = options.store ?? getSessionStore()
     this.createQueryEngine = options.createQueryEngine ?? ((queryOptions) => new QueryEngine(queryOptions))
     this.now = options.now ?? (() => Date.now())
+    this.apiKey = options.apiKey
+    this.baseUrl = options.baseUrl
+    this.apiFormat = options.apiFormat
+    this.headers = options.headers
+    this.fetchOptions = options.fetchOptions
+    this.fetch = options.fetch
   }
 
   async createSession(options: { id?: string; name?: string; cwd?: string; model?: string }): Promise<Session> {
@@ -162,6 +182,9 @@ export class SessionManager {
       }
     }
     this.runtime.delete(id)
+    // Clear in-memory maps for todo/task tools to prevent memory leaks
+    clearTodosForSession(id)
+    clearTasksForSession(id)
     this.store.deleteSession(id)
   }
 
@@ -246,6 +269,14 @@ export class SessionManager {
       }
       this.store.addMessage(userMessage, sessionId)
 
+      // Re-read session to get accurate message list (includes the user message just added)
+      const freshSession = this.store.getSession(sessionId)
+      if (!freshSession) {
+        controller.enqueue(new TextEncoder().encode('event: error\ndata: Session not found\n\n'))
+        controller.close()
+        return
+      }
+
       // 使用 QueryEngine 处理消息
       const queryEngine = this.createQueryEngine({
         model: options.model || session.model || 'default',
@@ -256,6 +287,12 @@ export class SessionManager {
         enabledTools: options.enabledTools,
         tools: toolRegistry.getAll(),
         permissionPolicy: options.permissionPolicy,
+        apiKey: this.apiKey,
+        baseUrl: this.baseUrl,
+        apiFormat: this.apiFormat,
+        headers: this.headers,
+        fetchOptions: this.fetchOptions,
+        fetch: this.fetch,
       })
 
       // 发送流开始事件
@@ -264,8 +301,8 @@ export class SessionManager {
         new TextEncoder().encode(`event: stream_start\ndata: ${JSON.stringify({ messageId })}\n\n`)
       )
 
-      // 调用 QueryEngine 获取流式响应
-      const result = await queryEngine.query([...session.messages, userMessage], {
+      // 调用 QueryEngine 获取流式响应 (use fresh session messages to avoid duplicate user message)
+      const result = await queryEngine.query([...freshSession.messages], {
         onStream: (event: StreamEvent) => {
           if (runtime.abortController?.signal.aborted) {
             queryEngine.cancel()
@@ -332,6 +369,12 @@ export class SessionManager {
         enabledTools: options.enabledTools,
         tools: toolRegistry.getAll(),
         permissionPolicy: options.permissionPolicy,
+        apiKey: this.apiKey,
+        baseUrl: this.baseUrl,
+        apiFormat: this.apiFormat,
+        headers: this.headers,
+        fetchOptions: this.fetchOptions,
+        fetch: this.fetch,
       })
 
       const messageId = randomUUID()

@@ -14,6 +14,11 @@ interface TaskRecord {
 
 const tasksBySession = new Map<string, TaskRecord[]>()
 
+/** Clear tasks for a session — called during session cleanup to prevent memory leaks */
+export function clearTasksForSession(sessionId: string): void {
+  tasksBySession.delete(sessionId)
+}
+
 function getTasks(sessionId: string): TaskRecord[] {
   const tasks = tasksBySession.get(sessionId)
   if (tasks) {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { QueryEngine } from './queryEngine.js'
+import { validateMessageSequence } from './validateMessages.js'
 import { MCPManager } from '../mcp/MCPManager.js'
 import { toolRegistry } from '../tools/registry.js'
 
@@ -69,27 +70,35 @@ describe('QueryEngine', () => {
       timestamp: 1,
     }])
 
-    // The final message should contain text and tool_use/tool_result blocks
+    // The final message should contain text and tool_use blocks, but NO tool_result blocks
+    // (tool_result belongs in user messages, not assistant messages)
     const textBlocks = result.message.content.filter((c: any) => c.type === 'text')
     const toolUseBlocks = result.message.content.filter((c: any) => c.type === 'tool_use')
     const toolResultBlocks = result.message.content.filter((c: any) => c.type === 'tool_result')
 
     expect(textBlocks.some((c: any) => c.text === 'final answer')).toBe(true)
     expect(toolUseBlocks).toHaveLength(1)
-    expect(toolResultBlocks).toHaveLength(1)
+    expect(toolResultBlocks).toHaveLength(0)
     expect(result.usage).toEqual({
       inputTokens: 12,
       outputTokens: 8,
     })
     expect(seenMessages).toHaveLength(2)
-    expect(seenMessages[1]?.at(-1)).toMatchObject({
-      role: 'user',
-      content: [{
-        type: 'tool_result',
-        tool_use_id: 'tool-1',
-        content: 'echo:hello',
-      }],
-    })
+
+    // The second API call must have valid message alternation:
+    // ... user → assistant(with tool_use) → user(with tool_result)
+    const secondCall = seenMessages[1]!
+    // Must not have consecutive same-role messages
+    for (let i = 1; i < secondCall.length; i++) {
+      expect(secondCall[i - 1]!.role).not.toBe(secondCall[i]!.role)
+    }
+    // The tool_result must be preceded by an assistant message with tool_use
+    const lastUserMsg = secondCall.findLast((m: any) => m.role === 'user')
+    const lastUserIdx = secondCall.indexOf(lastUserMsg!)
+    const prevMsg = secondCall[lastUserIdx - 1]
+    expect(prevMsg?.role).toBe('assistant')
+    const prevContent = prevMsg?.content as Array<{ type: string; id?: string }>
+    expect(prevContent?.some?.((c: any) => c.type === 'tool_use' && c.id === 'tool-1')).toBe(true)
   })
 
   it('includes connected MCP tools in the default tool pool', async () => {
@@ -322,5 +331,134 @@ describe('QueryEngine', () => {
         delete process.env.CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY
       }
     }
+  })
+
+  it('maintains valid user/assistant alternation across tool call iterations', async () => {
+    const seenMessages: Array<Array<{ role: string; content: unknown }>> = []
+    let callCount = 0
+
+    const engine = new QueryEngine({
+      model: 'test-model',
+      client: {
+        async *streamQuery(messages) {
+          seenMessages.push(messages.map((message) => ({
+            role: message.role,
+            content: message.content,
+          })))
+
+          if (callCount === 0) {
+            callCount += 1
+            yield {
+              type: 'tool_use' as const,
+              name: 'echo_tool',
+              input: { value: 'hello' },
+              id: 'tool-1',
+            }
+            yield {
+              type: 'usage' as const,
+              inputTokens: 10,
+              outputTokens: 5,
+            }
+            return
+          }
+
+          yield {
+            type: 'text' as const,
+            text: 'final answer',
+          }
+          yield {
+            type: 'usage' as const,
+            inputTokens: 2,
+            outputTokens: 3,
+          }
+        },
+      },
+      tools: [{
+        name: 'echo_tool',
+        description: 'Echoes the provided value',
+        input_schema: {
+          type: 'object',
+          properties: {
+            value: { type: 'string' },
+          },
+          required: ['value'],
+        },
+        async execute(input: unknown) {
+          return {
+            content: `echo:${(input as { value: string }).value}`,
+          }
+        },
+      }],
+    })
+
+    await engine.query([{
+      id: 'user-1',
+      role: 'user',
+      content: [{ type: 'text', text: 'run a tool' }],
+      timestamp: 1,
+    }])
+
+    // Validate the second API call's messages pass our validator
+    const secondCall = seenMessages[1]!
+    const validation = validateMessageSequence(secondCall as any)
+    expect(validation.valid).toBe(true)
+  })
+
+  it('does not include tool_result blocks in the returned assistant message', async () => {
+    let callCount = 0
+
+    const engine = new QueryEngine({
+      model: 'test-model',
+      client: {
+        async *streamQuery() {
+          if (callCount === 0) {
+            callCount += 1
+            yield {
+              type: 'tool_use' as const,
+              name: 'echo_tool',
+              input: { value: 'test' },
+              id: 'tool-1',
+            }
+            yield {
+              type: 'usage' as const,
+              inputTokens: 5,
+              outputTokens: 3,
+            }
+            return
+          }
+
+          yield {
+            type: 'text' as const,
+            text: 'done',
+          }
+          yield {
+            type: 'usage' as const,
+            inputTokens: 1,
+            outputTokens: 1,
+          }
+        },
+      },
+      tools: [{
+        name: 'echo_tool',
+        description: 'Echoes',
+        input_schema: { type: 'object', properties: { value: { type: 'string' } } },
+        async execute() {
+          return { content: 'echo:test' }
+        },
+      }],
+    })
+
+    const result = await engine.query([{
+      id: 'user-1',
+      role: 'user',
+      content: [{ type: 'text', text: 'run a tool' }],
+      timestamp: 1,
+    }])
+
+    const toolResultBlocks = result.message.content.filter((c: any) => c.type === 'tool_result')
+    expect(toolResultBlocks).toHaveLength(0)
+
+    const toolUseBlocks = result.message.content.filter((c: any) => c.type === 'tool_use')
+    expect(toolUseBlocks).toHaveLength(1)
   })
 })

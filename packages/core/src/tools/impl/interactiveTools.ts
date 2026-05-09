@@ -29,15 +29,12 @@ export const askUserQuestionTool: Tool = {
   },
 
   async execute(input: AskUserQuestionInput, context: ToolContext): Promise<ToolResult> {
-    // If the context provides an interactive callback, use it.
+    // If the context provides an interactive question callback, use it.
     // Otherwise, return a placeholder that the adapter layer handles.
-    if (context.onPermissionRequest) {
-      const response = await context.onPermissionRequest({
-        type: 'question',
-        message: input.question,
-      })
+    if (context.onUserQuestion) {
+      const response = await context.onUserQuestion(input.question)
       return {
-        content: [{ type: 'text', text: String(response) }],
+        content: [{ type: 'text', text: response }],
       }
     }
 

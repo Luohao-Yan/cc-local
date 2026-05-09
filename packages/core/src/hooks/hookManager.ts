@@ -5,8 +5,8 @@
  * Hooks can modify inputs, block execution, or transform outputs.
  */
 
-import { execSync } from 'child_process'
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
+import { spawn } from 'child_process'
+import { existsSync, readFileSync, writeFileSync, mkdirSync, renameSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 
@@ -50,7 +50,9 @@ function saveHooks(hooks: HookConfig[]): void {
   if (!existsSync(HOOKS_DIR)) {
     mkdirSync(HOOKS_DIR, { recursive: true })
   }
-  writeFileSync(HOOKS_FILE, JSON.stringify(hooks, null, 2), 'utf-8')
+  const tmpFile = HOOKS_FILE + '.tmp'
+  writeFileSync(tmpFile, JSON.stringify(hooks, null, 2), 'utf-8')
+  renameSync(tmpFile, HOOKS_FILE)
   hooksCache = hooks
 }
 
@@ -99,27 +101,85 @@ export async function executeHooks(
     if (context.output) env.CCLOCAL_TOOL_OUTPUT = JSON.stringify(context.output)
 
     try {
-      const result = execSync(hook.command, {
-        encoding: 'utf-8',
+      const result = await execAsync(hook.command, {
         timeout: hook.timeout ?? 5000,
         env,
-        stdio: ['pipe', 'pipe', 'pipe'],
       })
       results.push({
         exitCode: 0,
-        stdout: result.toString(),
-        stderr: '',
-        blocked: result.toString().includes('BLOCK'),
+        stdout: result.stdout,
+        stderr: result.stderr,
+        blocked: result.stdout.includes('BLOCK'),
       })
     } catch (error: any) {
       results.push({
         exitCode: error.status ?? 1,
-        stdout: error.stdout?.toString() ?? '',
-        stderr: error.stderr?.toString() ?? '',
+        stdout: error.stdout ?? '',
+        stderr: error.stderr ?? '',
         blocked: error.status !== 0,
       })
     }
   }
 
   return results
+}
+
+/** Async replacement for execSync — does not block the event loop */
+function execAsync(
+  command: string,
+  options: { timeout?: number; env?: Record<string, string> },
+): Promise<{ stdout: string; stderr: string; status: number }> {
+  return new Promise((resolve, reject) => {
+    const timeout = options.timeout ?? 5000
+    const isWindows = process.platform === 'win32'
+    const shell = isWindows ? 'cmd' : 'sh'
+    const shellArgs = isWindows ? ['/c', command] : ['-c', command]
+    const child = spawn(shell, shellArgs, {
+      encoding: 'utf-8',
+      timeout,
+      env: options.env,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+
+    let stdout = ''
+    let stderr = ''
+
+    child.stdout?.on('data', (data: Buffer) => {
+      stdout += data.toString()
+    })
+    child.stderr?.on('data', (data: Buffer) => {
+      stderr += data.toString()
+    })
+
+    const timer = setTimeout(() => {
+      child.kill('SIGTERM')
+      const err: any = new Error(`Hook timed out after ${timeout}ms`)
+      err.status = 1
+      err.stdout = stdout
+      err.stderr = stderr
+      reject(err)
+    }, timeout)
+
+    child.on('close', (code) => {
+      clearTimeout(timer)
+      if (code === 0) {
+        resolve({ stdout, stderr, status: 0 })
+      } else {
+        const err: any = new Error(`Hook exited with code ${code}`)
+        err.status = code ?? 1
+        err.stdout = stdout
+        err.stderr = stderr
+        reject(err)
+      }
+    })
+
+    child.on('error', (error) => {
+      clearTimeout(timer)
+      const err: any = error
+      err.status = 1
+      err.stdout = stdout
+      err.stderr = stderr
+      reject(err)
+    })
+  })
 }

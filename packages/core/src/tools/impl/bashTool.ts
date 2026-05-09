@@ -55,7 +55,10 @@ export const bashTool: Tool = {
 
     return new Promise((resolve) => {
       const workDir = cwd || context.cwd
-      const child = spawn('bash', ['-c', command], {
+      const isWindows = process.platform === 'win32'
+      const shell = isWindows ? 'cmd' : 'bash'
+      const shellArgs = isWindows ? ['/c', command] : ['-c', command]
+      const child = spawn(shell, shellArgs, {
         cwd: workDir,
         signal: context.abortSignal,
       })

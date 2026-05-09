@@ -4,6 +4,7 @@
  */
 
 import type { Message, Session, SessionMetadata } from '@cclocal/shared'
+import { randomUUID } from 'crypto'
 import { DatabaseConnection } from './connection.js'
 
 export class SessionStore {
@@ -141,23 +142,28 @@ export class SessionStore {
 
   // 添加消息
   addMessage(message: Message, sessionId: string): void {
-    const stmt = this.db.prepare(`
+    const insertStmt = this.db.prepare(`
       INSERT INTO messages (id, session_id, role, content, timestamp)
       VALUES ($id, $sessionId, $role, $content, $timestamp)
     `)
 
-    stmt.run({
-      $id: message.id,
-      $sessionId: sessionId,
-      $role: message.role,
-      $content: JSON.stringify(message.content),
-      $timestamp: message.timestamp,
-    })
-
-    // 更新会话时间
-    this.db.prepare(`
+    const updateStmt = this.db.prepare(`
       UPDATE sessions SET updated_at = $now WHERE id = $sessionId
-    `).run({ $now: Date.now(), $sessionId: sessionId })
+    `)
+
+    const now = Date.now()
+
+    this.db.transaction(() => {
+      insertStmt.run({
+        $id: message.id,
+        $sessionId: sessionId,
+        $role: message.role,
+        $content: JSON.stringify(message.content),
+        $timestamp: message.timestamp,
+      })
+
+      updateStmt.run({ $now: now, $sessionId: sessionId })
+    })()
   }
 
   // 获取会话的所有消息
@@ -300,8 +306,6 @@ export class SessionStore {
     if (!source) {
       throw new Error(`Session ${sourceId} not found`)
     }
-
-    const { randomUUID } = require('crypto') as typeof import('crypto')
     const now = Date.now()
     const newId = randomUUID()
     const newName = options?.name ?? `${source.name} (fork)`
@@ -363,6 +367,12 @@ export function getSessionStore(): SessionStore {
 // 兼容旧代码的导出
 export const sessionStore = new Proxy({} as SessionStore, {
   get(_target, prop) {
-    return getSessionStore()[prop as keyof SessionStore]
+    const instance = getSessionStore()
+    const value = instance[prop as keyof SessionStore]
+    // Bind methods to the instance so destructuring doesn't lose `this`
+    if (typeof value === 'function') {
+      return value.bind(instance)
+    }
+    return value
   },
 })

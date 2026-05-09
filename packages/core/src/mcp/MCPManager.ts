@@ -223,7 +223,16 @@ export class MCPManager {
       throw new Error(`MCP tool "${toolName}" is not allowed for server "${serverName}"`)
     }
 
-    return await connection.handle.callTool(toolName, args)
+    const MCP_TOOL_TIMEOUT_MS = 120_000 // 2 minutes
+
+    const result = await Promise.race([
+      connection.handle.callTool(toolName, args),
+      new Promise<ToolResult>((_resolve, reject) =>
+        setTimeout(() => reject(new Error(`MCP tool "${toolName}" on server "${serverName}" timed out after ${MCP_TOOL_TIMEOUT_MS / 1000}s`)), MCP_TOOL_TIMEOUT_MS)
+      ),
+    ])
+
+    return result
   }
 
   async listResources(serverName: string): Promise<MCPResourceDefinition[]> {
@@ -257,7 +266,7 @@ export class MCPManager {
             command: record.config.command as string,
             args: record.config.args,
             cwd: record.config.cwd,
-            env: (record.config.env ?? process.env) as Record<string, string>,
+            env: (record.config.env ?? {}) as Record<string, string>,
             stderr: 'pipe',
           })
         : record.config.type === 'sse'

@@ -48,6 +48,15 @@ Task: ${input.prompt}
 
 Working directory: ${input.cwd ?? context.cwd ?? process.cwd()}`,
       maxTurns: 10,
+      tools: context.tools,
+      apiKey: context.apiKey,
+      baseUrl: context.baseUrl,
+      apiFormat: context.apiFormat,
+      headers: context.headers,
+      fetchOptions: context.fetchOptions,
+      fetch: context.fetch,
+      permissionPolicy: context.permissionPolicy,
+      onPermissionCheck: context.onPermissionCheck,
     })
 
     const messages = [
@@ -60,9 +69,17 @@ Working directory: ${input.cwd ?? context.cwd ?? process.cwd()}`,
     ]
 
     try {
+      // Forward abort signal from parent to sub-agent
+      const abortHandler = () => {
+        agentEngine.cancel()
+      }
+      context.abortSignal?.addEventListener('abort', abortHandler)
+
       const result = await agentEngine.query(messages, {
         onStream: context.onStream,
       })
+
+      context.abortSignal?.removeEventListener('abort', abortHandler)
 
       const textContent = result.message.content
         .filter((c: any) => c.type === 'text')

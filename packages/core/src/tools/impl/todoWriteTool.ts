@@ -9,6 +9,11 @@ export interface TodoItem {
 
 const todosBySession = new Map<string, TodoItem[]>()
 
+/** Clear todos for a session — called during session cleanup to prevent memory leaks */
+export function clearTodosForSession(sessionId: string): void {
+  todosBySession.delete(sessionId)
+}
+
 export const todoWriteTool: Tool = {
   name: 'TodoWrite',
   description: 'Create or update the session todo list for multi-step work.',

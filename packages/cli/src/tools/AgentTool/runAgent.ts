@@ -881,26 +881,59 @@ export function filterIncompleteToolCalls(messages: Message[]): Message[] {
     }
   }
 
-  // Filter out assistant messages that contain tool calls without results
-  return messages.filter(message => {
+  // Collect tool_use IDs from assistant messages that will be removed
+  const removedToolUseIds = new Set<string>()
+
+  // First pass: identify which assistant messages to remove and collect their tool_use IDs
+  const filteredMessages = messages.filter(message => {
     if (message?.type === 'assistant') {
       const assistantMessage = message as AssistantMessage
       const content = assistantMessage.message.content
       if (Array.isArray(content)) {
-        // Check if this assistant message has any tool uses without results
         const hasIncompleteToolCall = content.some(
           block =>
             block.type === 'tool_use' &&
             block.id &&
             !toolUseIdsWithResults.has(block.id),
         )
-        // Exclude messages with incomplete tool calls
-        return !hasIncompleteToolCall
+        if (hasIncompleteToolCall) {
+          // Collect all tool_use IDs from this removed message
+          for (const block of content) {
+            if (block.type === 'tool_use' && block.id) {
+              removedToolUseIds.add(block.id)
+            }
+          }
+          return false
+        }
       }
     }
-    // Keep all non-assistant messages and assistant messages without tool calls
     return true
   })
+
+  // Second pass: strip orphaned tool_result blocks from user messages
+  // that reference tool_use IDs from removed assistant messages
+  return filteredMessages.map(message => {
+    if (message?.type === 'user') {
+      const userMessage = message as UserMessage
+      const content = userMessage.message.content
+      if (Array.isArray(content)) {
+        const hasOrphanedResult = content.some(
+          block => block.type === 'tool_result' && removedToolUseIds.has(block.tool_use_id),
+        )
+        if (hasOrphanedResult) {
+          const strippedContent = content.filter(
+            block => !(block.type === 'tool_result' && removedToolUseIds.has(block.tool_use_id)),
+          )
+          // If the user message still has content, keep it; otherwise drop it entirely
+          if (strippedContent.length > 0) {
+            return { ...userMessage, message: { ...userMessage.message, content: strippedContent } }
+          }
+          return null
+        }
+      }
+    }
+    return message
+  }).filter((m): m is Message => m !== null)
 }
 
 async function getAgentSystemPrompt(

@@ -559,12 +559,10 @@ function streamedCheckPermissionsAndCallTool(
       for (const result of results) {
         stream.enqueue(result)
       }
+      stream.done()
     })
     .catch(error => {
       stream.error(error)
-    })
-    .finally(() => {
-      stream.done()
     })
   return stream
 }

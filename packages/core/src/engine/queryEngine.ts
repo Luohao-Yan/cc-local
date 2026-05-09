@@ -221,14 +221,26 @@ export class QueryEngine {
     messageId: string
   ): Promise<QueryResult> {
     let currentMessages = [...messages]
+    // Accumulate across ALL turns for the final returned message
     let fullResponse = ''
     let fullThinking = ''
-    const contentBlocks: MessageContent[] = []
+    const allToolUseBlocks: MessageContent[] = []
+    // Per-turn content blocks to preserve correct ordering in final message
+    const turnContentBlocks: Array<{
+      thinking?: string
+      text?: string
+      toolUses: MessageContent[]
+    }> = []
     let inputTokens = 0
     let outputTokens = 0
     let maxIterations = Math.max(1, opts.maxTurns ?? 10) // 防止无限循环
 
     while (maxIterations-- > 0) {
+      // Track per-turn text/thinking for the turn record,
+      // but keep accumulating into fullResponse/fullThinking
+      let turnText = ''
+      let turnThinking = ''
+
       // 调用 Anthropic API 流式查询
       const stream = this.client.streamQuery(currentMessages, {
         systemPrompt: opts.systemPrompt,
@@ -248,6 +260,7 @@ export class QueryEngine {
         switch (event.type) {
           case 'text':
             fullResponse += event.text
+            turnText += event.text
             opts.onStream?.({
               type: 'stream_delta',
               messageId,
@@ -260,6 +273,7 @@ export class QueryEngine {
 
           case 'thinking':
             fullThinking += event.thinking
+            turnThinking += event.thinking
             opts.onStream?.({
               type: 'stream_delta',
               messageId,
@@ -272,13 +286,6 @@ export class QueryEngine {
 
           case 'tool_use':
             toolCalls.push({
-              name: event.name,
-              input: event.input,
-              id: event.id,
-            })
-            // Record tool_use in content blocks for the final message
-            contentBlocks.push({
-              type: 'tool_use',
               name: event.name,
               input: event.input,
               id: event.id,
@@ -303,8 +310,13 @@ export class QueryEngine {
         }
       }
 
-      // 如果没有工具调用，直接返回结果
+      // 如果没有工具调用，记录最后一轮的文本然后返回结果
       if (toolCalls.length === 0) {
+        turnContentBlocks.push({
+          thinking: turnThinking.trim() || undefined,
+          text: turnText.trim() || undefined,
+          toolUses: [],
+        })
         break
       }
 
@@ -348,10 +360,54 @@ export class QueryEngine {
         }
       }
 
-      // Build tool result messages with proper content format for the API
-      const toolResultContents: Array<{ type: 'tool_result'; tool_use_id: string; content: string; is_error?: boolean }> = []
-      const toolResultMessages: Message[] = []
+      // Build assistant message for this turn (thinking + text + tool_use)
+      // This MUST be appended to currentMessages BEFORE the tool_result user message
+      // to maintain valid API message alternation: assistant(tool_use) → user(tool_result)
+      // IMPORTANT: only use per-turn text/thinking for the API message, not accumulated
+      const turnAssistantContent: MessageContent[] = []
+      if (turnThinking.trim()) {
+        turnAssistantContent.push({ type: 'thinking', thinking: turnThinking.trim() })
+      }
+      if (turnText.trim()) {
+        turnAssistantContent.push({ type: 'text', text: turnText.trim() })
+      }
+      for (const toolCall of toolCalls) {
+        turnAssistantContent.push({
+          type: 'tool_use',
+          name: toolCall.name,
+          input: toolCall.input,
+          id: toolCall.id,
+        })
+        allToolUseBlocks.push({
+          type: 'tool_use',
+          name: toolCall.name,
+          input: toolCall.input,
+          id: toolCall.id,
+        })
+      }
 
+      // Record per-turn content for the final returned message
+      // This preserves the correct ordering: thinking→text→tool_use per turn
+      turnContentBlocks.push({
+        thinking: turnThinking.trim() || undefined,
+        text: turnText.trim() || undefined,
+        toolUses: toolCalls.map(tc => ({
+          type: 'tool_use' as const,
+          name: tc.name,
+          input: tc.input,
+          id: tc.id,
+        })),
+      })
+
+      const turnAssistantMessage: Message = {
+        id: randomUUID(),
+        role: 'assistant',
+        content: turnAssistantContent,
+        timestamp: Date.now(),
+      }
+
+      // Build tool_result user message
+      const toolResultContents: Array<{ type: 'tool_result'; tool_use_id: string; content: string; is_error?: boolean }> = []
       for (const { toolCall, result } of toolResultEntries) {
         const normalizedContent = typeof result.content === 'string'
           ? result.content
@@ -365,45 +421,35 @@ export class QueryEngine {
           content: normalizedContent,
           is_error: result.is_error,
         })
-
-        // Also record tool_result in contentBlocks for the final message
-        contentBlocks.push({
-          type: 'tool_result',
-          tool_use_id: toolCall.id,
-          content: normalizedContent,
-          is_error: result.is_error,
-        })
       }
 
-      // Send tool results as a single user message (Anthropic API convention)
-      toolResultMessages.push({
+      const toolResultUserMessage: Message = {
         id: randomUUID(),
         role: 'user',
         content: toolResultContents,
         timestamp: Date.now(),
-      })
+      }
 
-      // 更新消息列表继续循环
-      currentMessages = [...currentMessages, ...toolResultMessages]
+      // Append BOTH assistant and user messages to maintain valid API sequence:
+      // ...previous → assistant(with tool_use) → user(with tool_result)
+      currentMessages = [...currentMessages, turnAssistantMessage, toolResultUserMessage]
     }
 
-    // 构建助手消息 — 包含 thinking 和 text 内容
+    // Build the final assistant message for the return value.
+    // Content is ordered by turn: each turn's thinking → text → tool_use blocks.
+    // This ensures semantic consistency — text and tool_use from the same turn
+    // appear together, not text from turn N mixed with tool_use from turn 1.
     const finalContentBlocks: MessageContent[] = []
 
-    // Add thinking block if present
-    if (fullThinking.trim()) {
-      finalContentBlocks.push({ type: 'thinking', thinking: fullThinking.trim() })
-    }
-
-    // Add text content
-    if (fullResponse.trim()) {
-      finalContentBlocks.push({ type: 'text', text: fullResponse.trim() })
-    }
-
-    // Add tool_use/tool_result blocks from the conversation
-    for (const block of contentBlocks) {
-      if (block.type === 'tool_use' || block.type === 'tool_result') {
-        finalContentBlocks.push(block)
+    for (const turn of turnContentBlocks) {
+      if (turn.thinking) {
+        finalContentBlocks.push({ type: 'thinking', thinking: turn.thinking })
+      }
+      if (turn.text) {
+        finalContentBlocks.push({ type: 'text', text: turn.text })
+      }
+      for (const toolUse of turn.toolUses) {
+        finalContentBlocks.push(toolUse)
       }
     }
 
@@ -504,6 +550,17 @@ export class QueryEngine {
           },
         })
       } : undefined,
+      model: opts.model,
+      onStream: opts.onStream,
+      apiKey: opts.apiKey,
+      baseUrl: opts.baseUrl,
+      apiFormat: opts.apiFormat,
+      headers: opts.headers,
+      fetchOptions: opts.fetchOptions,
+      fetch: opts.fetch,
+      permissionPolicy: opts.permissionPolicy,
+      onPermissionCheck: opts.onPermissionCheck,
+      tools: opts.tools,
     }
 
     const result = await this.executeTool(tool, toolCall.input, context)

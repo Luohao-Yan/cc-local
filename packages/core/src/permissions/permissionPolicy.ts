@@ -28,7 +28,7 @@ function normalizeToolName(toolName: string): string {
   if (toolName.startsWith('mcp__')) {
     return toolName
   }
-  return toolName
+  return toolName.toLowerCase()
 }
 
 function matchesToolPattern(toolName: string, pattern: string): boolean {
@@ -42,7 +42,7 @@ function matchesToolPattern(toolName: string, pattern: string): boolean {
 }
 
 function matchesAny(toolName: string, patterns?: string[]): boolean {
-  return Boolean(patterns?.some((pattern) => matchesToolPattern(toolName, pattern)))
+  return Boolean(patterns?.some((pattern) => matchesToolPattern(toolName, normalizeToolName(pattern))))
 }
 
 export function decideToolPermission(toolName: string, policy: PermissionPolicy = {}): PermissionDecision {

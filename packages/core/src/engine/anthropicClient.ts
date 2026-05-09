@@ -7,6 +7,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import OpenAI from 'openai'
 import type { Message, MessageContent } from '@cclocal/shared'
 import { isOpenAIThinkingEnabled, normalizeBaseUrl } from './thinkingUtils.js'
+import { validateMessageSequence } from './validateMessages.js'
 
 export interface AnthropicClientOptions {
   apiKey?: string
@@ -49,6 +50,13 @@ export class AnthropicClient {
     | { type: 'usage'; inputTokens: number; outputTokens: number }
   > {
     try {
+      // Validate message sequence before sending to the API
+      const validation = validateMessageSequence(messages)
+      if (!validation.valid) {
+        yield { type: 'error', error: `Invalid message sequence: ${validation.errors.join('; ')}` }
+        return
+      }
+
       // 转换消息格式
       const apiMessages = this.convertMessages(messages)
 
@@ -282,6 +290,13 @@ export class OpenAICompatibleClient {
     | { type: 'usage'; inputTokens: number; outputTokens: number }
   > {
     try {
+      // Validate message sequence before sending to the API
+      const validation = validateMessageSequence(messages)
+      if (!validation.valid) {
+        yield { type: 'error', error: `Invalid message sequence: ${validation.errors.join('; ')}` }
+        return
+      }
+
       // Build OpenAI-compatible messages
       const openaiMessages: OpenAI.ChatCompletionMessageParam[] = []
 
@@ -314,6 +329,10 @@ export class OpenAICompatibleClient {
         } else if (msg.role === 'user') {
           const toolResults = msg.content.filter(c => c.type === 'tool_result')
           if (toolResults.length > 0) {
+            // If there's text alongside tool_results, emit it as a separate user message first
+            if (textParts.trim()) {
+              openaiMessages.push({ role: 'user', content: textParts })
+            }
             for (const tr of toolResults) {
               const isError = (tr as any).is_error === true
               let trContent = (tr.content as string) || ''

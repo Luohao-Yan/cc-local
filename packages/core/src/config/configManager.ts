@@ -5,7 +5,7 @@
  * Backed by the session store's metadata layer.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 
@@ -36,7 +36,9 @@ function saveConfig(config: ConfigData): void {
   if (!existsSync(CONFIG_DIR)) {
     mkdirSync(CONFIG_DIR, { recursive: true })
   }
-  writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf-8')
+  const tmpFile = CONFIG_FILE + '.tmp'
+  writeFileSync(tmpFile, JSON.stringify(config, null, 2), 'utf-8')
+  renameSync(tmpFile, CONFIG_FILE)
   configCache = config
 }
 

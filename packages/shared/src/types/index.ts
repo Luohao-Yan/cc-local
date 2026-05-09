@@ -58,6 +58,25 @@ export interface ToolContext {
   cwd: string
   abortSignal?: AbortSignal
   onProgress?: (progress: ToolProgress) => void
+  /** Parent engine's model (for sub-agent inheritance) */
+  model?: string
+  /** Parent engine's stream callback (for sub-agent passthrough) */
+  onStream?: (event: any) => void
+  /** Parent engine's API credentials (for sub-agent inheritance) */
+  apiKey?: string
+  baseUrl?: string
+  apiFormat?: 'anthropic' | 'openai'
+  headers?: Record<string, string>
+  fetchOptions?: Record<string, unknown>
+  fetch?: typeof fetch
+  /** Parent engine's permission policy (for sub-agent inheritance) */
+  permissionPolicy?: { mode?: string; allowedTools?: string[]; blockedTools?: string[] }
+  /** Parent engine's permission check callback */
+  onPermissionCheck?: (toolName: string, input: unknown, reason?: string) => Promise<boolean>
+  /** Available tools from the parent context */
+  tools?: Tool[]
+  /** Callback for interactive user questions (AskUserQuestion tool) */
+  onUserQuestion?: (question: string) => Promise<string>
 }
 
 export interface ToolProgress {
@@ -252,3 +271,6 @@ export interface SessionState {
   contextWindow: number
   tokenCount: number
 }
+
+// 权限模式
+export type PermissionMode = 'default' | 'dontAsk' | 'acceptEdits' | 'bypassPermissions'
