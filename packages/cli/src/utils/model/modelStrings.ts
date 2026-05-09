@@ -25,7 +25,11 @@ const MODEL_KEYS = Object.keys(ALL_MODEL_CONFIGS) as ModelKey[]
 function getBuiltinModelStrings(provider: APIProvider): ModelStrings {
   const out = {} as ModelStrings
   for (const key of MODEL_KEYS) {
-    out[key] = ALL_MODEL_CONFIGS[key][provider]
+    const config = ALL_MODEL_CONFIGS[key]
+    // Third-party providers (openai, custom) don't have dedicated entries in
+    // ALL_MODEL_CONFIGS. Fall back to firstParty since users specify the exact
+    // model string via ANTHROPIC_MODEL / ANTHROPIC_DEFAULT_*_MODEL env vars.
+    out[key] = (config[provider] ?? config.firstParty) as string
   }
   return out
 }
