@@ -175,7 +175,8 @@ export function modelSupportsAutoMode(model: string): boolean {
     const m = getCanonicalName(model)
 
     // 第三方兼容 API：当使用自定义 BASE_URL 时，信任用户的模型选择，
-    // 允许所有模型使用 auto mode（分类器会独立评估每个操作的安全性）
+    // 允许所有模型使用 auto mode。实际的 classifier 可用性会在运行时
+    // 通过 probeAutoModeAvailability() 发送探测请求来验证。
     if (process.env.ANTHROPIC_BASE_URL) {
       return true
     }

@@ -1476,7 +1476,7 @@ class ClassifierModelUnavailableError extends Error {
  * Check if an API error indicates the model itself is unavailable,
  * rather than a transient network error or prompt-too-long.
  */
-function isModelUnavailableError(error: unknown): boolean {
+export function isModelUnavailableError(error: unknown): boolean {
   if (!(error instanceof Error)) return false
   const msg = error.message.toLowerCase()
   // Prompt too long is NOT a model unavailability error
@@ -1553,7 +1553,7 @@ const classifierModelHealth = new ClassifierModelHealth()
  * Get a list of candidate models for the classifier, ordered by preference.
  * Filters out models that have been marked unhealthy due to repeated failures.
  */
-function getClassifierModelCandidates(): string[] {
+export function getClassifierModelCandidates(): string[] {
   const candidates: string[] = []
 
   // Priority 1: Explicit classifier model env var

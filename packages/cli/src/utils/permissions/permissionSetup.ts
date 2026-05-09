@@ -61,6 +61,11 @@ import { modelSupportsAutoMode } from '../betas.js'
 import { logForDebugging } from '../debug.js'
 import { gracefulShutdown } from '../gracefulShutdown.js'
 import { getMainLoopModel } from '../model/model.js'
+import { sideQuery } from '../sideQuery.js'
+import {
+  getClassifierModelCandidates,
+  isModelUnavailableError,
+} from './yoloClassifier.js'
 import {
   CROSS_PLATFORM_CODE_EXEC,
   DANGEROUS_BASH_PATTERNS,
@@ -1065,6 +1070,117 @@ export function getAutoModeUnavailableNotification(
 }
 
 /**
+ * Cache for classifier availability probe results.
+ * Key: `${model}:${baseUrl}` — invalidated when model or base URL changes.
+ * This avoids repeated API probes (and token costs) across multiple
+ * verifyAutoModeGateAccess calls within the same process lifetime.
+ */
+const classifierProbeCache = new Map<string, boolean>()
+
+const PROBE_TIMEOUT_MS = 8000
+
+/**
+ * Send a lightweight probe request to test whether the classifier API
+ * actually supports `tools` + `tool_choice` (required for auto mode).
+ *
+ * Tries each candidate model in order; returns `true` as soon as one
+ * succeeds. Returns `false` if a candidate responds with a
+ * tool_choice-unsupported error, or if all candidates fail.
+ */
+async function probeAutoModeAvailability(): Promise<boolean> {
+  const mainModel = getMainLoopModel()
+  const baseUrl = process.env.ANTHROPIC_BASE_URL || ''
+  const cacheKey = `${mainModel}:${baseUrl}`
+
+  if (classifierProbeCache.has(cacheKey)) {
+    logForDebugging(
+      `[auto-mode] Using cached probe result: ${classifierProbeCache.get(cacheKey)}`,
+    )
+    return classifierProbeCache.get(cacheKey)!
+  }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS)
+
+  try {
+    const candidates = getClassifierModelCandidates()
+    logForDebugging(
+      `[auto-mode] Probing classifier availability with candidates: ${candidates.join(', ')}`,
+    )
+
+    for (const model of candidates) {
+      try {
+        await sideQuery({
+          model,
+          max_tokens: 1,
+          messages: [{ role: 'user', content: 'probe' }],
+          tools: [
+            {
+              name: 'probe',
+              description: 'Auto mode availability probe',
+              input_schema: { type: 'object', properties: {} },
+            },
+          ],
+          tool_choice: { type: 'tool', name: 'probe' },
+          maxRetries: 0,
+          signal: controller.signal,
+          querySource: 'auto_mode_probe',
+          skipSystemPromptPrefix: true,
+        })
+        logForDebugging(`[auto-mode] Probe succeeded for model: ${model}`)
+        classifierProbeCache.set(cacheKey, true)
+        return true
+      } catch (error) {
+        if (controller.signal.aborted) {
+          logForDebugging('[auto-mode] Probe timed out, treating as unavailable')
+          classifierProbeCache.set(cacheKey, false)
+          return false
+        }
+
+        const msg = error instanceof Error ? error.message.toLowerCase() : ''
+
+        // tool_choice / forced function calling not supported → permanently unavailable
+        if (
+          msg.includes('tool_choice') ||
+          msg.includes('tool choice') ||
+          msg.includes('forced tool') ||
+          msg.includes('function calling') ||
+          (msg.includes('not supported') &&
+            (msg.includes('tool') || msg.includes('function')))
+        ) {
+          logForDebugging(
+            `[auto-mode] Probe failed: tool_choice not supported (${msg})`,
+          )
+          classifierProbeCache.set(cacheKey, false)
+          return false
+        }
+
+        // Model temporarily unavailable (404/429/5xx) → try next candidate
+        if (isModelUnavailableError(error)) {
+          logForDebugging(
+            `[auto-mode] Probe: model ${model} temporarily unavailable, trying next...`,
+          )
+          continue
+        }
+
+        // Other errors → treat as unavailable (conservative)
+        logForDebugging(
+          `[auto-mode] Probe error for ${model}: ${msg || 'unknown error'}`,
+        )
+        classifierProbeCache.set(cacheKey, false)
+        return false
+      }
+    }
+
+    logForDebugging('[auto-mode] All classifier probe candidates exhausted')
+    classifierProbeCache.set(cacheKey, false)
+    return false
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+/**
  * Async check of auto mode availability.
  *
  * Returns a transform function (not a pre-computed context) that callers
@@ -1092,8 +1208,10 @@ export async function verifyAutoModeGateAccess(
     enabled?: AutoModeEnabledState
     disableFastMode?: boolean
   }>('tengu_auto_mode_config', {})
-  // 第三方兼容 API：无 GrowthBook 服务，强制启用 auto mode，
-  // 忽略 GrowthBook 缓存或默认值可能导致的 'disabled' 状态
+  // 第三方兼容 API：无 GrowthBook 服务，强制启用 auto mode config，
+  // 忽略 GrowthBook 缓存或默认值可能导致的 'disabled' 状态。
+  // 注意：这仅解除 circuit-breaker。实际的 classifier 可用性由
+  // probeAutoModeAvailability() 通过发送探测请求来验证。
   const isThirdPartyApi =
     process.env.ANTHROPIC_BASE_URL &&
     !process.env.ANTHROPIC_BASE_URL.includes('anthropic.com')
@@ -1120,8 +1238,16 @@ export async function verifyAutoModeGateAccess(
     (!!fastMode ||
       (process.env.USER_TYPE === 'ant' &&
         mainModel.toLowerCase().includes('-fast')))
-  const modelSupported =
+  let modelSupported =
     modelSupportsAutoMode(mainModel) && !disableFastModeBreakerFires
+
+  // 第三方 API：发送实际探测请求验证 classifier 是否支持 tool_choice。
+  // 这比静态判断更准确——某些第三方 provider 可能支持，某些不支持。
+  if (isThirdPartyApi && modelSupported) {
+    const probeResult = await probeAutoModeAvailability()
+    modelSupported = probeResult
+  }
+
   let carouselAvailable = false
   if (enabledState !== 'disabled' && !disabledBySettings && modelSupported) {
     carouselAvailable =
@@ -1317,7 +1443,8 @@ export function getAutoModeUnavailableReason(): AutoModeUnavailableReason | null
  */
 export type AutoModeEnabledState = 'enabled' | 'disabled' | 'opt-in'
 
-// 第三方 API 场景下默认启用 auto mode（无 GrowthBook 服务）
+// 第三方 API 场景下默认启用 auto mode config（无 GrowthBook 服务）。
+// 实际可用性仍受 modelSupportsAutoMode() 限制。
 const AUTO_MODE_ENABLED_DEFAULT: AutoModeEnabledState =
   process.env.ANTHROPIC_BASE_URL ? 'enabled' : 'disabled'
 
