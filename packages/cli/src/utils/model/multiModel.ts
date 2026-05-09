@@ -186,6 +186,10 @@ export function getModelConfigs(): ModelConfig[] {
  * @returns 匹配到的模型 key（用作实际模型标识），未匹配返回 null
  */
 export function resolveMultiModelConfig(modelInput: string): string | null {
+  if (!modelInput || typeof modelInput !== 'string') {
+    return null
+  }
+
   const models = getConfiguredModels()
   if (models.length === 0) {
     return null

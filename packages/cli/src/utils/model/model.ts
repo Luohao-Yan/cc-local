@@ -661,6 +661,10 @@ export function getPublicModelName(model: ModelName): string {
 export function parseUserSpecifiedModel(
   modelInput: ModelName | ModelAlias,
 ): ModelName {
+  if (!modelInput || typeof modelInput !== 'string') {
+    return getDefaultMainLoopModelSetting()
+  }
+
   // 多模型配置：根据别名或模型名切换 API 端点和 Key
   const multiModelName = resolveMultiModelConfig(modelInput)
   if (multiModelName) {
