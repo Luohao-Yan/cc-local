@@ -168,12 +168,14 @@ export async function toolToAPISchema(
 
     base = {
       name: tool.name,
-      description: await tool.prompt({
-        getToolPermissionContext: options.getToolPermissionContext,
-        tools: options.tools,
-        agents: options.agents,
-        allowedAgentTypes: options.allowedAgentTypes,
-      }),
+      description: tool.prompt
+        ? await tool.prompt({
+            getToolPermissionContext: options.getToolPermissionContext,
+            tools: options.tools,
+            agents: options.agents,
+            allowedAgentTypes: options.allowedAgentTypes,
+          })
+        : await tool.description(),
       input_schema,
     }
 
