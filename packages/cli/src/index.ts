@@ -35,8 +35,20 @@ import {
   hasExplicitServerArg,
   shouldAutoStartEmbeddedServer,
 } from './runtime/routeContext.js'
-import { delegateToInkUi, getUserArgs, shouldUseInkUi } from './ui/inkAdapter.js'
+import { delegateToInkUi, getUserArgs, runInkUiInProcess, shouldUseInkUi } from './ui/inkAdapter.js'
 import type { Message, MessageOptions, Session, StreamEvent } from '@cclocal/shared'
+
+// On Windows, spawnSync with stdio: 'inherit' doesn't properly pass TTY stdin,
+// so we use in-process mode instead. This helper routes to the right path.
+async function launchInkUi(args: string[]): Promise<never> {
+  if (process.platform === 'win32') {
+    await runInkUiInProcess(args)
+    // runInkUiInProcess imports cli.tsx which fires void main() at import time,
+    // starting the Ink REPL. Ink's event loop handles keep the process alive.
+    await new Promise<never>(() => {})
+  }
+  delegateToInkUi(args)
+}
 
 let embeddedServerProcess: any = null
 let embeddedServerToken: string | undefined
@@ -290,7 +302,7 @@ const rawUserArgs = getUserArgs(process.argv)
 const useInkUi = shouldUseInkUi(rawUserArgs)
 
 if (useInkUi) {
-  delegateToInkUi(rawUserArgs)
+  await launchInkUi(rawUserArgs)
 }
 
 const program = new Command()
@@ -436,7 +448,7 @@ program
   .action(async (options) => {
     // For interactive mode, delegate to Ink UI
     if (!options.print) {
-      delegateToInkUi(rawUserArgs)
+      await launchInkUi(rawUserArgs)
       return
     }
 
@@ -533,7 +545,7 @@ function registerLegacyCompatibilityCommands(rootProgram: Command): void {
       .argument('[args...]')
       .action(async () => {
         const args = getUserArgs(process.argv)
-        delegateToInkUi(args)
+        await launchInkUi(args)
       })
   }
 }
@@ -762,7 +774,7 @@ sessionsCommand
     }
 
     // Delegate to Ink UI for interactive mode
-    delegateToInkUi(rawUserArgs)
+    await launchInkUi(rawUserArgs)
   })
 
 sessionsCommand
@@ -805,7 +817,7 @@ sessionsCommand
     }
 
     // Delegate to Ink UI for interactive mode
-    delegateToInkUi(rawUserArgs)
+    await launchInkUi(rawUserArgs)
   })
 
 sessionsCommand
@@ -1094,7 +1106,7 @@ modelCommand
     }
 
     // Delegate to Ink UI for interactive mode
-    delegateToInkUi(rawUserArgs)
+    await launchInkUi(rawUserArgs)
   })
 
 modelCommand
@@ -1555,7 +1567,7 @@ assistantCommand
       return
     }
     // Delegate to Ink UI for interactive mode
-    delegateToInkUi(rawUserArgs)
+    await launchInkUi(rawUserArgs)
   })
 
 autoModeCommand
