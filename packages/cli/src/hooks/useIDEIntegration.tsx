@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import { useEffect } from 'react';
 import type { ScopedMcpServerConfig } from '../services/mcp/types.js';

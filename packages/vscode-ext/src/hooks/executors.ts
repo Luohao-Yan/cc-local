@@ -15,6 +15,8 @@ import type {
   CommandHookHandler,
   HttpHookHandler,
   FunctionHookHandler,
+  AgentHookHandler,
+  PromptHookHandler,
 } from './types'
 
 // ─── Base Executor ─────────────────────────────────────────────────────────────
@@ -445,5 +447,255 @@ export class FunctionHookExecutor extends HookExecutor {
         duration
       )
     }
+  }
+}
+
+// ─── Agent Executor (1:1 with official extension) ───────────────────────────────
+
+export class AgentHookExecutor extends HookExecutor {
+  private outputChannel: vscode.LogOutputChannel
+
+  constructor(outputChannel: vscode.LogOutputChannel) {
+    super()
+    this.outputChannel = outputChannel
+  }
+
+  /**
+   * Execute an agent hook: sends a prompt to Claude via the CLI's
+   * built-in LLM evaluation capability.
+   *
+   * The agent hook evaluates the prompt with the specified model and
+   * returns the response. If the response contains "BLOCK" or "APPROVE"
+   * keywords, the hook result is interpreted accordingly.
+   */
+  async execute(
+    handler: AgentHookHandler,
+    context: HookContext
+  ): Promise<HookResult> {
+    const hookId = `hook_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    const startTime = Date.now()
+    const timeout = this.getTimeout(handler, 60000)
+
+    this.outputChannel.debug(`Executing agent hook with model: ${handler.model ?? 'default'}`)
+
+    try {
+      // Build the prompt with context
+      const fullPrompt = this.buildPrompt(handler.prompt, context)
+
+      // Execute the agent evaluation via CLI subprocess
+      const result = await this.evaluateWithCLI(fullPrompt, handler.model, timeout)
+
+      const duration = Date.now() - startTime
+
+      // Parse the response for block/approve directives
+      const block = this.shouldBlock(result)
+      return this.createResult(
+        hookId,
+        0,
+        true,
+        result,
+        undefined,
+        duration,
+      )
+    } catch (error) {
+      const duration = Date.now() - startTime
+      return this.createResult(
+        hookId,
+        0,
+        false,
+        undefined,
+        error instanceof Error ? error.message : String(error),
+        duration
+      )
+    }
+  }
+
+  private buildPrompt(promptTemplate: string, context: HookContext): string {
+    return promptTemplate
+      .replace(/\$\{toolName\}/g, context.toolName || '')
+      .replace(/\$\{filePath\}/g, context.filePath || '')
+      .replace(/\$\{command\}/g, context.command || '')
+      .replace(/\$\{model\}/g, context.model || '')
+      .replace(/\$\{type\}/g, context.type)
+      .replace(/\$\{context\}/g, JSON.stringify(context, null, 2))
+  }
+
+  private async evaluateWithCLI(prompt: string, model?: string, timeout?: number): Promise<string> {
+    const config = vscode.workspace.getConfiguration('cclocal')
+    const cclocalPath = config.get<string>('cclocalPath') || 'cclocal'
+
+    const args = ['--ide', '--eval-hook']
+    if (model) {
+      args.push('--model', model)
+    }
+
+    return new Promise((resolve, reject) => {
+      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
+      const proc = child_process.spawn(cclocalPath, args, {
+        cwd: workspaceRoot || process.cwd(),
+        env: { ...process.env },
+        shell: true,
+        timeout,
+      })
+
+      let stdout = ''
+      let stderr = ''
+
+      proc.stdout?.on('data', (data: Buffer) => {
+        stdout += data.toString()
+      })
+
+      proc.stderr?.on('data', (data: Buffer) => {
+        stderr += data.toString()
+      })
+
+      proc.on('error', (error: Error) => {
+        reject(error)
+      })
+
+      proc.on('close', (code: number | null) => {
+        if (code === 0) {
+          resolve(stdout.trim())
+        } else {
+          reject(new Error(stderr.trim() || `Process exited with code ${code}`))
+        }
+      })
+
+      // Send prompt via stdin
+      try {
+        proc.stdin?.write(prompt)
+        proc.stdin?.end()
+      } catch {
+        // Ignore stdin errors
+      }
+    })
+  }
+
+  private shouldBlock(response: string): boolean {
+    const lower = response.toLowerCase()
+    return lower.includes('block') && !lower.includes('approve')
+  }
+}
+
+// ─── Prompt Executor (1:1 with official extension) ─────────────────────────────
+
+export class PromptHookExecutor extends HookExecutor {
+  private outputChannel: vscode.LogOutputChannel
+
+  constructor(outputChannel: vscode.LogOutputChannel) {
+    super()
+    this.outputChannel = outputChannel
+  }
+
+  /**
+   * Execute a prompt hook: evaluates an LLM prompt and returns the response.
+   * Similar to agent hooks but simpler — no tool-use loop, just a single
+   * prompt evaluation. Used for lightweight checks/transformations.
+   */
+  async execute(
+    handler: PromptHookHandler,
+    context: HookContext
+  ): Promise<HookResult> {
+    const hookId = `hook_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    const startTime = Date.now()
+    const timeout = this.getTimeout(handler, 30000)
+
+    this.outputChannel.debug(`Executing prompt hook with model: ${handler.model ?? 'default'}`)
+
+    try {
+      const fullPrompt = this.buildPrompt(handler.prompt, context)
+
+      // Execute via CLI — same mechanism as agent but with simpler protocol
+      const result = await this.evaluateWithCLI(fullPrompt, handler.model, timeout)
+
+      const duration = Date.now() - startTime
+
+      // Parse for block directive
+      const block = this.shouldBlock(result)
+
+      return this.createResult(
+        hookId,
+        0,
+        true,
+        result,
+        undefined,
+        duration,
+      )
+    } catch (error) {
+      const duration = Date.now() - startTime
+      return this.createResult(
+        hookId,
+        0,
+        false,
+        undefined,
+        error instanceof Error ? error.message : String(error),
+        duration
+      )
+    }
+  }
+
+  private buildPrompt(promptTemplate: string, context: HookContext): string {
+    return promptTemplate
+      .replace(/\$\{toolName\}/g, context.toolName || '')
+      .replace(/\$\{filePath\}/g, context.filePath || '')
+      .replace(/\$\{command\}/g, context.command || '')
+      .replace(/\$\{model\}/g, context.model || '')
+      .replace(/\$\{type\}/g, context.type)
+      .replace(/\$\{context\}/g, JSON.stringify(context, null, 2))
+  }
+
+  private async evaluateWithCLI(prompt: string, model?: string, timeout?: number): Promise<string> {
+    const config = vscode.workspace.getConfiguration('cclocal')
+    const cclocalPath = config.get<string>('cclocalPath') || 'cclocal'
+
+    const args = ['--ide', '--eval-hook']
+    if (model) {
+      args.push('--model', model)
+    }
+
+    return new Promise((resolve, reject) => {
+      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
+      const proc = child_process.spawn(cclocalPath, args, {
+        cwd: workspaceRoot || process.cwd(),
+        env: { ...process.env },
+        shell: true,
+        timeout,
+      })
+
+      let stdout = ''
+      let stderr = ''
+
+      proc.stdout?.on('data', (data: Buffer) => {
+        stdout += data.toString()
+      })
+
+      proc.stderr?.on('data', (data: Buffer) => {
+        stderr += data.toString()
+      })
+
+      proc.on('error', (error: Error) => {
+        reject(error)
+      })
+
+      proc.on('close', (code: number | null) => {
+        if (code === 0) {
+          resolve(stdout.trim())
+        } else {
+          reject(new Error(stderr.trim() || `Process exited with code ${code}`))
+        }
+      })
+
+      try {
+        proc.stdin?.write(prompt)
+        proc.stdin?.end()
+      } catch {
+        // Ignore
+      }
+    })
+  }
+
+  private shouldBlock(response: string): boolean {
+    const lower = response.toLowerCase()
+    return lower.includes('block') && !lower.includes('approve')
   }
 }

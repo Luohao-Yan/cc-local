@@ -1374,23 +1374,38 @@ export async function createPluginFromPath(
   }
 
   // Step 3: Auto-detect optional directories in parallel
+  // When silentlyIgnoreDefaultDirs is true and manifest declares real components,
+  // check for default dirs but skip loading them (log a warning instead).
+  // Guard: empty objects/arrays are truthy but contain no entries — don't suppress.
+  const hasManifestComponents = !!(
+    (manifest.commands && (Array.isArray(manifest.commands) ? manifest.commands.length : Object.keys(manifest.commands).length)) ||
+    (manifest.agents && (Array.isArray(manifest.agents) ? manifest.agents.length : Object.keys(manifest.agents).length)) ||
+    (manifest.skills && (Array.isArray(manifest.skills) ? manifest.skills.length : Object.keys(manifest.skills).length)) ||
+    (manifest.outputStyles && (Array.isArray(manifest.outputStyles) ? manifest.outputStyles.length : Object.keys(manifest.outputStyles).length))
+  )
+  const silentIgnore = manifest.silentlyIgnoreDefaultDirs && hasManifestComponents
+
   const [
     commandsDirExists,
     agentsDirExists,
     skillsDirExists,
     outputStylesDirExists,
   ] = await Promise.all([
-    !manifest.commands ? pathExists(join(pluginPath, 'commands')) : false,
-    !manifest.agents ? pathExists(join(pluginPath, 'agents')) : false,
-    !manifest.skills ? pathExists(join(pluginPath, 'skills')) : false,
-    !manifest.outputStyles
+    silentIgnore || !manifest.commands ? pathExists(join(pluginPath, 'commands')) : false,
+    silentIgnore || !manifest.agents ? pathExists(join(pluginPath, 'agents')) : false,
+    silentIgnore || !manifest.skills ? pathExists(join(pluginPath, 'skills')) : false,
+    silentIgnore || !manifest.outputStyles
       ? pathExists(join(pluginPath, 'output-styles'))
       : false,
   ])
 
   const commandsPath = join(pluginPath, 'commands')
   if (commandsDirExists) {
-    plugin.commandsPath = commandsPath
+    if (manifest.commands && silentIgnore) {
+      logForDebugging(`Plugin "${manifest.name}": silently ignoring default "commands/" dir because manifest declares commands and silentlyIgnoreDefaultDirs is true`)
+    } else if (!manifest.commands) {
+      plugin.commandsPath = commandsPath
+    }
   }
 
   // Step 3a: Process additional command paths from manifest
@@ -1532,7 +1547,11 @@ export async function createPluginFromPath(
   // Step 4: Register agents directory if detected
   const agentsPath = join(pluginPath, 'agents')
   if (agentsDirExists) {
-    plugin.agentsPath = agentsPath
+    if (manifest.agents && silentIgnore) {
+      logForDebugging(`Plugin "${manifest.name}": silently ignoring default "agents/" dir because manifest declares agents and silentlyIgnoreDefaultDirs is true`)
+    } else if (!manifest.agents) {
+      plugin.agentsPath = agentsPath
+    }
   }
 
   // Step 4a: Process additional agent paths from manifest
@@ -1560,7 +1579,11 @@ export async function createPluginFromPath(
   // Step 4b: Register skills directory if detected
   const skillsPath = join(pluginPath, 'skills')
   if (skillsDirExists) {
-    plugin.skillsPath = skillsPath
+    if (manifest.skills && silentIgnore) {
+      logForDebugging(`Plugin "${manifest.name}": silently ignoring default "skills/" dir because manifest declares skills and silentlyIgnoreDefaultDirs is true`)
+    } else if (!manifest.skills) {
+      plugin.skillsPath = skillsPath
+    }
   }
 
   // Step 4c: Process additional skill paths from manifest
@@ -1588,7 +1611,11 @@ export async function createPluginFromPath(
   // Step 4d: Register output-styles directory if detected
   const outputStylesPath = join(pluginPath, 'output-styles')
   if (outputStylesDirExists) {
-    plugin.outputStylesPath = outputStylesPath
+    if (manifest.outputStyles && silentIgnore) {
+      logForDebugging(`Plugin "${manifest.name}": silently ignoring default "output-styles/" dir because manifest declares outputStyles and silentlyIgnoreDefaultDirs is true`)
+    } else if (!manifest.outputStyles) {
+      plugin.outputStylesPath = outputStylesPath
+    }
   }
 
   // Step 4e: Process additional output style paths from manifest

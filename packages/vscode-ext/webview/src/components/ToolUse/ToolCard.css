@@ -1,0 +1,167 @@
+/* Tool Card Styles */
+.tool-card {
+  margin: var(--app-spacing-sm) 0 var(--app-spacing-sm) var(--app-spacing-xl);
+  background: var(--app-tool-card-bg, var(--vscode-editorWidget-background));
+  border-radius: var(--app-radius-md);
+  border: 1px solid var(--app-tool-card-border, var(--app-border));
+  overflow: hidden;
+  max-width: calc(100% - var(--app-spacing-xl));
+  animation: slideIn var(--app-transition-medium);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Tool Card Header */
+.tool-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-sm);
+  padding: var(--app-spacing-sm) var(--app-spacing-md);
+  background: var(--vscode-editorGutter-background, rgba(0, 0, 0, 0.1));
+  border-bottom: 1px solid var(--app-border);
+}
+
+.tool-card-icon {
+  font-size: var(--app-font-size-md);
+  opacity: 0.8;
+}
+
+.tool-card-name {
+  font-family: var(--app-monospace-font-family);
+  font-weight: var(--app-font-weight-semibold);
+  font-size: var(--app-font-size-xs);
+  color: var(--app-tool-name-fg);
+  letter-spacing: 0.3px;
+}
+
+.tool-card-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-xs);
+  font-size: var(--app-font-size-xs);
+  color: var(--app-foreground-dim);
+}
+
+.tool-card-status-pending {
+  color: var(--app-status-warning);
+}
+
+.tool-card-status-running {
+  color: var(--app-status-running);
+}
+
+.tool-card-status-success {
+  color: var(--app-status-connected);
+}
+
+.tool-card-status-error {
+  color: var(--app-status-error);
+}
+
+/* Tool Card Body */
+.tool-card-body {
+  padding: var(--app-spacing-md);
+  font-family: var(--app-monospace-font-family);
+  font-size: var(--app-font-size-sm);
+}
+
+/* Tool Card Row */
+.tool-card-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-spacing-xs);
+  margin-bottom: var(--app-spacing-sm);
+}
+
+.tool-card-row:last-child {
+  margin-bottom: 0;
+}
+
+.tool-card-key {
+  color: var(--vscode-symbolIcon-propertyForeground, #9cdcfe);
+  font-weight: var(--app-font-weight-medium);
+  flex-shrink: 0;
+  font-size: var(--app-font-size-xs);
+}
+
+.tool-card-value {
+  color: var(--app-foreground);
+  word-break: break-word;
+  white-space: pre-wrap;
+  padding-left: var(--app-spacing-md);
+  border-left: 1px solid var(--app-border);
+  margin-left: var(--app-spacing-sm);
+}
+
+/* Collapsible */
+.tool-card-collapsible {
+  cursor: pointer;
+}
+
+.tool-card-collapsible .tool-card-header:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.tool-card-collapsible .tool-card-body {
+  display: none;
+}
+
+.tool-card-collapsible[open] .tool-card-body {
+  display: block;
+}
+
+.tool-card-collapsible summary {
+  list-style: none;
+}
+
+.tool-card-collapsible summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Expand Arrow */
+.tool-card-expand {
+  margin-left: auto;
+  transition: transform var(--app-transition-fast);
+}
+
+.tool-card-collapsible[open] .tool-card-expand {
+  transform: rotate(90deg);
+}
+
+/* Tool Result */
+.tool-card-result {
+  margin-top: var(--app-spacing-sm);
+  padding: var(--app-spacing-sm);
+  background: var(--app-code-background);
+  border-radius: var(--app-radius-sm);
+  overflow-x: auto;
+}
+
+.tool-card-result pre {
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Compact variant */
+.tool-card-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-spacing-sm);
+  padding: var(--app-spacing-xs) var(--app-spacing-md);
+  margin: var(--app-spacing-xs) 0;
+}
+
+.tool-card-compact .tool-card-name {
+  font-size: var(--app-font-size-xs);
+}

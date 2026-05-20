@@ -1,34 +1,23 @@
 /**
  * 条件工具 — 需要特定运行环境才可使用
  *
- * 这些 stub 在核心注册表中占位，与旧版 tools.ts 的条件逻辑对齐。
- * 桥接路径下由旧版 UI 提供真实实现；原生路径下返回不可用提示。
+ * These tools are now implemented in dedicated files:
+ * - enterWorktreeTool / exitWorktreeTool — worktree operations (still stub for native mode)
+ * - lspTool — LSP client integration (see lspTool.ts)
+ * - powerShellTool — Windows PowerShell (see powerShellTool.ts)
+ *
+ * This file re-exports them and provides the conditional registration logic.
  */
 
 import type { Tool, ToolContext, ToolResult } from '@cclocal/shared'
+import { lspTool } from './lspTool.js'
+import { powerShellTool } from './powerShellTool.js'
 
-/** 旧版条件判断逻辑移植 */
-function isEnvTruthy(envVar: string | boolean | undefined): boolean {
-  if (!envVar) return false
-  if (typeof envVar === 'boolean') return envVar
-  const normalized = envVar.toLowerCase().trim()
-  return ['1', 'true', 'yes', 'on'].includes(normalized)
-}
+// ---- Worktree Tools (still stubs — full git worktree integration requires deeper engine changes) ----
 
+/** Check if worktree mode is available */
 function isWorktreeModeEnabled(): boolean {
-  return true
-}
-
-function isLspToolEnabled(): boolean {
-  return isEnvTruthy(process.env.ENABLE_LSP_TOOL)
-}
-
-function isPowerShellToolEnabled(): boolean {
-  if (process.platform !== 'win32') return false
-  return process.env.USER_TYPE === 'ant'
-    ? !isEnvTruthy(process.env.CLAUDE_CODE_USE_POWERSHELL_TOOL) ||
-      isEnvTruthy(process.env.CLAUDE_CODE_USE_POWERSHELL_TOOL)
-    : isEnvTruthy(process.env.CLAUDE_CODE_USE_POWERSHELL_TOOL)
+  return true // always register the tools, even if they stub
 }
 
 function stubExecute(name: string): (input: unknown, context: ToolContext) => Promise<ToolResult> {
@@ -77,47 +66,19 @@ export const exitWorktreeTool: Tool = {
   execute: stubExecute('ExitWorktreeTool'),
 }
 
-export const lspTool: Tool = {
-  name: 'lsp',
-  description:
-    'Language Server Protocol operations: go-to-definition, find-references, hover, document symbols, etc.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      operation: {
-        type: 'string',
-        description: 'The LSP operation to perform.',
-      },
-      file_path: {
-        type: 'string',
-        description: 'Path to the file.',
-      },
-      line: { type: 'number', description: 'Line number (0-indexed).' },
-      character: { type: 'number', description: 'Character offset (0-indexed).' },
-    },
-    required: ['operation', 'file_path'],
-  },
-  execute: stubExecute('LSPTool'),
+// Re-export the real implementations
+export { lspTool, powerShellTool }
+
+/** Check if LSP tool should be enabled */
+function isLspToolEnabled(): boolean {
+  // LSP tool is always available now (no feature flag needed)
+  return true
 }
 
-export const powerShellTool: Tool = {
-  name: 'powershell',
-  description: 'Execute PowerShell commands on Windows.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      command: {
-        type: 'string',
-        description: 'The PowerShell command to execute.',
-      },
-      timeout: {
-        type: 'number',
-        description: 'Timeout in milliseconds.',
-      },
-    },
-    required: ['command'],
-  },
-  execute: stubExecute('PowerShellTool'),
+/** Check if PowerShell tool should be enabled */
+function isPowerShellToolEnabled(): boolean {
+  if (process.platform !== 'win32') return false
+  return true // always enabled on Windows now
 }
 
 /** 返回满足当前运行条件的条件工具列表 */

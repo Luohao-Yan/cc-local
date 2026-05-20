@@ -117,12 +117,13 @@ export function* normalizeMessage(message: Message): Generator<SDKMessage> {
         }
       }
       return
-    case 'progress':
+    case 'progress': {
+      const d = message.data as any
       if (
-        message.data.type === 'agent_progress' ||
-        message.data.type === 'skill_progress'
+        d.type === 'agent_progress' ||
+        d.type === 'skill_progress'
       ) {
-        for (const _ of normalizeMessages([message.data.message])) {
+        for (const _ of normalizeMessages([d.message])) {
           switch (_.type) {
             case 'assistant':
               // Skip empty messages (e.g., "(no content)") that shouldn't be output to SDK
@@ -155,8 +156,8 @@ export function* normalizeMessage(message: Message): Generator<SDKMessage> {
           }
         }
       } else if (
-        message.data.type === 'bash_progress' ||
-        message.data.type === 'powershell_progress'
+        d.type === 'bash_progress' ||
+        d.type === 'powershell_progress'
       ) {
         // Filter bash progress to send only one per minute
         // Only emit for Claude Code Remote for now
@@ -190,16 +191,17 @@ export function* normalizeMessage(message: Message): Generator<SDKMessage> {
             type: 'tool_progress',
             tool_use_id: message.toolUseID,
             tool_name:
-              message.data.type === 'bash_progress' ? 'Bash' : 'PowerShell',
+              d.type === 'bash_progress' ? 'Bash' : 'PowerShell',
             parent_tool_use_id: message.parentToolUseID,
-            elapsed_time_seconds: message.data.elapsedTimeSeconds,
-            task_id: message.data.taskId,
+            elapsed_time_seconds: d.elapsedTimeSeconds,
+            task_id: d.taskId,
             session_id: getSessionId(),
             uuid: message.uuid,
           }
         }
       }
       break
+    }
     case 'user':
       for (const _ of normalizeMessages([message])) {
         yield {

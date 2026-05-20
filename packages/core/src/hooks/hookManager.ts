@@ -160,7 +160,7 @@ function execAsync(
       reject(err)
     }, timeout)
 
-    child.on('close', (code) => {
+    child.on('close', (code: any) => {
       clearTimeout(timer)
       if (code === 0) {
         resolve({ stdout, stderr, status: 0 })
@@ -173,7 +173,7 @@ function execAsync(
       }
     })
 
-    child.on('error', (error) => {
+    child.on('error', (error: any) => {
       clearTimeout(timer)
       const err: any = error
       err.status = 1

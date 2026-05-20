@@ -641,6 +641,9 @@ export async function compactConversation(
       ...hookMessages,
     ])
 
+    // Store post-compaction token count in boundary metadata for UI display
+    boundaryMarker.compactMetadata.postTokens = truePostCompactTokenCount
+
     // Extract compaction API usage metrics
     const compactionUsage = getTokenUsage(summaryResponse)
 
@@ -734,6 +737,15 @@ export async function compactConversation(
     ]
       .filter(Boolean)
       .join('\n')
+
+    // Emit final progress with both pre and post token counts
+    context.onCompactProgress?.({
+      type: 'compact_progress',
+      preTokens: preCompactTokenCount,
+      postTokens: truePostCompactTokenCount,
+      streamedTokens: 0,
+      estimatedTotal: 0,
+    })
 
     return {
       boundaryMarker,
@@ -987,6 +999,16 @@ export async function partialCompactConversation(
     ])
     const compactionUsage = getTokenUsage(summaryResponse)
 
+    // Compute true post-compact size for boundary metadata display
+    const truePartialPostCompactTokenCount = roughTokenCountEstimationForMessages([
+      boundaryMarker,
+      ...summaryMessages,
+      ...messagesToKeep.filter(m => m.type !== 'progress'),
+      ...postCompactFileAttachments,
+      ...hookMessages,
+    ])
+    boundaryMarker.compactMetadata.postTokens = truePartialPostCompactTokenCount
+
     logEvent('tengu_partial_compact', {
       preCompactTokenCount,
       postCompactTokenCount,
@@ -1073,6 +1095,15 @@ export async function partialCompactConversation(
       },
       context.abortController.signal,
     )
+
+    // Emit final progress with both pre and post token counts
+    context.onCompactProgress?.({
+      type: 'compact_progress',
+      preTokens: preCompactTokenCount,
+      postTokens: truePartialPostCompactTokenCount,
+      streamedTokens: 0,
+      estimatedTotal: 0,
+    })
 
     // 'from': prefix-preserving → boundary; 'up_to': suffix → last summary
     const anchorUuid =
@@ -1326,6 +1357,15 @@ async function streamCompactSummary({
       })
       const streamIter = streamingGen[Symbol.asyncIterator]()
       let next = await streamIter.next()
+      let totalStreamedChars = 0
+      // Estimate total output tokens from the model's max output config
+      const estimatedOutputTokens = Math.min(
+        COMPACT_MAX_OUTPUT_TOKENS,
+        getMaxOutputTokensForModel(context.options.mainLoopModel),
+      )
+      // Throttle progress events to avoid excessive re-renders (max once per 200ms)
+      let lastProgressEmitTime = 0
+      const PROGRESS_THROTTLE_MS = 200
 
       while (!next.done) {
         const event = next.value
@@ -1346,7 +1386,21 @@ async function streamCompactSummary({
           event.event.delta.type === 'text_delta'
         ) {
           const charactersStreamed = event.event.delta.text.length
+          totalStreamedChars += charactersStreamed
           context.setResponseLength?.(length => length + charactersStreamed)
+          // Emit progress event with throttle: estimate tokens at ~4 chars/token
+          const now = Date.now()
+          if (now - lastProgressEmitTime >= PROGRESS_THROTTLE_MS) {
+            lastProgressEmitTime = now
+            const streamedTokens = Math.ceil(totalStreamedChars / 4)
+            context.onCompactProgress?.({
+              type: 'compact_progress',
+              preTokens: preCompactTokenCount,
+              postTokens: 0,
+              streamedTokens,
+              estimatedTotal: estimatedOutputTokens,
+            })
+          }
         }
 
         if (event.type === 'assistant') {
@@ -1354,6 +1408,18 @@ async function streamCompactSummary({
         }
 
         next = await streamIter.next()
+      }
+
+      // Emit final progress update (unthrottled) to ensure last state is shown
+      if (totalStreamedChars > 0) {
+        const finalStreamedTokens = Math.ceil(totalStreamedChars / 4)
+        context.onCompactProgress?.({
+          type: 'compact_progress',
+          preTokens: preCompactTokenCount,
+          postTokens: 0,
+          streamedTokens: finalStreamedTokens,
+          estimatedTotal: estimatedOutputTokens,
+        })
       }
 
       if (response) {

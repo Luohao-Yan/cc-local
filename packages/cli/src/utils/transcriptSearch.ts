@@ -84,7 +84,7 @@ function computeSearchText(msg: RenderableMessage): string {
       // (AttachmentMessage.tsx <Ansi>{m.content}</Ansi>). Visible but
       // unsearchable without this — [ dump finds it, / doesn't.
       if (msg.attachment.type === 'relevant_memories') {
-        raw = msg.attachment.memories.map(m => m.content).join('\n')
+        raw = (msg.attachment as any).memories.map((m: any) => m.content).join('\n')
       } else if (
         // Mid-turn prompts — queued while an agent is running. Render via
         // UserTextMessage (AttachmentMessage.tsx:~348). stickyPromptText
@@ -93,11 +93,11 @@ function computeSearchText(msg: RenderableMessage): string {
         msg.attachment.commandMode !== 'task-notification' &&
         !msg.attachment.isMeta
       ) {
-        const p = msg.attachment.prompt
+        const p = msg.attachment.prompt as any
         raw =
           typeof p === 'string'
             ? p
-            : p.flatMap(b => (b.type === 'text' ? [b.text] : [])).join('\n')
+            : (p as any[]).flatMap((b: any) => (b.type === 'text' ? [b.text] : [])).join('\n')
       }
       break
     }
@@ -106,7 +106,7 @@ function computeSearchText(msg: RenderableMessage): string {
       // (collapseReadSearch.ts); their content is visible in transcript mode
       // via CollapsedReadSearchContent, so mirror it here for / search.
       if (msg.relevantMemories) {
-        raw = msg.relevantMemories.map(m => m.content).join('\n')
+        raw = (msg.relevantMemories as any[]).map((m: any) => m.content).join('\n')
       }
       break
     }

@@ -703,7 +703,7 @@ async function computeDiffStatsForFile(
 
     // Compute the diff
     const changes = diffLines(originalContent ?? '', backupContent ?? '')
-    changes.forEach(c => {
+    changes.forEach((c: any) => {
       if (c.added) {
         insertions += c.count || 0
       }

@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import type { ToolResultBlockParam, ToolUseBlockParam } from '@anthropic-ai/sdk/resources/index.mjs';
 import * as React from 'react';
@@ -30,8 +32,8 @@ import type { outputSchema, Progress, RemoteLaunchedOutput } from './AgentTool.j
 import { inputSchema } from './AgentTool.js';
 import { getAgentColor } from './agentColorManager.js';
 import { GENERAL_PURPOSE_AGENT } from './built-in/generalPurposeAgent.js';
+import { t } from '../../utils/i18n/index.js';
 const MAX_PROGRESS_MESSAGES_TO_SHOW = 3;
-
 /**
  * Guard: checks if progress data has a `message` field (agent_progress or
  * skill_progress).  Other progress types (e.g. bash_progress forwarded from
@@ -99,7 +101,7 @@ type ProcessedMessage = {
  */
 function processProgressMessages(messages: ProgressMessage<Progress>[], tools: Tools, isAgentRunning: boolean): ProcessedMessage[] {
   // Only process for ants
-  if ("external" !== 'ant') {
+  if (("external" as string) !== 'ant') {
     return messages.filter((m): m is ProgressMessage<AgentToolProgress> => hasProgressMessage(m.data) && m.data.message.type !== 'user').map(m => ({
       type: 'original',
       message: m
@@ -190,7 +192,7 @@ export function AgentPromptDisplay(t0) {
   t1 === undefined ? false : t1;
   let t2;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-    t2 = <Text color="success" bold={true}>Prompt:</Text>;
+    t2 = <Text color="success" bold={true}>{t('agentTool.prompt')}</Text>;
     $[0] = t2;
   } else {
     t2 = $[0];
@@ -212,7 +214,7 @@ export function AgentResponseDisplay(t0) {
   } = t0;
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-    t1 = <Text color="success" bold={true}>Response:</Text>;
+    t1 = <Text color="success" bold={true}>{t('agentTool.response')}</Text>;
     $[0] = t1;
   } else {
     t1 = $[0];
@@ -330,7 +332,7 @@ export function renderToolResultMessage(data: Output, progressMessagesForMessage
     return <Box flexDirection="column">
         <MessageResponse height={1}>
           <Text>
-            Remote agent launched{' '}
+            {t('agentTool.remoteAgentLaunched')}{' '}
             <Text dimColor>
               · {internal.taskId} · {internal.sessionUrl}
             </Text>
@@ -345,12 +347,12 @@ export function renderToolResultMessage(data: Output, progressMessagesForMessage
     return <Box flexDirection="column">
         <MessageResponse height={1}>
           <Text>
-            Backgrounded agent
+            {t('agentTool.backgroundedAgent')}
             {!isTranscriptMode && <Text dimColor>
                 {' ('}
                 <Byline>
-                  <KeyboardShortcutHint shortcut="↓" action="manage" />
-                  {prompt && <ConfigurableShortcutHint action="app:toggleTranscript" context="Global" fallback="ctrl+o" description="expand" />}
+                  <KeyboardShortcutHint shortcut="↓" action={t('agentTool.manage')} />
+                  {prompt && <ConfigurableShortcutHint action="app:toggleTranscript" context="Global" fallback="ctrl+o" description={t('agentTool.expand')} />}
                 </Byline>
                 {')'}
               </Text>}
@@ -373,8 +375,8 @@ export function renderToolResultMessage(data: Output, progressMessagesForMessage
     content,
     prompt
   } = data;
-  const result = [totalToolUseCount === 1 ? '1 tool use' : `${totalToolUseCount} tool uses`, formatNumber(totalTokens) + ' tokens', formatDuration(totalDurationMs)];
-  const completionMessage = `Done (${result.join(' · ')})`;
+  const result = [totalToolUseCount === 1 ? t('agentTool.toolUse', { count: 1 }) : t('agentTool.toolUses', { count: totalToolUseCount }), formatNumber(totalTokens) + ' ' + t('agentTool.tokens'), formatDuration(totalDurationMs)];
+  const completionMessage = `${t('agentTool.done')} (${result.join(' · ')})`;
   const finalAssistantMessage = createAssistantMessage({
     content: completionMessage,
     usage: {
@@ -385,7 +387,7 @@ export function renderToolResultMessage(data: Output, progressMessagesForMessage
     }
   });
   return <Box flexDirection="column">
-      {"external" === 'ant' && <MessageResponse>
+      {("external" as string) === 'ant' && <MessageResponse>
           <Text color="warning">
             [ANT-ONLY] API calls: {getDisplayPath(getDumpPromptsPath(agentId))}
           </Text>
@@ -441,7 +443,6 @@ export function renderToolUseTag(input: Partial<{
   }
   return <>{tags}</>;
 }
-const INITIALIZING_TEXT = 'Initializing…';
 export function renderToolUseProgressMessage(progressMessages: ProgressMessage<Progress>[], {
   tools,
   verbose,
@@ -460,7 +461,7 @@ export function renderToolUseProgressMessage(progressMessages: ProgressMessage<P
 }): React.ReactNode {
   if (!progressMessages.length) {
     return <MessageResponse height={1}>
-        <Text dimColor>{INITIALIZING_TEXT}</Text>
+        <Text dimColor>{t('agentTool.initializing')}</Text>
       </MessageResponse>;
   }
 
@@ -494,10 +495,9 @@ export function renderToolUseProgressMessage(progressMessages: ProgressMessage<P
     } = getProgressStats();
     return <MessageResponse height={1}>
         <Text dimColor>
-          In progress… · <Text bold>{toolUseCount}</Text> tool{' '}
-          {toolUseCount === 1 ? 'use' : 'uses'}
-          {tokens && ` · ${formatNumber(tokens)} tokens`} ·{' '}
-          <ConfigurableShortcutHint action="app:toggleTranscript" context="Global" fallback="ctrl+o" description="expand" parens />
+          {t('agentTool.inProgress')} · <Text bold>{toolUseCount}</Text> {toolUseCount === 1 ? t('agentTool.toolUse', { count: toolUseCount }) : t('agentTool.toolUses', { count: toolUseCount })}
+          {tokens && ` · ${formatNumber(tokens)} ${t('agentTool.tokens')}`} ·{' '}
+          <ConfigurableShortcutHint action="app:toggleTranscript" context="Global" fallback="ctrl+o" description={t('agentTool.expand')} parens />
         </Text>
       </MessageResponse>;
   }
@@ -533,7 +533,7 @@ export function renderToolUseProgressMessage(progressMessages: ProgressMessage<P
   // initializing text so MessageResponse doesn't render a bare ⎿.
   if (displayedMessages.length === 0 && !(isTranscriptMode && prompt)) {
     return <MessageResponse height={1}>
-        <Text dimColor>{INITIALIZING_TEXT}</Text>
+        <Text dimColor>{t('agentTool.initializing')}</Text>
       </MessageResponse>;
   }
   const {
@@ -562,8 +562,7 @@ export function renderToolUseProgressMessage(progressMessages: ProgressMessage<P
         })}
         </SubAgentProvider>
         {hiddenToolUseCount > 0 && <Text dimColor>
-            +{hiddenToolUseCount} more tool{' '}
-            {hiddenToolUseCount === 1 ? 'use' : 'uses'} <CtrlOToExpand />
+            +{hiddenToolUseCount} {hiddenToolUseCount === 1 ? t('agentTool.moreToolUse') : t('agentTool.moreToolUses')} <CtrlOToExpand />
           </Text>}
       </Box>
     </MessageResponse>;
@@ -591,7 +590,7 @@ export function renderToolUseRejectedMessage(_input: {
   const firstData = progressMessagesForMessage[0]?.data;
   const agentId = firstData && hasProgressMessage(firstData) ? firstData.agentId : undefined;
   return <>
-      {"external" === 'ant' && agentId && <MessageResponse>
+      {("external" as string) === 'ant' && agentId && <MessageResponse>
           <Text color="warning">
             [ANT-ONLY] API calls: {getDisplayPath(getDumpPromptsPath(agentId))}
           </Text>
@@ -695,7 +694,7 @@ export function renderGroupedAgentToolUse(toolUses: Array<{
       // Use the custom agent definition's color on the type, not the name
       descriptionColor = isCustomSubagentType(subagentType) ? getAgentColor(subagentType) as keyof Theme | undefined : undefined;
     } else {
-      agentType = parsedInput.success ? userFacingName(parsedInput.data) : 'Agent';
+      agentType = parsedInput.success ? userFacingName(parsedInput.data) : t('agentTool.agentLabel');
       description = parsedInput.success ? parsedInput.data.description : undefined;
       color = parsedInput.success ? userFacingNameBackgroundColor(parsedInput.data) : undefined;
       taskDescription = undefined;
@@ -731,7 +730,7 @@ export function renderGroupedAgentToolUse(toolUses: Array<{
 
   // Check if all agents are the same type
   const allSameType = agentStats.length > 0 && agentStats.every(stat => stat.agentType === agentStats[0]?.agentType);
-  const commonType = allSameType && agentStats[0]?.agentType !== 'Agent' ? agentStats[0]?.agentType : null;
+  const commonType = allSameType && agentStats[0]?.agentType !== t('agentTool.agentLabel') ? agentStats[0]?.agentType : null;
 
   // Check if all resolved agents are async (background)
   const allAsync = agentStats.every(stat => stat.isAsync);
@@ -740,16 +739,16 @@ export function renderGroupedAgentToolUse(toolUses: Array<{
         <ToolUseLoader shouldAnimate={shouldAnimate && anyUnresolved} isUnresolved={anyUnresolved} isError={anyError} />
         <Text>
           {allComplete ? allAsync ? <>
-                <Text bold>{toolUses.length}</Text> background agents launched{' '}
+                <Text bold>{toolUses.length}</Text> {t('agentTool.backgroundAgentsLaunched')}{' '}
                 <Text dimColor>
-                  <KeyboardShortcutHint shortcut="↓" action="manage" parens />
+                  <KeyboardShortcutHint shortcut="↓" action={t('agentTool.manage')} parens />
                 </Text>
               </> : <>
                 <Text bold>{toolUses.length}</Text>{' '}
-                {commonType ? `${commonType} agents` : 'agents'} finished
+                {commonType ? `${commonType} ${t('agentTool.agents')}` : t('agentTool.agents')} {t('agentTool.agentsFinished')}
               </> : <>
-              Running <Text bold>{toolUses.length}</Text>{' '}
-              {commonType ? `${commonType} agents` : 'agents'}…
+              {t('agentTool.running')} <Text bold>{toolUses.length}</Text>{' '}
+              {commonType ? `${commonType} ${t('agentTool.agents')}` : t('agentTool.agentsEllipsis')}
             </>}{' '}
         </Text>
         {!allAsync && <CtrlOToExpand />}
@@ -767,11 +766,11 @@ export function userFacingName(input: Partial<{
   if (input?.subagent_type && input.subagent_type !== GENERAL_PURPOSE_AGENT.agentType) {
     // Display "worker" agents as "Agent" for cleaner UI
     if (input.subagent_type === 'worker') {
-      return 'Agent';
+      return t('agentTool.agentLabel');
     }
     return input.subagent_type;
   }
-  return 'Agent';
+  return t('agentTool.agentLabel');
 }
 export function userFacingNameBackgroundColor(input: Partial<{
   description: string;

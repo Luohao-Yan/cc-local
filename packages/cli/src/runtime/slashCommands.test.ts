@@ -98,9 +98,9 @@ describe('slashCommands', () => {
     })
 
     it('clears messages on /clear', async () => {
-      mockCtx.messages.push({ role: 'user', content: 'test' })
+      mockCtx!.messages!.push({ role: 'user', content: 'test' })
       await handleSlashCommand('/clear', mockCtx)
-      expect(mockCtx.messages.length).toBe(0)
+      expect(mockCtx!.messages!.length).toBe(0)
     })
 
     it('calls updateSession on /rename', async () => {

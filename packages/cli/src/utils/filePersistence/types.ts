@@ -6,18 +6,21 @@ export type TurnStartTime = number
 
 export type PersistedFile = {
   relativePath: string
+  filename?: string
   fileId?: string
   size: number
 }
 
 export type FailedPersistence = {
   relativePath: string
+  filename?: string
   error: string
 }
 
 export type FilesPersistedEventData = {
   persisted: PersistedFile[]
   failed: FailedPersistence[]
+  files?: unknown[]
   totalFiles: number
   totalSize: number
   durationMs: number

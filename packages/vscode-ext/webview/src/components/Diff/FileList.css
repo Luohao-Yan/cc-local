@@ -1,0 +1,82 @@
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--app-border);
+  border-radius: var(--corner-radius-medium);
+  overflow: hidden;
+}
+
+.file-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-small);
+  padding: var(--app-spacing-small) var(--app-spacing-medium);
+  background: var(--app-background);
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.1s ease;
+}
+
+.file-list-item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.file-list-item.selected {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+}
+
+.file-list-status {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.file-list-status-added {
+  background: var(--vscode-gitDecoration-addedResourceForeground);
+  color: white;
+}
+
+.file-list-status-modified {
+  background: var(--vscode-gitDecoration-modifiedResourceForeground);
+  color: white;
+}
+
+.file-list-status-deleted {
+  background: var(--vscode-gitDecoration-deletedResourceForeground);
+  color: white;
+}
+
+.file-list-status-renamed {
+  background: var(--vscode-gitDecoration-renamedResourceForeground);
+  color: white;
+}
+
+.file-list-path {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--app-monospace-font-family);
+}
+
+.file-list-stats {
+  display: flex;
+  gap: var(--app-spacing-medium);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.file-list-additions {
+  color: var(--vscode-gitDecoration-addedResourceForeground);
+}
+
+.file-list-deletions {
+  color: var(--vscode-gitDecoration-deletedResourceForeground);
+}

@@ -852,7 +852,7 @@ export async function loadMcpbFile(
   // Parse and validate manifest
   const manifest = await parseAndValidateManifestFromBytes(manifestData)
   logForDebugging(
-    `MCPB manifest: ${manifest.name} v${manifest.version} by ${manifest.author.name}`,
+    `MCPB manifest: ${manifest.name} v${manifest.version} by ${(manifest.author as any).name}`,
   )
 
   // Check if manifest has server config

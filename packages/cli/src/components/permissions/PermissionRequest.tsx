@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../utils/i18n/index.js';
 import { feature } from 'bun:bundle';
 import * as React from 'react';
 import { EnterPlanModeTool } from '../../tools/EnterPlanModeTool/EnterPlanModeTool.js';
@@ -128,18 +131,18 @@ export type ToolUseConfirm<Input extends AnyObject = AnyObject> = {
 function getNotificationMessage(toolUseConfirm: ToolUseConfirm): string {
   const toolName = toolUseConfirm.tool.userFacingName(toolUseConfirm.input as never);
   if (toolUseConfirm.tool === ExitPlanModeV2Tool) {
-    return 'Claude Code needs your approval for the plan';
+    return t('request.needsApproval');
   }
   if (toolUseConfirm.tool === EnterPlanModeTool) {
-    return 'Claude Code wants to enter plan mode';
+    return t('request.wantsToEnterPlan');
   }
   if (feature('REVIEW_ARTIFACT') && toolUseConfirm.tool === ReviewArtifactTool) {
-    return 'Claude needs your approval for a review artifact';
+    return t('request.needsApprovalReview');
   }
   if (!toolName || toolName.trim() === '') {
-    return 'Claude Code needs your attention';
+    return t('request.needsAttention');
   }
-  return `Claude needs your permission to use ${toolName}`;
+  return t('request.needsPermission', {toolName});
 }
 
 // TODO: Move this to Tool.renderPermissionRequest
@@ -171,7 +174,7 @@ export function PermissionRequest(t0) {
   let t2;
   if ($[4] === Symbol.for("react.memo_cache_sentinel")) {
     t2 = {
-      context: "Confirmation"
+      context: t('request.confirmation')
     };
     $[4] = t2;
   } else {

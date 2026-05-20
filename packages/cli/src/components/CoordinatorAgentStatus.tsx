@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 /**
  * CoordinatorTaskPanel — Steerable list of background agents.

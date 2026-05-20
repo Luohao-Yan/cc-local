@@ -236,7 +236,7 @@ export class AuthManager implements vscode.Disposable {
    */
   private async loginBedrock(): Promise<boolean> {
     // Show Bedrock configuration
-    const bedrockAuth = this.providers.get('bedrock') as BedrockAuth
+    const bedrockAuth = this.providers.get('bedrock') as unknown as BedrockAuth
     const configured = await bedrockAuth.configure()
     if (configured) {
       return this.checkAuthStatus().then(s => s.status === 'authenticated')
@@ -248,7 +248,7 @@ export class AuthManager implements vscode.Disposable {
    * Login with GCP Vertex AI
    */
   private async loginVertex(): Promise<boolean> {
-    const vertexAuth = this.providers.get('vertex') as VertexAuth
+    const vertexAuth = this.providers.get('vertex') as unknown as VertexAuth
     const configured = await vertexAuth.configure()
     if (configured) {
       return this.checkAuthStatus().then(s => s.status === 'authenticated')

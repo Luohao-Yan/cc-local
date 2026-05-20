@@ -6,6 +6,7 @@ import type { Step } from '../../projectOnboardingState.js';
 import { formatCreditAmount, getCachedReferrerReward } from '../../services/api/referral.js';
 import type { LogOption } from '../../types/logs.js';
 import { getCwd } from '../../utils/cwd.js';
+import { isEnvTruthy } from '../../utils/envUtils.js';
 import { formatRelativeTimeAgo } from '../../utils/format.js';
 import { t } from '../../utils/i18n/index.js';
 import type { FeedConfig, FeedLine } from './Feed.js';
@@ -27,7 +28,7 @@ export function createRecentActivityFeed(activities: LogOption[]): FeedConfig {
 }
 export function createWhatsNewFeed(releaseNotes: string[]): FeedConfig {
   const lines: FeedLine[] = releaseNotes.map(note => {
-    if ("external" === 'ant') {
+    if (("external" as string) === 'ant') {
       const match = note.match(/^(\d+\s+\w+\s+ago)\s+(.+)$/);
       if (match) {
         return {
@@ -40,9 +41,9 @@ export function createWhatsNewFeed(releaseNotes: string[]): FeedConfig {
       text: note
     };
   });
-  const emptyMessage = "external" === 'ant' ? 'Unable to fetch latest claude-cli-internal commits' : 'Check the Claude Code changelog for updates';
+  const emptyMessage = ("external" as string) === 'ant' ? 'Unable to fetch latest claude-cli-internal commits' : 'Check the Claude Code changelog for updates';
   return {
-    title: "external" === 'ant' ? "What's new [ANT-ONLY: Latest CC commits]" : t('welcome.whatsNew'),
+    title: ("external" as string) === 'ant' ? "What's new [ANT-ONLY: Latest CC commits]" : t('welcome.whatsNew'),
     lines,
     footer: lines.length > 0 ? t('welcome.releaseNotesForMore') : undefined,
     emptyMessage
@@ -61,7 +62,7 @@ export function createProjectOnboardingFeed(steps: Step[]): FeedConfig {
       text: `${checkmark}${text}`
     };
   });
-  const warningText = getCwd() === homedir() ? 'Note: You have launched claude in your home directory. For the best experience, launch it in a project directory instead.' : undefined;
+  const warningText = getCwd() === homedir() && !isEnvTruthy(process.env.CLAUDE_CODE_HIDE_CWD) ? 'Note: You have launched claude in your home directory. For the best experience, launch it in a project directory instead.' : undefined;
   if (warningText) {
     lines.push({
       text: warningText

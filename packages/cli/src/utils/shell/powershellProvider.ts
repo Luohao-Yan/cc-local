@@ -1,15 +1,25 @@
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { join as posixJoin } from 'path/posix'
+import { isEnvTruthy } from '../envUtils.js'
 import { getSessionEnvVars } from '../sessionEnvVars.js'
 import type { ShellProvider } from './shellProvider.js'
 
 /**
  * PowerShell invocation flags + command. Shared by the provider's getSpawnArgs
  * and the hook spawn path in hooks.ts so the flag set stays in one place.
+ *
+ * When CLAUDE_CODE_POWERSHELL_RESPECT_EXECUTION_POLICY=1 is set, we omit
+ * -ExecutionPolicy Bypass — the user's system policy (e.g. RemoteSigned)
+ * is respected instead.
  */
 export function buildPowerShellArgs(cmd: string): string[] {
-  return ['-NoProfile', '-NonInteractive', '-Command', cmd]
+  const args = ['-NoProfile', '-NonInteractive']
+  if (!isEnvTruthy(process.env.CLAUDE_CODE_POWERSHELL_RESPECT_EXECUTION_POLICY)) {
+    args.push('-ExecutionPolicy', 'Bypass')
+  }
+  args.push('-Command', cmd)
+  return args
 }
 
 /**
@@ -88,6 +98,9 @@ export function createPowerShellProvider(shellPath: string): ShellProvider {
             `'${shellPath.replace(/'/g, `'\\''`)}'`,
             '-NoProfile',
             '-NonInteractive',
+            ...(!isEnvTruthy(process.env.CLAUDE_CODE_POWERSHELL_RESPECT_EXECUTION_POLICY)
+              ? ['-ExecutionPolicy', 'Bypass']
+              : []),
             '-EncodedCommand',
             encodePowerShellCommand(psCommand),
           ].join(' ')

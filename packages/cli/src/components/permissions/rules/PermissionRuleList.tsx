@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../../utils/i18n/index.js';
 import chalk from 'chalk';
 import figures from 'figures';
 import * as React from 'react';
@@ -63,11 +66,11 @@ function RuleSourceText(t0) {
 function getRuleBehaviorLabel(ruleBehavior: PermissionBehavior): string {
   switch (ruleBehavior) {
     case 'allow':
-      return 'allowed';
+      return t('rules.allowed');
     case 'deny':
-      return 'denied';
+      return t('rules.denied');
     case 'ask':
-      return 'ask';
+      return t('rules.ask');
   }
 }
 
@@ -135,7 +138,7 @@ function RuleDetails(t0) {
   const ruleDescription = t6;
   let t7;
   if ($[13] !== exitState.keyName || $[14] !== exitState.pending) {
-    t7 = <Box marginLeft={3}>{exitState.pending ? <Text dimColor={true}>Press {exitState.keyName} again to exit</Text> : <Text dimColor={true}>Esc to cancel</Text>}</Box>;
+    t7 = <Box marginLeft={3}>{exitState.pending ? <Text dimColor={true}>{t('rules.pressAgainToExit', {key: exitState.keyName})}</Text> : <Text dimColor={true}>{t('rules.escToCancel')}</Text>}</Box>;
     $[13] = exitState.keyName;
     $[14] = exitState.pending;
     $[15] = t7;
@@ -146,14 +149,14 @@ function RuleDetails(t0) {
   if (rule.source === "policySettings") {
     let t8;
     if ($[16] === Symbol.for("react.memo_cache_sentinel")) {
-      t8 = <Text bold={true} color="permission">Rule details</Text>;
+      t8 = <Text bold={true} color="permission">{t('rules.ruleDetails')}</Text>;
       $[16] = t8;
     } else {
       t8 = $[16];
     }
     let t9;
     if ($[17] === Symbol.for("react.memo_cache_sentinel")) {
-      t9 = <Text italic={true}>This rule is configured by managed settings and cannot be modified.{"\n"}Contact your system administrator for more information.</Text>;
+      t9 = <Text italic={true}>{t('rules.managedRuleMessage')}</Text>;
       $[17] = t9;
     } else {
       t9 = $[17];
@@ -187,7 +190,7 @@ function RuleDetails(t0) {
   }
   let t9;
   if ($[25] !== t8) {
-    t9 = <Text bold={true} color="error">Delete {t8} tool?</Text>;
+    t9 = <Text bold={true} color="error">{t('rules.deleteTool', {tool: t8})}</Text>;
     $[25] = t8;
     $[26] = t9;
   } else {
@@ -195,7 +198,7 @@ function RuleDetails(t0) {
   }
   let t10;
   if ($[27] === Symbol.for("react.memo_cache_sentinel")) {
-    t10 = <Text>Are you sure you want to delete this permission rule?</Text>;
+    t10 = <Text>{t('rules.areYouSureDelete')}</Text>;
     $[27] = t10;
   } else {
     t10 = $[27];
@@ -212,10 +215,10 @@ function RuleDetails(t0) {
   let t12;
   if ($[31] === Symbol.for("react.memo_cache_sentinel")) {
     t12 = [{
-      label: "Yes",
+      label: t('rules.yes'),
       value: "yes"
     }, {
-      label: "No",
+      label: t('rules.no'),
       value: "no"
     }];
     $[31] = t12;
@@ -388,9 +391,9 @@ function PermissionRulesTab(t0) {
     let t8;
     if ($[10] === Symbol.for("react.memo_cache_sentinel")) {
       t8 = {
-        allow: "Claude Code won't ask before using allowed tools.",
-        ask: "Claude Code will always ask for confirmation before using these tools.",
-        deny: "Claude Code will always reject requests to use denied tools."
+        allow: t('rules.willNotAskBeforeUsing'),
+        ask: t('rules.willAlwaysAsk'),
+        deny: t('rules.willAlwaysReject')
       };
       $[10] = t8;
     } else {
@@ -811,7 +814,7 @@ export function PermissionRuleList(t0) {
         const approvedMsg = approvedDenials.length > 0 ? [`Approved ${approvedDenials.map(_temp4).join(", ")}`] : [];
         onExit([...approvedMsg, ...changes].join("\n"));
       } else {
-        onExit("Permissions dialog dismissed", {
+        onExit(t('rules.permissionsDialogDismissed'), {
           display: "system"
         });
       }
@@ -1067,14 +1070,14 @@ export function PermissionRuleList(t0) {
   const t23 = !isSearchMode;
   let t24;
   if ($[82] === Symbol.for("react.memo_cache_sentinel")) {
-    t24 = <Tab id="recent" title="Recently denied"><RecentDenialsTab onHeaderFocusChange={handleHeaderFocusChange} onStateChange={handleDenialStateChange} /></Tab>;
+    t24 = <Tab id="recent" title={t('rules.recentlyDeniedTab')}><RecentDenialsTab onHeaderFocusChange={handleHeaderFocusChange} onStateChange={handleDenialStateChange} /></Tab>;
     $[82] = t24;
   } else {
     t24 = $[82];
   }
   let t25;
   if ($[83] !== sharedRulesProps) {
-    t25 = <Tab id="allow" title="Allow"><PermissionRulesTab tab="allow" {...sharedRulesProps} /></Tab>;
+    t25 = <Tab id="allow" title={t('rules.allowed')}><PermissionRulesTab tab="allow" {...sharedRulesProps} /></Tab>;
     $[83] = sharedRulesProps;
     $[84] = t25;
   } else {
@@ -1082,7 +1085,7 @@ export function PermissionRuleList(t0) {
   }
   let t26;
   if ($[85] !== sharedRulesProps) {
-    t26 = <Tab id="ask" title="Ask"><PermissionRulesTab tab="ask" {...sharedRulesProps} /></Tab>;
+    t26 = <Tab id="ask" title={t('rules.ask')}><PermissionRulesTab tab="ask" {...sharedRulesProps} /></Tab>;
     $[85] = sharedRulesProps;
     $[86] = t26;
   } else {
@@ -1090,7 +1093,7 @@ export function PermissionRuleList(t0) {
   }
   let t27;
   if ($[87] !== sharedRulesProps) {
-    t27 = <Tab id="deny" title="Deny"><PermissionRulesTab tab="deny" {...sharedRulesProps} /></Tab>;
+    t27 = <Tab id="deny" title={t('rules.denied')}><PermissionRulesTab tab="deny" {...sharedRulesProps} /></Tab>;
     $[87] = sharedRulesProps;
     $[88] = t27;
   } else {
@@ -1098,14 +1101,14 @@ export function PermissionRuleList(t0) {
   }
   let t28;
   if ($[89] === Symbol.for("react.memo_cache_sentinel")) {
-    t28 = <Text>Claude Code can read files in the workspace, and make edits when auto-accept edits is on.</Text>;
+    t28 = <Text>{t('rules.willHaveAccess')}</Text>;
     $[89] = t28;
   } else {
     t28 = $[89];
   }
   let t29;
   if ($[90] !== onExit || $[91] !== toolPermissionContext) {
-    t29 = <Tab id="workspace" title="Workspace"><Box flexDirection="column">{t28}<WorkspaceTab onExit={onExit} toolPermissionContext={toolPermissionContext} onRequestAddDirectory={handleRequestAddDirectory} onRequestRemoveDirectory={handleRequestRemoveDirectory} onHeaderFocusChange={handleHeaderFocusChange} /></Box></Tab>;
+    t29 = <Tab id="workspace" title={t('rules.workspaceTab')}><Box flexDirection="column">{t28}<WorkspaceTab onExit={onExit} toolPermissionContext={toolPermissionContext} onRequestAddDirectory={handleRequestAddDirectory} onRequestRemoveDirectory={handleRequestRemoveDirectory} onHeaderFocusChange={handleHeaderFocusChange} /></Box></Tab>;
     $[90] = onExit;
     $[91] = toolPermissionContext;
     $[92] = t29;

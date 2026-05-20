@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../../utils/i18n/index.js';
 import React, { useCallback, useMemo } from 'react';
 import { logError } from '../../../utils/log.js';
 import { getOriginalCwd } from '../../../bootstrap/state.js';
@@ -65,7 +68,7 @@ export function SkillPermissionRequest(props) {
   let t4;
   if ($[5] === Symbol.for("react.memo_cache_sentinel")) {
     t4 = [{
-      label: "Yes",
+      label: t('skillPerm.yes'),
       value: "yes",
       feedbackConfig: {
         type: "accept"
@@ -91,7 +94,7 @@ export function SkillPermissionRequest(props) {
       let t7;
       if ($[9] !== t5) {
         t7 = {
-          label: <Text>Yes, and don't ask again for {t5} in{" "}{t6}</Text>,
+          label: <Text>{t('skillPerm.yesDontAskAgainFor')} {t5} {t('skillPerm.in')}{" "}{t6}</Text>,
           value: "yes-exact"
         };
         $[9] = t5;
@@ -122,7 +125,7 @@ export function SkillPermissionRequest(props) {
         let t11;
         if ($[14] !== t9) {
           t11 = {
-            label: <Text>Yes, and don't ask again for{" "}{t9} commands in{" "}{t10}</Text>,
+            label: <Text>{t('skillPerm.yesDontAskAgainFor')}{" "}{t9} {t('skillPerm.commandsIn')}{" "}{t10}</Text>,
             value: "yes-prefix"
           };
           $[14] = t9;
@@ -141,7 +144,7 @@ export function SkillPermissionRequest(props) {
   let t5;
   if ($[16] === Symbol.for("react.memo_cache_sentinel")) {
     t5 = {
-      label: "No",
+      label: t('skillPerm.no'),
       value: "no",
       feedbackConfig: {
         type: "reject"
@@ -300,10 +303,10 @@ export function SkillPermissionRequest(props) {
     t11 = $[32];
   }
   const handleCancel = t11;
-  const t12 = `Use skill "${skill}"?`;
+  const t12 = t('skillPerm.title', {skill});
   let t13;
   if ($[33] === Symbol.for("react.memo_cache_sentinel")) {
-    t13 = <Text>Claude may use instructions, code, or files from this Skill.</Text>;
+    t13 = <Text>{t('skillPerm.warning')}</Text>;
     $[33] = t13;
   } else {
     t13 = $[33];

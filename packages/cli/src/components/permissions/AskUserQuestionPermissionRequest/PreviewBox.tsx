@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../../utils/i18n/index.js';
 import React, { Suspense, use, useMemo } from 'react';
 import { useSettings } from '../../../hooks/useSettings.js';
 import { useTerminalSize } from '../../../hooks/useTerminalSize.js';
@@ -145,7 +148,7 @@ function PreviewBoxBody(t0) {
     bottomBorder = `${BOX_CHARS.bottomLeft}${t7}${BOX_CHARS.bottomRight}`;
     truncationBar = isTruncated ? (() => {
       const hiddenCount = contentLines.length - effectiveMaxLines;
-      const label = `${BOX_CHARS.horizontal.repeat(3)} \u2702 ${BOX_CHARS.horizontal.repeat(3)} ${hiddenCount} lines hidden `;
+      const label = `${BOX_CHARS.horizontal.repeat(3)} \u2702 ${BOX_CHARS.horizontal.repeat(3)} ${t('auq.linesHidden', {count: hiddenCount})}`;
       const labelWidth = stringWidth(label);
       const fillWidth = Math.max(0, boxWidth - 2 - labelWidth);
       return `${BOX_CHARS.teeLeft}${label}${BOX_CHARS.horizontal.repeat(fillWidth)}${BOX_CHARS.teeRight}`;

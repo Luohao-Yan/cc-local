@@ -70,7 +70,7 @@ export function useNativeQuery(adapter: INativeAdapter | null): UseNativeQueryRe
 
       for await (const event of adapter.query({
         ...options,
-        onStream: (e) => events.push(e),
+        onStream: (e: any) => events.push(e),
       })) {
         if (abortController.signal.aborted) {
           throw new Error('Query aborted')
@@ -111,7 +111,7 @@ export function useNativeQuery(adapter: INativeAdapter | null): UseNativeQueryRe
 
       for await (const event of adapter.query({
         ...options,
-        onStream: (e) => {
+        onStream: (e: any) => {
           events.push(e)
           onEvent(e)
         },

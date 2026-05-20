@@ -1,0 +1,136 @@
+.session-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--app-background);
+}
+
+.session-list-header {
+  padding: var(--app-spacing-medium);
+  border-bottom: 1px solid var(--app-border);
+}
+
+.session-list-header h3 {
+  margin: 0 0 var(--app-spacing-small) 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.session-list-search {
+  width: 100%;
+  padding: var(--app-spacing-small) var(--app-spacing-medium);
+  border: 1px solid var(--app-border);
+  border-radius: var(--corner-radius-small);
+  background: var(--app-input-background);
+  color: var(--app-input-foreground);
+  font-size: 12px;
+}
+
+.session-list-search:focus {
+  outline: none;
+  border-color: var(--app-link-foreground);
+}
+
+.session-list-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.session-list-empty {
+  padding: var(--app-spacing-large);
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.session-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--app-spacing-small) var(--app-spacing-medium);
+  cursor: pointer;
+  border-bottom: 1px solid var(--app-border);
+  transition: background 0.15s ease;
+}
+
+.session-list-item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.session-list-item.active {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+}
+
+.session-list-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.session-list-item-name {
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-list-item-meta {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.session-list-item.active .session-list-item-meta {
+  color: var(--vscode-list-activeSelectionForeground);
+  opacity: 0.8;
+}
+
+.session-list-item-actions {
+  display: flex;
+  gap: var(--app-spacing-small);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.session-list-item:hover .session-list-item-actions {
+  opacity: 1;
+}
+
+.session-list-action {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--corner-radius-small);
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.session-list-action:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.session-list-action.delete:hover {
+  background: var(--vscode-errorForeground);
+  color: white;
+}
+
+.session-list-edit-input {
+  width: 100%;
+  padding: var(--app-spacing-small);
+  border: 1px solid var(--app-link-foreground);
+  border-radius: var(--corner-radius-small);
+  background: var(--app-input-background);
+  color: var(--app-input-foreground);
+  font-size: 13px;
+}
+
+.session-list-edit-input:focus {
+  outline: none;
+}

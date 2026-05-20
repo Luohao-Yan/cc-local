@@ -1986,7 +1986,7 @@ export async function validateForceLoginOrg(): Promise<OrgValidationResult> {
     }
   }
 
-  const tokenOrgUuid = profile.organization.uuid
+  const tokenOrgUuid = profile.organization!.uuid
   if (tokenOrgUuid === requiredOrgUuid) {
     return { valid: true }
   }

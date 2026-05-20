@@ -19,3 +19,11 @@ export interface SecureStorageData {
   >
   [key: string]: unknown
 }
+
+/** Secure storage interface with read/update/delete methods. */
+export interface SecureStorage {
+  read(): SecureStorageData | null
+  readAsync(): Promise<SecureStorageData | null>
+  update(data: SecureStorageData): { success: boolean; warning?: string }
+  delete(): boolean
+}

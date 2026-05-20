@@ -1,0 +1,144 @@
+.diff-editor {
+  background: var(--app-code-background);
+  border-radius: var(--corner-radius-medium);
+  border: 1px solid var(--app-border);
+  overflow: hidden;
+  font-family: var(--app-monospace-font-family);
+  font-size: 12px;
+}
+
+.diff-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--app-spacing-small) var(--app-spacing-medium);
+  background: var(--vscode-editorGutter-background);
+  border-bottom: 1px solid var(--app-border);
+}
+
+.diff-editor-path {
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-small);
+  color: var(--app-foreground);
+}
+
+.diff-editor-old-path,
+.diff-editor-new-path {
+  font-size: 11px;
+}
+
+.diff-editor-arrow {
+  color: var(--vscode-descriptionForeground);
+}
+
+.diff-editor-stats {
+  display: flex;
+  gap: var(--app-spacing-medium);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.diff-editor-additions {
+  color: var(--vscode-gitDecoration-addedResourceForeground);
+}
+
+.diff-editor-deletions {
+  color: var(--vscode-gitDecoration-deletedResourceForeground);
+}
+
+.diff-editor-content {
+  overflow: auto;
+  max-height: 300px;
+}
+
+.diff-hunk {
+  border-bottom: 1px solid var(--app-border);
+}
+
+.diff-hunk:last-child {
+  border-bottom: none;
+}
+
+.diff-hunk-header {
+  padding: var(--app-spacing-small) var(--app-spacing-medium);
+  background: var(--vscode-diffEditor-diagonalFill);
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+.diff-line {
+  display: flex;
+  min-height: 18px;
+  line-height: 18px;
+}
+
+.diff-line-add {
+  background: var(--vscode-diffEditor-insertedTextBackground);
+}
+
+.diff-line-remove {
+  background: var(--vscode-diffEditor-removedTextBackground);
+}
+
+.diff-line-context {
+  /* Context lines have no special background */
+}
+
+.diff-line-number {
+  width: 40px;
+  min-width: 40px;
+  padding: 0 var(--app-spacing-small);
+  text-align: right;
+  color: var(--vscode-editorLineNumber-foreground);
+  background: var(--vscode-editorGutter-background);
+  user-select: none;
+}
+
+.diff-line-old-number,
+.diff-line-new-number {
+  /* Default styles */
+}
+
+.diff-line-prefix {
+  width: 14px;
+  min-width: 14px;
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+  user-select: none;
+}
+
+.diff-line-add .diff-line-prefix {
+  color: var(--vscode-gitDecoration-addedResourceForeground);
+}
+
+.diff-line-remove .diff-line-prefix {
+  color: var(--vscode-gitDecoration-deletedResourceForeground);
+}
+
+.diff-line-content {
+  flex: 1;
+  padding: 0 var(--app-spacing-small);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.diff-editor-expand {
+  width: 100%;
+  padding: var(--app-spacing-small);
+  border: none;
+  background: var(--vscode-editorGutter-background);
+  color: var(--app-link-foreground);
+  cursor: pointer;
+  font-size: 11px;
+  text-align: center;
+}
+
+.diff-editor-expand:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+/* Full height mode */
+.diff-editor-full .diff-editor-content {
+  max-height: none;
+}

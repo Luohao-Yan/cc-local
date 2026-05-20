@@ -7,6 +7,7 @@ import { getIsNonInteractiveSession } from '../bootstrap/state.js'
 import { getCurrentWorktreeSession } from '../utils/worktree.js'
 import { getSessionStartDate } from './common.js'
 import { getInitialSettings } from '../utils/settings/settings.js'
+import { getAntModelOverrideConfig } from '../utils/model/antModels.js'
 import {
   AGENT_TOOL_NAME,
   VERIFICATION_AGENT_TYPE,
@@ -60,6 +61,26 @@ import { logForDebugging } from '../utils/debug.js'
 import { loadMemoryPrompt } from '../memdir/memdir.js'
 import { isUndercover } from '../utils/undercover.js'
 import { isMcpInstructionsDeltaEnabled } from '../utils/mcpInstructionsDelta.js'
+
+/**
+ * Module-level storage for dynamic sections that were excluded from the
+ * system prompt (when --exclude-dynamic-system-prompt-sections is enabled).
+ * The query engine retrieves these and injects them into the first user message.
+ */
+let excludedDynamicSections: string[] | undefined
+
+/**
+ * Get the dynamic sections that were excluded from the system prompt.
+ * Returns undefined if no sections were excluded.
+ */
+export function getExcludedDynamicSections(): string[] | undefined {
+  return excludedDynamicSections
+}
+
+/** Reset excluded sections (called at the start of each getSystemPrompt call). */
+function resetExcludedDynamicSections(): void {
+  excludedDynamicSections = undefined
+}
 
 // Dead code elimination: conditional imports for feature-gated modules
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -454,6 +475,7 @@ export async function getSystemPrompt(
   }
 
   const cwd = getCwd()
+  resetExcludedDynamicSections()
   const [skillToolCommands, outputStyleConfig, envInfo] = await Promise.all([
     getSkillToolCommands(cwd),
     getOutputStyleConfig(),
@@ -486,7 +508,23 @@ ${CYBER_RISK_INSTRUCTION}`,
       SUMMARIZE_TOOL_RESULTS_SECTION,
       getProactiveSection(),
     ].filter(s => s !== null)
+
+    // For proactive mode, dynamic sections stay in system prompt
+    return systemPrompt
   }
+
+  // Check if --exclude-dynamic-system-prompt-sections is enabled
+  const excludeDynamic = isEnvTruthy(process.env.CLAUDE_CODE_EXCLUDE_DYNAMIC_SECTIONS)
+
+  // Per-machine section IDs that should be moved to the first user message
+  // when excludeDynamicSections is enabled. These sections contain
+  // information that varies per machine (cwd, env info, memory paths, git status)
+  // and bust the cross-user prompt cache.
+  const PER_MACHINE_SECTION_IDS = new Set([
+    'env_info_simple',
+    'session_guidance',
+    'memory',
+  ])
 
   const dynamicSections = [
     systemPromptSection('session_guidance', () =>
@@ -556,6 +594,47 @@ ${CYBER_RISK_INSTRUCTION}`,
 
   const resolvedDynamicSections =
     await resolveSystemPromptSections(dynamicSections)
+
+  // When excludeDynamic is enabled, split dynamic sections:
+  // per-machine sections are stored for injection into the first user message,
+  // while shared sections remain in the system prompt.
+  if (excludeDynamic) {
+    const systemDynamicSections: string[] = []
+    const _userMsgDynamicSections: string[] = []
+
+    for (let i = 0; i < dynamicSections.length; i++) {
+      const section = dynamicSections[i]
+      const resolved = resolvedDynamicSections[i]
+      if (!resolved) continue
+
+      if (PER_MACHINE_SECTION_IDS.has(section.id)) {
+        _userMsgDynamicSections.push(resolved)
+      } else {
+        systemDynamicSections.push(resolved)
+      }
+    }
+
+    // Store the excluded sections so the query engine can inject them
+    // into the first user message for cross-user prompt-cache reuse.
+    excludedDynamicSections = _userMsgDynamicSections.length > 0
+      ? _userMsgDynamicSections
+      : undefined
+
+    return [
+      getSimpleIntroSection(outputStyleConfig),
+      getSimpleSystemSection(),
+      outputStyleConfig === null ||
+      outputStyleConfig.keepCodingInstructions === true
+        ? getSimpleDoingTasksSection()
+        : null,
+      getActionsSection(),
+      getUsingYourToolsSection(enabledTools),
+      getSimpleToneAndStyleSection(),
+      getOutputEfficiencySection(),
+      ...(shouldUseGlobalCacheScope() ? [SYSTEM_PROMPT_DYNAMIC_BOUNDARY] : []),
+      ...systemDynamicSections,
+    ].filter(s => s !== null)
+  }
 
   return [
     // --- Static content (cacheable) ---
@@ -823,7 +902,7 @@ function getFunctionResultClearingSection(model: string): string | null {
     return null
   }
   const config = getCachedMCConfigForFRC()
-  const isModelSupported = config.supportedModels?.some(pattern =>
+  const isModelSupported = config.supportedModels?.some((pattern: any) =>
     model.includes(pattern),
   )
   if (

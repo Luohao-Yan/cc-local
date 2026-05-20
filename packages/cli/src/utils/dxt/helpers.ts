@@ -76,7 +76,7 @@ export function generateExtensionId(
       .replace(/-+/g, '-')
       .replace(/^-+|-+$/g, '')
 
-  const authorName = manifest.author.name
+  const authorName = (manifest.author as any).name
   const extensionName = manifest.name
 
   const sanitizedAuthor = sanitize(authorName)

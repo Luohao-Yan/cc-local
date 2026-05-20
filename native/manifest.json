@@ -1,0 +1,7 @@
+{
+  "version": "14.1.0",
+  "platform": "win32-x64",
+  "binaries": {
+    "ripgrep": "native/win32-x64/rg.exe"
+  }
+}

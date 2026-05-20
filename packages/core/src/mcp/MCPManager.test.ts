@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { MCPManager } from './MCPManager.js'
 
 describe('MCPManager', () => {
@@ -304,5 +304,88 @@ describe('MCPManager', () => {
     await expect(manager.readResource('resources', 'file:///demo.txt')).resolves.toEqual({
       content: 'resource:file:///demo.txt',
     })
+  })
+
+  it('deduplicates concurrent connectServer calls', async () => {
+    let factoryCallCount = 0
+    let resolveConnection: () => void = () => {}
+    const connectionPromise = new Promise<void>((resolve) => {
+      resolveConnection = resolve
+    })
+
+    const manager = new MCPManager({
+      connectionFactory: async (record) => {
+        factoryCallCount++
+        await connectionPromise
+        return {
+          async listTools() {
+            return [{ name: 'read', description: 'Read' }]
+          },
+          async callTool() {
+            return { content: 'ok' }
+          },
+          async close() {},
+        }
+      },
+    })
+
+    manager.registerServer({
+      name: 'slow',
+      config: {
+        type: 'stdio',
+        command: 'slow-mcp',
+      },
+    })
+
+    // Fire two concurrent connect calls before the factory resolves
+    const promise1 = manager.connectServer('slow')
+    const promise2 = manager.connectServer('slow')
+
+    // Allow the factory to proceed
+    resolveConnection()
+
+    const [result1, result2] = await Promise.all([promise1, promise2])
+    expect(result1.status).toBe('connected')
+    expect(result2.status).toBe('connected')
+    // Factory should be called only once
+    expect(factoryCallCount).toBe(1)
+  })
+
+  it('cleans up timeout timer when callTool resolves before timeout', async () => {
+    const clearTimeouts: number[] = []
+    const originalSetTimeout = globalThis.setTimeout
+    const originalClearTimeout = globalThis.clearTimeout
+
+    // Track clearTimeout calls to verify timer cleanup
+    const trackedClear = vi.spyOn(globalThis, 'clearTimeout')
+
+    const manager = new MCPManager({
+      connectionFactory: async () => ({
+        async listTools() {
+          return [{ name: 'fast_tool', description: 'Fast' }]
+        },
+        async callTool() {
+          // Resolves immediately
+          return { content: 'fast' }
+        },
+        async close() {},
+      }),
+    })
+
+    manager.registerServer({
+      name: 'fast-server',
+      config: {
+        type: 'stdio',
+        command: 'fast-mcp',
+      },
+    })
+
+    await manager.connectServer('fast-server')
+    const result = await manager.callTool('fast-server', 'fast_tool', {})
+    expect(result).toEqual({ content: 'fast' })
+
+    // The timeout timer should have been cleared
+    expect(trackedClear).toHaveBeenCalled()
+    trackedClear.mockRestore()
   })
 })

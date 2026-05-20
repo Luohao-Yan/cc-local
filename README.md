@@ -43,6 +43,7 @@
 - [VS Code 扩展](#vs-code-扩展)
 - [国际化支持](#国际化支持)
 - [构建打包](#构建打包)
+- [Feature Flags 功能标志](#feature-flags-功能标志)
 - [项目结构](#项目结构)
 - [工作原理](#工作原理)
 - [技术栈](#技术栈)
@@ -1011,6 +1012,114 @@ bun run acceptance:complete
 ```
 
 这会覆盖类型检查、测试、全量构建、parity audit、默认入口、分发产物、动态端口、无残留进程和脱离源码目录运行等关键路径。
+
+---
+
+## Feature Flags 功能标志
+
+项目通过编译时 feature flags 控制功能启用。`feature('FLAG')` 调用在构建时被替换为布尔值，未启用的功能会被 dead-code-elimination 移除。
+
+### 已启用（12 项）
+
+| Flag | 中文说明 |
+|------|---------|
+| `AUTO_THEME` | 主题自动切换和完整主题列表 |
+| `BASH_CLASSIFIER` | Bash 命令分类器（Auto Mode 依赖） |
+| `BG_SESSIONS` | 后台会话管理 |
+| `BREAK_CACHE_COMMAND` | 缓存失效命令 |
+| `BUDDY` | 终端宠物伴侣 |
+| `BUILTIN_EXPLORE_PLAN_AGENTS` | 内置 Explore/Plan Agent 类型 |
+| `CACHED_MICROCOMPACT` | 缓存微压缩 |
+| `DAEMON` | 守护进程模式（依赖 BRIDGE_MODE） |
+| `HISTORY_SNIP` | 历史记录裁剪 |
+| `PROACTIVE` | 主动建议 |
+| `REACTIVE_COMPACT` | 响应式压缩 |
+| `TRANSCRIPT_CLASSIFIER` | 会话分类器（Auto Mode） |
+
+### 已禁用（78 项）
+
+| Flag | 中文说明 |
+|------|---------|
+| `ABLATION_BASELINE` | 消融基线（实验对照） |
+| `AGENT_MEMORY_SNAPSHOT` | Agent 内存快照 |
+| `AGENT_TRIGGERS` | Agent 触发器 |
+| `AGENT_TRIGGERS_REMOTE` | Agent 远程触发器 |
+| `ALLOW_TEST_VERSIONS` | 允许测试版本 |
+| `ANTI_DISTILLATION_CC` | 反蒸馏保护 |
+| `AWAY_SUMMARY` | 离开摘要 |
+| `BRIDGE_MODE` | 桥接模式（VS Code/IDE 集成） |
+| `BUILDING_CLAUDE_APPS` | 构建 Claude 应用 |
+| `BYOC_ENVIRONMENT_RUNNER` | 自带云环境运行器 |
+| `CCR_AUTO_CONNECT` | CCR 自动连接 |
+| `CCR_MIRROR` | CCR 镜像 |
+| `CCR_REMOTE_SETUP` | CCR 远程设置 |
+| `CHICAGO_MCP` | Chicago MCP |
+| `COMMIT_ATTRIBUTION` | 提交归属 |
+| `COMPACTION_REMINDERS` | 压缩提醒 |
+| `CONNECTOR_TEXT` | 连接器文本 |
+| `CONTEXT_COLLAPSE` | 上下文折叠 |
+| `COORDINATOR_MODE` | 协调器模式 |
+| `COWORKER_TYPE_TELEMETRY` | 协作者类型遥测 |
+| `DIRECT_CONNECT` | 直连模式 |
+| `DOWNLOAD_USER_SETTINGS` | 下载用户设置 |
+| `DUMP_SYSTEM_PROMPT` | 导出系统提示词 |
+| `ENHANCED_TELEMETRY_BETA` | 增强遥测 Beta |
+| `EXPERIMENTAL_SKILL_SEARCH` | 实验性技能搜索 |
+| `EXTRACT_MEMORIES` | 提取记忆 |
+| `FILE_PERSISTENCE` | 文件持久化 |
+| `FORK_SUBAGENT` | Fork 子 Agent |
+| `HARD_FAIL` | 硬失败（严格中断） |
+| `HISTORY_PICKER` | 历史记录选择器 |
+| `HOOK_PROMPTS` | Hook 提示词 |
+| `IS_LIBC_GLIBC` | glibc 检测 |
+| `IS_LIBC_MUSL` | musl 检测 |
+| `KAIROS` | Kairos 调度系统 |
+| `KAIROS_BRIEF` | Kairos 简报 |
+| `KAIROS_CHANNELS` | Kairos 频道 |
+| `KAIROS_DREAM` | Kairos 梦境模式 |
+| `KAIROS_GITHUB_WEBHOOKS` | Kairos GitHub Webhook |
+| `KAIROS_PUSH_NOTIFICATION` | Kairos 推送通知 |
+| `LODESTONE` | Lodestone 导航系统 |
+| `MCP_RICH_OUTPUT` | MCP 富输出 |
+| `MCP_SKILLS` | MCP 技能 |
+| `MEMORY_SHAPE_TELEMETRY` | 记忆形态遥测 |
+| `MESSAGE_ACTIONS` | 消息操作 |
+| `MONITOR_TOOL` | 监控工具 |
+| `NATIVE_CLIENT_ATTESTATION` | 原生客户端认证 |
+| `NATIVE_CLIPBOARD_IMAGE` | 原生剪贴板图片 |
+| `NEW_INIT` | 新初始化流程 |
+| `OVERFLOW_TEST_TOOL` | 溢出测试工具 |
+| `PERFETTO_TRACING` | Perfetto 追踪 |
+| `POWERSHELL_AUTO_MODE` | PowerShell 自动模式 |
+| `PROMPT_CACHE_BREAK_DETECTION` | 缓存中断检测 |
+| `QUICK_SEARCH` | 快速搜索 |
+| `REVIEW_ARTIFACT` | 审查产物 |
+| `RUN_SKILL_GENERATOR` | 运行技能生成器 |
+| `SELF_HOSTED_RUNNER` | 自托管运行器 |
+| `SHOT_STATS` | 截图统计 |
+| `SKIP_DETECTION_WHEN_AUTOUPDATES_DISABLED` | 自动更新禁用时跳过检测 |
+| `SKILL_IMPROVEMENT` | 技能改进 |
+| `SLOW_OPERATION_LOGGING` | 慢操作日志 |
+| `SSH_REMOTE` | SSH 远程 |
+| `STREAMLINED_OUTPUT` | 精简输出 |
+| `TEAMMEM` | 团队成员 |
+| `TEMPLATES` | 模板 |
+| `TERMINAL_PANEL` | 终端面板 |
+| `TOKEN_BUDGET` | Token 预算 |
+| `TORCH` | Torch 灯塔系统 |
+| `TREE_SITTER_BASH` | Tree-sitter Bash 解析 |
+| `TREE_SITTER_BASH_SHADOW` | Tree-sitter Bash 影子解析 |
+| `UDS_INBOX` | UDS 收件箱 |
+| `ULTRAPLAN` | 超级规划 |
+| `ULTRATHINK` | 超级思考 |
+| `UNATTENDED_RETRY` | 无人值守重试 |
+| `UPLOAD_USER_SETTINGS` | 上传用户设置 |
+| `VERIFICATION_AGENT` | 验证 Agent |
+| `VOICE_MODE` | 语音模式 |
+| `WEB_BROWSER_TOOL` | 网页浏览器工具 |
+| `WORKFLOW_SCRIPTS` | 工作流脚本 |
+
+> Feature flags 配置位于 `scripts/build-external.ts` 中的 `ENABLED_FEATURES` 和 `EXTERNAL_DISABLED_FEATURES` 数组。运行时由 `packages/cli/src/_external/preload.ts` 中的 Bun 插件解析 `bun:bundle` 的 `feature()` 函数。
 
 ---
 

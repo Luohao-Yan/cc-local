@@ -85,35 +85,36 @@ export function useDirectConnect({
         }
       },
       onPermissionRequest: (request, requestId) => {
+        const req = request as any
         logForDebugging(
-          `[useDirectConnect] Permission request for tool: ${request.tool_name}`,
+          `[useDirectConnect] Permission request for tool: ${req.tool_name ?? req.request?.tool_name}`,
         )
 
         const tool =
-          findToolByName(toolsRef.current, request.tool_name) ??
-          createToolStub(request.tool_name)
+          findToolByName(toolsRef.current, req.tool_name ?? req.request?.tool_name) ??
+          createToolStub(req.tool_name ?? req.request?.tool_name)
 
         const syntheticMessage = createSyntheticAssistantMessage(
-          request,
+          request as any,
           requestId,
         )
 
         const permissionResult: PermissionAskDecision = {
           behavior: 'ask',
           message:
-            request.description ?? `${request.tool_name} requires permission`,
-          suggestions: request.permission_suggestions,
-          blockedPath: request.blocked_path,
+            req.description ?? req.request?.description ?? `${req.tool_name ?? req.request?.tool_name} requires permission`,
+          suggestions: req.permission_suggestions ?? req.request?.permission_suggestions,
+          blockedPath: req.blocked_path ?? req.request?.blocked_path,
         }
 
         const toolUseConfirm: ToolUseConfirm = {
           assistantMessage: syntheticMessage,
           tool,
           description:
-            request.description ?? `${request.tool_name} requires permission`,
-          input: request.input,
+            req.description ?? req.request?.description ?? `${req.tool_name ?? req.request?.tool_name} requires permission`,
+          input: req.input ?? req.request?.input,
           toolUseContext: {} as ToolUseConfirm['toolUseContext'],
-          toolUseID: request.tool_use_id,
+          toolUseID: req.tool_use_id ?? req.request?.tool_use_id,
           permissionResult,
           permissionPromptStartTimeMs: Date.now(),
           onUserInteraction() {
@@ -126,7 +127,7 @@ export function useDirectConnect({
             }
             manager.respondToPermissionRequest(requestId, response)
             setToolUseConfirmQueue(queue =>
-              queue.filter(item => item.toolUseID !== request.tool_use_id),
+              queue.filter(item => item.toolUseID !== (req.tool_use_id ?? req.request?.tool_use_id)),
             )
           },
           onAllow(updatedInput, _permissionUpdates, _feedback) {
@@ -136,7 +137,7 @@ export function useDirectConnect({
             }
             manager.respondToPermissionRequest(requestId, response)
             setToolUseConfirmQueue(queue =>
-              queue.filter(item => item.toolUseID !== request.tool_use_id),
+              queue.filter(item => item.toolUseID !== (req.tool_use_id ?? req.request?.tool_use_id)),
             )
             setIsLoading(true)
           },
@@ -147,7 +148,7 @@ export function useDirectConnect({
             }
             manager.respondToPermissionRequest(requestId, response)
             setToolUseConfirmQueue(queue =>
-              queue.filter(item => item.toolUseID !== request.tool_use_id),
+              queue.filter(item => item.toolUseID !== (req.tool_use_id ?? req.request?.tool_use_id)),
             )
           },
           async recheckPermission() {

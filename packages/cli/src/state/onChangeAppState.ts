@@ -4,6 +4,8 @@ import {
   clearAwsCredentialsCache,
   clearGcpCredentialsCache,
 } from '../utils/auth.js'
+import { clearActiveModel } from '../utils/model/activeModelContext.js'
+import { resolveMultiModelConfig } from '../utils/model/multiModel.js'
 import { getGlobalConfig, saveGlobalConfig } from '../utils/config.js'
 import { toError } from '../utils/errors.js'
 import { logError } from '../utils/log.js'
@@ -91,23 +93,44 @@ export function onChangeAppState({
     notifyPermissionModeChanged(newMode)
   }
 
-  // mainLoopModel: remove it from settings?
-  if (
-    newState.mainLoopModel !== oldState.mainLoopModel &&
-    newState.mainLoopModel === null
-  ) {
-    // Remove from settings
-    updateSettingsForSource('userSettings', { model: undefined })
-    setMainLoopModelOverride(null)
+  // mainLoopModel / mainLoopModelForSession: sync settings + activate routing
+  //
+  // Model routing state (activeModel, ANTHROPIC_BASE_URL, ANTHROPIC_API_KEY) is
+  // derived from the *effective* model: mainLoopModelForSession ?? mainLoopModel.
+  // This block is the SINGLE source of truth for activation — every mutation
+  // path that changes either field flows through here synchronously during
+  // setAppState (see store.ts line 25), so there is no race window.
+  //
+  // Pattern mirrors the permission-mode sync block above: diff + activate
+  // in one place, so entry points (ModelPicker, REPL Bridge, /model, rewind)
+  // don't each need their own clearActiveModel + resolveMultiModelConfig calls.
+  const newEffective = newState.mainLoopModelForSession ?? newState.mainLoopModel
+  const oldEffective = oldState.mainLoopModelForSession ?? oldState.mainLoopModel
+
+  if (newEffective !== oldEffective) {
+    if (newEffective === null) {
+      clearActiveModel()
+    } else {
+      // resolveMultiModelConfig returns null for built-in aliases (sonnet, opus, haiku)
+      // since they're not in models.json — in that case we must clear the active
+      // model to restore Anthropic's default endpoint. Failing to do so leaves
+      // ANTHROPIC_BASE_URL pointing at the previous custom provider, causing the
+      // "wrong API model name" error the user reported.
+      const resolved = resolveMultiModelConfig(newEffective)
+      if (resolved === null) {
+        clearActiveModel()
+      }
+    }
   }
 
-  // mainLoopModel: add it to settings?
-  if (
-    newState.mainLoopModel !== oldState.mainLoopModel &&
-    newState.mainLoopModel !== null
-  ) {
-    // Save to settings
-    updateSettingsForSource('userSettings', { model: newState.mainLoopModel })
+  // Persist mainLoopModel to settings & module-level override.
+  // (mainLoopModelForSession is per-session only — never persisted.)
+  if (newState.mainLoopModel !== oldState.mainLoopModel) {
+    if (newState.mainLoopModel === null) {
+      updateSettingsForSource('userSettings', { model: undefined })
+    } else {
+      updateSettingsForSource('userSettings', { model: newState.mainLoopModel })
+    }
     setMainLoopModelOverride(newState.mainLoopModel)
   }
 

@@ -846,29 +846,17 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
           // All fallback models exhausted — degrade permission mode to
           // acceptEdits rather than pretending auto mode still works.
           if (classifierResult.allClassifierModelsFailed) {
-            // Check if we've already degraded to avoid spamming notifications
-            const currentMode = appState.toolPermissionContext.mode
-            if (currentMode !== 'acceptEdits') {
-              logForDebugging(
-                'Auto mode classifier unavailable — degrading permission mode to acceptEdits',
-                { level: 'warn' },
-              )
-              // Persist the mode downgrade so future tool uses skip the classifier
-              context.setAppState(prev => ({
-                ...prev,
-                toolPermissionContext: {
-                  ...prev.toolPermissionContext,
-                  mode: 'acceptEdits',
-                },
-              }))
-              if (context.addNotification) {
-                context.addNotification({
-                  key: 'auto-mode-classifier-degraded-to-accept-edits',
-                  text: 'Auto mode classifier is unavailable for this provider. Permission mode has been downgraded to acceptEdits (file edits and filesystem commands are auto-approved).',
-                  priority: 'immediate',
-                  color: 'warning',
-                })
-              }
+            logForDebugging(
+              'Auto mode classifier unavailable — degrading to acceptEdits for this tool call only',
+              { level: 'warn' },
+            )
+            if (context.addNotification) {
+              context.addNotification({
+                key: 'auto-mode-classifier-degraded-to-accept-edits',
+                text: 'Auto mode classifier is temporarily unavailable for this provider. Permission mode is downgraded to acceptEdits for this tool call only — if the classifier recovers, the original mode will resume.',
+                priority: 'immediate',
+                color: 'warning',
+              })
             }
 
             // Re-run permission check in acceptEdits mode so the tool's

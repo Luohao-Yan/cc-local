@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { t } from '../../../../utils/i18n/index.js';
 import { Box, Text, useTheme } from '../../../ink.js';
 import { useKeybinding } from '../../../keybindings/useKeybinding.js';
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../../services/analytics/growthbook.js';
@@ -112,7 +113,7 @@ export function PowerShellPermissionRequest(props: PermissionRequestProps): Reac
     setShowPermissionDebug(prev => !prev);
   }, []);
   useKeybinding('permission:toggleDebug', handleToggleDebug, {
-    context: 'Confirmation'
+    context: t('powershell.confirmation')
   });
   function onSelect(value: string) {
     // Map options to numeric values for analytics (strings not allowed in logEvent)
@@ -192,7 +193,7 @@ export function PowerShellPermissionRequest(props: PermissionRequestProps): Reac
         }
     }
   }
-  return <PermissionDialog workerBadge={workerBadge} title="PowerShell command">
+  return <PermissionDialog workerBadge={workerBadge} title={t('powershell.title')}>
       <Box flexDirection="column" paddingX={2} paddingY={1}>
         <Text dimColor={explainerState.visible}>
           {PowerShellTool.renderToolUseMessage({
@@ -208,9 +209,9 @@ export function PowerShellPermissionRequest(props: PermissionRequestProps): Reac
         <PermissionExplainerContent visible={explainerState.visible} promise={explainerState.promise} />
       </Box>
       {showPermissionDebug ? <>
-          <PermissionDecisionDebugInfo permissionResult={toolUseConfirm.permissionResult} toolName="PowerShell" />
+          <PermissionDecisionDebugInfo permissionResult={toolUseConfirm.permissionResult} toolName={t('powershell.toolName')} />
           {toolUseContext.options.debug && <Box justifyContent="flex-end" marginTop={1}>
-              <Text dimColor>Ctrl-D to hide debug info</Text>
+              <Text dimColor>{t('powershell.ctrlDToHide')}</Text>
             </Box>}
         </> : <>
           <Box flexDirection="column">
@@ -218,16 +219,16 @@ export function PowerShellPermissionRequest(props: PermissionRequestProps): Reac
             {destructiveWarning && <Box marginBottom={1}>
                 <Text color="warning">{destructiveWarning}</Text>
               </Box>}
-            <Text>Do you want to proceed?</Text>
+            <Text>{t('powershell.doYouWantToProceed')}</Text>
             <Select options={options} inlineDescriptions onChange={onSelect} onCancel={() => handleReject()} onFocus={handleFocus} onInputModeToggle={handleInputModeToggle} />
           </Box>
           <Box justifyContent="space-between" marginTop={1}>
             <Text dimColor>
-              Esc to cancel
-              {(focusedOption === 'yes' && !yesInputMode || focusedOption === 'no' && !noInputMode) && ' · Tab to amend'}
-              {explainerState.enabled && ` · ctrl+e to ${explainerState.visible ? 'hide' : 'explain'}`}
+              {t('powershell.escToCancel')}
+              {(focusedOption === 'yes' && !yesInputMode || focusedOption === 'no' && !noInputMode) && t('powershell.tabToAmend')}
+              {explainerState.enabled && t('powershell.ctrlEToExplain', {action: explainerState.visible ? t('powershell.actionHide') : t('powershell.actionExplain')})}
             </Text>
-            {toolUseContext.options.debug && <Text dimColor>Ctrl+d to show debug info</Text>}
+            {toolUseContext.options.debug && <Text dimColor>{t('powershell.ctrlDToShow')}</Text>}
           </Box>
         </>}
     </PermissionDialog>;

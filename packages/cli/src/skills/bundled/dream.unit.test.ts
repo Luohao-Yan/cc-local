@@ -150,7 +150,7 @@ describe('/dream 提示词生成', () => {
     await capturedDefinition!.getPromptForCommand('重点整理调试记录', {} as any)
 
     // 验证 extra 参数（第三个参数）包含用户输入
-    const extra = mockBuildConsolidationPrompt.mock.calls[0]![2] as string
+    const extra = mockBuildConsolidationPrompt.mock.calls[0]![2] as unknown as string
     expect(extra).toContain('重点整理调试记录')
   })
 
@@ -159,7 +159,7 @@ describe('/dream 提示词生成', () => {
     await capturedDefinition!.getPromptForCommand('', {} as any)
 
     // 验证 extra 参数不包含工具限制相关文本
-    const extra = mockBuildConsolidationPrompt.mock.calls[0]![2] as string
+    const extra = mockBuildConsolidationPrompt.mock.calls[0]![2] as unknown as string
     expect(extra).not.toContain('Tool constraints')
     expect(extra).not.toContain('tool_use')
   })
@@ -298,7 +298,7 @@ describe('/dream 边界条件', () => {
     await capturedDefinition!.getPromptForCommand('', {} as any)
 
     // 验证 extra 参数不包含 "Sessions since" 文本
-    const extra = mockBuildConsolidationPrompt.mock.calls[0]![2] as string
+    const extra = mockBuildConsolidationPrompt.mock.calls[0]![2] as unknown as string
     expect(extra).not.toContain('Sessions since')
   })
 
@@ -310,7 +310,7 @@ describe('/dream 边界条件', () => {
     await capturedDefinition!.getPromptForCommand('', {} as any)
 
     // 验证 extra 参数不包含 "Sessions since" 文本（当前会话被过滤掉后为空）
-    const extra = mockBuildConsolidationPrompt.mock.calls[0]![2] as string
+    const extra = mockBuildConsolidationPrompt.mock.calls[0]![2] as unknown as string
     expect(extra).not.toContain('Sessions since')
     expect(extra).not.toContain('current-session-id')
   })
@@ -326,7 +326,7 @@ describe('/dream 边界条件', () => {
     await capturedDefinition!.getPromptForCommand('', {} as any)
 
     // 验证 extra 包含过滤后的会话信息（排除当前会话后剩余 2 个）
-    const extra = mockBuildConsolidationPrompt.mock.calls[0]![2] as string
+    const extra = mockBuildConsolidationPrompt.mock.calls[0]![2] as unknown as string
     expect(extra).toContain('2')
     expect(extra).toContain('session-x')
     expect(extra).toContain('session-y')

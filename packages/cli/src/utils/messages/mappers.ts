@@ -98,10 +98,10 @@ export function toSDKCompactMetadata(
 export function fromSDKCompactMetadata(
   meta: SDKCompactMetadata,
 ): CompactMetadata {
-  const seg = meta.preserved_segment
+  const seg = (meta as any).preserved_segment
   return {
-    trigger: meta.trigger,
-    preTokens: meta.pre_tokens,
+    trigger: (meta as any).trigger,
+    preTokens: (meta as any).pre_tokens,
     ...(seg && {
       preservedSegment: {
         headUuid: seg.head_uuid,

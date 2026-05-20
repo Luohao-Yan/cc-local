@@ -275,7 +275,7 @@ export function useVoice({
   function updateState(newState: VoiceState): void {
     stateRef.current = newState
     setState(newState)
-    setVoiceState(prev => {
+    setVoiceState((prev: any) => {
       if (prev.voiceState === newState) return prev
       return { ...prev, voiceState: newState }
     })
@@ -312,7 +312,7 @@ export function useVoice({
     accumulatedRef.current = ''
     audioLevelsRef.current = []
     fullAudioRef.current = []
-    setVoiceState(prev => {
+    setVoiceState((prev: any) => {
       if (prev.voiceInterimTranscript === '' && !prev.voiceAudioLevels.length)
         return prev
       return { ...prev, voiceInterimTranscript: '', voiceAudioLevels: [] }
@@ -509,7 +509,7 @@ export function useVoice({
         }
 
         accumulatedRef.current = ''
-        setVoiceState(prev => {
+        setVoiceState((prev: any) => {
           if (prev.voiceInterimTranscript === '') return prev
           return { ...prev, voiceInterimTranscript: '' }
         })
@@ -675,7 +675,7 @@ export function useVoice({
       '[voice] Starting recording session, connecting voice stream',
     )
     // Clear any previous error
-    setVoiceState(prev => {
+    setVoiceState((prev: any) => {
       if (!prev.voiceError) return prev
       return { ...prev, voiceError: null }
     })
@@ -719,7 +719,7 @@ export function useVoice({
         // Copy the array so React sees a new reference
         const snapshot = [...levels]
         audioLevelsRef.current = snapshot
-        setVoiceState(prev => ({ ...prev, voiceAudioLevels: snapshot }))
+        setVoiceState((prev: any) => ({ ...prev, voiceAudioLevels: snapshot }))
       },
       () => {
         // External end (e.g. device error) - treat as stop
@@ -737,7 +737,7 @@ export function useVoice({
       )
       cleanup()
       updateState('idle')
-      setVoiceState(prev => ({
+      setVoiceState((prev: any) => ({
         ...prev,
         voiceError: 'Recording failed — no audio tool found',
       }))
@@ -796,7 +796,7 @@ export function useVoice({
                 )
                 onTranscriptRef.current(text.trim())
                 focusFlushedCharsRef.current += text.trim().length
-                setVoiceState(prev => {
+                setVoiceState((prev: any) => {
                   if (prev.voiceInterimTranscript === '') return prev
                   return { ...prev, voiceInterimTranscript: '' }
                 })
@@ -813,7 +813,7 @@ export function useVoice({
                   `[voice] Accumulated final transcript: "${accumulatedRef.current}"`,
                 )
                 // Clear interim since final supersedes it
-                setVoiceState(prev => {
+                setVoiceState((prev: any) => {
                   const preview = accumulatedRef.current
                   if (prev.voiceInterimTranscript === preview) return prev
                   return { ...prev, voiceInterimTranscript: preview }
@@ -832,7 +832,7 @@ export function useVoice({
               const preview = accumulatedRef.current
                 ? accumulatedRef.current + (interim ? ' ' + interim : '')
                 : interim
-              setVoiceState(prev => {
+              setVoiceState((prev: any) => {
                 if (prev.voiceInterimTranscript === preview) return prev
                 return { ...prev, voiceInterimTranscript: preview }
               })

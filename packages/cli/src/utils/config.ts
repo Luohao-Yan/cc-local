@@ -1218,7 +1218,7 @@ function saveConfigWithLock<A extends object>(
     const startTime = Date.now()
     release = lockfile.lockSync(file, {
       lockfilePath: lockFilePath,
-      onCompromised: err => {
+      onCompromised: (err: any) => {
         // Default onCompromised throws from a setTimeout callback, which
         // becomes an unhandled exception. Log instead -- the lock being
         // stolen (e.g. after a 10s event-loop stall) is recoverable.
@@ -1814,6 +1814,19 @@ export function getAutoUpdaterDisabledReason(): AutoUpdaterDisabledReason | null
     return { type: 'config' }
   }
   return null
+}
+
+/**
+ * Whether package-manager-specific auto-update (Homebrew, WinGet, etc.) is
+ * enabled. Defaults to true unless CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE
+ * is explicitly set to a falsy value. This env var is separate from the
+ * general DISABLE_AUTOUPDATER knob — some users want npm-style updates but
+ * NOT package-manager background checks.
+ */
+export function isPackageManagerAutoUpdateEnabled(): boolean {
+  const raw = process.env.CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE
+  if (raw === undefined) return true
+  return isEnvTruthy(raw)
 }
 
 export function getOrCreateUserID(): string {

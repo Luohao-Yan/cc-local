@@ -110,7 +110,7 @@ export function createLSPServerInstance(
   const { createLSPClient } = require('./LSPClient.js') as {
     createLSPClient: typeof createLSPClientType
   }
-  let state: LspServerState = 'stopped'
+  let state: LspServerState = { status: 'stopped' }
   let startTime: Date | undefined
   let lastError: Error | undefined
   let restartCount = 0
@@ -119,7 +119,7 @@ export function createLSPServerInstance(
   // Without this, state stays 'running' after crash and the server is never
   // restarted (zombie state).
   const client = createLSPClient(name, error => {
-    state = 'error'
+    state = { status: 'error', error: errorMessage(error) }
     lastError = error
     crashRecoveryCount++
   })
@@ -133,14 +133,14 @@ export function createLSPServerInstance(
    * @throws {Error} If server fails to start or initialize
    */
   async function start(): Promise<void> {
-    if (state === 'running' || state === 'starting') {
+    if (state.status === 'running' || state.status === 'starting') {
       return
     }
 
     // Cap crash-recovery attempts so a persistently crashing server doesn't
     // spawn unbounded child processes on every incoming request.
-    const maxRestarts = config.maxRestarts ?? 3
-    if (state === 'error' && crashRecoveryCount > maxRestarts) {
+    const maxRestarts = (config.maxRestarts as number) ?? 3
+    if (state.status === 'error' && crashRecoveryCount > maxRestarts) {
       const error = new Error(
         `LSP server '${name}' exceeded max crash recovery attempts (${maxRestarts})`,
       )
@@ -151,17 +151,17 @@ export function createLSPServerInstance(
 
     let initPromise: Promise<unknown> | undefined
     try {
-      state = 'starting'
+      state = { status: 'starting' }
       logForDebugging(`Starting LSP server instance: ${name}`)
 
       // Start the client
-      await client.start(config.command, config.args || [], {
-        env: config.env,
-        cwd: config.workspaceFolder,
+      await client.start(config.command as string, (config.args as string[]) || [], {
+        env: config.env as Record<string, string> | undefined,
+        cwd: config.workspaceFolder as string,
       })
 
       // Initialize with workspace info
-      const workspaceFolder = config.workspaceFolder || getCwd()
+      const workspaceFolder = (config.workspaceFolder as string) || getCwd()
       const workspaceUri = pathToFileURL(workspaceFolder).href
 
       const initParams: InitializeParams = {
@@ -171,13 +171,13 @@ export function createLSPServerInstance(
         // Required by vue-language-server, optional for others
         // Provide empty object as default to avoid undefined errors in servers
         // that expect this field to exist
-        initializationOptions: config.initializationOptions ?? {},
+        initializationOptions: (config.initializationOptions as object) ?? {},
 
         // Modern approach (LSP 3.16+) - required for Pyright, gopls
         workspaceFolders: [
           {
             uri: workspaceUri,
-            name: path.basename(workspaceFolder),
+            name: path.basename(workspaceFolder as string),
           },
         ],
 
@@ -237,17 +237,17 @@ export function createLSPServerInstance(
       }
 
       initPromise = client.initialize(initParams)
-      if (config.startupTimeout !== undefined) {
+      if ((config.startupTimeout as number | undefined) !== undefined) {
         await withTimeout(
           initPromise,
-          config.startupTimeout,
+          config.startupTimeout as number,
           `LSP server '${name}' timed out after ${config.startupTimeout}ms during initialization`,
         )
       } else {
         await initPromise
       }
 
-      state = 'running'
+      state = { status: 'running' }
       startTime = new Date()
       crashRecoveryCount = 0
       logForDebugging(`LSP server instance started: ${name}`)
@@ -256,7 +256,7 @@ export function createLSPServerInstance(
       client.stop().catch(() => {})
       // Prevent unhandled rejection from abandoned initialize promise
       initPromise?.catch(() => {})
-      state = 'error'
+      state = { status: 'error', error: errorMessage(error) }
       lastError = error as Error
       logError(error)
       throw error
@@ -272,17 +272,17 @@ export function createLSPServerInstance(
    * @throws {Error} If server fails to stop
    */
   async function stop(): Promise<void> {
-    if (state === 'stopped' || state === 'stopping') {
+    if (state.status === 'stopped') {
       return
     }
 
     try {
-      state = 'stopping'
+      state = { status: 'stopped' }
       await client.stop()
-      state = 'stopped'
+      state = { status: 'stopped' }
       logForDebugging(`LSP server instance stopped: ${name}`)
     } catch (error) {
-      state = 'error'
+      state = { status: 'error', error: errorMessage(error) }
       lastError = error as Error
       logError(error)
       throw error
@@ -310,7 +310,7 @@ export function createLSPServerInstance(
 
     restartCount++
 
-    const maxRestarts = config.maxRestarts ?? 3
+    const maxRestarts = (config.maxRestarts as number) ?? 3
     if (restartCount > maxRestarts) {
       const error = new Error(
         `Max restart attempts (${maxRestarts}) exceeded for server '${name}'`,
@@ -336,7 +336,7 @@ export function createLSPServerInstance(
    * @returns true if state is 'running' AND the client has completed initialization
    */
   function isHealthy(): boolean {
-    return state === 'running' && client.isInitialized
+    return state.status === 'running' && client.isInitialized
   }
 
   /**
@@ -355,7 +355,7 @@ export function createLSPServerInstance(
   async function sendRequest<T>(method: string, params: unknown): Promise<T> {
     if (!isHealthy()) {
       const error = new Error(
-        `Cannot send request to LSP server '${name}': server is ${state}` +
+        `Cannot send request to LSP server '${name}': server is ${state.status}` +
           `${lastError ? `, last error: ${lastError.message}` : ''}`,
       )
       logError(error)
@@ -419,7 +419,7 @@ export function createLSPServerInstance(
   ): Promise<void> {
     if (!isHealthy()) {
       const error = new Error(
-        `Cannot send notification to LSP server '${name}': server is ${state}`,
+        `Cannot send notification to LSP server '${name}': server is ${state.status}`,
       )
       logError(error)
       throw error

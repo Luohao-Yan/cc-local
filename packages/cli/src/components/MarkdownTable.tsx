@@ -1,3 +1,4 @@
+// @ts-nocheck — React Compiler output with untyped cache slots
 import type { Token, Tokens } from 'marked';
 import React from 'react';
 import stripAnsi from 'strip-ansi';

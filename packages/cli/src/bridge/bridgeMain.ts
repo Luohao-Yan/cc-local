@@ -18,6 +18,7 @@ import { isEnvTruthy, isInProtectedNamespace } from '../utils/envUtils.js'
 import { errorMessage } from '../utils/errors.js'
 import { truncateToWidth } from '../utils/format.js'
 import { logError } from '../utils/log.js'
+import { getInitialSettings } from '../utils/settings/settings.js';
 import { sleep } from '../utils/sleep.js'
 import { createAgentWorktree, removeAgentWorktree } from '../utils/worktree.js'
 import {
@@ -971,10 +972,13 @@ export async function runBridgeLoop(
           // take 1-2s, so reading config.spawnMode after the await can
           // produce contradictory analytics (spawn_mode:'same-dir', in_worktree:true).
           const spawnModeAtDecision = config.spawnMode
+          // bgIsolation='none' suppresses worktree isolation for bridge agents
+          const bgIsolation = getInitialSettings().worktree?.bgIsolation
+          const effectiveSpawnMode = bgIsolation === 'none' && spawnModeAtDecision === 'worktree' ? 'same-dir' : spawnModeAtDecision
           let sessionDir = config.dir
           let worktreeCreateMs = 0
           if (
-            spawnModeAtDecision === 'worktree' &&
+            effectiveSpawnMode === 'worktree' &&
             (initialSessionId === undefined ||
               !sameSessionId(sessionId, initialSessionId))
           ) {

@@ -58,11 +58,11 @@ export function countLinesChanged(
     numAdditions = newFileContent.split(/\r?\n/).length
   } else {
     numAdditions = patch.reduce(
-      (acc, hunk) => acc + count(hunk.lines, _ => _.startsWith('+')),
+      (acc: number, hunk: any) => acc + count(hunk.lines, (l: any) => l.startsWith('+')),
       0,
     )
     numRemovals = patch.reduce(
-      (acc, hunk) => acc + count(hunk.lines, _ => _.startsWith('-')),
+      (acc: number, hunk: any) => acc + count(hunk.lines, (l: any) => l.startsWith('-')),
       0,
     )
   }
@@ -107,7 +107,7 @@ export function getPatchFromContents({
   if (!result) {
     return []
   }
-  return result.hunks.map(_ => ({
+  return result.hunks.map((_: any) => ({
     ..._,
     lines: _.lines.map(unescapeFromDiff),
   }))
@@ -170,7 +170,7 @@ export function getPatchForDisplay({
   if (!result) {
     return []
   }
-  return result.hunks.map(_ => ({
+  return result.hunks.map((_: any) => ({
     ..._,
     lines: _.lines.map(unescapeFromDiff),
   }))

@@ -308,10 +308,18 @@ export const SYNTHETIC_MESSAGES = new Set([
 ])
 
 export function isSyntheticMessage(message: Message): boolean {
+  if (
+    message.type === 'progress' ||
+    message.type === 'attachment' ||
+    message.type === 'system' ||
+    message.type === 'stream_event' ||
+    message.type === 'stream_request_start' ||
+    message.type === 'tombstone' ||
+    message.type === 'tool_use_summary'
+  ) {
+    return false
+  }
   return (
-    message.type !== 'progress' &&
-    message.type !== 'attachment' &&
-    message.type !== 'system' &&
     Array.isArray(message.message.content) &&
     message.message.content[0]?.type === 'text' &&
     SYNTHETIC_MESSAGES.has(message.message.content[0].text)
@@ -478,7 +486,7 @@ export function createUserMessage({
   isVisibleInTranscriptOnly?: true
   isVirtual?: true
   isCompactSummary?: true
-  toolUseResult?: unknown // Matches tool's `Output` type
+  toolUseResult?: ToolResultBlockParam | unknown // Matches tool's `Output` type
   /** MCP protocol metadata to pass through to SDK consumers (never sent to model) */
   mcpMeta?: {
     _meta?: Record<string, unknown>
@@ -486,7 +494,7 @@ export function createUserMessage({
   }
   uuid?: UUID | string
   timestamp?: string
-  imagePasteIds?: number[]
+  imagePasteIds?: string[]
   // For tool_result messages: the UUID of the assistant message containing the matching tool_use
   sourceToolAssistantUUID?: UUID
   // Permission mode when message was sent (for rewind restoration)
@@ -512,7 +520,7 @@ export function createUserMessage({
     summarizeMetadata,
     uuid: (uuid as UUID | undefined) || randomUUID(),
     timestamp: timestamp ?? new Date().toISOString(),
-    toolUseResult,
+    toolUseResult: toolUseResult as ToolResultBlockParam | undefined,
     mcpMeta,
     imagePasteIds,
     sourceToolAssistantUUID,
@@ -693,7 +701,11 @@ export function isNotEmptyMessage(message: Message): boolean {
   if (
     message.type === 'progress' ||
     message.type === 'attachment' ||
-    message.type === 'system'
+    message.type === 'system' ||
+    message.type === 'stream_event' ||
+    message.type === 'stream_request_start' ||
+    message.type === 'tombstone' ||
+    message.type === 'tool_use_summary'
   ) {
     return true
   }
@@ -755,8 +767,8 @@ export function normalizeMessages(messages: Message[]): NormalizedMessage[] {
         isNewChain = isNewChain || message.message.content.length > 1
         return message.message.content.map((_, index) => {
           const uuid = isNewChain
-            ? deriveUUID(message.uuid, index)
-            : message.uuid
+            ? deriveUUID(message.uuid as UUID, index)
+            : message.uuid as UUID
           return {
             type: 'assistant' as const,
             timestamp: message.timestamp,
@@ -783,7 +795,7 @@ export function normalizeMessages(messages: Message[]): NormalizedMessage[] {
         return [message]
       case 'user': {
         if (typeof message.message.content === 'string') {
-          const uuid = isNewChain ? deriveUUID(message.uuid, 0) : message.uuid
+          const uuid = isNewChain ? deriveUUID(message.uuid as UUID, 0) : message.uuid as UUID
           return [
             {
               ...message,
@@ -808,16 +820,16 @@ export function normalizeMessages(messages: Message[]): NormalizedMessage[] {
           return {
             ...createUserMessage({
               content: [_],
-              toolUseResult: message.toolUseResult,
+              toolUseResult: message.toolUseResult as ToolResultBlockParam | undefined,
               mcpMeta: message.mcpMeta,
-              isMeta: message.isMeta,
-              isVisibleInTranscriptOnly: message.isVisibleInTranscriptOnly,
-              isVirtual: message.isVirtual,
-              timestamp: message.timestamp,
-              imagePasteIds: imageId !== undefined ? [imageId] : undefined,
+              isMeta: message.isMeta ? true : undefined,
+              isVisibleInTranscriptOnly: message.isVisibleInTranscriptOnly ? true : undefined,
+              isVirtual: message.isVirtual ? true : undefined,
+              timestamp: String(message.timestamp),
+              imagePasteIds: imageId !== undefined ? [String(imageId)] : undefined,
               origin: message.origin,
             }),
-            uuid: isNewChain ? deriveUUID(message.uuid, index) : message.uuid,
+            uuid: isNewChain ? deriveUUID(message.uuid as UUID, index) : message.uuid as UUID,
           } as NormalizedMessage
         })
       }
@@ -852,6 +864,7 @@ export function isToolUseResultMessage(
   return (
     message.type === 'user' &&
     ((Array.isArray(message.message.content) &&
+      typeof message.message.content[0] !== 'string' &&
       message.message.content[0]?.type === 'tool_result') ||
       Boolean(message.toolUseResult))
   )
@@ -1033,7 +1046,7 @@ export function reorderMessagesInUI(
 
 function isHookAttachmentMessage(
   message: Message,
-): message is AttachmentMessage<HookAttachment> {
+): message is AttachmentMessage & { attachment: HookAttachment } {
   return (
     message.type === 'attachment' &&
     (message.attachment.type === 'hook_blocking_error' ||
@@ -1056,8 +1069,8 @@ function getInProgressHookCount(
     messages,
     _ =>
       _.type === 'progress' &&
-      _.data.type === 'hook_progress' &&
-      _.data.hookEvent === hookEvent &&
+      (_.data as { type?: string }).type === 'hook_progress' &&
+      (_.data as { hookEvent?: HookEvent }).hookEvent === hookEvent &&
       _.parentToolUseID === toolUseID,
   )
 }
@@ -1072,7 +1085,7 @@ function getResolvedHookCount(
   const uniqueHookNames = new Set(
     messages
       .filter(
-        (_): _ is AttachmentMessage<HookAttachmentWithName> =>
+        (_): _ is AttachmentMessage & { attachment: HookAttachmentWithName } =>
           isHookAttachmentMessage(_) &&
           _.attachment.toolUseID === toolUseID &&
           _.attachment.hookEvent === hookEvent,
@@ -1220,7 +1233,8 @@ export function buildMessageLookups(
   for (const msg of normalizedMessages) {
     if (msg.type === 'progress') {
       // Build progress messages lookup
-      const toolUseID = msg.parentToolUseID
+      const toolUseID = msg.parentToolUseID ?? ''
+      if (!toolUseID) continue
       const existing = progressMessagesByToolUseID.get(toolUseID)
       if (existing) {
         existing.push(msg)
@@ -1229,14 +1243,17 @@ export function buildMessageLookups(
       }
 
       // Count in-progress hooks
-      if (msg.data.type === 'hook_progress') {
-        const hookEvent = msg.data.hookEvent
-        let byHookEvent = inProgressHookCounts.get(toolUseID)
-        if (!byHookEvent) {
-          byHookEvent = new Map()
-          inProgressHookCounts.set(toolUseID, byHookEvent)
+      const data = msg.data as { type?: string; hookEvent?: HookEvent } | null
+      if (data?.type === 'hook_progress') {
+        const hookEvent = data.hookEvent
+        if (hookEvent) {
+          let byHookEvent = inProgressHookCounts.get(toolUseID)
+          if (!byHookEvent) {
+            byHookEvent = new Map()
+            inProgressHookCounts.set(toolUseID, byHookEvent)
+          }
+          byHookEvent.set(hookEvent, (byHookEvent.get(hookEvent) ?? 0) + 1)
         }
-        byHookEvent.set(hookEvent, (byHookEvent.get(hookEvent) ?? 0) + 1)
       }
     }
 
@@ -2087,7 +2104,7 @@ export function normalizeMessagesForAPI(
           const userMsg = createUserMessage({
             content: message.content,
             uuid: message.uuid,
-            timestamp: message.timestamp,
+            timestamp: String(message.timestamp),
           })
           const lastMessage = last(result)
           if (lastMessage?.type === 'user') {
@@ -2274,7 +2291,7 @@ export function normalizeMessagesForAPI(
         }
         case 'attachment': {
           const rawAttachmentMessage = normalizeAttachmentForAPI(
-            message.attachment,
+            message.attachment as Attachment,
           )
           const attachmentMessage = checkStatsigFeatureGate_CACHED_MAY_BE_STALE(
             'tengu_chair_sermon',
@@ -2812,6 +2829,7 @@ export function filterUnresolvedToolUses(messages: Message[]): Message[] {
     const content = msg.message.content
     if (!Array.isArray(content)) continue
     for (const block of content) {
+      if (typeof block === 'string') continue
       if (block.type === 'tool_use') {
         toolUseIds.add(block.id)
       }
@@ -4068,7 +4086,7 @@ You have exited auto mode. The user may now want to interact more directly. You 
       const messages: UserMessage[] = []
 
       // Handle systemMessage
-      if (response.systemMessage) {
+      if (typeof response.systemMessage === 'string') {
         messages.push(
           createUserMessage({
             content: response.systemMessage,
@@ -4078,14 +4096,16 @@ You have exited auto mode. The user may now want to interact more directly. You 
       }
 
       // Handle additionalContext
+      const hookSpecificOutput = response.hookSpecificOutput as Record<string, unknown> | undefined
       if (
-        response.hookSpecificOutput &&
-        'additionalContext' in response.hookSpecificOutput &&
-        response.hookSpecificOutput.additionalContext
+        hookSpecificOutput &&
+        typeof hookSpecificOutput === 'object' &&
+        'additionalContext' in hookSpecificOutput &&
+        typeof hookSpecificOutput.additionalContext === 'string'
       ) {
         messages.push(
           createUserMessage({
-            content: response.hookSpecificOutput.additionalContext,
+            content: hookSpecificOutput.additionalContext,
             isMeta: true,
           }),
         )
@@ -4414,6 +4434,7 @@ export function createBridgeStatusMessage(
     type: 'system',
     subtype: 'bridge_status',
     content: `/remote-control is active. Code in CLI or at ${url}`,
+    level: 'info',
     url,
     upgradeNudge,
     isMeta: false,
@@ -4429,6 +4450,7 @@ export function createScheduledTaskFireMessage(
     type: 'system',
     subtype: 'scheduled_task_fire',
     content,
+    level: 'info',
     isMeta: false,
     timestamp: new Date().toISOString(),
     uuid: randomUUID(),
@@ -4450,6 +4472,7 @@ export function createStopHookSummaryMessage(
   return {
     type: 'system',
     subtype: 'stop_hook_summary',
+    content: 'Stop hook summary',
     hookCount,
     hookInfos,
     hookErrors,
@@ -4457,6 +4480,7 @@ export function createStopHookSummaryMessage(
     stopReason,
     hasOutput,
     level,
+    isMeta: false,
     timestamp: new Date().toISOString(),
     uuid: randomUUID(),
     toolUseID,
@@ -4473,6 +4497,8 @@ export function createTurnDurationMessage(
   return {
     type: 'system',
     subtype: 'turn_duration',
+    content: 'Turn duration',
+    level: 'info',
     durationMs,
     budgetTokens: budget?.tokens,
     budgetLimit: budget?.limit,
@@ -4491,6 +4517,7 @@ export function createAwaySummaryMessage(
     type: 'system',
     subtype: 'away_summary',
     content,
+    level: 'info',
     timestamp: new Date().toISOString(),
     uuid: randomUUID(),
     isMeta: false,
@@ -4503,6 +4530,8 @@ export function createMemorySavedMessage(
   return {
     type: 'system',
     subtype: 'memory_saved',
+    content: 'Memory saved',
+    level: 'info',
     writtenPaths,
     timestamp: new Date().toISOString(),
     uuid: randomUUID(),
@@ -4514,6 +4543,8 @@ export function createAgentsKilledMessage(): SystemAgentsKilledMessage {
   return {
     type: 'system',
     subtype: 'agents_killed',
+    content: 'Agents killed',
+    level: 'info',
     timestamp: new Date().toISOString(),
     uuid: randomUUID(),
     isMeta: false,
@@ -4536,6 +4567,8 @@ export function createApiMetricsMessage(metrics: {
   return {
     type: 'system',
     subtype: 'api_metrics',
+    content: 'API metrics',
+    level: 'info',
     ttftMs: metrics.ttftMs,
     otps: metrics.otps,
     isP50: metrics.isP50,
@@ -4631,12 +4664,14 @@ export function createSystemAPIErrorMessage(
   return {
     type: 'system',
     subtype: 'api_error',
+    content: 'API error',
     level: 'error',
     cause: error.cause instanceof Error ? error.cause : undefined,
     error,
     retryInMs,
     retryAttempt,
     maxRetries,
+    isMeta: false,
     timestamp: new Date().toISOString(),
     uuid: randomUUID(),
   }

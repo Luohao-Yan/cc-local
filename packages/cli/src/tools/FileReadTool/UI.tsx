@@ -9,6 +9,7 @@ import { FILE_NOT_FOUND_CWD_NOTE, getDisplayPath } from '../../utils/file.js';
 import { formatFileSize } from '../../utils/format.js';
 import { getPlansDirectory } from '../../utils/plans.js';
 import { getTaskOutputDir } from '../../utils/task/diskOutput.js';
+import { t } from '../../utils/i18n/index.js';
 import type { Input, Output } from './FileReadTool.js';
 
 /**
@@ -50,12 +51,12 @@ export function renderToolUseMessage({
   if (pages) {
     return <>
         <FilePathLink filePath={file_path}>{displayPath}</FilePathLink>
-        {` · pages ${pages}`}
+        {t('fileRead.pages', { pages })}
       </>;
   }
   if (verbose && (offset || limit)) {
     const startLine = offset ?? 1;
-    const lineRange = limit ? `lines ${startLine}-${startLine + limit - 1}` : `from line ${startLine}`;
+    const lineRange = limit ? t('fileRead.linesRange', { start: startLine, end: startLine + limit - 1 }) : t('fileRead.fromLine', { start: startLine });
     return <>
         <FilePathLink filePath={file_path}>{displayPath}</FilePathLink>
         {` · ${lineRange}`}
@@ -84,7 +85,7 @@ export function renderToolResultMessage(output: Output): React.ReactNode {
         } = output.file;
         const formattedSize = formatFileSize(originalSize);
         return <MessageResponse height={1}>
-          <Text>Read image ({formattedSize})</Text>
+          <Text>{t('fileRead.readImage')} ({formattedSize})</Text>
         </MessageResponse>;
       }
     case 'notebook':
@@ -93,11 +94,11 @@ export function renderToolResultMessage(output: Output): React.ReactNode {
           cells
         } = output.file;
         if (!cells || cells.length < 1) {
-          return <Text color="error">No cells found in notebook</Text>;
+          return <Text color="error">{t('fileRead.noCellsFound')}</Text>;
         }
         return <MessageResponse height={1}>
           <Text>
-            Read <Text bold>{cells.length}</Text> cells
+            {t('fileRead.readCell')} <Text bold>{cells.length}</Text> {cells.length === 1 ? t('fileRead.cell') : t('fileRead.cells')}
           </Text>
         </MessageResponse>;
       }
@@ -108,7 +109,7 @@ export function renderToolResultMessage(output: Output): React.ReactNode {
         } = output.file;
         const formattedSize = formatFileSize(originalSize);
         return <MessageResponse height={1}>
-          <Text>Read PDF ({formattedSize})</Text>
+          <Text>{t('fileRead.readPdf')} ({formattedSize})</Text>
         </MessageResponse>;
       }
     case 'parts':
@@ -116,7 +117,7 @@ export function renderToolResultMessage(output: Output): React.ReactNode {
         return <MessageResponse height={1}>
           <Text>
             Read <Text bold>{output.file.count}</Text>{' '}
-            {output.file.count === 1 ? 'page' : 'pages'} (
+            {output.file.count === 1 ? t('fileRead.page') : t('fileRead.pages_')} (
             {formatFileSize(output.file.originalSize)})
           </Text>
         </MessageResponse>;
@@ -129,14 +130,14 @@ export function renderToolResultMessage(output: Output): React.ReactNode {
         return <MessageResponse height={1}>
           <Text>
             Read <Text bold>{numLines}</Text>{' '}
-            {numLines === 1 ? 'line' : 'lines'}
+            {numLines === 1 ? t('fileRead.line') : t('fileRead.lines_')}
           </Text>
         </MessageResponse>;
       }
     case 'file_unchanged':
       {
         return <MessageResponse height={1}>
-          <Text dimColor>Unchanged since last read</Text>
+          <Text dimColor>{t('fileRead.unchangedSinceLastRead')}</Text>
         </MessageResponse>;
       }
   }
@@ -151,12 +152,12 @@ export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'
     // check the raw string directly for the cwd note marker.
     if (result.includes(FILE_NOT_FOUND_CWD_NOTE)) {
       return <MessageResponse>
-          <Text color="error">File not found</Text>
+          <Text color="error">{t('fileRead.fileNotFound')}</Text>
         </MessageResponse>;
     }
     if (extractTag(result, 'tool_use_error')) {
       return <MessageResponse>
-          <Text color="error">Error reading file</Text>
+          <Text color="error">{t('fileRead.errorReadingFile')}</Text>
         </MessageResponse>;
     }
   }
@@ -164,12 +165,12 @@ export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'
 }
 export function userFacingName(input: Partial<Input> | undefined): string {
   if (input?.file_path?.startsWith(getPlansDirectory())) {
-    return 'Reading Plan';
+    return t('fileRead.readingPlan');
   }
   if (input?.file_path && getAgentOutputTaskId(input.file_path)) {
-    return 'Read agent output';
+    return t('fileRead.readAgentOutput');
   }
-  return 'Read';
+  return t('fileRead.read');
 }
 export function getToolUseSummary(input: Partial<Input> | undefined): string | null {
   if (!input?.file_path) {

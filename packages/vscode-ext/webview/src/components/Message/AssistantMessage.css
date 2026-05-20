@@ -1,0 +1,145 @@
+/* Assistant Message Styles */
+.assistant-message {
+  word-wrap: break-word;
+  width: 100%;
+}
+
+.assistant-message-text {
+  white-space: pre-wrap;
+  line-height: var(--app-line-height);
+}
+
+/* Tool Result Block */
+.assistant-message-tool-result {
+  margin-top: var(--app-spacing-md);
+  padding: var(--app-spacing-md);
+  background: var(--app-code-background);
+  border-radius: var(--app-radius-sm);
+  overflow-x: auto;
+  font-family: var(--app-monospace-font-family);
+  font-size: var(--app-font-size-sm);
+}
+
+.assistant-message-tool-result.error {
+  border-left: 3px solid var(--app-error-foreground);
+  background: rgba(241, 76, 76, 0.08);
+}
+
+.assistant-message-tool-result.success {
+  border-left: 3px solid var(--app-success-foreground);
+}
+
+.assistant-message-tool-result pre {
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  white-space: pre-wrap;
+}
+
+/* Thinking Block */
+.assistant-message-thinking {
+  margin-top: var(--app-spacing-md);
+  padding: var(--app-spacing-md);
+  background: var(--vscode-editor-inactiveSelectionBackground, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
+}
+
+.assistant-message-thinking summary {
+  cursor: pointer;
+  font-size: var(--app-font-size-xs);
+  font-weight: var(--app-font-weight-medium);
+  color: var(--app-foreground-dim);
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-sm);
+  user-select: none;
+}
+
+.assistant-message-thinking summary::-webkit-details-marker {
+  display: none;
+}
+
+.assistant-message-thinking summary::before {
+  content: "▶";
+  font-size: 8px;
+  transition: transform var(--app-transition-fast);
+}
+
+.assistant-message-thinking[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.assistant-message-thinking-content {
+  margin-top: var(--app-spacing-md);
+  font-size: var(--app-font-size-xs);
+  color: var(--app-foreground-dim);
+  white-space: pre-wrap;
+  line-height: var(--app-line-height);
+  padding-left: var(--app-spacing-md);
+  border-left: 2px solid var(--app-border);
+}
+
+/* Streaming indicator */
+.assistant-message-streaming {
+  display: flex;
+  gap: var(--app-spacing-xs);
+  align-items: center;
+  padding: var(--app-spacing-xs) 0 var(--app-spacing-sm);
+}
+
+.assistant-message-streaming span {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--app-radius-full);
+  background: var(--app-foreground-dim);
+  animation: pulse 1.2s infinite;
+}
+
+.assistant-message-streaming span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.assistant-message-streaming span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes pulse {
+  0%, 80%, 100% {
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+/* Timestamp */
+.assistant-message-timestamp {
+  font-size: var(--app-font-size-xs);
+  color: var(--app-foreground-dim);
+  opacity: 0.6;
+  margin-top: var(--app-spacing-sm);
+}
+
+/* Markdown inline styles */
+.markdown-content .markdown-inline-code {
+  padding: 2px 4px;
+  background: var(--vscode-textCodeBlock-background, rgba(255, 255, 255, 0.06));
+  border-radius: 3px;
+  font-family: var(--app-monospace-font-family, 'Consolas', 'Courier New', monospace);
+  font-size: 85%;
+}
+
+.markdown-content .markdown-link {
+  color: var(--vscode-textLink-foreground, #3794ff);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.markdown-content .markdown-link:hover {
+  text-decoration: underline;
+}
+
+.markdown-content del {
+  opacity: 0.6;
+}

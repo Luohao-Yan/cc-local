@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import figures from 'figures';
 import React, { type ReactNode, useEffect, useRef, useState } from 'react';

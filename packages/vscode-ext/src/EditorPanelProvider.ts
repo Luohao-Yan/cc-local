@@ -87,6 +87,12 @@ export class EditorPanelProvider {
     return this.panel?.webview
   }
 
+  /** Restore panel state from serialized data (called by WebviewPanelSerializer) */
+  restorePanel(state: unknown): void {
+    // The panel is re-created via openInEditorTab() — state is kept via retainContextWhenHidden
+    this.outputChannel.debug('[EditorPanel] Restoring panel state')
+  }
+
   // ─── Internal ────────────────────────────────────────────────────────────
 
   private getWebviewHtml(webview: vscode.Webview): string {
@@ -117,5 +123,69 @@ export class EditorPanelProvider {
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`
+  }
+}
+
+/**
+ * Serializer that persists and restores the editor panel across VS Code restarts.
+ * Registered via `vscode.window.registerWebviewPanelSerializer`.
+ */
+export class EditorPanelSerializer implements vscode.WebviewPanelSerializer {
+  private extensionUri: vscode.Uri
+  private outputChannel: vscode.LogOutputChannel
+  private onDidRestore?: (webview: vscode.Webview) => void
+
+  constructor(
+    extensionUri: vscode.Uri,
+    outputChannel: vscode.LogOutputChannel,
+    onDidRestore?: (webview: vscode.Webview) => void,
+  ) {
+    this.extensionUri = extensionUri
+    this.outputChannel = outputChannel
+    this.onDidRestore = onDidRestore
+  }
+
+  async deserializeWebviewPanel(
+    panel: vscode.WebviewPanel,
+    _state: unknown,
+  ): Promise<void> {
+    this.outputChannel.debug('[EditorPanelSerializer] Restoring panel')
+
+    panel.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this.extensionUri],
+    }
+
+    const nonce = crypto.randomBytes(16).toString('base64')
+    const webviewDistUri = (fileName: string) =>
+      panel.webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'webview-dist', fileName))
+
+    const scriptUri = webviewDistUri('index.js')
+    const styleUri = webviewDistUri('index.css')
+
+    panel.webview.html = /* html */ `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none';
+            style-src 'nonce-${nonce}' https:;
+            script-src 'nonce-${nonce}';
+            img-src 'self' data: https:;
+            font-src 'self' https:;" />
+  <link rel="stylesheet" type="text/css" href="${styleUri}" nonce="${nonce}">
+  <title>CCLocal</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script nonce="${nonce}" src="${scriptUri}"></script>
+</body>
+</html>`
+
+    // Notify parent that panel was restored — register webview as broadcast target
+    this.onDidRestore?.(panel.webview)
+
+    panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'images', 'icon.png')
   }
 }

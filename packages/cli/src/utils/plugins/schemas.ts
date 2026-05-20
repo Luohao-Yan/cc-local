@@ -316,6 +316,13 @@ const PluginManifestMetadataSchema = lazySchema(() =>
       .describe(
         'Plugins that must be enabled for this plugin to function. Bare names (no "@marketplace") are resolved against the declaring plugin\'s own marketplace.',
       ),
+    silentlyIgnoreDefaultDirs: z
+      .boolean()
+      .optional()
+      .describe(
+        'When true and the manifest explicitly declares components (skills, agents, etc.), ' +
+          'default component directories are silently ignored with a warning instead of being loaded alongside the manifest entries.',
+      ),
   }),
 )
 

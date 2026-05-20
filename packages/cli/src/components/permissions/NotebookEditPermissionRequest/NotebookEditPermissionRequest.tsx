@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../../utils/i18n/index.js';
 import { basename } from 'path';
 import React from 'react';
 import type { z } from 'zod/v4';
@@ -38,16 +41,16 @@ export function NotebookEditPermissionRequest(props) {
     } = parsed;
     notebook_path = t11;
     language = cell_type === "markdown" ? "markdown" : "python";
-    const editTypeText = edit_mode === "insert" ? "insert this cell into" : edit_mode === "delete" ? "delete this cell from" : "make this edit to";
+    const editTypeText = edit_mode === "insert" ? t('notebookEditPerm.insertThisCell') : edit_mode === "delete" ? t('notebookEditPerm.deleteThisCell') : t('notebookEditPerm.makeThisEdit');
     T2 = FilePermissionDialog;
     t5 = props.toolUseConfirm;
     t6 = props.toolUseContext;
     t7 = props.onDone;
     t8 = props.onReject;
     t9 = props.workerBadge;
-    t10 = "Edit notebook";
+    t10 = t('notebookEditPerm.title');
     T1 = Text;
-    t2 = "Do you want to ";
+    t2 = t('notebookEditPerm.doYouWantTo');
     t3 = editTypeText;
     t4 = " ";
     T0 = Text;

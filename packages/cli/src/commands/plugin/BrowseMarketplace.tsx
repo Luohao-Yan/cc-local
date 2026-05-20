@@ -8,6 +8,7 @@ import { useKeybinding, useKeybindings } from '../../keybindings/useKeybinding.j
 import type { LoadedPlugin } from '../../types/plugin.js';
 import { count } from '../../utils/array.js';
 import { openBrowser } from '../../utils/browser.js';
+import { roughTokenCountEstimation } from '../../services/tokenEstimation.js';
 import { logForDebugging } from '../../utils/debug.js';
 import { errorMessage } from '../../utils/errors.js';
 import { clearAllCaches } from '../../utils/plugins/cacheUtils.js';
@@ -689,6 +690,14 @@ export function BrowseMarketplace({
                     · Components will be discovered at installation
                   </Text>}
               </>}
+          {(() => {
+            const manifestJson = JSON.stringify(selectedPlugin.entry)
+            const estimatedTokens = roughTokenCountEstimation(manifestJson, 2)
+            const formatted = estimatedTokens >= 1000
+              ? `${(estimatedTokens / 1000).toFixed(1)}k`
+              : String(estimatedTokens)
+            return <Text dimColor>· Projected context cost: ~{formatted} tokens per turn</Text>
+          })()}
         </Box>
 
         <PluginTrustWarning />

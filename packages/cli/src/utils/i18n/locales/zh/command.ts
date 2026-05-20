@@ -106,5 +106,6 @@ export const command = {
   "description.schedule": "创建、更新、列出或运行按 cron 计划执行的预定远程代理（触发器）。",
   "whenToUse.schedule": "当用户想要安排定期远程代理、设置自动化任务、为 Claude Code 创建 cron 作业或管理其预定的代理/触发器时使用。",
   "description.security-review": "完成对当前分支待定更改的安全审查",
-  "description.statusline": "设置 Claude Code 的状态栏 UI"
+  "description.statusline": "设置 Claude Code 的状态栏 UI",
+  "description.workflows": "列出可用的工作流模板和活动的工作流"
 }

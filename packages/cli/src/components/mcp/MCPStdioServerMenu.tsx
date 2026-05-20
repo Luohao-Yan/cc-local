@@ -43,7 +43,7 @@ export function MCPStdioServerMenu({
   const toggleMcpServer = useMcpToggleEnabled();
   const [isReconnecting, setIsReconnecting] = useState(false);
   const handleToggleEnabled = React.useCallback(async () => {
-    const wasEnabled = server.client.type !== 'disabled';
+    const wasEnabled = (server.client as any).type !== 'disabled';
     try {
       await toggleMcpServer(server.name);
       // Return to the server list so user can continue managing other servers
@@ -52,7 +52,7 @@ export function MCPStdioServerMenu({
       const action = wasEnabled ? 'disable' : 'enable';
       onComplete(`Failed to ${action} MCP server '${server.name}': ${errorMessage(err)}`);
     }
-  }, [server.client.type, server.name, toggleMcpServer, onCancel, onComplete]);
+  }, [(server.client as any).type, server.name, toggleMcpServer, onCancel, onComplete]);
   const capitalizedServerName = capitalize(String(server.name));
 
   // Count MCP prompts for this server (skills are shown in /skills, not here)
@@ -60,7 +60,7 @@ export function MCPStdioServerMenu({
   const menuOptions = [];
 
   // Only show "View tools" if server is not disabled and has tools
-  if (server.client.type !== 'disabled' && serverToolsCount > 0) {
+  if ((server.client as any).type !== 'disabled' && serverToolsCount > 0) {
     menuOptions.push({
       label: 'View tools',
       value: 'tools'
@@ -68,14 +68,14 @@ export function MCPStdioServerMenu({
   }
 
   // Only show reconnect option if the server is not disabled
-  if (server.client.type !== 'disabled') {
+  if ((server.client as any).type !== 'disabled') {
     menuOptions.push({
       label: 'Reconnect',
       value: 'reconnectMcpServer'
     });
   }
   menuOptions.push({
-    label: server.client.type !== 'disabled' ? 'Disable' : 'Enable',
+    label: (server.client as any).type !== 'disabled' ? 'Disable' : 'Enable',
     value: 'toggle-enabled'
   });
 
@@ -107,7 +107,7 @@ export function MCPStdioServerMenu({
         <Box flexDirection="column" gap={0}>
           <Box>
             <Text bold>Status: </Text>
-            {server.client.type === 'disabled' ? <Text>{color('inactive', theme)(figures.radioOff)} disabled</Text> : server.client.type === 'connected' ? <Text>{color('success', theme)(figures.tick)} connected</Text> : server.client.type === 'pending' ? <>
+            {(server.client as any).type === 'disabled' ? <Text>{color('inactive', theme)(figures.radioOff)} disabled</Text> : (server.client as any).type === 'connected' ? <Text>{color('success', theme)(figures.tick)} connected</Text> : (server.client as any).type === 'pending' ? <>
                 <Text dimColor>{figures.radioOff}</Text>
                 <Text> connecting…</Text>
               </> : <Text>{color('error', theme)(figures.cross)} failed</Text>}
@@ -115,24 +115,24 @@ export function MCPStdioServerMenu({
 
           <Box>
             <Text bold>Command: </Text>
-            <Text dimColor>{server.config.command}</Text>
+            <Text dimColor>{(server.config as any).command}</Text>
           </Box>
 
-          {server.config.args && server.config.args.length > 0 && <Box>
+          {(server.config as any).args && (server.config as any).args.length > 0 && <Box>
               <Text bold>Args: </Text>
-              <Text dimColor>{server.config.args.join(' ')}</Text>
+              <Text dimColor>{(server.config as any).args.join(' ')}</Text>
             </Box>}
 
           <Box>
             <Text bold>Config location: </Text>
             <Text dimColor>
-              {describeMcpConfigFilePath(getMcpConfigByName(server.name)?.scope ?? 'dynamic')}
+              {describeMcpConfigFilePath(getMcpConfigByName(server.name)?.scope as any ?? 'dynamic')}
             </Text>
           </Box>
 
-          {server.client.type === 'connected' && <CapabilitiesSection serverToolsCount={serverToolsCount} serverPromptsCount={serverCommandsCount} serverResourcesCount={mcp.resources[server.name]?.length || 0} />}
+          {(server.client as any).type === 'connected' && <CapabilitiesSection serverToolsCount={serverToolsCount} serverPromptsCount={serverCommandsCount} serverResourcesCount={mcp.resources[server.name]?.length || 0} />}
 
-          {server.client.type === 'connected' && serverToolsCount > 0 && <Box>
+          {(server.client as any).type === 'connected' && serverToolsCount > 0 && <Box>
               <Text bold>Tools: </Text>
               <Text dimColor>{serverToolsCount} tools</Text>
             </Box>}

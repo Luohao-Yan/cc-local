@@ -138,7 +138,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 
 export function formatCreditAmount(reward: ReferrerRewardInfo): string {
   const symbol = CURRENCY_SYMBOLS[reward.currency] ?? `${reward.currency} `
-  const amount = reward.amount_minor_units / 100
+  const amount = reward.amount_minor_units! / 100
   const formatted = amount % 1 === 0 ? amount.toString() : amount.toFixed(2)
   return `${symbol}${formatted}`
 }

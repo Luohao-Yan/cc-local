@@ -1,0 +1,213 @@
+/* Toast Notification Styles */
+.toast-container {
+  position: fixed;
+  bottom: var(--app-spacing-2xl);
+  right: var(--app-spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-spacing-sm);
+  z-index: var(--app-z-toast);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-sm);
+  padding: var(--app-spacing-md) var(--app-spacing-lg);
+  border-radius: var(--app-radius-md);
+  background: var(--vscode-notifications-background, var(--vscode-editor-background));
+  color: var(--vscode-notifications-foreground, var(--app-foreground));
+  border: 1px solid var(--app-border);
+  box-shadow: var(--app-shadow-lg);
+  pointer-events: auto;
+  animation: toastSlideIn var(--app-transition-medium) ease-out;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-exit {
+  animation: toastSlideOut var(--app-transition-medium) ease-in forwards;
+}
+
+@keyframes toastSlideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Toast Types */
+.toast-info {
+  border-left: 3px solid var(--app-info-foreground);
+}
+
+.toast-success {
+  border-left: 3px solid var(--app-success-foreground);
+}
+
+.toast-warning {
+  border-left: 3px solid var(--app-status-warning);
+}
+
+.toast-error {
+  border-left: 3px solid var(--app-error-foreground);
+  background: rgba(241, 76, 76, 0.08);
+}
+
+/* Toast Icon */
+.toast-icon {
+  flex-shrink: 0;
+  font-size: var(--app-font-size-lg);
+}
+
+.toast-info .toast-icon {
+  color: var(--app-info-foreground);
+}
+
+.toast-success .toast-icon {
+  color: var(--app-success-foreground);
+}
+
+.toast-warning .toast-icon {
+  color: var(--app-status-warning);
+}
+
+.toast-error .toast-icon {
+  color: var(--app-error-foreground);
+}
+
+/* Toast Content */
+.toast-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-message {
+  font-size: var(--app-font-size-md);
+  line-height: var(--app-line-height);
+  word-wrap: break-word;
+}
+
+.toast-description {
+  font-size: var(--app-font-size-sm);
+  color: var(--app-foreground-dim);
+  margin-top: var(--app-spacing-xs);
+}
+
+/* Toast Actions */
+.toast-actions {
+  display: flex;
+  gap: var(--app-spacing-xs);
+  margin-top: var(--app-spacing-sm);
+}
+
+.toast-action {
+  padding: var(--app-spacing-xs) var(--app-spacing-sm);
+  border: none;
+  border-radius: var(--app-radius-sm);
+  background: var(--vscode-toolbar-hoverBackground);
+  color: var(--app-foreground);
+  font-size: var(--app-font-size-sm);
+  cursor: pointer;
+  transition: background var(--app-transition-fast);
+}
+
+.toast-action:hover {
+  background: var(--app-button-secondary-hover-background);
+}
+
+.toast-action.primary {
+  background: var(--app-button-background);
+  color: var(--app-button-foreground);
+}
+
+.toast-action.primary:hover {
+  background: var(--app-button-hover-background);
+}
+
+/* Toast Close Button */
+.toast-close {
+  border: none;
+  background: transparent;
+  color: var(--app-foreground-dim);
+  cursor: pointer;
+  padding: var(--app-spacing-xs);
+  font-size: var(--app-font-size-md);
+  line-height: 1;
+  transition: color var(--app-transition-fast);
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  color: var(--app-foreground);
+}
+
+/* Progress Bar */
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--app-link-foreground);
+  animation: toastProgress linear forwards;
+}
+
+@keyframes toastProgress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+/* Position Variants */
+.toast-container.top-right {
+  top: var(--app-spacing-lg);
+  bottom: auto;
+}
+
+.toast-container.top-left {
+  top: var(--app-spacing-lg);
+  left: var(--app-spacing-lg);
+  right: auto;
+  bottom: auto;
+}
+
+.toast-container.bottom-left {
+  left: var(--app-spacing-lg);
+  right: auto;
+}
+
+.toast-container.center {
+  left: 50%;
+  transform: translateX(-50%);
+  right: auto;
+}
+
+.toast-container.center .toast {
+  animation: toastFadeIn var(--app-transition-medium) ease-out;
+}
+
+@keyframes toastFadeIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

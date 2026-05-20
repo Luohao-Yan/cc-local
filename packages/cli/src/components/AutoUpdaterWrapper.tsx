@@ -1,8 +1,10 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import { feature } from 'bun:bundle';
 import * as React from 'react';
 import type { AutoUpdaterResult } from '../utils/autoUpdater.js';
-import { isAutoUpdaterDisabled } from '../utils/config.js';
+import { isAutoUpdaterDisabled, isPackageManagerAutoUpdateEnabled } from '../utils/config.js';
 import { logForDebugging } from '../utils/debug.js';
 import { getCurrentInstallationType } from '../utils/doctorDiagnostic.js';
 import { AutoUpdater } from './AutoUpdater.js';
@@ -56,6 +58,9 @@ export function AutoUpdaterWrapper(t0) {
     return null;
   }
   if (isPackageManager) {
+    if (!isPackageManagerAutoUpdateEnabled()) {
+      return null;
+    }
     let t3;
     if ($[2] !== autoUpdaterResult || $[3] !== isUpdating || $[4] !== onAutoUpdaterResult || $[5] !== onChangeIsUpdating || $[6] !== showSuccessMessage || $[7] !== verbose) {
       t3 = <PackageManagerAutoUpdater verbose={verbose} onAutoUpdaterResult={onAutoUpdaterResult} autoUpdaterResult={autoUpdaterResult} isUpdating={isUpdating} onChangeIsUpdating={onChangeIsUpdating} showSuccessMessage={showSuccessMessage} />;

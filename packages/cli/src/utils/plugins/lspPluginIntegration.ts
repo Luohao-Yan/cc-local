@@ -259,7 +259,7 @@ export function resolvePluginLspEnvironment(
 
   // Resolve args
   if (resolved.args) {
-    resolved.args = resolved.args.map(arg => resolveValue(arg))
+    resolved.args = resolved.args.map((arg: any) => resolveValue(arg))
   }
 
   // Resolve environment variables and add CLAUDE_PLUGIN_ROOT / CLAUDE_PLUGIN_DATA

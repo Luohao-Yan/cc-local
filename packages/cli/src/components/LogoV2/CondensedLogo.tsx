@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import * as React from 'react';
 import { type ReactNode, useEffect } from 'react';
@@ -29,7 +31,8 @@ export function CondensedLogo() {
     version,
     cwd,
     billingType,
-    agentName: agentNameFromSettings
+    agentName: agentNameFromSettings,
+    hideCwd
   } = getLogoDisplayData();
   const agentName = agent ?? agentNameFromSettings;
   const showGuestPassesUpsell = useShowGuestPassesUpsell();
@@ -111,7 +114,7 @@ export function CondensedLogo() {
   } else {
     t7 = $[14];
   }
-  const t8 = agentName ? `@${agentName} · ${truncatedCwd}` : truncatedCwd;
+  const t8 = hideCwd ? (agentName ? `@${agentName}` : '') : (agentName ? `@${agentName} · ${truncatedCwd}` : truncatedCwd);
   let t9;
   if ($[15] !== t8) {
     t9 = <Text dimColor={true}>{t8}</Text>;

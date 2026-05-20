@@ -25,7 +25,7 @@ export function useTerminalTitle(title: string | null): void {
     if (process.platform === 'win32') {
       process.title = clean
     } else {
-      writeRaw(osc(OSC.SET_TITLE_AND_ICON, clean))
+      writeRaw!(osc(OSC.SET_TITLE_AND_ICON, clean))
     }
   }, [title, writeRaw])
 }

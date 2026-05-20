@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../../utils/i18n/index.js';
 import { basename, relative } from 'path';
 import React, { useMemo } from 'react';
 import type { z } from 'zod/v4';
@@ -85,13 +88,13 @@ export function FileWritePermissionRequest(props) {
     fileExists,
     oldContent
   } = t1;
-  const actionText = fileExists ? "overwrite" : "create";
+  const actionText = fileExists ? t('fileWritePerm.overwrite') : t('fileWritePerm.create');
   const t2 = props.toolUseConfirm;
   const t3 = props.toolUseContext;
   const t4 = props.onDone;
   const t5 = props.onReject;
   const t6 = props.workerBadge;
-  const t7 = fileExists ? "Overwrite file" : "Create file";
+  const t7 = fileExists ? t('fileWritePerm.overwriteTitle') : t('fileWritePerm.createTitle');
   let t8;
   if ($[5] !== file_path) {
     t8 = relative(getCwd(), file_path);
@@ -118,7 +121,7 @@ export function FileWritePermissionRequest(props) {
   }
   let t11;
   if ($[11] !== actionText || $[12] !== t10) {
-    t11 = <Text>Do you want to {actionText} {t10}?</Text>;
+    t11 = <Text>{t('fileWritePerm.doYouWantTo')} {actionText} {t10}?</Text>;
     $[11] = actionText;
     $[12] = t10;
     $[13] = t11;

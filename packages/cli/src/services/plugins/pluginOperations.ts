@@ -25,6 +25,7 @@ import {
 import {
   findReverseDependents,
   formatReverseDependentsSuffix,
+  qualifyDependency,
 } from '../../utils/plugins/dependencyResolver.js'
 import {
   loadInstalledPluginsFromDisk,
@@ -657,6 +658,39 @@ export async function setPluginEnabledOp(
     }
   }
 
+  // ── Enable: auto-enable missing transitive dependencies ──
+  let autoEnabledDeps: string[] = []
+  if (enabled) {
+    const { enabled: loadedEnabled, disabled } = await loadAllPlugins()
+    const allPlugins = [...loadedEnabled, ...disabled]
+    const targetPlugin = allPlugins.find(
+      p => p.source === pluginId || p.name === plugin,
+    )
+    if (targetPlugin?.manifest.dependencies?.length) {
+      const enabledIds = getPluginEditableScopes()
+      for (const dep of targetPlugin.manifest.dependencies) {
+        const qualified = qualifyDependency(dep, targetPlugin.source)
+        const { name: depName } = parsePluginIdentifier(qualified)
+        const depId = qualified.includes('@')
+          ? qualified
+          : allPlugins.find(p => p.name === depName)?.source ?? qualified
+        if (!enabledIds.has(depId)) {
+          // Auto-enable the dependency at the same scope
+          const depSettingSource = scopeToSettingSource(resolvedScope)
+          const { error: depErr } = updateSettingsForSource(depSettingSource, {
+            enabledPlugins: {
+              ...getSettingsForSource(depSettingSource)?.enabledPlugins,
+              [depId]: true,
+            },
+          })
+          if (!depErr) {
+            autoEnabledDeps.push(depName)
+          }
+        }
+      }
+    }
+  }
+
   const settingSource = scopeToSettingSource(resolvedScope)
   const scopeSettingsValue =
     getSettingsForSource(settingSource)?.enabledPlugins?.[pluginId]
@@ -706,16 +740,20 @@ export async function setPluginEnabledOp(
     }
   }
 
-  // On disable: capture reverse dependents from the PRE-disable snapshot,
-  // before we write settings and clear the memoized plugin cache.
+  // On disable: block if other enabled plugins depend on this one
   let reverseDependents: string[] | undefined
   if (!enabled) {
     const { enabled: loadedEnabled, disabled } = await loadAllPlugins()
-    const rdeps = findReverseDependents(pluginId, [
-      ...loadedEnabled,
-      ...disabled,
-    ])
-    if (rdeps.length > 0) reverseDependents = rdeps
+    const allPlugins = [...loadedEnabled, ...disabled]
+    const rdeps = findReverseDependents(pluginId, allPlugins)
+    if (rdeps.length > 0) {
+      const names = rdeps.join(', ')
+      return {
+        success: false,
+        message: `Cannot disable "${parsePluginIdentifier(pluginId).name}" — the following enabled plugins depend on it: ${names}. Disable them first, or use "plugin disable --all" to disable all plugins.`,
+        reverseDependents: rdeps,
+      }
+    }
   }
 
   // ── ACTION: write settings ──
@@ -735,14 +773,15 @@ export async function setPluginEnabledOp(
   clearAllCaches()
 
   const { name: pluginName } = parsePluginIdentifier(pluginId)
-  const depWarn = formatReverseDependentsSuffix(reverseDependents)
+  const depSuffix = autoEnabledDeps.length > 0
+    ? ` (auto-enabled ${autoEnabledDeps.length} ${autoEnabledDeps.length === 1 ? 'dependency' : 'dependencies'}: ${autoEnabledDeps.join(', ')})`
+    : ''
   return {
     success: true,
-    message: `Successfully ${operation}d plugin: ${pluginName} (scope: ${resolvedScope})${depWarn}`,
+    message: `Successfully ${operation}d plugin: ${pluginName} (scope: ${resolvedScope})${depSuffix}`,
     pluginId,
     pluginName,
     scope: resolvedScope,
-    reverseDependents,
   }
 }
 

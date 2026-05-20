@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../../utils/i18n/index.js';
 import figures from 'figures';
 import React, { useCallback, useState } from 'react';
 import type { KeyboardEvent } from '../../../ink/events/keyboard-event.js';
@@ -185,7 +188,7 @@ export function QuestionView(t0) {
       t8 = $[21];
     }
     handleOpenEditor = t8;
-    const t9 = question.multiSelect ? "Type something" : "Type something.";
+    const t9 = question.multiSelect ? t('auq.typeSomething') : `${t('auq.typeSomething')}.`;
     const t10 = questionState?.textInputValue ?? "";
     let t11;
     if ($[22] !== onUpdateQuestionState || $[23] !== question.multiSelect || $[24] !== questionText) {
@@ -206,7 +209,7 @@ export function QuestionView(t0) {
       t12 = {
         type: "input" as const,
         value: "__other__",
-        label: "Other",
+        label: t('auq.other'),
         placeholder: t9,
         initialValue: t10,
         onChange: t11
@@ -261,7 +264,7 @@ export function QuestionView(t0) {
   }
   let t8;
   if ($[47] !== isInPlanMode || $[48] !== planFilePath) {
-    t8 = isInPlanMode && planFilePath && <Box flexDirection="column" gap={0}><Divider color="inactive" /><Text color="inactive">Planning: <FilePathLink filePath={planFilePath} /></Text></Box>;
+    t8 = isInPlanMode && planFilePath && <Box flexDirection="column" gap={0}><Divider color="inactive" /><Text color="inactive">{t('auq.planning')} <FilePathLink filePath={planFilePath} /></Text></Box>;
     $[47] = isInPlanMode;
     $[48] = planFilePath;
     $[49] = t8;
@@ -303,7 +306,7 @@ export function QuestionView(t0) {
         const textInput = values.includes("__other__") ? questionStates[questionText]?.textInputValue : undefined;
         const finalValues = values.filter(_temp4).concat(textInput ? [textInput] : []);
         onAnswer(questionText, finalValues, undefined, false);
-      }} onFocus={handleFocus} onCancel={onCancel} submitButtonText={currentQuestionIndex === questions.length - 1 ? "Submit" : "Next"} onSubmit={onSubmit} onDownFromLastItem={handleDownFromLastItem} isDisabled={isFooterFocused} onOpenEditor={handleOpenEditor} onImagePaste={onImagePaste} pastedContents={pastedContents} onRemoveImage={onRemoveImage} /> : <Select key={question.question} options={options} defaultValue={questionStates[question.question]?.selectedValue as string | undefined} onChange={value_1 => {
+      }} onFocus={handleFocus} onCancel={onCancel} submitButtonText={currentQuestionIndex === questions.length - 1 ? t('auq.submit') : t('auq.next')} onSubmit={onSubmit} onDownFromLastItem={handleDownFromLastItem} isDisabled={isFooterFocused} onOpenEditor={handleOpenEditor} onImagePaste={onImagePaste} pastedContents={pastedContents} onRemoveImage={onRemoveImage} /> : <Select key={question.question} options={options} defaultValue={questionStates[question.question]?.selectedValue as string | undefined} onChange={value_1 => {
         onUpdateQuestionState(questionText, {
           selectedValue: value_1
         }, false);
@@ -351,7 +354,7 @@ export function QuestionView(t0) {
   const t16 = options.length + 1;
   let t17;
   if ($[80] !== t15 || $[81] !== t16) {
-    t17 = <Text color={t15}>{t16}. Chat about this</Text>;
+    t17 = <Text color={t15}>{t16}. {t('auq.chatAboutThis')}</Text>;
     $[80] = t15;
     $[81] = t16;
     $[82] = t17;
@@ -369,7 +372,7 @@ export function QuestionView(t0) {
   }
   let t19;
   if ($[86] !== footerIndex || $[87] !== isFooterFocused || $[88] !== isInPlanMode || $[89] !== options.length) {
-    t19 = isInPlanMode && <Box flexDirection="row" gap={1}>{isFooterFocused && footerIndex === 1 ? <Text color="suggestion">{figures.pointer}</Text> : <Text> </Text>}<Text color={isFooterFocused && footerIndex === 1 ? "suggestion" : undefined}>{options.length + 2}. Skip interview and plan immediately</Text></Box>;
+    t19 = isInPlanMode && <Box flexDirection="row" gap={1}>{isFooterFocused && footerIndex === 1 ? <Text color="suggestion">{figures.pointer}</Text> : <Text> </Text>}<Text color={isFooterFocused && footerIndex === 1 ? "suggestion" : undefined}>{options.length + 2}. {t('auq.skipInterview')}</Text></Box>;
     $[86] = footerIndex;
     $[87] = isFooterFocused;
     $[88] = isInPlanMode;

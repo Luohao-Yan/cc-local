@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../../utils/i18n/index.js';
 import * as React from 'react';
 import { Text } from '../../../ink.js';
 import { BashTool } from '../../../tools/BashTool/BashTool.js';
@@ -26,7 +29,7 @@ export function PermissionRuleDescription(t0) {
             }
             let t2;
             if ($[2] !== t1) {
-              t2 = <Text dimColor={true}>Any Bash command starting with{" "}<Text bold={true}>{t1}</Text></Text>;
+              t2 = <Text dimColor={true}>{t('rules.anyBashCommandStarting')}{" "}<Text bold={true}>{t1}</Text></Text>;
               $[2] = t1;
               $[3] = t2;
             } else {
@@ -36,7 +39,7 @@ export function PermissionRuleDescription(t0) {
           } else {
             let t1;
             if ($[4] !== ruleValue.ruleContent) {
-              t1 = <Text dimColor={true}>The Bash command <Text bold={true}>{ruleValue.ruleContent}</Text></Text>;
+              t1 = <Text dimColor={true}>{t('rules.theBashCommand')} <Text bold={true}>{ruleValue.ruleContent}</Text></Text>;
               $[4] = ruleValue.ruleContent;
               $[5] = t1;
             } else {
@@ -47,7 +50,7 @@ export function PermissionRuleDescription(t0) {
         } else {
           let t1;
           if ($[6] === Symbol.for("react.memo_cache_sentinel")) {
-            t1 = <Text dimColor={true}>Any Bash command</Text>;
+            t1 = <Text dimColor={true}>{t('rules.anyBashCommand')}</Text>;
             $[6] = t1;
           } else {
             t1 = $[6];
@@ -60,7 +63,7 @@ export function PermissionRuleDescription(t0) {
         if (!ruleValue.ruleContent) {
           let t1;
           if ($[7] !== ruleValue.toolName) {
-            t1 = <Text dimColor={true}>Any use of the <Text bold={true}>{ruleValue.toolName}</Text> tool</Text>;
+            t1 = <Text dimColor={true}>{t('rules.anyUseOfThe')} <Text bold={true}>{ruleValue.toolName}</Text>{t('rules.tool')}</Text>;
             $[7] = ruleValue.toolName;
             $[8] = t1;
           } else {

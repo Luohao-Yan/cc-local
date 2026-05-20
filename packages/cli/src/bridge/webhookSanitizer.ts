@@ -6,6 +6,8 @@
  * potential security issues and normalize the content format.
  */
 
+import { createHmac, timingSafeEqual } from 'crypto'
+
 /**
  * Sanitize inbound webhook content from GitHub.
  *
@@ -20,30 +22,27 @@
 export function sanitizeInboundWebhookContent(
   content: string | unknown[],
 ): string | unknown[] {
-  // Basic implementation: pass through content unchanged
-  // When KAIROS_GITHUB_WEBHOOKS feature is fully implemented,
-  // this should perform actual sanitization
-
   if (typeof content === 'string') {
-    // Basic string sanitization - remove null bytes and control characters
+    // Remove null bytes and control characters
     return content.replace(/\x00/g, '').replace(/[\x01-\x08\x0B\x0C\x0E-\x1F]/g, '')
   }
 
   if (Array.isArray(content)) {
-    // For array content, return as-is for now
-    // Future implementation should sanitize each block
-    return content
+    // Sanitize string elements in arrays; pass objects through
+    return content.map(item =>
+      typeof item === 'string' ? item.replace(/\x00/g, '').replace(/[\x01-\x08\x0B\x0C\x0E-\x1F]/g, '') : item,
+    )
   }
 
   return content
 }
 
 /**
- * Validate a GitHub webhook signature.
+ * Validate a GitHub webhook signature using HMAC-SHA256.
  *
- * @param payload - The raw payload string
- * @param signature - The X-Hub-Signature-256 header value
- * @param secret - The webhook secret
+ * @param payload - The raw payload string (exact bytes received, before JSON parse)
+ * @param signature - The X-Hub-Signature-256 header value, expected format: "sha256=<hex>"
+ * @param secret - The webhook secret configured in GitHub
  * @returns True if the signature is valid
  */
 export function validateWebhookSignature(
@@ -51,7 +50,32 @@ export function validateWebhookSignature(
   signature: string,
   secret: string,
 ): boolean {
-  // Stub implementation - always returns true
-  // Real implementation should use HMAC-SHA256
-  return true
+  if (!signature || !secret) {
+    return false
+  }
+
+  const expectedPrefix = 'sha256='
+  if (!signature.startsWith(expectedPrefix)) {
+    return false
+  }
+
+  const receivedHex = signature.slice(expectedPrefix.length)
+  if (!receivedHex) {
+    return false
+  }
+
+  const hmac = createHmac('sha256', secret)
+  hmac.update(payload)
+  const computedHex = hmac.digest('hex')
+
+  // Length mismatch means they can't be equal — reject early
+  if (receivedHex.length !== computedHex.length) {
+    return false
+  }
+
+  // Constant-time comparison to prevent timing attacks
+  return timingSafeEqual(
+    Buffer.from(receivedHex, 'hex'),
+    Buffer.from(computedHex, 'hex'),
+  )
 }

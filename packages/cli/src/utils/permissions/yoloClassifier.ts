@@ -1395,7 +1395,7 @@ type AutoModeConfig = {
  * Detect if the API endpoint is Anthropic official.
  * Third-party APIs may not support Claude models.
  */
-function isAnthropicOfficialApi(): boolean {
+export function isAnthropicOfficialApi(): boolean {
   const baseUrl = process.env.ANTHROPIC_BASE_URL || ''
   // No base URL = default to Anthropic official
   if (!baseUrl) return true
@@ -1622,13 +1622,23 @@ function resolveTwoStageClassifier():
     'tengu_auto_mode_config',
     {} as AutoModeConfig,
   )
-  return config?.twoStageClassifier
+  if (config?.twoStageClassifier !== undefined) return config.twoStageClassifier
+
+  // 第三方 API：GrowthBook 不可用，twoStageClassifier 为 undefined。
+  // XML classifier 只需文本补全能力，所有 OpenAI 兼容 API 都支持，
+  // 而 tool-calling classifier 必须依赖 tool_choice（大多第三方不支持）。
+  // 默认启用 XML classifier，确保 auto mode 可用。
+  if (!isAnthropicOfficialApi()) {
+    return true
+  }
+
+  return undefined
 }
 
 /**
  * Check if the XML classifier is enabled (any truthy value including 'fast'/'thinking').
  */
-function isTwoStageClassifierEnabled(): boolean {
+export function isTwoStageClassifierEnabled(): boolean {
   const v = resolveTwoStageClassifier()
   return v === true || v === 'fast' || v === 'thinking'
 }

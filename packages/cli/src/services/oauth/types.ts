@@ -64,6 +64,8 @@ export interface ReferralRedemptionsResponse {
 }
 
 export interface ReferrerRewardInfo {
+  currency?: string
+  amount_minor_units?: number
   [key: string]: unknown
 }
 

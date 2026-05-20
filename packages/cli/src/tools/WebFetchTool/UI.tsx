@@ -5,6 +5,7 @@ import { Box, Text } from '../../ink.js';
 import type { ToolProgressData } from '../../Tool.js';
 import type { ProgressMessage } from '../../types/message.js';
 import { formatFileSize, truncate } from '../../utils/format.js';
+import { t } from '../../utils/i18n/index.js';
 import type { Output } from './WebFetchTool.js';
 export function renderToolUseMessage({
   url,
@@ -22,13 +23,13 @@ export function renderToolUseMessage({
     return null;
   }
   if (verbose) {
-    return `url: "${url}"${verbose && prompt ? `, prompt: "${prompt}"` : ''}`;
+    return t('webFetch.url', { url }) + (verbose && prompt ? `, ${t('webFetch.prompt', { prompt })}` : '');
   }
   return url;
 }
 export function renderToolUseProgressMessage(): React.ReactNode {
   return <MessageResponse height={1}>
-      <Text dimColor>Fetching…</Text>
+      <Text dimColor>{t('webFetch.fetching')}</Text>
     </MessageResponse>;
 }
 export function renderToolResultMessage({
@@ -46,7 +47,7 @@ export function renderToolResultMessage({
     return <Box flexDirection="column">
         <MessageResponse height={1}>
           <Text>
-            Received <Text bold>{formattedSize}</Text> ({code} {codeText})
+            {t('webFetch.received')} <Text bold>{formattedSize}</Text> ({code} {codeText})
           </Text>
         </MessageResponse>
         <Box flexDirection="column">

@@ -74,7 +74,7 @@ function processOutput(output: NotebookCellOutput) {
       return {
         output_type: output.output_type,
         text: processOutputText(
-          `${output.ename}: ${output.evalue}\n${output.traceback.join('\n')}`,
+          `${output.ename}: ${output.evalue}\n${(output.traceback ?? []).join('\n')}`,
         ),
       }
   }

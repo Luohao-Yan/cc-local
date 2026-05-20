@@ -250,14 +250,6 @@ export class SessionManager {
     }
 
     const runtime = this.getOrCreateRuntime(sessionId)
-    runtime.abortController = new AbortController()
-
-    // 关联外部取消信号
-    if (abortSignal.aborted) {
-      runtime.abortController.abort()
-    }
-    const onAbort = () => runtime.abortController?.abort()
-    abortSignal.addEventListener('abort', onAbort)
 
     try {
       // 添加用户消息
@@ -303,12 +295,8 @@ export class SessionManager {
 
       // 调用 QueryEngine 获取流式响应 (use fresh session messages to avoid duplicate user message)
       const result = await queryEngine.query([...freshSession.messages], {
+        abortSignal,
         onStream: (event: StreamEvent) => {
-          if (runtime.abortController?.signal.aborted) {
-            queryEngine.cancel()
-            return
-          }
-
           if (event.type === 'stream_delta' && event.delta?.type === 'text') {
             const data = JSON.stringify({
               type: 'text_delta',
@@ -340,7 +328,6 @@ export class SessionManager {
         )
       }
     } finally {
-      abortSignal.removeEventListener('abort', onAbort)
       runtime.abortController = undefined
       controller.close()
     }

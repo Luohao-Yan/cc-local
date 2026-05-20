@@ -75,6 +75,7 @@ type LocalCommand = {
   type: 'local'
   supportsNonInteractive: boolean
   load: () => Promise<LocalCommandModule>
+  call?: any
 }
 
 export type LocalJSXCommandContext = ToolUseContext & {

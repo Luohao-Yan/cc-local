@@ -577,7 +577,7 @@ export class QueryEngine {
             timestamp: msg.timestamp,
             isReplay: !msg.isCompactSummary,
             isSynthetic: msg.isMeta || msg.isVisibleInTranscriptOnly,
-          } as SDKUserMessageReplay
+          } as unknown as SDKUserMessageReplay
         }
 
         // Local command output — yield as a synthetic assistant message so
@@ -744,7 +744,7 @@ export class QueryEngine {
                 uuid: msgToAck.uuid,
                 timestamp: msgToAck.timestamp,
                 isReplay: true,
-              } as SDKUserMessageReplay
+              } as unknown as SDKUserMessageReplay
             }
           }
         }
@@ -888,7 +888,7 @@ export class QueryEngine {
               uuid: message.attachment.source_uuid || message.uuid,
               timestamp: message.timestamp,
               isReplay: true,
-            } as SDKUserMessageReplay
+            } as unknown as SDKUserMessageReplay
           }
           break
         case 'stream_request_start':
@@ -947,8 +947,8 @@ export class QueryEngine {
               attempt: message.retryAttempt,
               max_retries: message.maxRetries,
               retry_delay_ms: message.retryInMs,
-              error_status: message.error.status ?? null,
-              error: categorizeRetryableAPIError(message.error),
+              error_status: (message.error as any).status ?? null,
+              error: categorizeRetryableAPIError(message.error as any),
               session_id: getSessionId(),
               uuid: message.uuid,
             }

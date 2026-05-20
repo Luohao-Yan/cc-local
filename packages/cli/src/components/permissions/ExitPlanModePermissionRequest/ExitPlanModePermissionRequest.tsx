@@ -47,6 +47,7 @@ import type { PastedContent } from '../../../utils/config.js';
 import type { ImageDimensions } from '../../../utils/imageResizer.js';
 import { maybeResizeAndDownsampleImageBlock } from '../../../utils/imageResizer.js';
 import { cacheImagePath, storeImage } from '../../../utils/imageStore.js';
+import { t } from '../../../../utils/i18n/index.js';
 type ResponseValue = 'yes-bypass-permissions' | 'yes-accept-edits' | 'yes-accept-edits-keep-context' | 'yes-default-keep-context' | 'yes-resume-auto-mode' | 'yes-auto-clear-context' | 'ultraplan' | 'no';
 
 /**
@@ -163,7 +164,7 @@ export function ExitPlanModePermissionRequest({
       type: 'image',
       content: base64Image,
       mediaType: mediaType || 'image/png',
-      filename: filename || 'Pasted image',
+      filename: filename || t('exitPlan.pastedImage'),
       dimensions
     };
     cacheImagePath(newContent);
@@ -208,7 +209,7 @@ export function ExitPlanModePermissionRequest({
   const [currentPlan, setCurrentPlan] = useState(() => {
     if (inputPlan) return inputPlan;
     const plan = getPlan();
-    return plan ?? 'No plan found. Please write your plan to the plan file first.';
+    return plan ?? t('exitPlan.noPlanFound');
   });
   const [showSaveMessage, setShowSaveMessage] = useState(false);
   // Track Ctrl+G local edits so updatedInput can include the plan (the tool
@@ -287,7 +288,7 @@ export function ExitPlanModePermissionRequest({
       });
       onDone();
       onReject();
-      toolUseConfirm.onReject('Plan being refined via Ultraplan — please wait for the result.');
+      toolUseConfirm.onReject(t('exitPlan.ultraplanRefining'));
       void launchUltraplan({
         blurb: '',
         seedPlan: currentPlan,
@@ -376,7 +377,7 @@ export function ExitPlanModePermissionRequest({
         initialMessage: {
           message: {
             ...createUserMessage({
-              content: `Implement the following plan:\n\n${currentPlan}${verificationInstruction}${transcriptHint}${teamHint}${feedbackSuffix}`
+              content: `${t('exitPlan.implementPlan')}\n\n${currentPlan}${verificationInstruction}${transcriptHint}${teamHint}${feedbackSuffix}`
             }),
             planContent: currentPlan
           },
@@ -503,7 +504,7 @@ export function ExitPlanModePermissionRequest({
       }
       onDone();
       onReject();
-      toolUseConfirm.onReject(trimmedFeedback || (hasImages ? '(See attached image)' : undefined), imageBlocks && imageBlocks.length > 0 ? imageBlocks : undefined);
+      toolUseConfirm.onReject(trimmedFeedback || (hasImages ? t('exitPlan.seeAttachedImage') : undefined), imageBlocks && imageBlocks.length > 0 ? imageBlocks : undefined);
     }
   }
   const editor = getExternalEditor();
@@ -533,19 +534,19 @@ export function ExitPlanModePermissionRequest({
   useLayoutEffect(() => {
     if (!useStickyFooter) return;
     setStickyFooter(<Box flexDirection="column" borderStyle="round" borderColor="planMode" borderLeft={false} borderRight={false} borderBottom={false} paddingX={1}>
-        <Text dimColor>Would you like to proceed?</Text>
+        <Text dimColor>{t('exitPlan.wouldYouLikeToProceed')}</Text>
         <Box marginTop={1}>
           <Select options={options} onChange={v => void handleResponseRef.current(v)} onCancel={() => handleCancelRef.current?.()} onImagePaste={onImagePaste} pastedContents={pastedContents} onRemoveImage={onRemoveImage} />
         </Box>
         {editorName && <Box flexDirection="row" gap={1} marginTop={1}>
-            <Text dimColor>ctrl-g to edit in </Text>
+            <Text dimColor>{t('exitPlan.ctrlGToEditIn')} </Text>
             <Text bold dimColor>
               {editorName}
             </Text>
             {isV2 && planFilePath && <Text dimColor> · {getDisplayPath(planFilePath)}</Text>}
             {showSaveMessage && <>
                 <Text dimColor>{' · '}</Text>
-                <Text color="success">{figures.tick}Plan saved!</Text>
+                <Text color="success">{figures.tick}{t('exitPlan.planSaved')}</Text>
               </>}
           </Box>}
       </Box>);
@@ -598,15 +599,15 @@ export function ExitPlanModePermissionRequest({
         toolUseConfirm.onReject();
       }
     }
-    return <PermissionDialog color="planMode" title="Exit plan mode?" workerBadge={workerBadge}>
+    return <PermissionDialog color="planMode" title={t('exitPlan.exitPlanTitle')} workerBadge={workerBadge}>
         <Box flexDirection="column" paddingX={1} marginTop={1}>
-          <Text>Claude wants to exit plan mode</Text>
+          <Text>{t('exitPlan.claudeWantsToExit')}</Text>
           <Box marginTop={1}>
             <Select options={[{
-            label: 'Yes',
+            label: t('exitPlan.yes'),
             value: 'yes' as const
           }, {
-            label: 'No',
+            label: t('exitPlan.no'),
             value: 'no' as const
           }]} onChange={handleEmptyPlanResponse} onCancel={() => {
             logEvent('tengu_plan_exit', {
@@ -624,10 +625,10 @@ export function ExitPlanModePermissionRequest({
       </PermissionDialog>;
   }
   return <Box flexDirection="column" tabIndex={0} autoFocus onKeyDown={handleKeyDown}>
-      <PermissionDialog color="planMode" title="Ready to code?" innerPaddingX={0} workerBadge={workerBadge}>
+      <PermissionDialog color="planMode" title={t('exitPlan.readyToCode')} innerPaddingX={0} workerBadge={workerBadge}>
         <Box flexDirection="column" marginTop={1}>
           <Box paddingX={1} flexDirection="column">
-            <Text>Here is Claude&apos;s plan:</Text>
+            <Text>{t('exitPlan.hereIsClaudesPlan')}</Text>
           </Box>
           <Box borderColor="subtle" borderStyle="dashed" flexDirection="column" borderLeft={false} borderRight={false} paddingX={1} marginBottom={1}
         // Necessary for Windows Terminal to render properly
@@ -637,15 +638,14 @@ export function ExitPlanModePermissionRequest({
           <Box flexDirection="column" paddingX={1}>
             <PermissionRuleExplanation permissionResult={toolUseConfirm.permissionResult} toolType="tool" />
             {isClassifierPermissionsEnabled() && allowedPrompts && allowedPrompts.length > 0 && <Box flexDirection="column" marginBottom={1}>
-                  <Text bold>Requested permissions:</Text>
+                  <Text bold>{t('exitPlan.requestedPermissions')}</Text>
                   {allowedPrompts.map((p, i) => <Text key={i} dimColor>
                       {'  '}· {p.tool}({PROMPT_PREFIX} {p.prompt})
                     </Text>)}
                 </Box>}
             {!useStickyFooter && <>
                 <Text dimColor>
-                  Claude has written up a plan and is ready to execute. Would
-                  you like to proceed?
+                  {t('exitPlan.claudeWrittenPlan')}
                 </Text>
                 <Box marginTop={1}>
                   <Select options={options} onChange={handleResponse} onCancel={() => handleCancelRef.current?.()} onImagePaste={onImagePaste} pastedContents={pastedContents} onRemoveImage={onRemoveImage} />
@@ -656,7 +656,7 @@ export function ExitPlanModePermissionRequest({
       </PermissionDialog>
       {!useStickyFooter && editorName && <Box flexDirection="row" gap={1} paddingX={1} marginTop={1}>
           <Box>
-            <Text dimColor>ctrl-g to edit in </Text>
+            <Text dimColor>{t('exitPlan.ctrlGToEditIn')} </Text>
             <Text bold dimColor>
               {editorName}
             </Text>
@@ -664,7 +664,7 @@ export function ExitPlanModePermissionRequest({
           </Box>
           {showSaveMessage && <Box>
               <Text dimColor>{' · '}</Text>
-              <Text color="success">{figures.tick}Plan saved!</Text>
+              <Text color="success">{figures.tick}{t('exitPlan.planSaved')}</Text>
             </Box>}
         </Box>}
     </Box>;
@@ -687,21 +687,21 @@ export function buildPlanApprovalOptions({
   onFeedbackChange: (v: string) => void;
 }): OptionWithDescription<ResponseValue>[] {
   const options: OptionWithDescription<ResponseValue>[] = [];
-  const usedLabel = usedPercent !== null ? ` (${usedPercent}% used)` : '';
+  const usedLabel = usedPercent !== null ? ` (${t('exitPlan.usedPercent', {percent: usedPercent})})` : '';
   if (showClearContext) {
     if (feature('TRANSCRIPT_CLASSIFIER') && isAutoModeAvailable) {
       options.push({
-        label: `Yes, clear context${usedLabel} and use auto mode`,
+        label: `${t('exitPlan.clearContextAutoMode')}${usedLabel}`,
         value: 'yes-auto-clear-context'
       });
     } else if (isBypassPermissionsModeAvailable) {
       options.push({
-        label: `Yes, clear context${usedLabel} and bypass permissions`,
+        label: `${t('exitPlan.clearContextBypass')}${usedLabel}`,
         value: 'yes-bypass-permissions'
       });
     } else {
       options.push({
-        label: `Yes, clear context${usedLabel} and auto-accept edits`,
+        label: `${t('exitPlan.clearContextAutoAccept')}${usedLabel}`,
         value: 'yes-accept-edits'
       });
     }
@@ -710,36 +710,36 @@ export function buildPlanApprovalOptions({
   // Slot 2: keep-context with elevated mode (same priority: auto > bypass > edits).
   if (feature('TRANSCRIPT_CLASSIFIER') && isAutoModeAvailable) {
     options.push({
-      label: 'Yes, and use auto mode',
+      label: t('exitPlan.yesAutoMode'),
       value: 'yes-resume-auto-mode'
     });
   } else if (isBypassPermissionsModeAvailable) {
     options.push({
-      label: 'Yes, and bypass permissions',
+      label: t('exitPlan.yesBypass'),
       value: 'yes-accept-edits-keep-context'
     });
   } else {
     options.push({
-      label: 'Yes, auto-accept edits',
+      label: t('exitPlan.yesAutoAccept'),
       value: 'yes-accept-edits-keep-context'
     });
   }
   options.push({
-    label: 'Yes, manually approve edits',
+    label: t('exitPlan.yesManualApprove'),
     value: 'yes-default-keep-context'
   });
   if (showUltraplan) {
     options.push({
-      label: 'No, refine with Ultraplan on Claude Code on the web',
+      label: t('exitPlan.noUltraplan'),
       value: 'ultraplan'
     });
   }
   options.push({
     type: 'input',
-    label: 'No, keep planning',
+    label: t('exitPlan.noKeepPlanning'),
     value: 'no',
-    placeholder: 'Tell Claude what to change',
-    description: 'shift+tab to approve with this feedback',
+    placeholder: t('exitPlan.tellClaudeWhatToChange'),
+    description: t('exitPlan.shiftTabApprove'),
     onChange: onFeedbackChange
   });
   return options;

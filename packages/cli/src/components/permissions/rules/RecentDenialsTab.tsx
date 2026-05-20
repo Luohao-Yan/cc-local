@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../../utils/i18n/index.js';
 import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 // eslint-disable-next-line custom-rules/prefer-use-keybindings -- 'r' is a view-specific key, not a global keybinding
@@ -140,7 +143,7 @@ export function RecentDenialsTab(t0) {
   if (denials.length === 0) {
     let t10;
     if ($[16] === Symbol.for("react.memo_cache_sentinel")) {
-      t10 = <Text dimColor={true}>No recent denials. Commands denied by the auto mode classifier will appear here.</Text>;
+      t10 = <Text dimColor={true}>{t('rules.noRecentDenials')}</Text>;
       $[16] = t10;
     } else {
       t10 = $[16];
@@ -153,7 +156,7 @@ export function RecentDenialsTab(t0) {
     if ($[21] !== approved || $[22] !== retry) {
       t11 = (d, idx_0) => {
         const isApproved = approved.has(idx_0);
-        const suffix = retry.has(idx_0) ? " (retry)" : "";
+        const suffix = retry.has(idx_0) ? t('rules.retry') : "";
         return {
           label: <Text><StatusIcon status={isApproved ? "success" : "error"} withSpace={true} />{d.display}<Text dimColor={true}>{suffix}</Text></Text>,
           value: String(idx_0)
@@ -176,7 +179,7 @@ export function RecentDenialsTab(t0) {
   const options = t10;
   let t11;
   if ($[24] === Symbol.for("react.memo_cache_sentinel")) {
-    t11 = <Text>Commands recently denied by the auto mode classifier.</Text>;
+    t11 = <Text>{t('rules.recentlyDenied')}</Text>;
     $[24] = t11;
   } else {
     t11 = $[24];

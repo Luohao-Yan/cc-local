@@ -110,7 +110,7 @@ function accumulateToolUses(
   message: SDKAssistantMessage,
   counts: ToolCounts,
 ): void {
-  const content = message.message.content
+  const content = (message.message as any).content
   if (!Array.isArray(content)) {
     return
   }
@@ -137,7 +137,7 @@ export function createStreamlinedTransformer(): (
   ): StdoutMessage | null {
     switch (message.type) {
       case 'assistant': {
-        const content = message.message.content
+        const content = (message.message as any).content
         const text = Array.isArray(content)
           ? extractTextContent(content, '\n').trim()
           : ''

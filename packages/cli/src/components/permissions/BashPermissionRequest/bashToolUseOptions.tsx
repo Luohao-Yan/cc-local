@@ -1,4 +1,5 @@
 import { BASH_TOOL_NAME } from '../../../tools/BashTool/toolName.js';
+import { t } from '../../../../utils/i18n/index.js';
 import { extractOutputRedirections } from '../../../utils/bash/commands.js';
 import { isClassifierPermissionsEnabled } from '../../../utils/permissions/bashClassifier.js';
 import type { PermissionDecisionReason } from '../../../utils/permissions/PermissionResult.js';
@@ -62,15 +63,15 @@ export function bashToolUseOptions({
   if (yesInputMode) {
     options.push({
       type: 'input',
-      label: 'Yes',
+      label: t('shell.yes'),
       value: 'yes',
-      placeholder: 'and tell Claude what to do next',
+      placeholder: t('shell.tellClaudeNext'),
       onChange: onAcceptFeedbackChange,
       allowEmptySubmitToCancel: true
     });
   } else {
     options.push({
-      label: 'Yes',
+      label: t('shell.yes'),
       value: 'yes'
     });
   }
@@ -85,9 +86,9 @@ export function bashToolUseOptions({
     if (editablePrefix !== undefined && onEditablePrefixChange && !hasNonBashSuggestions && suggestions.length > 0) {
       options.push({
         type: 'input',
-        label: 'Yes, and don\u2019t ask again for',
+        label: t('shell.yesDontAskAgain'),
         value: 'yes-prefix-edited',
-        placeholder: 'command prefix (e.g., npm run:*)',
+        placeholder: t('shell.commandPrefix'),
         initialValue: editablePrefix,
         onChange: onEditablePrefixChange,
         allowEmptySubmitToCancel: true,
@@ -112,12 +113,12 @@ export function bashToolUseOptions({
     // Skip when the editable prefix option is already shown — they serve the
     // same role and having two identical-looking "don't ask again" inputs is confusing.
     const editablePrefixShown = options.some(o => o.value === 'yes-prefix-edited');
-    if ("external" === 'ant' && !editablePrefixShown && isClassifierPermissionsEnabled() && onClassifierDescriptionChange && !initialClassifierDescriptionEmpty && !descriptionAlreadyExists(classifierDescription ?? '', existingAllowDescriptions) && decisionReason?.type !== 'classifier') {
+    if (("external" as string) === 'ant' && !editablePrefixShown && isClassifierPermissionsEnabled() && onClassifierDescriptionChange && !initialClassifierDescriptionEmpty && !descriptionAlreadyExists(classifierDescription ?? '', existingAllowDescriptions) && decisionReason?.type !== 'classifier') {
       options.push({
         type: 'input',
-        label: 'Yes, and don\u2019t ask again for',
+        label: t('shell.yesDontAskAgain'),
         value: 'yes-classifier-reviewed',
-        placeholder: 'describe what to allow...',
+        placeholder: t('shell.describeWhatToAllow'),
         initialValue: classifierDescription ?? '',
         onChange: onClassifierDescriptionChange,
         allowEmptySubmitToCancel: true,
@@ -130,15 +131,15 @@ export function bashToolUseOptions({
   if (noInputMode) {
     options.push({
       type: 'input',
-      label: 'No',
+      label: t('shell.no'),
       value: 'no',
-      placeholder: 'and tell Claude what to do differently',
+      placeholder: t('shell.tellClaudeDifferently'),
       onChange: onRejectFeedbackChange,
       allowEmptySubmitToCancel: true
     });
   } else {
     options.push({
-      label: 'No',
+      label: t('shell.no'),
       value: 'no'
     });
   }

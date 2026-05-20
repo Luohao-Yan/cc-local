@@ -1,0 +1,177 @@
+/* Message Bubble Styles */
+.message-bubble {
+  max-width: 88%;
+  padding: var(--app-spacing-md) var(--app-spacing-lg);
+  border-radius: var(--app-radius-lg);
+  word-wrap: break-word;
+  word-break: break-word;
+  animation: fadeIn var(--app-transition-medium);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* User Message Bubble */
+.message-bubble-user {
+  align-self: flex-end;
+  background: var(--app-user-message-bg);
+  color: var(--app-user-message-fg);
+  margin-left: auto;
+  border-radius: var(--app-radius-lg) var(--app-radius-lg) var(--app-radius-xs) var(--app-radius-lg);
+}
+
+/* Assistant Message Bubble */
+.message-bubble-assistant {
+  align-self: flex-start;
+  background: var(--app-assistant-message-bg);
+  color: var(--app-assistant-message-fg);
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Message Header */
+.message-header {
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-sm);
+  margin-bottom: var(--app-spacing-xs);
+}
+
+.message-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--app-radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--app-font-size-xs);
+  font-weight: var(--app-font-weight-bold);
+  color: white;
+  background: linear-gradient(135deg, var(--app-claude-purple), var(--app-claude-blue));
+}
+
+.message-sender {
+  font-size: var(--app-font-size-xs);
+  font-weight: var(--app-font-weight-semibold);
+  color: var(--app-foreground-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Message Content */
+.message-content {
+  line-height: var(--app-line-height);
+}
+
+.message-content p {
+  margin: var(--app-spacing-xs) 0;
+}
+
+.message-content p:first-child {
+  margin-top: 0;
+}
+
+.message-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Inline Code */
+.message-content code {
+  font-family: var(--app-monospace-font-family);
+  font-size: 0.85em;
+  background: var(--app-code-background);
+  padding: var(--app-spacing-xs) var(--app-spacing-sm);
+  border-radius: var(--app-radius-sm);
+}
+
+/* Code Block */
+.message-content pre {
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
+  padding: var(--app-spacing-lg);
+  margin: var(--app-spacing-md) 0;
+  overflow-x: auto;
+}
+
+.message-content pre code {
+  background: transparent;
+  padding: 0;
+  font-size: var(--app-font-size-sm);
+}
+
+/* Lists */
+.message-content ul,
+.message-content ol {
+  padding-left: var(--app-spacing-xl);
+  margin: var(--app-spacing-xs) 0;
+}
+
+.message-content li {
+  margin: var(--app-spacing-xs) 0;
+}
+
+/* Blockquote */
+.message-content blockquote {
+  border-left: 3px solid var(--app-border);
+  padding-left: var(--app-spacing-lg);
+  color: var(--app-foreground-dim);
+  margin: var(--app-spacing-md) 0;
+}
+
+/* Headers */
+.message-content h1,
+.message-content h2,
+.message-content h3 {
+  font-weight: var(--app-font-weight-semibold);
+  margin: var(--app-spacing-md) 0 var(--app-spacing-sm);
+  line-height: var(--app-line-height-tight);
+}
+
+.message-content h1 { font-size: var(--app-font-size-xl); }
+.message-content h2 { font-size: var(--app-font-size-lg); }
+.message-content h3 { font-size: var(--app-font-size-md); }
+
+/* Links */
+.message-content a {
+  color: var(--app-link-foreground);
+  text-decoration: none;
+}
+
+.message-content a:hover {
+  text-decoration: underline;
+}
+
+/* Tables */
+.message-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--app-spacing-md) 0;
+}
+
+.message-content th,
+.message-content td {
+  padding: var(--app-spacing-sm) var(--app-spacing-md);
+  border: 1px solid var(--app-border);
+  text-align: left;
+}
+
+.message-content th {
+  background: var(--vscode-editorWidget-background);
+  font-weight: var(--app-font-weight-semibold);
+}
+
+/* Horizontal Rule */
+.message-content hr {
+  border: none;
+  border-top: 1px solid var(--app-border);
+  margin: var(--app-spacing-lg) 0;
+}

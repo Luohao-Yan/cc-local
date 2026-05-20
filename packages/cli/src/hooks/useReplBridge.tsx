@@ -394,6 +394,8 @@ export function useReplBridge(messages: Message[], setMessages: (action: React.S
             },
             onSetModel(model) {
               const resolved = model === 'default' ? null : model ?? null;
+              // Model activation is handled by onChangeAppState (the single
+              // source of truth), which fires synchronously during setAppState.
               setMainLoopModelOverride(resolved);
               setAppState(prev_10 => {
                 if (prev_10.mainLoopModelForSession === resolved) return prev_10;

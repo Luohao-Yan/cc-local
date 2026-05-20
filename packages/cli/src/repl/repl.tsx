@@ -173,8 +173,8 @@ export function Repl({ client }: ReplProps) {
             case 'stream_start':
               break
             case 'delta':
-              if (event.delta?.type === 'text' && event.delta.text) {
-                setStreaming(prev => prev + event.delta.text)
+              if (event?.delta?.type === 'text' && event?.delta.text) {
+                setStreaming(prev => prev + event.delta!.text)
               }
               break
             case 'tool_call':

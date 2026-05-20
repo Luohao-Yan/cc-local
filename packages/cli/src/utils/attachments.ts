@@ -1525,8 +1525,8 @@ export function getAgentListingDeltaAttachment(
   for (const msg of messages ?? []) {
     if (msg.type !== 'attachment') continue
     if (msg.attachment.type !== 'agent_listing_delta') continue
-    for (const t of msg.attachment.addedTypes) announced.add(t)
-    for (const t of msg.attachment.removedTypes) announced.delete(t)
+    for (const t of (msg.attachment as any).addedTypes) announced.add(t)
+    for (const t of (msg.attachment as any).removedTypes) announced.delete(t)
   }
 
   const currentTypes = new Set(filtered.map(a => a.agentType))
@@ -2256,7 +2256,7 @@ export function collectSurfacedMemories(messages: ReadonlyArray<Message>): {
   let totalBytes = 0
   for (const m of messages) {
     if (m.type === 'attachment' && m.attachment.type === 'relevant_memories') {
-      for (const mem of m.attachment.memories) {
+      for (const mem of (m.attachment as any).memories) {
         paths.add(mem.path)
         totalBytes += mem.content.length
       }
@@ -3932,10 +3932,6 @@ export function getCompactionReminderAttachment(
   messages: Message[],
   model: string,
 ): Attachment[] {
-  if (!getFeatureValue_CACHED_MAY_BE_STALE('tengu_marble_fox', false)) {
-    return []
-  }
-
   if (!isAutoCompactEnabled()) {
     return []
   }

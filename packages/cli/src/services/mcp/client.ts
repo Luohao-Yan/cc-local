@@ -919,7 +919,7 @@ export const connectToServer = memoize(
         const context = createChromeContext(serverRef.env)
         inProcessServer = createClaudeForChromeMcpServer(context)
         const [clientTransport, serverTransport] = createLinkedTransportPair()
-        await inProcessServer.connect(serverTransport)
+        await inProcessServer?.connect(serverTransport)
         transport = clientTransport
         logMCPDebug(name, `In-process Chrome MCP server started`)
       } else if (
@@ -938,7 +938,7 @@ export const connectToServer = memoize(
         )
         inProcessServer = await createComputerUseMcpServerForCli()
         const [clientTransport, serverTransport] = createLinkedTransportPair()
-        await inProcessServer.connect(serverTransport)
+        await inProcessServer?.connect(serverTransport)
         transport = clientTransport
         logMCPDebug(name, `In-process Computer Use MCP server started`)
       } else if (serverRef.type === 'stdio' || !serverRef.type) {
@@ -1054,7 +1054,7 @@ export const connectToServer = memoize(
             `Connection timeout triggered after ${elapsed}ms (limit: ${getConnectionTimeoutMs()}ms)`,
           )
           if (inProcessServer) {
-            inProcessServer.close().catch(() => {})
+            inProcessServer?.close().catch(() => {})
           }
           transport.close().catch(() => {})
           reject(
@@ -1145,7 +1145,7 @@ export const connectToServer = memoize(
           })
         }
         if (inProcessServer) {
-          inProcessServer.close().catch(() => {})
+          inProcessServer?.close().catch(() => {})
         }
         transport.close().catch(() => {})
         if (stderrOutput) {
@@ -1405,7 +1405,7 @@ export const connectToServer = memoize(
         // In-process servers (e.g. Chrome MCP) don't have child processes or stderr
         if (inProcessServer) {
           try {
-            await inProcessServer.close()
+            await inProcessServer?.close()
           } catch (error) {
             logMCPDebug(name, `Error closing in-process server: ${error}`)
           }
@@ -1627,7 +1627,7 @@ export const connectToServer = memoize(
       logMCPError(name, `Connection failed: ${errorMessage(error)}`)
 
       if (inProcessServer) {
-        inProcessServer.close().catch(() => {})
+        inProcessServer?.close().catch(() => {})
       }
       return {
         name,

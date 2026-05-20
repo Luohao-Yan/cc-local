@@ -3,3 +3,4 @@
  */
 
 export * from './types/index.js'
+export * from './security/pathSecurity.js'

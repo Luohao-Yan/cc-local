@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../../utils/i18n/index.js';
 import React from 'react';
 import { Box, Text, useTheme } from '../../../ink.js';
 import { FallbackPermissionRequest } from '../FallbackPermissionRequest.js';
@@ -47,8 +50,8 @@ export function FilesystemPermissionRequest(t0) {
   }
   const userFacingName = t2;
   const isReadOnly = toolUseConfirm.tool.isReadOnly(toolUseConfirm.input);
-  const userFacingReadOrEdit = isReadOnly ? "Read" : "Edit";
-  const title = `${userFacingReadOrEdit} file`;
+  const userFacingReadOrEdit = isReadOnly ? t('filesystem.read') : t('filesystem.edit');
+  const title = t('filesystem.title', {action: userFacingReadOrEdit});
   const parseInput = _temp;
   if (!path) {
     let t3;

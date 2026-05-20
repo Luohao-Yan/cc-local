@@ -13,7 +13,7 @@ import type {
   HooksConfiguration,
   HookExecutionOptions,
 } from './types'
-import { CommandHookExecutor, HttpHookExecutor, FunctionHookExecutor } from './executors'
+import { CommandHookExecutor, HttpHookExecutor, FunctionHookExecutor, AgentHookExecutor, PromptHookExecutor } from './executors'
 
 // ─── Hook Manager ─────────────────────────────────────────────────────────────
 
@@ -24,11 +24,15 @@ export class HookManager implements vscode.Disposable {
     command: CommandHookExecutor
     http: HttpHookExecutor
     function: FunctionHookExecutor
+    agent: AgentHookExecutor
+    prompt: PromptHookExecutor
   }
   private enabled: boolean = true
   private allowedHttpUrls: Set<string>
   private allowedCommands: Set<string>
   private allowedEnvVars: Set<string>
+  /** Track "once" hooks that have already been executed this session */
+  private executedOnceKeys: Set<string> = new Set()
 
   constructor(
     outputChannel: vscode.LogOutputChannel,
@@ -50,6 +54,8 @@ export class HookManager implements vscode.Disposable {
       command: new CommandHookExecutor(outputChannel, config?.allowedCommands),
       http: new HttpHookExecutor(outputChannel, config?.allowedHttpUrls, config?.allowedEnvVars),
       function: new FunctionHookExecutor(outputChannel, config?.registeredFunctions),
+      agent: new AgentHookExecutor(outputChannel),
+      prompt: new PromptHookExecutor(outputChannel),
     }
 
     this.outputChannel.debug('HookManager initialized')
@@ -66,7 +72,7 @@ export class HookManager implements vscode.Disposable {
     for (const [type, definitions] of Object.entries(config)) {
       if (definitions && definitions.length > 0) {
         const hookType = type as HookType
-        this.hooks.set(hookType, definitions.filter(d => d.enabled !== false))
+        this.hooks.set(hookType, definitions.filter((d: any) => d.enabled !== false))
       }
     }
 
@@ -153,6 +159,7 @@ export class HookManager implements vscode.Disposable {
    */
   clear(): void {
     this.hooks.clear()
+    this.executedOnceKeys.clear()
     this.outputChannel.debug('Cleared all hooks')
   }
 
@@ -264,10 +271,42 @@ export class HookManager implements vscode.Disposable {
         break
       }
 
+      // "once" support: skip if already executed this session
+      const onceKey = `${context.type}:${definitionIndex}:${handlerIndex}:${handler.type}`
+      if (handler.once && this.executedOnceKeys.has(onceKey)) {
+        this.outputChannel.debug(`Hook handler ${onceKey} already executed once, skipping`)
+        continue
+      }
+
+      // "statusMessage" support: show progress indicator
+      let statusDisposable: vscode.Disposable | undefined
+      if (handler.statusMessage) {
+        vscode.window.setStatusBarMessage(`$(sync~spin) ${handler.statusMessage}`, handler.timeout ?? 30000)
+      }
+
       try {
+        // "async" support: fire and forget
+        if (handler.async) {
+          const handlerRef = handler
+          const ctxRef = context
+          const timeoutRef = remainingTimeout
+          const idx = handlerIndex
+          void this.executeHandler(handlerRef, ctxRef, timeoutRef).then(result => {
+            result.handlerIndex = idx
+            this.outputChannel.debug(`Async hook completed: ${result.success ? 'ok' : result.error}`)
+          })
+          // Don't wait for result, don't add to results
+          continue
+        }
+
         const result = await this.executeHandler(handler, context, remainingTimeout)
         result.handlerIndex = handlerIndex
         results.push(result)
+
+        // Mark once hooks as executed
+        if (handler.once) {
+          this.executedOnceKeys.add(onceKey)
+        }
 
         // Stop if handler requested blocking
         if (result.block) {
@@ -282,6 +321,8 @@ export class HookManager implements vscode.Disposable {
           error: error instanceof Error ? error.message : String(error),
           duration: Date.now() - startTime,
         })
+      } finally {
+        statusDisposable?.dispose()
       }
     }
 

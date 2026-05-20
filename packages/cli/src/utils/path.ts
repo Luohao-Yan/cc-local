@@ -130,11 +130,8 @@ export function getDirectoryForPath(path: string): string {
  * @param path - The path to check for traversal patterns
  * @returns true if the path contains traversal (e.g., '../', '..\', or ends with '..')
  */
-export function containsPathTraversal(path: string): boolean {
-  return /(?:^|[\\/])\.\.(?:[\\/]|$)/.test(path)
-}
-
-// Re-export from the shared zero-dep source.
+// Re-export from @cclocal/shared so core package can also use it
+export { containsPathTraversal } from '@cclocal/shared'
 export { sanitizePath } from './sessionStoragePortable.js'
 
 /**

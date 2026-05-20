@@ -156,7 +156,7 @@ export async function clearConversation({
               task.abortController?.abort()
             }
             if ('unregisterCleanup' in task) {
-              task.unregisterCleanup?.()
+              (task as any).unregisterCleanup?.()
             }
           }
         } catch (error) {

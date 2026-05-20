@@ -218,7 +218,9 @@ export class IDEBridge extends EventEmitter {
   }
 
   /**
-   * 发送消息
+   * 发送消息（fire-and-forget）
+   * 消息成功写入 WebSocket 后立即 resolve，返回消息 ID。
+   * 不等待 IDE 响应；如需等待响应，使用 request()。
    */
   async send(type: IDEMessageType, payload: unknown): Promise<string> {
     const id = randomUUID()
@@ -235,35 +237,23 @@ export class IDEBridge extends EventEmitter {
         return
       }
 
-      const timeout = setTimeout(() => {
-        this.pendingRequests.delete(id)
-        reject(new Error('Message timeout'))
-      }, 30000)
-
-      // Store pending entry but do NOT resolve yet —
-      // the response handler in handleMessage() will resolve it.
-      this.pendingRequests.set(id, { resolve, reject, timeout })
-
       this.ws.send(JSON.stringify(message), (error) => {
         if (error) {
-          clearTimeout(timeout)
-          this.pendingRequests.delete(id)
           reject(error)
+        } else {
+          resolve(id)
         }
-        // On success, just let the pending entry stay —
-        // it will be resolved by handleMessage() when the IDE responds.
       })
     })
   }
 
   /**
    * 发送请求并等待响应
+   * 与 send() 不同，request() 会等待 IDE 返回匹配 id 的响应后才 resolve。
    */
   async request<T = unknown>(type: IDEMessageType, payload: unknown): Promise<T> {
-    // send() now returns a Promise that resolves with the IDE's response payload,
-    // not just the message ID.
-    const id = this.generateId()
-    const message = { id, type, payload, timestamp: Date.now() }
+    const id = randomUUID()
+    const message: IDEMessage = { id, type, payload, timestamp: Date.now() }
 
     return new Promise((resolve, reject) => {
       if (!this.ws || !this.connected) {

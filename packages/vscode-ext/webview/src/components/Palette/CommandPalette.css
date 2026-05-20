@@ -1,0 +1,130 @@
+.command-palette-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 100px;
+  z-index: 2000;
+}
+
+.command-palette {
+  width: 500px;
+  max-width: 90%;
+  background: var(--vscode-editor-background);
+  border-radius: var(--corner-radius-large);
+  border: 1px solid var(--app-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.command-palette-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-small);
+  padding: var(--app-spacing-medium);
+  border-bottom: 1px solid var(--app-border);
+}
+
+.command-palette-icon {
+  font-size: 16px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.command-palette-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--app-foreground);
+  font-size: 14px;
+  padding: var(--app-spacing-small) 0;
+}
+
+.command-palette-input:focus {
+  outline: none;
+}
+
+.command-palette-input::placeholder {
+  color: var(--vscode-descriptionForeground);
+}
+
+.command-palette-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.command-palette-empty {
+  padding: var(--app-spacing-large);
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+  font-size: 13px;
+}
+
+.command-palette-item {
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-medium);
+  padding: var(--app-spacing-small) var(--app-spacing-medium);
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.command-palette-item:hover,
+.command-palette-item.selected {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.command-palette-item.selected {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+}
+
+.command-palette-item-icon {
+  width: 20px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.command-palette-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.command-palette-item-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.command-palette-item-description {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-palette-item.selected .command-palette-item-description {
+  color: var(--vscode-list-activeSelectionForeground);
+  opacity: 0.8;
+}
+
+.command-palette-item-shortcut {
+  font-size: 11px;
+  font-family: var(--app-monospace-font-family);
+  color: var(--vscode-descriptionForeground);
+  padding: 2px 6px;
+  background: var(--vscode-editorGutter-background);
+  border-radius: var(--corner-radius-small);
+}
+
+.command-palette-item.selected .command-palette-item-shortcut {
+  color: var(--vscode-list-activeSelectionForeground);
+  background: rgba(255, 255, 255, 0.1);
+}

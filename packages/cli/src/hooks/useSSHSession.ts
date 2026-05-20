@@ -25,7 +25,7 @@ import type { SSHSessionManager } from '../ssh/SSHSessionManager.js'
 import type { Tool } from '../Tool.js'
 import { findToolByName } from '../Tool.js'
 import type { Message as MessageType } from '../types/message.js'
-import type { PermissionAskDecision } from '../types/permissions.js'
+import type { PermissionAskDecision, PermissionUpdate } from '../types/permissions.js'
 import { logForDebugging } from '../utils/debug.js'
 import { gracefulShutdown } from '../utils/gracefulShutdown.js'
 import type { RemoteMessageContent } from '../utils/teleport/api.js'
@@ -71,17 +71,17 @@ export function useSSHSession({
 
     const manager = session.createManager({
       onMessage: sdkMessage => {
-        if (isSessionEndMessage(sdkMessage)) {
+        if (isSessionEndMessage(sdkMessage as any)) {
           setIsLoading(false)
         }
 
         // Skip duplicate init messages (one per turn from stream-json mode).
-        if (sdkMessage.type === 'system' && sdkMessage.subtype === 'init') {
+        if ((sdkMessage as any).type === 'system' && (sdkMessage as any).subtype === 'init') {
           if (hasReceivedInitRef.current) return
           hasReceivedInitRef.current = true
         }
 
-        const converted = convertSDKMessage(sdkMessage, {
+        const converted = convertSDKMessage(sdkMessage as any, {
           convertToolResults: true,
         })
         if (converted.type === 'message') {
@@ -90,34 +90,34 @@ export function useSSHSession({
       },
       onPermissionRequest: (request, requestId) => {
         logForDebugging(
-          `[useSSHSession] permission request: ${request.tool_name}`,
+          `[useSSHSession] permission request: ${(request as any).tool_name}`,
         )
 
         const tool =
-          findToolByName(toolsRef.current, request.tool_name) ??
-          createToolStub(request.tool_name)
+          findToolByName(toolsRef.current, (request as any).tool_name) ??
+          createToolStub((request as any).tool_name)
 
         const syntheticMessage = createSyntheticAssistantMessage(
-          request,
+          request as any,
           requestId,
         )
 
         const permissionResult: PermissionAskDecision = {
           behavior: 'ask',
           message:
-            request.description ?? `${request.tool_name} requires permission`,
-          suggestions: request.permission_suggestions,
-          blockedPath: request.blocked_path,
+            (request as any).description ?? `${(request as any).tool_name} requires permission`,
+          suggestions: (request as any).permission_suggestions,
+          blockedPath: (request as any).blocked_path,
         }
 
         const toolUseConfirm: ToolUseConfirm = {
           assistantMessage: syntheticMessage,
           tool,
           description:
-            request.description ?? `${request.tool_name} requires permission`,
-          input: request.input,
+            (request as any).description ?? `${(request as any).tool_name} requires permission`,
+          input: (request as any).input,
           toolUseContext: {} as ToolUseConfirm['toolUseContext'],
-          toolUseID: request.tool_use_id,
+          toolUseID: (request as any).tool_use_id,
           permissionResult,
           permissionPromptStartTimeMs: Date.now(),
           onUserInteraction() {},
@@ -127,7 +127,7 @@ export function useSSHSession({
               message: 'User aborted',
             })
             setToolUseConfirmQueue(q =>
-              q.filter(i => i.toolUseID !== request.tool_use_id),
+              q.filter(i => i.toolUseID !== (request as any).tool_use_id),
             )
           },
           onAllow(updatedInput) {
@@ -136,7 +136,7 @@ export function useSSHSession({
               updatedInput,
             })
             setToolUseConfirmQueue(q =>
-              q.filter(i => i.toolUseID !== request.tool_use_id),
+              q.filter(i => i.toolUseID !== (request as any).tool_use_id),
             )
             setIsLoading(true)
           },
@@ -146,7 +146,7 @@ export function useSSHSession({
               message: feedback ?? 'User denied permission',
             })
             setToolUseConfirmQueue(q =>
-              q.filter(i => i.toolUseID !== request.tool_use_id),
+              q.filter(i => i.toolUseID !== (request as any).tool_use_id),
             )
           },
           async recheckPermission() {},

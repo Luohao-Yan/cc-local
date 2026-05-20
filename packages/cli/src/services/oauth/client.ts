@@ -123,8 +123,8 @@ export async function exchangeCodeForTokens(
     state,
   }
 
-  if (expiresIn !== undefined) {
-    requestBody.expires_in = expiresIn
+  if (expiresIn! !== undefined) {
+    requestBody.expires_in = expiresIn!
   }
 
   const response = await axios.post(getOauthConfig().TOKEN_URL, requestBody, {
@@ -179,7 +179,7 @@ export async function refreshOAuthToken(
       expires_in: expiresIn,
     } = data
 
-    const expiresAt = Date.now() + expiresIn * 1000
+    const expiresAt = Date.now() + (expiresIn ?? 3600) * 1000
     const scopes = parseScopes(data.scope)
 
     logEvent('tengu_oauth_token_refresh_success', {})
@@ -411,7 +411,7 @@ export async function fetchProfileInfo(accessToken: string): Promise<{
   }
 
   if (profile?.organization?.subscription_created_at) {
-    result.subscriptionCreatedAt = profile.organization.subscription_created_at
+    result.subscriptionCreatedAt = profile.organization?.subscription_created_at
   }
 
   logEvent('tengu_oauth_profile_fetch_success', {})
@@ -499,14 +499,14 @@ export async function populateOAuthAccountInfoIfNeeded(): Promise<boolean> {
       storeOAuthAccountInfo({
         accountUuid: profile.account.uuid,
         emailAddress: profile.account.email,
-        organizationUuid: profile.organization.uuid,
+        organizationUuid: profile.organization?.uuid,
         displayName: profile.account.display_name || undefined,
         hasExtraUsageEnabled:
-          profile.organization.has_extra_usage_enabled ?? false,
-        billingType: profile.organization.billing_type ?? undefined,
+          profile.organization?.has_extra_usage_enabled ?? false,
+        billingType: profile.organization?.billing_type ?? undefined,
         accountCreatedAt: profile.account.created_at,
         subscriptionCreatedAt:
-          profile.organization.subscription_created_at ?? undefined,
+          profile.organization?.subscription_created_at ?? undefined,
       })
       return true
     }

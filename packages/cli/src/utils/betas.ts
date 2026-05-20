@@ -407,7 +407,7 @@ export const getModelBetas = memoize((model: string): string[] => {
     return []
   }
   const modelBetas = getAllModelBetas(model)
-  if (provider === 'bedrock') {
+  if ((provider as string) === 'bedrock') {
     return modelBetas.filter(b => !BEDROCK_EXTRA_PARAMS_HEADERS.has(b))
   }
   return modelBetas

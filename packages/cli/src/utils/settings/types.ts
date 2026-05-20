@@ -369,6 +369,20 @@ export const SettingsSchema = lazySchema(() =>
         .describe(
           "Include built-in commit and PR workflow instructions in Claude's system prompt (default: true)",
         ),
+      prUrlTemplate: z
+        .string()
+        .optional()
+        .describe(
+          'Custom PR URL template. Use {owner}, {repo}, {number} as placeholders. ' +
+            'Example: "https://gitlab.internal/{owner}/{repo}/-/merge_requests/{number}"',
+        ),
+      parentSettingsBehavior: z
+        .enum(['first-wins', 'merge'])
+        .optional()
+        .describe(
+          'How parent directory settings are merged. "first-wins" (default) uses the nearest ancestor; ' +
+            '"merge" deep-merges all ancestor settings with child overriding parent.',
+        ),
       permissions: PermissionsSchema()
         .optional()
         .describe('Tool usage permissions configuration'),
@@ -451,6 +465,20 @@ export const SettingsSchema = lazySchema(() =>
             .describe(
               'Directories to include when creating worktrees, via git sparse-checkout (cone mode). ' +
                 'Dramatically faster in large monorepos — only the listed paths are written to disk.',
+            ),
+          bgIsolation: z
+            .enum(['worktree', 'none'])
+            .optional()
+            .describe(
+              'Background session isolation mode. "worktree" (default) creates a separate git worktree; ' +
+                '"none" lets background sessions edit the working copy directly.',
+            ),
+          baseRef: z
+            .enum(['fresh', 'head'])
+            .optional()
+            .describe(
+              'Worktree base reference. "fresh" (default) uses origin/default branch; ' +
+                '"head" uses the current HEAD as the base.',
             ),
         })
         .optional()

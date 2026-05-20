@@ -7,9 +7,10 @@ import { TOOL_SUMMARY_MAX_LENGTH } from '../../constants/toolLimits.js';
 import { Text } from '../../ink.js';
 import { FILE_NOT_FOUND_CWD_NOTE, getDisplayPath } from '../../utils/file.js';
 import { truncate } from '../../utils/format.js';
+import { t } from '../../utils/i18n/index.js';
 import { GrepTool } from '../GrepTool/GrepTool.js';
 export function userFacingName(): string {
-  return 'Search';
+  return t('glob.search');
 }
 export function renderToolUseMessage({
   pattern,
@@ -26,9 +27,9 @@ export function renderToolUseMessage({
     return null;
   }
   if (!path) {
-    return `pattern: "${pattern}"`;
+    return t('glob.pattern', { pattern });
   }
-  return `pattern: "${pattern}", path: "${verbose ? path : getDisplayPath(path)}"`;
+  return t('glob.patternWithPath', { pattern, path: verbose ? path : getDisplayPath(path) });
 }
 export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'], {
   verbose
@@ -39,11 +40,11 @@ export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'
     const errorMessage = extractTag(result, 'tool_use_error');
     if (errorMessage?.includes(FILE_NOT_FOUND_CWD_NOTE)) {
       return <MessageResponse>
-          <Text color="error">File not found</Text>
+          <Text color="error">{t('glob.fileNotFound')}</Text>
         </MessageResponse>;
     }
     return <MessageResponse>
-        <Text color="error">Error searching files</Text>
+        <Text color="error">{t('glob.errorSearchingFiles')}</Text>
       </MessageResponse>;
   }
   return <FallbackToolUseErrorMessage result={result} verbose={verbose} />;

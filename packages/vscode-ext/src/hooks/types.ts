@@ -1,6 +1,13 @@
 /**
  * Hook Types and Interfaces for CCLocal VS Code Extension
- * Supports 20+ hook types matching official Claude Code extension
+ * Supports 20+ hook types matching official Claude Code extension 1:1
+ *
+ * Handler types (1:1 with official):
+ *   - command: Shell command execution (bash/powershell)
+ *   - http: HTTP POST requests
+ *   - function: Registered function reference
+ *   - agent: LLM-based agentic verifier (official extension exclusive)
+ *   - prompt: LLM prompt evaluation (official extension exclusive)
  */
 
 // ─── Hook Types ────────────────────────────────────────────────────────────────
@@ -48,30 +55,92 @@ export type HookType =
 
 // ─── Hook Handler Types ────────────────────────────────────────────────────────
 
-export type HookHandlerType = 'command' | 'http' | 'function'
+export type HookHandlerType = 'command' | 'http' | 'function' | 'agent' | 'prompt'
 
 export interface CommandHookHandler {
   type: 'command'
+  /** Shell command to execute */
   command: string
+  /** Timeout in milliseconds (default: 30000) */
   timeout?: number
+  /** Environment variables to set */
   env?: Record<string, string>
+  /** Shell to use: bash (default) or powershell (Windows) */
+  shell?: 'bash' | 'powershell'
+  /** Execute asynchronously — don't block tool call (default: false) */
+  async?: boolean
+  /** Execute only once per session (default: false) */
+  once?: boolean
+  /** Status message to display while running */
+  statusMessage?: string
 }
 
 export interface HttpHookHandler {
   type: 'http'
+  /** HTTP URL to POST to */
   url: string
+  /** HTTP method (default: POST) */
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  /** HTTP request headers */
   headers?: Record<string, string>
+  /** Timeout in milliseconds (default: 10000) */
   timeout?: number
+  /** Execute asynchronously — don't block tool call (default: false) */
+  async?: boolean
+  /** Execute only once per session (default: false) */
+  once?: boolean
+  /** Status message to display while running */
+  statusMessage?: string
+  /** Environment variable names allowed in the request body */
+  allowedEnvVars?: string[]
 }
 
 export interface FunctionHookHandler {
   type: 'function'
-  handler: string // Function name reference
+  /** Registered function name reference */
+  handler: string
+  /** Timeout in milliseconds (default: 5000) */
   timeout?: number
+  /** Execute only once per session (default: false) */
+  once?: boolean
+  /** Status message to display while running */
+  statusMessage?: string
 }
 
-export type HookHandler = CommandHookHandler | HttpHookHandler | FunctionHookHandler
+export interface AgentHookHandler {
+  type: 'agent'
+  /** LLM prompt content for the agent to evaluate */
+  prompt: string
+  /** Model to use (default: claude-sonnet-4-20250514) */
+  model?: string
+  /** Timeout in milliseconds (default: 60000) */
+  timeout?: number
+  /** Execute only once per session (default: false) */
+  once?: boolean
+  /** Status message to display while running */
+  statusMessage?: string
+}
+
+export interface PromptHookHandler {
+  type: 'prompt'
+  /** LLM prompt content to evaluate */
+  prompt: string
+  /** Model to use (optional, defaults to current session model) */
+  model?: string
+  /** Timeout in milliseconds (default: 30000) */
+  timeout?: number
+  /** Execute only once per session (default: false) */
+  once?: boolean
+  /** Status message to display while running */
+  statusMessage?: string
+}
+
+export type HookHandler =
+  | CommandHookHandler
+  | HttpHookHandler
+  | FunctionHookHandler
+  | AgentHookHandler
+  | PromptHookHandler
 
 // ─── Hook Definition ──────────────────────────────────────────────────────────
 
@@ -101,177 +170,81 @@ export interface HookDefinition {
 // ─── Hook Context ───────────────────────────────────────────────────────────────
 
 export interface HookContext {
-  /**
-   * Type of hook being triggered
-   */
+  /** Type of hook being triggered */
   type: HookType
-
-  /**
-   * Timestamp of hook execution
-   */
+  /** Timestamp of hook execution */
   timestamp: number
-
-  /**
-   * Session ID if applicable
-   */
+  /** Session ID if applicable */
   sessionId?: string
-
-  /**
-   * Tool name for tool-related hooks
-   */
+  /** Tool name for tool-related hooks */
   toolName?: string
-
-  /**
-   * Tool input for PreToolUse/PostToolUse
-   */
+  /** Tool input for PreToolUse/PostToolUse */
   toolInput?: unknown
-
-  /**
-   * Tool result for PostToolUse
-   */
+  /** Tool result for PostToolUse */
   toolResult?: unknown
-
-  /**
-   * Tool error if any
-   */
+  /** Tool error if any */
   toolError?: string
-
-  /**
-   * File path for file-related hooks
-   */
+  /** File path for file-related hooks */
   filePath?: string
-
-  /**
-   * File content for file operations
-   */
+  /** File content for file operations */
   fileContent?: string
-
-  /**
-   * Command for bash-related hooks
-   */
+  /** Command for bash-related hooks */
   command?: string
-
-  /**
-   * Exit code for bash execution
-   */
+  /** Exit code for bash execution */
   exitCode?: number
-
-  /**
-   * Output from bash execution
-   */
+  /** Output from bash execution */
   output?: string
-
-  /**
-   * Model name for model change
-   */
+  /** Model name for model change */
   model?: string
-
-  /**
-   * Previous model for model change
-   */
+  /** Previous model for model change */
   previousModel?: string
-
-  /**
-   * Permission mode for permission change
-   */
+  /** Permission mode for permission change */
   permissionMode?: string
-
-  /**
-   * MCP server name
-   */
+  /** MCP server name */
   mcpServerName?: string
-
-  /**
-   * Plugin ID
-   */
+  /** Plugin ID */
   pluginId?: string
-
-  /**
-   * Error message for error hooks
-   */
+  /** Error message for error hooks */
   errorMessage?: string
-
-  /**
-   * Error stack trace
-   */
+  /** Error stack trace */
   errorStack?: string
-
-  /**
-   * Custom data
-   */
+  /** Custom data */
   data?: Record<string, unknown>
 }
 
 // ─── Hook Result ───────────────────────────────────────────────────────────────
 
 export interface HookResult {
-  /**
-   * Hook ID
-   */
+  /** Hook ID */
   hookId: string
-
-  /**
-   * Handler index in the hook definition
-   */
+  /** Handler index in the hook definition */
   handlerIndex: number
-
-  /**
-   * Whether the hook executed successfully
-   */
+  /** Whether the hook executed successfully */
   success: boolean
-
-  /**
-   * Output from command or response from HTTP
-   */
+  /** Output from command or response from HTTP */
   output?: string
-
-  /**
-   * Error message if failed
-   */
+  /** Error message if failed */
   error?: string
-
-  /**
-   * Execution duration in milliseconds
-   */
+  /** Execution duration in milliseconds */
   duration: number
-
-  /**
-   * Whether to block the operation (for PreToolUse)
-   */
+  /** Whether to block the operation (for PreToolUse) */
   block?: boolean
-
-  /**
-   * Modified input (for PreToolUse)
-   */
+  /** Modified input (for PreToolUse) */
   modifiedInput?: unknown
 }
 
 // ─── Hook Execution Options ────────────────────────────────────────────────────
 
 export interface HookExecutionOptions {
-  /**
-   * Timeout for the entire hook execution (default: 60000)
-   */
+  /** Timeout for the entire hook execution (default: 60000) */
   timeout?: number
-
-  /**
-   * Whether to run hooks in parallel (default: false)
-   */
+  /** Whether to run hooks in parallel (default: false) */
   parallel?: boolean
-
-  /**
-   * Whether to stop on first failure (default: true)
-   */
+  /** Whether to stop on first failure (default: true) */
   stopOnFailure?: boolean
-
-  /**
-   * Whether to capture stdout (default: true)
-   */
+  /** Whether to capture stdout (default: true) */
   captureOutput?: boolean
-
-  /**
-   * Environment variables to pass
-   */
+  /** Environment variables to pass */
   env?: Record<string, string>
 }
 
@@ -306,6 +279,8 @@ export const DEFAULT_TIMEOUTS = {
   command: 30000,  // 30 seconds for shell commands
   http: 10000,      // 10 seconds for HTTP requests
   function: 5000,   // 5 seconds for function calls
+  agent: 60000,     // 60 seconds for agent evaluations
+  prompt: 30000,   // 30 seconds for prompt evaluations
 }
 
 // ─── Hook Priority ─────────────────────────────────────────────────────────────

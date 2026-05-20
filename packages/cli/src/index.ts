@@ -323,6 +323,7 @@ program
   .option('--strict-mcp-config', 'Use only MCP servers from --mcp-config for this startup', false)
   .option('--settings <file-or-json>', 'Load compatibility settings from a JSON file or JSON string', collectOption, [])
   .option('--plugin-dir <path>', 'Load plugins from a directory for this session only', collectOption, [])
+  .option('--plugin-url <url>', 'Fetch a plugin .zip from a URL for this session only', collectOption, [])
   .option('--add-dir <directory>', 'Additional directory to include in message context', collectOption, [])
   .option('--file <spec>', 'File resource spec to attach as compatibility metadata', collectOption, [])
   .option('--tools <tools>', 'Comma-separated list of model-visible tools; "" disables tools')
@@ -380,6 +381,8 @@ program
   .option('--subject <text>', 'Compatibility subject metadata')
   .option('--scope <text>', 'Compatibility scope metadata')
   .option('--effort <level>', 'Compatibility effort metadata')
+  .option('--exclude-dynamic-system-prompt-sections', 'Move per-machine sections from system prompt to first user message', false)
+  .option('--remote-control-session-name-prefix <prefix>', 'Prefix for auto-generated Remote Control session names')
   .option('--output <path>', 'Compatibility output path metadata')
   .option('--owner <value>', 'Compatibility owner metadata')
   .option('--email <value>', 'Compatibility email metadata')
@@ -2633,6 +2636,7 @@ function buildCompatibilityMetadata(options: {
     files: options.file,
     remote: normalizeOptionalFlagValue(options.remote),
     remoteControl: normalizeOptionalFlagValue(options.remoteControl),
+    remoteControlSessionNamePrefix: options.remoteControlSessionNamePrefix,
     rc: normalizeOptionalFlagValue(options.rc),
     teleport: normalizeOptionalFlagValue(options.teleport),
     sdkUrl: options.sdkUrl,
@@ -2674,6 +2678,7 @@ function buildCompatibilityMetadata(options: {
     email: options.email,
     enableAuthStatus: options.enableAuthStatus,
     enableAutoMode: options.enableAutoMode,
+    excludeDynamicSystemPromptSections: options.excludeDynamicSystemPromptSections,
     force: options.force,
     fromPr: normalizeOptionalFlagValue(options.fromPr),
     hardFail: options.hardFail,

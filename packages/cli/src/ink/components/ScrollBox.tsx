@@ -214,7 +214,7 @@ function ScrollBox({
   // stickyScroll is passed as a DOM attribute (via ink-box directly) so it's
   // available on the first render — ref callbacks fire after the initial
   // commit, which is too late for the first frame.
-  return <ink-box ref={el => {
+  return <ink-box ref={(el: any) => {
     domRef.current = el;
     if (el) el.scrollTop ??= 0;
   }} style={{

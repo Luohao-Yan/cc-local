@@ -14,6 +14,7 @@ import { logForDebugging } from '../debug.js'
 import { logForDiagnosticsNoPII } from '../diagLogs.js'
 import { getClaudeConfigHomeDir, isEnvTruthy } from '../envUtils.js'
 import { getErrnoCode, isENOENT } from '../errors.js'
+import { existsSync } from 'fs'
 import { writeFileSyncAndFlush_DEPRECATED } from '../file.js'
 import { readFileSync } from '../fileRead.js'
 import { getFsImplementation, safeResolvePath } from '../fsOperations.js'
@@ -306,6 +307,58 @@ export function getRelativeSettingsFilePathForSource(
   }
 }
 
+/**
+ * Walk up from cwd toward git root, collecting ancestor .claude/settings.json
+ * files. Returns them in order from furthest to nearest (so they can be
+ * deep-merged with the nearest taking precedence).
+ *
+ * When parentSettingsBehavior='first-wins' (default), returns [] — meaning
+ * only the nearest (cwd) settings file is used, matching the original behavior.
+ * When parentSettingsBehavior='merge', returns all ancestor settings objects.
+ */
+function getAncestorSettings(
+  source: 'projectSettings' | 'localSettings',
+): { settings: SettingsJson[]; errors: ValidationError[] } {
+  // Check the nearest settings file first to read parentSettingsBehavior
+  const nearestPath = getSettingsFilePathForSource(source)
+  if (!nearestPath) return { settings: [], errors: [] }
+
+  const nearestParsed = parseSettingsFile(nearestPath)
+  if (!nearestParsed.settings) return { settings: [], errors: [] }
+
+  // If not 'merge', use default behavior (first-wins) — no ancestor walk
+  if (nearestParsed.settings.parentSettingsBehavior !== 'merge') {
+    return { settings: [], errors: [] }
+  }
+
+  const relativePath = getRelativeSettingsFilePathForSource(source)
+  const cwd = getOriginalCwd()
+  const ancestorSettings: SettingsJson[] = []
+  const allErrors: ValidationError[] = []
+
+  // Walk from parent of cwd upward. Skip the nearest (cwd) since it's already loaded.
+  let dir = dirname(cwd)
+  const home = dirname(getClaudeConfigHomeDir())
+
+  while (dir && dirname(dir) !== dir && dir !== home) {
+    const ancestorFile = join(dir, relativePath)
+
+    if (!existsSync(ancestorFile)) {
+      dir = dirname(dir)
+      continue
+    }
+
+    const parsed = parseSettingsFile(ancestorFile)
+    allErrors.push(...parsed.errors)
+    if (parsed.settings) {
+      ancestorSettings.unshift(parsed.settings) // furthest first
+    }
+    dir = dirname(dir)
+  }
+
+  return { settings: ancestorSettings, errors: allErrors }
+}
+
 export function getSettingsForSource(
   source: SettingSource,
 ): SettingsJson | null {
@@ -361,6 +414,24 @@ function getSettingsForSourceUncached(
           settingsMergeCustomizer,
         ) as SettingsJson
       }
+    }
+  }
+
+  // For project/local settings with parentSettingsBehavior='merge',
+  // also merge ancestor directory settings (furthest first, nearest last)
+  if (
+    (source === 'projectSettings' || source === 'localSettings') &&
+    fileSettings?.parentSettingsBehavior === 'merge'
+  ) {
+    const { settings: ancestors } = getAncestorSettings(source)
+    if (ancestors.length > 0 && fileSettings) {
+      // Deep-merge: ancestors (furthest first) then nearest on top
+      let merged: SettingsJson = {}
+      for (const ancestor of ancestors) {
+        merged = mergeWith(merged, ancestor, settingsMergeCustomizer) as SettingsJson
+      }
+      merged = mergeWith(merged, fileSettings, settingsMergeCustomizer) as SettingsJson
+      return merged
     }
   }
 

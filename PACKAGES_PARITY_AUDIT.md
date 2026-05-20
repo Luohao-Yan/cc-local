@@ -10,10 +10,10 @@ Compatibility note: `packages/cli` keeps an explicit `--legacy` escape hatch. To
 
 | Area | Legacy count | Native packages count | Legacy bridge count | Remaining native gap count |
 |---|---:|---:|---:|---:|
-| Top-level commands | 21 | 30 | 0 | 0 |
-| Top-level options | 127 | 148 | 0 | 0 |
-| Slash commands | 107 | 121 | 0 | 1 |
-| Tools | 12 | 41 | 0 | 1 |
+| Top-level commands | 23 | 30 | 0 | 2 |
+| Top-level options | 137 | 151 | 0 | 6 |
+| Slash commands | 113 | 121 | 0 | 6 |
+| Tools | 12 | 41 | 0 | 2 |
 
 ## Bridged Top-Level Commands
 
@@ -21,7 +21,8 @@ Compatibility note: `packages/cli` keeps an explicit `--legacy` escape hatch. To
 
 ## Remaining Top-Level Command Gaps
 
-- None
+- `project`
+- `ultrareview`
 
 ## Bridged Top-Level Options
 
@@ -29,11 +30,21 @@ Compatibility note: `packages/cli` keeps an explicit `--legacy` escape hatch. To
 
 ## Remaining Top-Level Option Gaps
 
-- None
+- `--confirm`
+- `--interactive`
+- `--message`
+- `--push`
+- `--timeout`
+- `--yes`
 
 ## Missing Slash Commands
 
+- `force-snip`
+- `goal`
+- `loop`
 - `proactive`
+- `scroll-speed`
+- `workflows`
 
 ## Ignored Static Slash Matches
 
@@ -51,6 +62,7 @@ These are parser noise from compiler output, examples, labels, or template strin
 ## Missing Tools
 
 - `sleep`
+- `TerminalCapture`
 
 ## Current Packages Top-Level Commands
 
@@ -143,6 +155,7 @@ These are parser noise from compiler output, examples, labels, or template strin
 - `--enable`
 - `--enable-auth-status`
 - `--enable-auto-mode`
+- `--exclude-dynamic-system-prompt-sections`
 - `--fallback-model`
 - `--file`
 - `--force`
@@ -192,6 +205,7 @@ These are parser noise from compiler output, examples, labels, or template strin
 - `--permission-prompt-tool`
 - `--plan-mode-required`
 - `--plugin-dir`
+- `--plugin-url`
 - `--port`
 - `--prefill`
 - `--print`
@@ -199,6 +213,7 @@ These are parser noise from compiler output, examples, labels, or template strin
 - `--rc`
 - `--remote`
 - `--remote-control`
+- `--remote-control-session-name-prefix`
 - `--replay-user-messages`
 - `--resume`
 - `--resume-session-at`

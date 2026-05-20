@@ -18,14 +18,14 @@ export async function installPlugin(pluginManager: PluginManager, outputChannel:
     const allPlugins = await pluginManager.listAvailablePlugins()
     const installedIds = new Set(pluginManager.getInstalledPluginIds())
 
-    const available = allPlugins.filter(p => !installedIds.has(p.id))
+    const available = allPlugins.filter((p: any) => !installedIds.has(p.id))
 
     if (available.length === 0) {
       vscode.window.showInformationMessage('CCLocal: No new plugins available')
       return
     }
 
-    const items: vscode.QuickPickItem[] = available.map(p => ({
+    const items: vscode.QuickPickItem[] = available.map((p: any) => ({
       label: p.name,
       description: p.version ? `v${p.version}` : undefined,
       detail: p.description,
@@ -40,7 +40,7 @@ export async function installPlugin(pluginManager: PluginManager, outputChannel:
 
     if (!selected) return
 
-    const plugin = available.find(p => p.name === selected.label)
+    const plugin = available.find((p: any) => p.name === selected.label)
     if (!plugin) return
 
     await vscode.window.withProgress(

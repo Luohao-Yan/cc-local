@@ -501,8 +501,8 @@ export function getDisplayMessageFromCollapsed(
   message: CollapsedReadSearchGroup,
 ): Exclude<CollapsibleMessage, { type: 'grouped_tool_use' }> {
   const firstMsg = message.displayMessage
-  if (firstMsg.type === 'grouped_tool_use') {
-    return firstMsg.displayMessage
+  if ((firstMsg as any).type === 'grouped_tool_use') {
+    return (firstMsg as any).displayMessage
   }
   return firstMsg
 }
@@ -717,14 +717,14 @@ function createCollapsedGroup(
     searchArgs: group.nonMemSearchArgs,
     latestDisplayHint: group.latestDisplayHint,
     messages: group.messages,
-    displayMessage: firstMsg,
-    uuid: `collapsed-${firstMsg.uuid}` as UUID,
-    timestamp: firstMsg.timestamp,
+    displayMessage: firstMsg as any,
+    uuid: `collapsed-${(firstMsg as any).uuid}` as UUID,
+    timestamp: typeof firstMsg.timestamp === 'number' ? firstMsg.timestamp : Number(firstMsg.timestamp),
   }
   if (feature('TEAMMEM')) {
-    result.teamMemorySearchCount = teamMemSearchCount
-    result.teamMemoryReadCount = teamMemReadCount
-    result.teamMemoryWriteCount = teamMemWriteCount
+    ;(result as any).teamMemorySearchCount = teamMemSearchCount
+    ;(result as any).teamMemoryReadCount = teamMemReadCount
+    ;(result as any).teamMemoryWriteCount = teamMemWriteCount
   }
   if ((group.mcpCallCount ?? 0) > 0) {
     result.mcpCallCount = group.mcpCallCount
@@ -735,10 +735,10 @@ function createCollapsedGroup(
       result.bashCount = group.bashCount
       result.gitOpBashCount = group.gitOpBashCount
     }
-    if ((group.commits?.length ?? 0) > 0) result.commits = group.commits
-    if ((group.pushes?.length ?? 0) > 0) result.pushes = group.pushes
-    if ((group.branches?.length ?? 0) > 0) result.branches = group.branches
-    if ((group.prs?.length ?? 0) > 0) result.prs = group.prs
+    if ((group.commits?.length ?? 0) > 0) result.commits = group.commits as any
+    if ((group.pushes?.length ?? 0) > 0) result.pushes = group.pushes as any
+    if ((group.branches?.length ?? 0) > 0) result.branches = group.branches as any
+    if ((group.prs?.length ?? 0) > 0) result.prs = group.prs as any
   }
   if (group.hookCount > 0) {
     result.hookTotalMs = group.hookTotalMs
@@ -914,7 +914,7 @@ export function collapseReadSearchGroups(
       // suppresses the fallback). createCollapsedGroup adds .length to
       // memoryReadCount after the readCount subtraction instead.
       currentGroup.relevantMemories ??= []
-      currentGroup.relevantMemories.push(...msg.attachment.memories)
+      currentGroup.relevantMemories.push(...(msg.attachment.memories as any[]))
     } else if (shouldSkipMessage(msg)) {
       // Don't flush the group for skippable messages (thinking, attachments, system)
       // If a group is in progress, defer these messages to output after the collapsed group

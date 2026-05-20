@@ -148,9 +148,9 @@ export function accumulateStreamEvents(
   // rewrite the same entry instead of emitting one event per delta.
   const touched = new Map<string[], CoalescedStreamEvent>()
   for (const msg of buffer) {
-    switch (msg.event.type) {
+    switch ((msg.event as any).type) {
       case 'message_start': {
-        const id = msg.event.message.id
+        const id = (msg.event as any).message.id
         const prevId = state.scopeToMessage.get(scopeKey(msg))
         if (prevId) state.byMessage.delete(prevId)
         state.scopeToMessage.set(scopeKey(msg), id)
@@ -159,7 +159,7 @@ export function accumulateStreamEvents(
         break
       }
       case 'content_block_delta': {
-        if (msg.event.delta.type !== 'text_delta') {
+        if ((msg.event as any).delta.type !== 'text_delta') {
           out.push(msg)
           break
         }
@@ -173,8 +173,8 @@ export function accumulateStreamEvents(
           out.push(msg)
           break
         }
-        const chunks = (blocks[msg.event.index] ??= [])
-        chunks.push(msg.event.delta.text)
+        const chunks = (blocks[(msg.event as any).index] ??= [])
+        chunks.push((msg.event as any).delta.text)
         const existing = touched.get(chunks)
         if (existing) {
           existing.event.delta.text = chunks.join('')
@@ -182,12 +182,12 @@ export function accumulateStreamEvents(
         }
         const snapshot: CoalescedStreamEvent = {
           type: 'stream_event',
-          uuid: msg.uuid,
-          session_id: msg.session_id,
-          parent_tool_use_id: msg.parent_tool_use_id,
+          uuid: msg.uuid as any,
+          session_id: msg.session_id as any,
+          parent_tool_use_id: msg.parent_tool_use_id as any,
           event: {
             type: 'content_block_delta',
-            index: msg.event.index,
+            index: (msg.event as any).index,
             delta: { type: 'text_delta', text: chunks.join('') },
           },
         }

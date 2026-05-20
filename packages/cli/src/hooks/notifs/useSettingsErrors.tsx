@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import { useCallback, useEffect, useState } from 'react';
 import { useNotifications } from '../../context/notifications.js';

@@ -154,8 +154,20 @@ export type CompactProgressEvent =
     }
   | { type: 'compact_start' }
   | { type: 'compact_end' }
+  | {
+      type: 'compact_progress'
+      /** Pre-compaction token count */
+      preTokens: number
+      /** Post-compaction token count (0 until known) */
+      postTokens: number
+      /** Tokens streamed so far in the summary response */
+      streamedTokens: number
+      /** Estimated total summary output tokens (from model max) */
+      estimatedTotal: number
+    }
 
 export type ToolUseContext = {
+  isCli?: boolean
   options: {
     commands: Command[]
     debug: boolean

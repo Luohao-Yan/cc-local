@@ -13,6 +13,7 @@ export interface NotebookCell {
   cell_type: NotebookCellType
   source: string | string[]
   id?: string
+  metadata?: Record<string, unknown>
   execution_count?: number | null
   outputs?: NotebookCellOutput[]
 }

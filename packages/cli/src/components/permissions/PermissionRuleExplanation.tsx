@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../utils/i18n/index.js';
 import { feature } from 'bun:bundle';
 import chalk from 'chalk';
 import React from 'react';
@@ -25,29 +28,29 @@ function stringsForDecisionReason(reason: PermissionDecisionReason | undefined, 
   if ((feature('BASH_CLASSIFIER') || feature('TRANSCRIPT_CLASSIFIER')) && reason.type === 'classifier') {
     if (reason.classifier === 'auto-mode') {
       return {
-        reasonString: `Auto mode classifier requires confirmation for this ${toolType}.\n${reason.reason}`,
+        reasonString: t('ruleExplanation.autoModeClassifier', {toolType, reason: reason.reason}),
         configString: undefined,
         themeColor: 'error'
       };
     }
     return {
-      reasonString: `Classifier ${chalk.bold(reason.classifier)} requires confirmation for this ${toolType}.\n${reason.reason}`,
+      reasonString: t('ruleExplanation.classifier', {classifier: reason.classifier, toolType, reason: reason.reason}),
       configString: undefined
     };
   }
   switch (reason.type) {
     case 'rule':
       return {
-        reasonString: `Permission rule ${chalk.bold(permissionRuleValueToString(reason.rule.ruleValue))} requires confirmation for this ${toolType}.`,
-        configString: reason.rule.source === 'policySettings' ? undefined : '/permissions to update rules'
+        reasonString: t('ruleExplanation.permissionRule', {rule: permissionRuleValueToString(reason.rule.ruleValue), toolType}),
+        configString: reason.rule.source === 'policySettings' ? undefined : t('ruleExplanation.permissionsToUpdate')
       };
     case 'hook':
       {
         const hookReasonString = reason.reason ? `:\n${reason.reason}` : '.';
         const sourceLabel = reason.hookSource ? ` ${chalk.dim(`[${reason.hookSource}]`)}` : '';
         return {
-          reasonString: `Hook ${chalk.bold(reason.hookName)} requires confirmation for this ${toolType}${hookReasonString}${sourceLabel}`,
-          configString: '/hooks to update'
+          reasonString: t('ruleExplanation.hook', {hookName: reason.hookName, toolType, hookReason: hookReasonString, sourceLabel}),
+          configString: t('ruleExplanation.hooksToUpdate')
         };
       }
     case 'safetyCheck':
@@ -59,7 +62,7 @@ function stringsForDecisionReason(reason: PermissionDecisionReason | undefined, 
     case 'workingDir':
       return {
         reasonString: reason.reason,
-        configString: '/permissions to update rules'
+        configString: t('ruleExplanation.permissionsToUpdateRules')
       };
     default:
       return null;

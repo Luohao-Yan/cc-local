@@ -69,7 +69,7 @@ export function updateProgressFromMessage(tracker: ProgressTracker, message: Mes
   if (message.type !== 'assistant') {
     return;
   }
-  const usage = message.message.usage;
+  const usage = message.message.usage!
   // Keep latest input (it's cumulative in the API), sum outputs
   tracker.latestInputTokens = usage.input_tokens + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0);
   tracker.cumulativeOutputTokens += usage.output_tokens;
@@ -247,7 +247,7 @@ export function enqueueAgentNotification({
   const outputPath = getTaskOutputPath(taskId);
   const toolUseIdLine = toolUseId ? `\n<${TOOL_USE_ID_TAG}>${toolUseId}</${TOOL_USE_ID_TAG}>` : '';
   const resultSection = finalMessage ? `\n<result>${finalMessage}</result>` : '';
-  const usageSection = usage ? `\n<usage><total_tokens>${usage.totalTokens}</total_tokens><tool_uses>${usage.toolUses}</tool_uses><duration_ms>${usage.durationMs}</duration_ms></usage>` : '';
+  const usageSection = usage! ? `\n<usage!><total_tokens>${usage!.totalTokens}</total_tokens><tool_uses>${usage!.toolUses}</tool_uses><duration_ms>${usage!.durationMs}</duration_ms></usage!>` : '';
   const worktreeSection = worktreePath ? `\n<${WORKTREE_TAG}><${WORKTREE_PATH_TAG}>${worktreePath}</${WORKTREE_PATH_TAG}>${worktreeBranch ? `<${WORKTREE_BRANCH_TAG}>${worktreeBranch}</${WORKTREE_BRANCH_TAG}>` : ''}</${WORKTREE_TAG}>` : '';
   const message = `<${TASK_NOTIFICATION_TAG}>
 <${TASK_ID_TAG}>${taskId}</${TASK_ID_TAG}>${toolUseIdLine}

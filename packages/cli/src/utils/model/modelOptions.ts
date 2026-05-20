@@ -272,7 +272,7 @@ function getOpusPlanOption(): ModelOption {
 function getModelOptionsBase(fastMode = false): ModelOption[] {
   if (process.env.USER_TYPE === 'ant') {
     // Build options from antModels config
-    const antModelOptions: ModelOption[] = getAntModels().map(m => ({
+    const antModelOptions: ModelOption[] = getAntModels().map((m: any) => ({
       value: m.alias,
       label: m.label,
       description: m.description ?? `[ANT-ONLY] ${m.label} (${m.model})`,

@@ -273,7 +273,7 @@ describe('SessionManager', () => {
       const manager = new SessionManager({
         store,
         createQueryEngine: () => ({
-          async query(_messages, options) {
+          async query(_messages: any, options: any) {
             // Simulate a running query that blocks until resolved
             options?.onStream?.({
               type: 'stream_delta',

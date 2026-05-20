@@ -1,0 +1,82 @@
+.image-block {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  margin: var(--app-spacing-medium) 0;
+  border-radius: var(--corner-radius-medium);
+  overflow: hidden;
+  background: var(--vscode-editor-inactiveSelectionBackground);
+}
+
+.image-block-loading,
+.image-block-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 200px;
+  min-height: 100px;
+  padding: var(--app-spacing-large);
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.image-block-error {
+  color: var(--vscode-errorForeground);
+}
+
+.image-block-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.image-block-img:hover {
+  opacity: 0.9;
+}
+
+.image-block-caption {
+  padding: var(--app-spacing-small) var(--app-spacing-medium);
+  background: var(--vscode-editorGutter-background);
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  text-align: center;
+}
+
+.image-block.full {
+  display: block;
+}
+
+.image-block-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  cursor: pointer;
+}
+
+.image-block-full-img {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+}
+
+/* Gallery mode */
+.image-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-spacing-small);
+  margin: var(--app-spacing-medium) 0;
+}
+
+.image-gallery .image-block {
+  flex: 0 0 auto;
+  max-width: calc(50% - var(--app-spacing-small));
+}

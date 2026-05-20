@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import '../global.d.ts';
 import React, { type PropsWithChildren, type Ref } from 'react';

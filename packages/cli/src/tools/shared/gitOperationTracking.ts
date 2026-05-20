@@ -52,26 +52,53 @@ const GH_PR_ACTIONS: readonly { re: RegExp; action: PrAction; op: string }[] = [
 ]
 
 /**
- * Parse PR info from a GitHub PR URL.
+ * Parse PR info from a PR/MR URL.
  * Returns { prNumber, prUrl, prRepository } or null if not a valid PR URL.
+ *
+ * Supported platforms:
+ *   GitHub / GitHub Enterprise:  .../{owner}/{repo}/pull/{number}
+ *   GitLab:                     .../{owner}/{repo}/-/merge_requests/{number}
+ *   Bitbucket Cloud:            .../{owner}/{repo}/pull-requests/{number}
  */
 function parsePrUrl(
   url: string,
 ): { prNumber: number; prUrl: string; prRepository: string } | null {
-  const match = url.match(/https:\/\/github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/)
-  if (match?.[1] && match?.[2]) {
+  // GitHub / GitHub Enterprise
+  const githubMatch = url.match(/(?:github\.com|github\.[^/]+)\/([^/]+\/[^/]+)\/pull\/(\d+)/)
+  if (githubMatch?.[1] && githubMatch?.[2]) {
     return {
-      prNumber: parseInt(match[2], 10),
+      prNumber: parseInt(githubMatch[2], 10),
       prUrl: url,
-      prRepository: match[1],
+      prRepository: githubMatch[1],
     }
   }
+
+  // GitLab
+  const gitlabMatch = url.match(/(?:gitlab\.com|gitlab\.[^/]+)\/([^/]+\/[^/]+)\/-\/merge_requests\/(\d+)/)
+  if (gitlabMatch?.[1] && gitlabMatch?.[2]) {
+    return {
+      prNumber: parseInt(gitlabMatch[2], 10),
+      prUrl: url,
+      prRepository: gitlabMatch[1],
+    }
+  }
+
+  // Bitbucket Cloud
+  const bitbucketMatch = url.match(/bitbucket\.org\/([^/]+\/[^/]+)\/pull-requests\/(\d+)/)
+  if (bitbucketMatch?.[1] && bitbucketMatch?.[2]) {
+    return {
+      prNumber: parseInt(bitbucketMatch[2], 10),
+      prUrl: url,
+      prRepository: bitbucketMatch[1],
+    }
+  }
+
   return null
 }
 
-/** Find a GitHub PR URL embedded anywhere in stdout and parse it. */
+/** Find a PR/MR URL embedded anywhere in stdout and parse it. */
 function findPrInStdout(stdout: string): ReturnType<typeof parsePrUrl> {
-  const m = stdout.match(/https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/)
+  const m = stdout.match(/(?:https?:\/\/[^/\s]+\/[^/\s]+\/[^/\s]+\/(?:pull|pull-requests|-\/merge_requests)\/\d+)/)
   return m ? parsePrUrl(m[0]) : null
 }
 

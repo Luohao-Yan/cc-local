@@ -65,6 +65,8 @@ import { sideQuery } from '../sideQuery.js'
 import {
   getClassifierModelCandidates,
   isModelUnavailableError,
+  isTwoStageClassifierEnabled,
+  isAnthropicOfficialApi,
 } from './yoloClassifier.js'
 import {
   CROSS_PLATFORM_CODE_EXEC,
@@ -1081,11 +1083,16 @@ const PROBE_TIMEOUT_MS = 8000
 
 /**
  * Send a lightweight probe request to test whether the classifier API
- * actually supports `tools` + `tool_choice` (required for auto mode).
+ * supports the capabilities required for auto mode.
+ *
+ * When the XML 2-stage classifier is enabled, only text completion is
+ * needed (all OpenAI-compatible APIs support this). When the legacy
+ * tool-calling classifier is active, `tools` + `tool_choice` must be
+ * supported.
  *
  * Tries each candidate model in order; returns `true` as soon as one
- * succeeds. Returns `false` if a candidate responds with a
- * tool_choice-unsupported error, or if all candidates fail.
+ * succeeds. Returns `false` if a hard incompatibility is detected, or
+ * if all candidates fail.
  */
 async function probeAutoModeAvailability(): Promise<boolean> {
   const mainModel = getMainLoopModel()
@@ -1104,29 +1111,45 @@ async function probeAutoModeAvailability(): Promise<boolean> {
 
   try {
     const candidates = getClassifierModelCandidates()
+    const useXmlClassifier = isTwoStageClassifierEnabled()
     logForDebugging(
-      `[auto-mode] Probing classifier availability with candidates: ${candidates.join(', ')}`,
+      `[auto-mode] Probing classifier availability with candidates: ${candidates.join(', ')} (xmlClassifier=${useXmlClassifier})`,
     )
 
     for (const model of candidates) {
       try {
-        await sideQuery({
-          model,
-          max_tokens: 1,
-          messages: [{ role: 'user', content: 'probe' }],
-          tools: [
-            {
-              name: 'probe',
-              description: 'Auto mode availability probe',
-              input_schema: { type: 'object', properties: {} },
-            },
-          ],
-          tool_choice: { type: 'tool', name: 'probe' },
-          maxRetries: 0,
-          signal: controller.signal,
-          querySource: 'auto_mode_probe',
-          skipSystemPromptPrefix: true,
-        })
+        if (useXmlClassifier) {
+          // XML classifier only needs text completion — verify API reachability
+          await sideQuery({
+            model,
+            max_tokens: 1,
+            messages: [{ role: 'user', content: 'probe' }],
+            skipSystemPromptPrefix: true,
+            maxRetries: 0,
+            signal: controller.signal,
+            querySource: 'auto_mode_probe',
+          })
+        } else {
+          // Legacy tool-calling classifier — must verify tool_choice support
+          await sideQuery({
+            model,
+            max_tokens: 1,
+            messages: [{ role: 'user', content: 'probe' }],
+            tools: [
+              {
+                name: 'probe',
+                description: 'Auto mode availability probe',
+                input_schema: { type: 'object', properties: {} },
+              },
+            ],
+            tool_choice: { type: 'tool', name: 'probe' },
+            maxRetries: 0,
+            signal: controller.signal,
+            querySource: 'auto_mode_probe',
+            skipSystemPromptPrefix: true,
+          })
+        }
+
         logForDebugging(`[auto-mode] Probe succeeded for model: ${model}`)
         classifierProbeCache.set(cacheKey, true)
         return true
@@ -1139,20 +1162,22 @@ async function probeAutoModeAvailability(): Promise<boolean> {
 
         const msg = error instanceof Error ? error.message.toLowerCase() : ''
 
-        // tool_choice / forced function calling not supported → permanently unavailable
-        if (
-          msg.includes('tool_choice') ||
-          msg.includes('tool choice') ||
-          msg.includes('forced tool') ||
-          msg.includes('function calling') ||
-          (msg.includes('not supported') &&
-            (msg.includes('tool') || msg.includes('function')))
-        ) {
-          logForDebugging(
-            `[auto-mode] Probe failed: tool_choice not supported (${msg})`,
-          )
-          classifierProbeCache.set(cacheKey, false)
-          return false
+        // Legacy path: tool_choice not supported → permanently unavailable
+        if (!useXmlClassifier) {
+          if (
+            msg.includes('tool_choice') ||
+            msg.includes('tool choice') ||
+            msg.includes('forced tool') ||
+            msg.includes('function calling') ||
+            (msg.includes('not supported') &&
+              (msg.includes('tool') || msg.includes('function')))
+          ) {
+            logForDebugging(
+              `[auto-mode] Probe failed: tool_choice not supported (${msg})`,
+            )
+            classifierProbeCache.set(cacheKey, false)
+            return false
+          }
         }
 
         // Model temporarily unavailable (404/429/5xx) → try next candidate
@@ -1210,11 +1235,9 @@ export async function verifyAutoModeGateAccess(
   }>('tengu_auto_mode_config', {})
   // 第三方兼容 API：无 GrowthBook 服务，强制启用 auto mode config，
   // 忽略 GrowthBook 缓存或默认值可能导致的 'disabled' 状态。
-  // 注意：这仅解除 circuit-breaker。实际的 classifier 可用性由
-  // probeAutoModeAvailability() 通过发送探测请求来验证。
-  const isThirdPartyApi =
-    process.env.ANTHROPIC_BASE_URL &&
-    !process.env.ANTHROPIC_BASE_URL.includes('anthropic.com')
+  // 注意：这仅解除 circuit-breaker。实际的 classifier 可用性
+  // 由 XML classifier 的文本补全能力保证（运行时降级链兜底）。
+  const isThirdPartyApi = !isAnthropicOfficialApi()
   const enabledState = isThirdPartyApi
     ? 'enabled' as AutoModeEnabledState
     : parseAutoModeEnabledState(autoModeConfig?.enabled)
@@ -1241,11 +1264,21 @@ export async function verifyAutoModeGateAccess(
   let modelSupported =
     modelSupportsAutoMode(mainModel) && !disableFastModeBreakerFires
 
-  // 第三方 API：发送实际探测请求验证 classifier 是否支持 tool_choice。
-  // 这比静态判断更准确——某些第三方 provider 可能支持，某些不支持。
+  // 第三方 API + XML classifier：文本补全是所有 OpenAI 兼容 API 的最低共同标准，
+  // 不需要发 Probe 验证。跳过 Probe 省去一次 API 调用和最长 8 秒超时等待，
+  // 同时避免因临时网络抖动导致 Probe 失败而永久封禁 auto mode。
+  // 如果 API 真的完全不可用，主循环请求也会同步失败，用户自然知晓；
+  // 运行时 classifier 失败已有完整降级链（→ acceptEdits → 手动确认）兜底。
   if (isThirdPartyApi && modelSupported) {
-    const probeResult = await probeAutoModeAvailability()
-    modelSupported = probeResult
+    if (isTwoStageClassifierEnabled()) {
+      logForDebugging(
+        '[auto-mode] Third-party API with XML classifier — skipping probe (text completion is universally supported)',
+      )
+    } else {
+      // 旧版 tool-calling classifier 仍需验证 tool_choice
+      const probeResult = await probeAutoModeAvailability()
+      modelSupported = probeResult
+    }
   }
 
   let carouselAvailable = false

@@ -40,7 +40,7 @@ export const call: LocalJSXCommandCall = async (onDone, context, args) => {
     return null;
   }
   if (gate.kind === 'needs-confirm') {
-    return <UltrareviewOverageDialog onProceed={async signal => {
+    return <UltrareviewOverageDialog onProceed={async (signal: any) => {
       await launchAndDone(args, context, onDone, ' This review bills as Extra Usage.', signal);
       // Only persist the confirmation flag after a non-aborted launch —
       // otherwise Escape-during-launch would leave the flag set and

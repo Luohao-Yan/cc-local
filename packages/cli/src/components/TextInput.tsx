@@ -43,11 +43,11 @@ export default function TextInput(props: Props): React.ReactNode {
   const reducedMotion = settings.prefersReducedMotion ?? false;
   const voiceState = feature('VOICE_MODE') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
-  useVoiceState(s => s.voiceState) : 'idle' as const;
+  useVoiceState((s: any) => s.voiceState) : 'idle' as const;
   const isVoiceRecording = voiceState === 'recording';
   const audioLevels = feature('VOICE_MODE') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
-  useVoiceState(s_0 => s_0.voiceAudioLevels) : [];
+  useVoiceState((s_0: any) => s_0.voiceAudioLevels) : [];
   const smoothedRef = useRef<number[]>(new Array(CURSOR_WAVEFORM_WIDTH).fill(0));
   const needsAnimation = isVoiceRecording && !reducedMotion;
   const [animRef, animTime] = feature('VOICE_MODE') ?
@@ -69,7 +69,8 @@ export default function TextInput(props: Props): React.ReactNode {
   } else if (isVoiceRecording && !reducedMotion) {
     // Single-bar waveform from the latest audio level
     const smoothed = smoothedRef.current;
-    const raw = audioLevels.length > 0 ? audioLevels[audioLevels.length - 1] ?? 0 : 0;
+    const al = audioLevels as any;
+    const raw = al.length > 0 ? al[al.length - 1] ?? 0 : 0;
     const target = Math.min(raw * LEVEL_BOOST, 1);
     smoothed[0] = (smoothed[0] ?? 0) * SMOOTH + target * (1 - SMOOTH);
     const displayLevel = smoothed[0] ?? 0;

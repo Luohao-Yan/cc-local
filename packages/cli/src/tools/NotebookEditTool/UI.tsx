@@ -12,6 +12,7 @@ import { NotebookEditToolUseRejectedMessage } from '../../components/NotebookEdi
 import { Box, Text } from '../../ink.js';
 import type { Tools } from '../../Tool.js';
 import { getDisplayPath } from '../../utils/file.js';
+import { t } from '../../utils/i18n/index.js';
 import type { inputSchema, Output } from './NotebookEditTool.js';
 export function getToolUseSummary(input: Partial<z.infer<ReturnType<typeof inputSchema>>> | undefined): string | null {
   if (!input?.notebook_path) {
@@ -64,7 +65,7 @@ export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'
 }): React.ReactNode {
   if (!verbose && typeof result === 'string' && extractTag(result, 'tool_use_error')) {
     return <MessageResponse>
-        <Text color="error">Error editing notebook</Text>
+        <Text color="error">{t('notebookEdit.errorEditingNotebook')}</Text>
       </MessageResponse>;
   }
   return <FallbackToolUseErrorMessage result={result} verbose={verbose} />;
@@ -82,7 +83,7 @@ export function renderToolResultMessage({
   return <MessageResponse>
       <Box flexDirection="column">
         <Text>
-          Updated cell <Text bold>{cell_id}</Text>:
+          {t('notebookEdit.updatedCell', { cellId: cell_id })}
         </Text>
         <Box marginLeft={2}>
           <HighlightedCode code={new_source} filePath="notebook.py" />

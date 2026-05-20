@@ -125,7 +125,7 @@ export class TokenBudgetManager {
         if (block.type === 'text') {
           // 粗略估算：平均 4 字符 = 1 Token
           total += Math.ceil(block.text.length / 4)
-        } else if (block.type === 'image') {
+        } else if ((block.type as string) === 'image') {
           // 图片估算：取决于大小
           total += 1000 // 默认估算
         } else if (block.type === 'tool_use' || block.type === 'tool_result') {

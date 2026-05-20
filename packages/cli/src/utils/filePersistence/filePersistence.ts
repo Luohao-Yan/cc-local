@@ -104,14 +104,14 @@ export async function runFilePersistence(
     }
 
     // Nothing to report
-    if (result.files.length === 0 && result.failed.length === 0) {
+    if (result!.files.length === 0 && result!.failed.length === 0) {
       return null
     }
 
     const durationMs = Date.now() - startTime
     logEvent('tengu_file_persistence_completed', {
-      success_count: result.files.length,
-      failure_count: result.failed.length,
+      success_count: result!.files.length,
+      failure_count: result!.failed.length,
       duration_ms: durationMs,
       mode: environmentKind as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
     })

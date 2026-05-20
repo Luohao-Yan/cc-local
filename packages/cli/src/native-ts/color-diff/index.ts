@@ -614,7 +614,7 @@ function wordDiffStrings(oldStr: string, newStr: string): [Range[], Range[]] {
   let newOff = 0
 
   for (const op of ops) {
-    const len = op.value.reduce((s, t) => s + t.length, 0)
+    const len = op.value.reduce((s: number, t: string) => s + t.length, 0)
     if (op.removed) {
       changedLen += len
       oldRanges.push({ start: oldOff, end: oldOff + len })

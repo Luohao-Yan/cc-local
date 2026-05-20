@@ -55,6 +55,10 @@ export async function installOAuthTokens(tokens: OAuthTokens): Promise<void> {
   const profile =
     tokens.profile ?? (await getOauthProfileFromOauthToken(tokens.accessToken))
   if (profile) {
+    if (!profile.organization) {
+      logForDebugging('OAuth profile missing organization data', { level: 'warn' })
+      return
+    }
     storeOAuthAccountInfo({
       accountUuid: profile.account.uuid,
       emailAddress: profile.account.email,

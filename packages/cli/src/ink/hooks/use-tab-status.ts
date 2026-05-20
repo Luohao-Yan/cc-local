@@ -59,7 +59,7 @@ export function useTabStatus(kind: TabStatusKind | null): void {
     // showStatusInTerminalTab mid-session), clear the stale dot.
     if (kind === null) {
       if (prevKindRef.current !== null && writeRaw && supportsTabStatus()) {
-        writeRaw(wrapForMultiplexer(CLEAR_TAB_STATUS))
+        writeRaw!(wrapForMultiplexer(CLEAR_TAB_STATUS))
       }
       prevKindRef.current = null
       return
@@ -67,6 +67,6 @@ export function useTabStatus(kind: TabStatusKind | null): void {
 
     prevKindRef.current = kind
     if (!writeRaw || !supportsTabStatus()) return
-    writeRaw(wrapForMultiplexer(tabStatus(TAB_STATUS_PRESETS[kind])))
+    writeRaw!(wrapForMultiplexer(tabStatus(TAB_STATUS_PRESETS[kind])))
   }, [kind, writeRaw])
 }

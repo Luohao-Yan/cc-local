@@ -44,10 +44,11 @@ export function useAwaySummary(
   messagesRef.current = messages
   isLoadingRef.current = isLoading
 
-  // 3P default: false
+  // cc-local: default to true (matches official CLI behavior when GrowthBook grants the flag).
+  // For official builds, GrowthBook 'tengu_sedge_lantern' controls this; 3P default was false.
   const gbEnabled = getFeatureValue_CACHED_MAY_BE_STALE(
     'tengu_sedge_lantern',
-    false,
+    true,
   )
 
   useEffect(() => {

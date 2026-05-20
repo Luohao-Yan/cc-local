@@ -215,7 +215,7 @@ export function createChromeContext(
         }
       },
     }),
-    trackEvent: (eventName, metadata) => {
+    trackEvent: (eventName: any, metadata: any) => {
       const safeMetadata: {
         [key: string]:
           | boolean
@@ -270,7 +270,7 @@ export async function runClaudeInChromeMcpServer(): Promise<void> {
   process.stdin.on('error', () => void shutdownAndExit())
 
   logForDebugging('[Claude in Chrome] Starting MCP server')
-  await server.connect(transport)
+  await (server as any).connect(transport)
   logForDebugging('[Claude in Chrome] MCP server started')
 }
 

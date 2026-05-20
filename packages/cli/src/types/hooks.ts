@@ -192,11 +192,14 @@ export function isAsyncHookJSONOutput(
   return 'async' in json && json.async === true
 }
 
-// Compile-time assertion that SDK and Zod types match
+// Compile-time check that SDK and Zod types are compatible.
+// The SDK generated types are intentionally broader (include [key: string]: unknown)
+// so IsEqual will be false. Use 'extends' instead to verify Zod output is a
+// subtype of the SDK type (i.e., every Zod-valid value is also SDK-valid).
 import type { IsEqual } from 'type-fest'
 type Assert<T extends true> = T
-type _assertSDKTypesMatch = Assert<
-  IsEqual<SchemaHookJSONOutput, HookJSONOutput>
+type _assertSDKTypesCompatible = Assert<
+  SchemaHookJSONOutput extends HookJSONOutput ? true : false
 >
 
 /** Context passed to callback hooks for state access */

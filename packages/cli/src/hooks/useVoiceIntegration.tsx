@@ -224,10 +224,10 @@ export function useVoiceIntegration({
   const voiceEnabled = feature('VOICE_MODE') ? useVoiceEnabled() : false;
   const voiceState = feature('VOICE_MODE') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
-  useVoiceState(s => s.voiceState) : 'idle' as const;
+  useVoiceState((s: any) => s.voiceState) : 'idle' as const;
   const voiceInterimTranscript = feature('VOICE_MODE') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
-  useVoiceState(s_0 => s_0.voiceInterimTranscript) : '';
+  useVoiceState((s_0: any) => s_0.voiceInterimTranscript) : '';
 
   // Set the voice anchor for focus mode (where recording starts via terminal
   // focus, not key hold). Key-hold sets the anchor in stripTrailing.
@@ -261,16 +261,17 @@ export function useVoiceIntegration({
     // window between CloseStream and WS close — this catches refined
     // TranscriptText arriving then and re-filling a cleared input.
     if (inputValueRef.current !== lastSetInputRef.current) return;
-    const needsSpace = prefix_0.length > 0 && !/\s$/.test(prefix_0) && voiceInterimTranscript.length > 0;
+    const interimText = voiceInterimTranscript as string;
+    const needsSpace = prefix_0.length > 0 && !/\s$/.test(prefix_0) && interimText.length > 0;
     // Don't gate on voiceInterimTranscript.length -- when interim clears to ''
     // after handleVoiceTranscript sets the final text, the trailing space
     // between prefix and suffix must still be preserved.
     const needsTrailingSpace = suffix_0.length > 0 && !/^\s/.test(suffix_0);
     const leadingSpace = needsSpace ? ' ' : '';
     const trailingSpace = needsTrailingSpace ? ' ' : '';
-    const newValue_0 = prefix_0 + leadingSpace + voiceInterimTranscript + trailingSpace + suffix_0;
+    const newValue_0 = prefix_0 + leadingSpace + interimText + trailingSpace + suffix_0;
     // Position cursor after the transcribed text (before suffix)
-    const cursorPos = prefix_0.length + leadingSpace.length + voiceInterimTranscript.length;
+    const cursorPos = prefix_0.length + leadingSpace.length + interimText.length;
     if (insertTextRef.current) {
       insertTextRef.current.setInputWithCursor(newValue_0, cursorPos);
     } else {
@@ -328,11 +329,12 @@ export function useVoiceIntegration({
   const interimRange = useMemo((): InterimRange | null => {
     if (!feature('VOICE_MODE')) return null;
     if (voicePrefixRef.current === null) return null;
-    if (voiceInterimTranscript.length === 0) return null;
+    const interimText_0 = voiceInterimTranscript as string;
+    if (interimText_0.length === 0) return null;
     const prefix_2 = voicePrefixRef.current;
-    const needsSpace_1 = prefix_2.length > 0 && !/\s$/.test(prefix_2) && voiceInterimTranscript.length > 0;
+    const needsSpace_1 = prefix_2.length > 0 && !/\s$/.test(prefix_2) && interimText_0.length > 0;
     const start = prefix_2.length + (needsSpace_1 ? 1 : 0);
-    const end = start + voiceInterimTranscript.length;
+    const end = start + interimText_0.length;
     return {
       start,
       end
@@ -385,13 +387,13 @@ export function useVoiceKeybindingHandler({
 } {
   const getVoiceState = useGetVoiceState();
   const setVoiceState = useSetVoiceState();
-  const keybindingContext = useOptionalKeybindingContext();
+  const keybindingContext = useOptionalKeybindingContext() as any;
   const isModalOverlayActive = useIsModalOverlayActive();
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
   const voiceEnabled = feature('VOICE_MODE') ? useVoiceEnabled() : false;
   const voiceState = feature('VOICE_MODE') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
-  useVoiceState(s => s.voiceState) : 'idle';
+  useVoiceState((s: any) => s.voiceState) : 'idle';
 
   // Find the configured key for voice:pushToTalk from keybinding context.
   // Forward iteration with last-wins (matching the resolver): if a later
@@ -456,7 +458,7 @@ export function useVoiceKeybindingHandler({
       rapidCountRef.current = 0;
       charsInInputRef.current = 0;
       recordingFloorRef.current = 0;
-      setVoiceState(prev => {
+      setVoiceState((prev: any) => {
         if (!prev.voiceWarmingUp) return prev;
         return {
           ...prev,
@@ -557,7 +559,7 @@ export function useVoiceKeybindingHandler({
       }
       rapidCountRef.current = 0;
       isHoldActiveRef.current = true;
-      setVoiceState(prev_0 => {
+      setVoiceState((prev_0: any) => {
         if (!prev_0.voiceWarmingUp) return prev_0;
         return {
           ...prev_0,
@@ -621,7 +623,7 @@ export function useVoiceKeybindingHandler({
 
     // Show warmup feedback once we detect a hold pattern
     if (rapidCountRef.current >= WARMUP_THRESHOLD) {
-      setVoiceState(prev_1 => {
+      setVoiceState((prev_1: any) => {
         if (prev_1.voiceWarmingUp) return prev_1;
         return {
           ...prev_1,
@@ -636,7 +638,7 @@ export function useVoiceKeybindingHandler({
       resetTimerRef_0.current = null;
       rapidCountRef_0.current = 0;
       charsInInputRef_0.current = 0;
-      setVoiceState_0(prev_2 => {
+      setVoiceState_0((prev_2: any) => {
         if (!prev_2.voiceWarmingUp) return prev_2;
         return {
           ...prev_2,
@@ -670,7 +672,7 @@ export function useVoiceKeybindingHandler({
 // TODO(onKeyDown-migration): temporary shim so existing JSX callers
 // (<VoiceKeybindingHandler .../>) keep compiling. Remove once REPL.tsx
 // wires handleKeyDown directly.
-export function VoiceKeybindingHandler(props) {
+export function VoiceKeybindingHandler(props: any) {
   useVoiceKeybindingHandler(props);
   return null;
 }

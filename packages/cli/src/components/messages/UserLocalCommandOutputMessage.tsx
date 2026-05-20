@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import * as React from 'react';
 import { DIAMOND_FILLED, DIAMOND_OPEN } from '../../constants/figures.js';

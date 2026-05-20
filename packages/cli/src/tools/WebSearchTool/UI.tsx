@@ -4,6 +4,7 @@ import { TOOL_SUMMARY_MAX_LENGTH } from '../../constants/toolLimits.js';
 import { Box, Text } from '../../ink.js';
 import type { ProgressMessage } from '../../types/message.js';
 import { truncate } from '../../utils/format.js';
+import { t } from '../../utils/i18n/index.js';
 import type { Output, SearchResult, WebSearchProgress } from './WebSearchTool.js';
 function getSearchSummary(results: (SearchResult | string | null | undefined)[]): {
   searchCount: number;
@@ -40,14 +41,14 @@ export function renderToolUseMessage({
   }
   let message = '';
   if (query) {
-    message += `"${query}"`;
+    message += t('webSearch.query', { query });
   }
   if (verbose) {
     if (allowed_domains && allowed_domains.length > 0) {
-      message += `, only allowing domains: ${allowed_domains.join(', ')}`;
+      message += `, ${t('webSearch.onlyAllowingDomains', { domains: allowed_domains.join(', ') })}`;
     }
     if (blocked_domains && blocked_domains.length > 0) {
-      message += `, blocking domains: ${blocked_domains.join(', ')}`;
+      message += `, ${t('webSearch.blockingDomains', { domains: blocked_domains.join(', ') })}`;
     }
   }
   return message;
@@ -64,12 +65,12 @@ export function renderToolUseProgressMessage(progressMessages: ProgressMessage<W
   switch (data.type) {
     case 'query_update':
       return <MessageResponse>
-          <Text dimColor>Searching: {data.query}</Text>
+          <Text dimColor>{t('webSearch.searching', { query: data.query })}</Text>
         </MessageResponse>;
     case 'search_results_received':
       return <MessageResponse>
           <Text dimColor>
-            Found {data.resultCount} results for &quot;{data.query}&quot;
+            {t('webSearch.foundResults', { count: data.resultCount, query: data.query })}
           </Text>
         </MessageResponse>;
     default:
@@ -84,8 +85,7 @@ export function renderToolResultMessage(output: Output): React.ReactNode {
   return <Box justifyContent="space-between" width="100%">
       <MessageResponse height={1}>
         <Text>
-          Did {searchCount} search
-          {searchCount !== 1 ? 'es' : ''} in {timeDisplay}
+          {t('webSearch.didSearch', { count: searchCount })}{searchCount !== 1 ? t('webSearch.searches') : ''} {t('webSearch.in', { time: timeDisplay })}
         </Text>
       </MessageResponse>
     </Box>;

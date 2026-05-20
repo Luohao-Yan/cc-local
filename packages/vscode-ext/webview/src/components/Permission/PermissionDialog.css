@@ -1,0 +1,192 @@
+/* Permission Dialog Styles */
+.permission-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--app-z-modal);
+  animation: fadeIn var(--app-transition-fast);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.permission-dialog {
+  background: var(--vscode-editor-background);
+  border-radius: var(--app-radius-lg);
+  border: 1px solid var(--app-border);
+  max-width: 500px;
+  width: 90%;
+  overflow: hidden;
+  box-shadow: var(--app-shadow-lg);
+  animation: scaleIn var(--app-transition-medium);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Dialog Header */
+.permission-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--app-spacing-md) var(--app-spacing-lg);
+  border-bottom: 1px solid var(--app-border);
+  background: var(--vscode-editorGutter-background);
+}
+
+.permission-dialog-header h3 {
+  margin: 0;
+  font-size: var(--app-font-size-lg);
+  font-weight: var(--app-font-weight-semibold);
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-sm);
+}
+
+.permission-dialog-header-icon {
+  color: var(--app-status-warning);
+}
+
+.permission-dialog-type {
+  padding: var(--app-spacing-xs) var(--app-spacing-sm);
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  border-radius: var(--app-radius-sm);
+  font-size: var(--app-font-size-xs);
+  font-weight: var(--app-font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Dialog Body */
+.permission-dialog-body {
+  padding: var(--app-spacing-lg);
+}
+
+.permission-dialog-body p {
+  margin: 0 0 var(--app-spacing-md) 0;
+  line-height: var(--app-line-height);
+}
+
+.permission-dialog-details {
+  margin: var(--app-spacing-md) 0 0;
+  padding: var(--app-spacing-md);
+  background: var(--app-code-background);
+  border-radius: var(--app-radius-sm);
+  border: 1px solid var(--app-border);
+  font-family: var(--app-monospace-font-family);
+  font-size: var(--app-font-size-sm);
+  overflow-x: auto;
+  max-height: 200px;
+}
+
+/* Tool Info */
+.permission-dialog-tool {
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-sm);
+  padding: var(--app-spacing-sm) var(--app-spacing-md);
+  background: var(--vscode-editorWidget-background);
+  border-radius: var(--app-radius-md);
+  margin-bottom: var(--app-spacing-md);
+}
+
+.permission-dialog-tool-icon {
+  font-size: var(--app-font-size-lg);
+}
+
+.permission-dialog-tool-name {
+  font-family: var(--app-monospace-font-family);
+  font-size: var(--app-font-size-sm);
+  font-weight: var(--app-font-weight-semibold);
+  color: var(--app-tool-name-fg);
+}
+
+/* Dialog Actions */
+.permission-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--app-spacing-sm);
+  padding: var(--app-spacing-md) var(--app-spacing-lg);
+  border-top: 1px solid var(--app-border);
+  background: var(--vscode-editorGutter-background);
+}
+
+.permission-dialog-button {
+  padding: var(--app-spacing-sm) var(--app-spacing-lg);
+  border: none;
+  border-radius: var(--app-radius-sm);
+  cursor: pointer;
+  font-size: var(--app-font-size-md);
+  font-weight: var(--app-font-weight-medium);
+  transition: all var(--app-transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-sm);
+}
+
+.permission-dialog-button.deny {
+  background: transparent;
+  color: var(--app-foreground);
+  border: 1px solid var(--app-border);
+}
+
+.permission-dialog-button.deny:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.permission-dialog-button.allow {
+  background: var(--app-button-background);
+  color: var(--app-button-foreground);
+}
+
+.permission-dialog-button.allow:hover {
+  background: var(--app-button-hover-background);
+}
+
+.permission-dialog-button.allow-for-session {
+  background: var(--app-button-secondary-background);
+  color: var(--app-button-secondary-foreground);
+}
+
+.permission-dialog-button.allow-for-session:hover {
+  background: var(--app-button-secondary-hover-background);
+}
+
+.permission-dialog-button:active {
+  transform: scale(0.97);
+}
+
+/* Warning Message */
+.permission-dialog-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-spacing-sm);
+  padding: var(--app-spacing-sm) var(--app-spacing-md);
+  background: rgba(204, 167, 0, 0.1);
+  border: 1px solid var(--app-status-warning);
+  border-radius: var(--app-radius-sm);
+  margin-top: var(--app-spacing-md);
+  font-size: var(--app-font-size-sm);
+  color: var(--app-status-warning);
+}
+
+.permission-dialog-warning-icon {
+  flex-shrink: 0;
+}

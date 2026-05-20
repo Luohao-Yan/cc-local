@@ -1,0 +1,12 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--app-background);
+}
+
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--app-spacing-medium);
+}

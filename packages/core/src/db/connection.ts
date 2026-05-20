@@ -116,14 +116,29 @@ export class DatabaseConnection {
   /**
    * 检查数据库健康状态
    */
-  healthCheck(): { healthy: boolean; journalMode: string; pageCount: number } {
-    const journalMode = this.db.prepare('PRAGMA journal_mode').get() as { journal_mode: string }
-    const pageCount = this.db.prepare('PRAGMA page_count').get() as { page_count: number }
+  healthCheck(): { healthy: boolean; journalMode: string; pageCount: number; integrityCheck?: string } {
+    try {
+      const journalMode = this.db.prepare('PRAGMA journal_mode').get() as { journal_mode: string }
+      const pageCount = this.db.prepare('PRAGMA page_count').get() as { page_count: number }
 
-    return {
-      healthy: true,
-      journalMode: journalMode?.journal_mode || 'unknown',
-      pageCount: pageCount?.page_count || 0,
+      // Verify database is actually readable
+      const selectResult = this.db.prepare('SELECT 1 AS ok').get() as { ok: number } | undefined
+      if (!selectResult || selectResult.ok !== 1) {
+        return { healthy: false, journalMode: 'unknown', pageCount: 0 }
+      }
+
+      // Run integrity check (quick mode for performance)
+      const integrity = this.db.prepare('PRAGMA integrity_check').get() as { integrity_check: string } | undefined
+      const integrityCheck = integrity?.integrity_check ?? 'unknown'
+
+      return {
+        healthy: integrityCheck === 'ok',
+        journalMode: journalMode?.journal_mode || 'unknown',
+        pageCount: pageCount?.page_count || 0,
+        integrityCheck,
+      }
+    } catch {
+      return { healthy: false, journalMode: 'unknown', pageCount: 0 }
     }
   }
 

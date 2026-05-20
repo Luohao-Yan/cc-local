@@ -1,6 +1,25 @@
 .vscode/**
 src/**
 node_modules/**
+webview/src/**
+webview/node_modules/**
+webview/*.json
+webview/*.ts
 *.map
 tsconfig.json
 .vscodeignore
+.gitignore
+vitest.config.ts
+**/*.test.ts
+**/__tests__/**
+
+# Explicitly include output directories (negate previous excludes)
+!out/**
+!webview-dist/**
+!bundle/**
+!bundle/cli/**
+!bundle/native/**
+!bundle/resources/**
+!cclocal-settings.schema.json
+!images/**
+!resources/**

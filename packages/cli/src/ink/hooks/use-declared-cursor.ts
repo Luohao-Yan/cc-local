@@ -31,7 +31,7 @@ export function useDeclaredCursor({
   column: number
   active: boolean
 }): (element: DOMElement | null) => void {
-  const setCursorDeclaration = useContext(CursorDeclarationContext)
+  const setCursorDeclaration = useContext(CursorDeclarationContext) as any
   const nodeRef = useRef<DOMElement | null>(null)
 
   const setNode = useCallback((node: DOMElement | null) => {

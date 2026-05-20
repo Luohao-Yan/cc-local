@@ -1,24 +1,85 @@
 /**
  * Grep 工具 - 文件内容搜索
  * 使用 ripgrep (rg) 命令
+ *
+ * 增强特性：
+ * - type: 按语言类型过滤 (js, py, rust, go, etc.)
+ * - -A/-B/-C: 上下文行数
+ * - multiline: 跨行正则匹配
+ * - offset: 跳过前 N 行结果
  */
 
 import { spawn } from 'child_process'
 import type { Tool, ToolContext, ToolResult } from '@cclocal/shared'
 
+/** Language type → ripgrep type mapping */
+const TYPE_MAP: Record<string, string> = {
+  js: 'js',
+  javascript: 'js',
+  ts: 'ts',
+  typescript: 'ts',
+  tsx: 'tsx',
+  jsx: 'jsx',
+  py: 'py',
+  python: 'py',
+  rs: 'rust',
+  rust: 'rust',
+  go: 'go',
+  java: 'java',
+  c: 'c',
+  cpp: 'cpp',
+  cxx: 'cpp',
+  cs: 'csharp',
+  csharp: 'csharp',
+  rb: 'ruby',
+  ruby: 'ruby',
+  php: 'php',
+  swift: 'swift',
+  sql: 'sql',
+  sh: 'shell',
+  bash: 'shell',
+  zsh: 'shell',
+  shell: 'shell',
+  html: 'html',
+  css: 'css',
+  scss: 'scss',
+  less: 'less',
+  json: 'json',
+  yaml: 'yaml',
+  yml: 'yaml',
+  toml: 'toml',
+  md: 'markdown',
+  markdown: 'markdown',
+  lua: 'lua',
+  dart: 'dart',
+  elixir: 'elixir',
+  erlang: 'erlang',
+  haskell: 'haskell',
+  kotlin: 'kotlin',
+  scala: 'scala',
+  vim: 'vim',
+  nix: 'nix',
+}
+
 export interface GrepInput {
   pattern: string
   path?: string
   glob?: string
+  type?: string
   output_mode?: 'files_with_matches' | 'content' | 'count'
   '-i'?: boolean
   '-n'?: boolean
+  '-A'?: number
+  '-B'?: number
+  '-C'?: number
+  multiline?: boolean
   head_limit?: number
+  offset?: number
 }
 
 export const grepTool: Tool = {
   name: 'grep',
-  description: 'Search file contents using regex (ripgrep). Use for finding code patterns, text, or references.',
+  description: 'Search file contents using regex (ripgrep). Supports type filtering, context lines, and multiline matching.',
   input_schema: {
     type: 'object',
     properties: {
@@ -34,10 +95,15 @@ export const grepTool: Tool = {
         type: 'string',
         description: 'Glob pattern to filter files (e.g., "*.js", "*.{ts,tsx}")',
       },
+      type: {
+        type: 'string',
+        description: 'Filter by language type (js, ts, py, rust, go, java, c, cpp, etc.)',
+        enum: Object.keys(TYPE_MAP),
+      },
       output_mode: {
         type: 'string',
         enum: ['files_with_matches', 'content', 'count'],
-        description: 'Output format',
+        description: 'Output format (default: files_with_matches)',
       },
       '-i': {
         type: 'boolean',
@@ -47,9 +113,29 @@ export const grepTool: Tool = {
         type: 'boolean',
         description: 'Show line numbers (default: true for content mode)',
       },
+      '-A': {
+        type: 'number',
+        description: 'Number of lines after each match',
+      },
+      '-B': {
+        type: 'number',
+        description: 'Number of lines before each match',
+      },
+      '-C': {
+        type: 'number',
+        description: 'Number of lines around each match',
+      },
+      multiline: {
+        type: 'boolean',
+        description: 'Enable multiline mode (. matches newlines, patterns can span lines)',
+      },
       head_limit: {
         type: 'number',
         description: 'Limit output lines',
+      },
+      offset: {
+        type: 'number',
+        description: 'Skip first N results',
       },
     },
     required: ['pattern'],
@@ -60,22 +146,28 @@ export const grepTool: Tool = {
       pattern,
       path = context.cwd,
       glob,
+      type: langType,
       output_mode = 'files_with_matches',
       '-i': caseInsensitive,
       '-n': showLineNumbers = true,
+      '-A': afterContext,
+      '-B': beforeContext,
+      '-C': aroundContext,
+      multiline,
       head_limit = 100,
+      offset = 0,
     } = input as GrepInput
 
     return new Promise((resolve) => {
       const args: string[] = ['--hidden']
 
-      // 排除目录
+      // Exclude directories
       args.push('--glob', '!node_modules')
       args.push('--glob', '!.git')
       args.push('--glob', '!dist')
       args.push('--glob', '!build')
 
-      // 输出模式
+      // Output mode
       if (output_mode === 'files_with_matches') {
         args.push('-l')
       } else if (output_mode === 'count') {
@@ -84,27 +176,45 @@ export const grepTool: Tool = {
         args.push('-n')
       }
 
-      // 大小写敏感
+      // Case sensitivity
       if (caseInsensitive) {
         args.push('-i')
       }
 
-      // 文件过滤
+      // Language type filter
+      if (langType && TYPE_MAP[langType]) {
+        args.push('--type', TYPE_MAP[langType])
+      }
+
+      // File glob filter
       if (glob) {
         args.push('--glob', glob)
       }
 
-      // 最大列宽限制
+      // Context lines
+      if (aroundContext) {
+        args.push('-C', String(aroundContext))
+      } else {
+        if (beforeContext) args.push('-B', String(beforeContext))
+        if (afterContext) args.push('-A', String(afterContext))
+      }
+
+      // Multiline mode
+      if (multiline) {
+        args.push('--multiline-dotall')
+      }
+
+      // Max column width
       args.push('--max-columns', '500')
 
-      // 模式（处理以 - 开头的模式）
+      // Pattern (handle patterns starting with -)
       if (pattern.startsWith('-')) {
         args.push('-e', pattern)
       } else {
         args.push(pattern)
       }
 
-      // 搜索路径
+      // Search path
       args.push(path)
 
       const child = spawn('rg', args, {
@@ -123,7 +233,7 @@ export const grepTool: Tool = {
         stderr += data.toString()
       })
 
-      // 超时处理
+      // Timeout
       const timeoutId = setTimeout(() => {
         child.kill('SIGTERM')
         resolve({
@@ -135,7 +245,7 @@ export const grepTool: Tool = {
       child.on('close', (code) => {
         clearTimeout(timeoutId)
 
-        // ripgrep 返回码 1 表示没有找到匹配
+        // ripgrep exit code 1 = no matches
         if (code === 1 && !stdout) {
           resolve({
             content: 'No matches found',
@@ -143,12 +253,15 @@ export const grepTool: Tool = {
           return
         }
 
-        // 限制输出行数
+        // Apply offset and head_limit
         const lines = stdout.trim().split('\n')
-        let output = lines.slice(0, head_limit).join('\n')
+        const skipped = lines.slice(offset)
+        let output = skipped.slice(0, head_limit).join('\n')
 
-        if (lines.length > head_limit) {
-          output += `\n\n(Results truncated. Found ${lines.length} lines, showing first ${head_limit})`
+        if (skipped.length > head_limit) {
+          output += `\n\n(Results truncated. ${skipped.length} total lines, showing ${offset + 1}-${offset + head_limit})`
+        } else if (offset > 0) {
+          output = `[Showing results ${offset + 1}-${offset + skipped.length} of ${lines.length} total]\n${output}`
         }
 
         resolve({
@@ -159,7 +272,6 @@ export const grepTool: Tool = {
 
       child.on('error', (error) => {
         clearTimeout(timeoutId)
-        // ripgrep 未安装
         if (error.message.includes('ENOENT')) {
           resolve({
             content: 'ripgrep (rg) not found. Please install it: https://github.com/BurntSushi/ripgrep#installation',

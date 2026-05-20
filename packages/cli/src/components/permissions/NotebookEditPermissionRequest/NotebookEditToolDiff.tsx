@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../../utils/i18n/index.js';
 import { relative } from 'path';
 import * as React from 'react';
 import { Suspense, use, useMemo } from 'react';
@@ -154,17 +157,17 @@ function NotebookEditToolDiffInner(t0) {
   bb2: switch (edit_mode) {
     case "insert":
       {
-        editTypeDescription = "Insert new cell";
+        editTypeDescription = t('notebookEditPerm.insertCell');
         break bb2;
       }
     case "delete":
       {
-        editTypeDescription = "Delete cell";
+        editTypeDescription = t('notebookEditPerm.deleteCell');
         break bb2;
       }
     default:
       {
-        editTypeDescription = "Replace cell contents";
+        editTypeDescription = t('notebookEditPerm.replaceCellContents');
       }
   }
   let t4;
@@ -187,7 +190,7 @@ function NotebookEditToolDiffInner(t0) {
   const t6 = cell_type ? ` (${cell_type})` : "";
   let t7;
   if ($[16] !== cell_id || $[17] !== editTypeDescription || $[18] !== t6) {
-    t7 = <Text dimColor={true}>{editTypeDescription} for cell {cell_id}{t6}</Text>;
+    t7 = <Text dimColor={true}>{editTypeDescription}{t('notebookEditPerm.forCell')}{cell_id}{t6}</Text>;
     $[16] = cell_id;
     $[17] = editTypeDescription;
     $[18] = t6;

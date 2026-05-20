@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+  <rect width="400" height="200" fill="#f5f5f5"/>
+  <circle cx="200" cy="100" r="60" fill="#d97706"/>
+  <text x="200" y="120" font-family="sans-serif" font-size="48" fill="white" text-anchor="middle" font-weight="bold">C</text>
+  <text x="200" y="175" font-family="sans-serif" font-size="18" fill="#666666" text-anchor="middle">CCLocal</text>
+</svg>

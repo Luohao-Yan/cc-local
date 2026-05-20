@@ -1,0 +1,29 @@
+/* User Message Styles */
+.user-message {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: var(--app-line-height);
+}
+
+.user-message p {
+  margin: 0;
+}
+
+/* User message specific overrides */
+.user-message .message-content {
+  color: var(--app-user-message-fg);
+}
+
+.user-message .message-content code {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.user-message .message-content pre {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.user-message .message-content a {
+  color: inherit;
+  text-decoration: underline;
+}

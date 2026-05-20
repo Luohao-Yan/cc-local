@@ -3,6 +3,7 @@ import { stringWidth } from '../ink/stringWidth.js'
 import type { LogOption } from '../types/logs.js'
 import { getSubscriptionName, isClaudeAISubscriber } from './auth.js'
 import { getCwd } from './cwd.js'
+import { isEnvTruthy } from './envUtils.js'
 import { getDisplayPath } from './file.js'
 import {
   truncate,
@@ -245,12 +246,16 @@ export function getLogoDisplayData(): {
   cwd: string
   billingType: string
   agentName: string | undefined
+  hideCwd: boolean
 } {
+  const hideCwd = isEnvTruthy(process.env.CLAUDE_CODE_HIDE_CWD)
   const version = process.env.DEMO_VERSION ?? MACRO.VERSION
   const serverUrl = getDirectConnectServerUrl()
-  const displayPath = process.env.DEMO_VERSION
-    ? '/code/claude'
-    : getDisplayPath(getCwd())
+  const displayPath = hideCwd
+    ? ''
+    : process.env.DEMO_VERSION
+      ? '/code/claude'
+      : getDisplayPath(getCwd())
   const cwd = serverUrl
     ? `${displayPath} in ${serverUrl.replace(/^https?:\/\//, '')}`
     : displayPath
@@ -264,6 +269,7 @@ export function getLogoDisplayData(): {
     cwd,
     billingType,
     agentName,
+    hideCwd,
   }
 }
 

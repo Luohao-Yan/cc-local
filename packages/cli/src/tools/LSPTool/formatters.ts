@@ -519,7 +519,7 @@ export function formatIncomingCallsResult(
       // Show call sites within the caller
       if (call.fromRanges && call.fromRanges.length > 0) {
         const callSites = call.fromRanges
-          .map(r => `${r.start.line + 1}:${r.start.character + 1}`)
+          .map((r: any) => `${r.start.line + 1}:${r.start.character + 1}`)
           .join(', ')
         callLine += ` [calls at: ${callSites}]`
       }
@@ -579,7 +579,7 @@ export function formatOutgoingCallsResult(
       // Show call sites within the current function
       if (call.fromRanges && call.fromRanges.length > 0) {
         const callSites = call.fromRanges
-          .map(r => `${r.start.line + 1}:${r.start.character + 1}`)
+          .map((r: any) => `${r.start.line + 1}:${r.start.character + 1}`)
           .join(', ')
         callLine += ` [called from: ${callSites}]`
       }

@@ -32,17 +32,17 @@ export function useAnimationFrame(
 ): [ref: (element: DOMElement | null) => void, time: number] {
   const clock = useContext(ClockContext)
   const [viewportRef, { isVisible }] = useTerminalViewport()
-  const [time, setTime] = useState(() => clock?.now() ?? 0)
+  const [time, setTime] = useState(() => (clock as any)?.now() ?? 0)
 
   const active = isVisible && intervalMs !== null
 
   useEffect(() => {
-    if (!clock || !active) return
+    if (!(clock as any) || !active) return
 
-    let lastUpdate = clock.now()
+    let lastUpdate = (clock as any).now()
 
     const onChange = (): void => {
-      const now = clock.now()
+      const now = (clock as any).now()
       if (now - lastUpdate >= intervalMs!) {
         lastUpdate = now
         setTime(now)
@@ -50,7 +50,7 @@ export function useAnimationFrame(
     }
 
     // keepAlive: true — visible animations drive the clock
-    return clock.subscribe(onChange, true)
+    return (clock as any).subscribe(onChange, true)
   }, [clock, intervalMs, active])
 
   return [viewportRef, time]

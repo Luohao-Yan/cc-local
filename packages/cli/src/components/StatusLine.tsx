@@ -96,7 +96,7 @@ function buildStatusLineCommandInput(permissionMode: PermissionMode, exceeds200k
       remaining_percentage: contextPercentages.remaining
     },
     exceeds_200k_tokens: exceeds200kTokens,
-    ...((rateLimits.five_hour || rateLimits.seven_day) && {
+    ...((rateLimits?.five_hour || rateLimits?.seven_day) && {
       rate_limits: rateLimits
     }),
     ...(isVimModeEnabled() && {

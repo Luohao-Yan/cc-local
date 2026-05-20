@@ -259,6 +259,9 @@ async function getOrCreateWorktree(
 
   const fetchEnv = { ...process.env, ...GIT_NO_PROMPT_ENV }
 
+  const worktreeSettings = getInitialSettings().worktree
+  const useHeadBase = worktreeSettings?.baseRef === 'head'
+
   let baseBranch: string
   let baseSha: string | null = null
   if (options?.prNumber) {
@@ -274,6 +277,9 @@ async function getOrCreateWorktree(
       )
     }
     baseBranch = 'FETCH_HEAD'
+  } else if (useHeadBase) {
+    // baseRef='head': skip fetch, use current HEAD as base
+    baseBranch = 'HEAD'
   } else {
     // If origin/<branch> already exists locally, skip fetch. In large repos
     // (210k files, 16M objects) fetch burns ~6-8s on a local commit-graph
@@ -318,7 +324,7 @@ async function getOrCreateWorktree(
     baseSha = stdout.trim()
   }
 
-  const sparsePaths = getInitialSettings().worktree?.sparsePaths
+  const sparsePaths = worktreeSettings?.sparsePaths
   const addArgs = ['worktree', 'add']
   if (sparsePaths?.length) {
     addArgs.push('--no-checkout')
@@ -607,7 +613,7 @@ async function performPostCreationSetup(
       .then(m =>
         m
           .installPrepareCommitMsgHook(worktreePath, worktreeHooksDir)
-          .catch(error => {
+          .catch((error: any) => {
             logForDebugging(
               `Failed to install attribution hook in worktree: ${error}`,
             )

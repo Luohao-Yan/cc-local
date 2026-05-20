@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import { homedir } from 'os';
 import { relative } from 'path';

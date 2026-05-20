@@ -42,6 +42,7 @@ import { loadPluginOptions, type PluginOptionSchema, savePluginOptions } from '.
 import { isPluginBlockedByPolicy } from '../../utils/plugins/pluginPolicy.js';
 import { getPluginEditableScopes } from '../../utils/plugins/pluginStartupCheck.js';
 import { getSettings_DEPRECATED, getSettingsForSource, updateSettingsForSource } from '../../utils/settings/settings.js';
+import { roughTokenCountEstimation } from '../../services/tokenEstimation.js';
 import { jsonParse } from '../../utils/slowOperations.js';
 import { plural } from '../../utils/stringUtils.js';
 import { formatErrorMessage, getErrorGuidance } from './PluginErrors.js';
@@ -215,7 +216,7 @@ function PluginComponentsDisplay({
         if (marketplace === 'builtin') {
           const builtinDef = getBuiltinPluginDefinition(plugin.name);
           if (builtinDef) {
-            const skillNames = builtinDef.skills?.map(s => s.name) ?? [];
+            const skillNames = builtinDef.skills?.map((s: any) => s.name) ?? [];
             const hookEvents = builtinDef.hooks ? Object.keys(builtinDef.hooks) : [];
             const mcpServerNames = builtinDef.mcpServers ? Object.keys(builtinDef.mcpServers) : [];
             setComponents({
@@ -344,6 +345,14 @@ function PluginComponentsDisplay({
   if (!hasComponents) {
     return null; // No components defined
   }
+
+  // Estimate projected context cost from manifest JSON
+  const manifestJson = JSON.stringify(plugin.manifest)
+  const estimatedTokens = roughTokenCountEstimation(manifestJson, 2)
+  const formattedTokens = estimatedTokens >= 1000
+    ? `${(estimatedTokens / 1000).toFixed(1)}k`
+    : String(estimatedTokens)
+
   return <Box flexDirection="column" marginBottom={1}>
       <Text bold>Installed components:</Text>
       {components.commands ? <Text dimColor>
@@ -366,6 +375,9 @@ function PluginComponentsDisplay({
           • MCP Servers:{' '}
           {typeof components.mcpServers === 'string' ? components.mcpServers : Array.isArray(components.mcpServers) ? components.mcpServers.map(String).join(', ') : typeof components.mcpServers === 'object' && components.mcpServers !== null ? Object.keys(components.mcpServers).join(', ') : String(components.mcpServers)}
         </Text> : null}
+      <Text dimColor>
+        • Projected context cost: ~{formattedTokens} tokens per turn
+      </Text>
     </Box>;
 }
 
@@ -1660,7 +1672,7 @@ export function ManagePlugins({
   // Configure options (from the Manage menu)
   if (typeof viewState === 'object' && viewState.type === 'configuring-options' && selectedPlugin) {
     const pluginId_11 = `${selectedPlugin.plugin.name}@${selectedPlugin.marketplace}`;
-    return <PluginOptionsDialog title={`Configure ${selectedPlugin.plugin.name}`} subtitle="Plugin options" configSchema={viewState.schema} initialValues={loadPluginOptions(pluginId_11)} onSave={values => {
+    return <PluginOptionsDialog title={`Configure ${selectedPlugin.plugin.name}`} subtitle="Plugin options" configSchema={viewState.schema} initialValues={loadPluginOptions(pluginId_11)} onSave={(values: any) => {
       try {
         savePluginOptions(pluginId_11, values, viewState.schema);
         clearAllCaches();

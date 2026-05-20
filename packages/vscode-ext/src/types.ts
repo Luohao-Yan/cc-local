@@ -55,9 +55,24 @@ export type CliStreamMessage =
   | CliProactiveSuggestionsUpdateMessage
   // Attribution
   | CliAttributionSnapshotMessage
+  // P1: Plan / Review / Comment / Browser / Notification
+  | CliPlanPreviewMessage
+  | CliReviewMessage
+  | CliReviewUpsellBannerMessage
+  | CliCommentResponseMessage
+  | CliCommentsResponseMessage
+  | CliCreateNewBrowserTabMessage
+  | CliShowNotificationMessage
+  | CliOpenFileDiffsMessage
   // Error / System
   | CliErrorMessage
   | CliSystemMessage
+  // IDE hooks (extension → CLI)
+  | CliIdeDiagnosticsMessage
+  // CLI → Extension hooks
+  | CliHookCallbackMessage
+  | CliDebuggerHelpMessage
+  | CliDebuggerMcpAddMessage
 
 // ─── Core Streaming ─────────────────────────────────────────────────
 
@@ -347,6 +362,71 @@ export interface CliProactiveSuggestionsUpdateMessage {
 export interface CliAttributionSnapshotMessage {
   type: 'attribution-snapshot'
   attribution: Record<string, unknown>
+  session_id?: string
+}
+
+// ─── P1: Plan / Review / Comment / Browser / Notification ──────────
+
+export interface CliPlanPreviewMessage {
+  type: 'plan_preview'
+  content: string
+  title?: string
+  session_id?: string
+}
+
+export interface CliReviewMessage {
+  type: 'review'
+  request: {
+    filePaths: string[]
+    type: 'full' | 'diff' | 'quick'
+  }
+  session_id?: string
+}
+
+export interface CliReviewUpsellBannerMessage {
+  type: 'review_upsell_banner'
+  session_id?: string
+}
+
+export interface CliCommentResponseMessage {
+  type: 'comment_response'
+  comment: {
+    id: string
+    text: string
+    resourceId: string
+    createdAt: string
+  }
+  session_id?: string
+}
+
+export interface CliCommentsResponseMessage {
+  type: 'comments_response'
+  comments: Array<{
+    id: string
+    text: string
+    resourceId: string
+    createdAt: string
+  }>
+  resourceId: string
+  session_id?: string
+}
+
+export interface CliCreateNewBrowserTabMessage {
+  type: 'create_new_browser_tab'
+  url?: string
+  session_id?: string
+}
+
+export interface CliShowNotificationMessage {
+  type: 'show_notification'
+  message: string
+  type_hint?: 'info' | 'warning' | 'error'
+  session_id?: string
+}
+
+export interface CliOpenFileDiffsMessage {
+  type: 'open_file_diffs'
+  file_paths: string[]
   session_id?: string
 }
 
@@ -772,6 +852,21 @@ export type WebviewToExtensionMessage =
   // Dismiss
   | { type: 'dismissOnboarding' }
   | { type: 'dismissBanner' }
+  // P1: Comment / Plan / Review / Browser / Proactive
+  | { type: 'addComment'; resourceId: string; text: string; range?: { startLine: number; endLine: number } }
+  | { type: 'removeComment'; resourceId: string; commentId: string }
+  | { type: 'getComments'; resourceId: string }
+  | { type: 'closePlanPreview'; planId: string }
+  | { type: 'planComment'; planId: string; text: string }
+  | { type: 'removePlanComment'; planId: string; commentId: string }
+  | { type: 'getPlanComments'; planId: string }
+  | { type: 'dismissReviewUpsellBanner' }
+  | { type: 'createNewBrowserTab'; url?: string }
+  | { type: 'setProactive'; enabled: boolean }
+  | { type: 'newTab' }
+  | { type: 'switchTab'; channelId: string }
+  | { type: 'closeTab'; channelId: string }
+  | { type: 'renameTab'; channelId: string; name: string }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 5. Extension → Webview Messages
@@ -884,6 +979,10 @@ export const CLI_MESSAGE_TYPES = new Set([
   'selection_changed', 'visibility_changed', 'font_configuration_changed',
   'proactive_suggestions_update',
   'attribution-snapshot',
+  // P1: Plan / Review / Comment / Browser / Notification
+  'plan_preview', 'review', 'review_upsell_banner',
+  'comment_response', 'comments_response',
+  'create_new_browser_tab', 'show_notification', 'open_file_diffs',
   'error', 'system',
 ] as const)
 
@@ -927,3 +1026,40 @@ export const EXT_REQUEST_TYPES = new Set([
   'get_asset_uris', 'show_claude_terminal_setting',
   'set_proactive', 'log_event', 'get_claude_state',
 ] as const)
+
+// ─── IDE Hook Messages (Extension ↔ CLI) ──────────────────────────────────
+
+/** Extension → CLI: new diagnostics found after a tool use */
+export interface CliIdeDiagnosticsMessage {
+  type: 'ide_diagnostics'
+  file_path: string
+  diagnostics: Array<{
+    severity: string
+    message: string
+    start_line: number
+    end_line: number
+    source?: string
+  }>
+  session_id: string
+}
+
+/** CLI → Extension: hook execution callback */
+export interface CliHookCallbackMessage {
+  type: 'hook_callback'
+  callback_id: string
+  input?: unknown
+  tool_use_id?: string
+  session_id: string
+}
+
+/** CLI → Extension: request debugger help */
+export interface CliDebuggerHelpMessage {
+  type: 'debugger_help'
+  session_id: string
+}
+
+/** CLI → Extension: add debugger MCP to channel */
+export interface CliDebuggerMcpAddMessage {
+  type: 'debugger_mcp_add_to_channel'
+  session_id: string
+}

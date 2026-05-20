@@ -80,20 +80,19 @@ export class DirectConnectSessionManager {
 
         // Handle control requests (permission requests)
         if (parsed.type === 'control_request') {
-          if (parsed.request.subtype === 'can_use_tool') {
+          const req = parsed.request as any
+          if (req.subtype === 'can_use_tool') {
             this.callbacks.onPermissionRequest(
-              parsed.request,
+              req,
               parsed.request_id,
             )
           } else {
-            // Send an error response for unrecognized subtypes so the
-            // server doesn't hang waiting for a reply that never comes.
             logForDebugging(
-              `[DirectConnect] Unsupported control request subtype: ${parsed.request.subtype}`,
+              `[DirectConnect] Unsupported control request subtype: ${req.subtype}`,
             )
             this.sendErrorResponse(
               parsed.request_id,
-              `Unsupported control request subtype: ${parsed.request.subtype}`,
+              `Unsupported control request subtype: ${req.subtype}`,
             )
           }
           continue

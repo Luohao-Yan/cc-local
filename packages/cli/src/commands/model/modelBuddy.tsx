@@ -10,7 +10,7 @@ import { Box, Text } from '../../ink.js'
 import { t } from '../../utils/i18n/index.js'
 import { getGlobalModelConfig, saveGlobalModelConfig } from '../../utils/model/modelConfig.js'
 import { resolveMultiModelConfig, getConfiguredModels } from '../../utils/model/multiModel.js'
-import type { LocalJSXCommandCall, LocalJSXCommandOnDone } from '../types.js'
+import type { LocalJSXCommandCall, LocalJSXCommandOnDone } from '../../types/command.js'
 
 interface ModelBuddyProps {
   onDone: LocalJSXCommandOnDone
@@ -82,7 +82,7 @@ function ModelBuddy({ onDone, modelArg }: ModelBuddyProps) {
   return null
 }
 
-export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
+export const call: LocalJSXCommandCall = async (onDone: any, _context: any, args: string) => {
   const modelArg = args[0]
   return <ModelBuddy onDone={onDone} modelArg={modelArg} />
 }

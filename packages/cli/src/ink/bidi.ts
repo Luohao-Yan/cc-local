@@ -38,7 +38,7 @@ function needsBidi(): boolean {
 
 function getBidi() {
   if (!bidiInstance) {
-    bidiInstance = bidiFactory()
+    bidiInstance = (bidiFactory as any)()
   }
   return bidiInstance
 }

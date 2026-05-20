@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { BoundedUUIDSet } from '../bridge/bridgeMessaging.js'
 import type { ToolUseConfirm } from '../components/permissions/PermissionRequest.js'
 import type { SpinnerMode } from '../components/Spinner/types.js'
+import type { SDKControlPermissionRequest } from '../entrypoints/sdk/controlTypes.js'
 import {
   type RemotePermissionResponse,
   type RemoteSessionConfig,
@@ -20,7 +21,7 @@ import type { AppState } from '../state/AppStateStore.js'
 import type { Tool } from '../Tool.js'
 import { findToolByName } from '../Tool.js'
 import type { Message as MessageType } from '../types/message.js'
-import type { PermissionAskDecision } from '../types/permissions.js'
+import type { PermissionAskDecision, PermissionUpdate } from '../types/permissions.js'
 import { logForDebugging } from '../utils/debug.js'
 import { truncateToWidth } from '../utils/format.js'
 import {
@@ -158,9 +159,11 @@ export function useRemoteSession({
         const parts = [`type=${sdkMessage.type}`]
         if ('subtype' in sdkMessage) parts.push(`subtype=${sdkMessage.subtype}`)
         if (sdkMessage.type === 'user') {
-          const c = sdkMessage.message?.content
+          const c = (sdkMessage as Record<string, unknown>).message != null
+            ? ((sdkMessage as Record<string, unknown>).message as { content?: unknown }).content
+            : undefined
           parts.push(
-            `content=${Array.isArray(c) ? c.map(b => b.type).join(',') : typeof c}`,
+            `content=${Array.isArray(c) ? (c as Array<{ type: string }>).map(b => b.type).join(',') : typeof c}`,
           )
         }
         logForDebugging(`[useRemoteSession] Received ${parts.join(' ')}`)
@@ -182,7 +185,7 @@ export function useRemoteSession({
         if (
           sdkMessage.type === 'user' &&
           sdkMessage.uuid &&
-          sentUUIDsRef.current.has(sdkMessage.uuid)
+          sentUUIDsRef.current.has(sdkMessage.uuid as string)
         ) {
           logForDebugging(
             `[useRemoteSession] Dropping echoed user message ${sdkMessage.uuid}`,
@@ -196,9 +199,9 @@ export function useRemoteSession({
           onInit
         ) {
           logForDebugging(
-            `[useRemoteSession] Init received with ${sdkMessage.slash_commands.length} slash commands`,
+            `[useRemoteSession] Init received with ${(sdkMessage as Record<string, unknown>).slash_commands != null ? ((sdkMessage as Record<string, unknown>).slash_commands as unknown[]).length : 0} slash commands`,
           )
-          onInit(sdkMessage.slash_commands)
+          onInit((sdkMessage as Record<string, unknown>).slash_commands as string[])
         }
 
         // Track remote subagent lifecycle for the "N in background" counter.
@@ -207,12 +210,12 @@ export function useRemoteSession({
         // Return early — these are status signals, not renderable messages.
         if (sdkMessage.type === 'system') {
           if (sdkMessage.subtype === 'task_started') {
-            runningTaskIdsRef.current.add(sdkMessage.task_id)
+            runningTaskIdsRef.current.add((sdkMessage as Record<string, unknown>).task_id as string)
             writeTaskCount()
             return
           }
           if (sdkMessage.subtype === 'task_notification') {
-            runningTaskIdsRef.current.delete(sdkMessage.task_id)
+            runningTaskIdsRef.current.delete((sdkMessage as Record<string, unknown>).task_id as string)
             writeTaskCount()
             return
           }
@@ -225,7 +228,7 @@ export function useRemoteSession({
           // (keep-alive ticks) update the ref but don't append to messages.
           if (sdkMessage.subtype === 'status') {
             const wasCompacting = isCompactingRef.current
-            isCompactingRef.current = sdkMessage.status === 'compacting'
+            isCompactingRef.current = (sdkMessage as Record<string, unknown>).status === 'compacting'
             if (wasCompacting && isCompactingRef.current) {
               return
             }
@@ -248,7 +251,8 @@ export function useRemoteSession({
         // and inProcessRunner.ts; without this the set grows unbounded for the
         // session lifetime (BQ: CCR cohort shows 5.2x higher RSS slope).
         if (setInProgressToolUseIDs && sdkMessage.type === 'user') {
-          const content = sdkMessage.message?.content
+          const msg = (sdkMessage as Record<string, unknown>).message as { content?: unknown } | undefined
+          const content = msg?.content
           if (Array.isArray(content)) {
             const resultIds: string[] = []
             for (const block of content) {
@@ -328,14 +332,24 @@ export function useRemoteSession({
         // 'ignored' messages are silently dropped
       },
       onPermissionRequest: (request, requestId) => {
+        // The SDK type nests tool details under request.request, but the runtime
+        // bridge flattens them onto the top-level request object.
+        const req = request as SDKControlPermissionRequest & {
+          tool_name: string
+          description?: string
+          permission_suggestions?: Array<unknown>
+          blocked_path?: string
+          input: Record<string, unknown>
+          tool_use_id: string
+        }
         logForDebugging(
-          `[useRemoteSession] Permission request for tool: ${request.tool_name}`,
+          `[useRemoteSession] Permission request for tool: ${req.tool_name}`,
         )
 
         // Look up the Tool object by name, or create a stub for unknown tools
         const tool =
-          findToolByName(toolsRef.current, request.tool_name) ??
-          createToolStub(request.tool_name)
+          findToolByName(toolsRef.current, req.tool_name) ??
+          createToolStub(req.tool_name)
 
         const syntheticMessage = createSyntheticAssistantMessage(
           request,
@@ -345,19 +359,19 @@ export function useRemoteSession({
         const permissionResult: PermissionAskDecision = {
           behavior: 'ask',
           message:
-            request.description ?? `${request.tool_name} requires permission`,
-          suggestions: request.permission_suggestions,
-          blockedPath: request.blocked_path,
+            req.description ?? `${req.tool_name} requires permission`,
+          suggestions: req.permission_suggestions as PermissionUpdate[] | undefined,
+          blockedPath: req.blocked_path,
         }
 
         const toolUseConfirm: ToolUseConfirm = {
           assistantMessage: syntheticMessage,
           tool,
           description:
-            request.description ?? `${request.tool_name} requires permission`,
-          input: request.input,
+            req.description ?? `${req.tool_name} requires permission`,
+          input: req.input,
           toolUseContext: {} as ToolUseConfirm['toolUseContext'],
-          toolUseID: request.tool_use_id,
+          toolUseID: req.tool_use_id,
           permissionResult,
           permissionPromptStartTimeMs: Date.now(),
           onUserInteraction() {
@@ -370,7 +384,7 @@ export function useRemoteSession({
             }
             manager.respondToPermissionRequest(requestId, response)
             setToolUseConfirmQueue(queue =>
-              queue.filter(item => item.toolUseID !== request.tool_use_id),
+              queue.filter(item => item.toolUseID !== req.tool_use_id),
             )
           },
           onAllow(updatedInput, _permissionUpdates, _feedback) {
@@ -380,7 +394,7 @@ export function useRemoteSession({
             }
             manager.respondToPermissionRequest(requestId, response)
             setToolUseConfirmQueue(queue =>
-              queue.filter(item => item.toolUseID !== request.tool_use_id),
+              queue.filter(item => item.toolUseID !== req.tool_use_id),
             )
             // Resume loading indicator after approving
             setIsLoading(true)
@@ -392,7 +406,7 @@ export function useRemoteSession({
             }
             manager.respondToPermissionRequest(requestId, response)
             setToolUseConfirmQueue(queue =>
-              queue.filter(item => item.toolUseID !== request.tool_use_id),
+              queue.filter(item => item.toolUseID !== req.tool_use_id),
             )
           },
           async recheckPermission() {

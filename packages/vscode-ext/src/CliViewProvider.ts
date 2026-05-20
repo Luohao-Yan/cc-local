@@ -46,7 +46,10 @@ export class CliViewProvider implements vscode.WebviewViewProvider {
       },
       onExit: () => {
         if (this.currentMessageId) {
-          this.sendToWebview({ type: 'assistantDone', messageId: this.currentMessageId })
+          this.sendToWebview({
+            type: 'from-extension',
+            message: { type: 'result', subtype: 'success', session_id: '' },
+          })
           this.currentMessageId = ''
         }
         this.setStatus('idle')
@@ -109,8 +112,8 @@ export class CliViewProvider implements vscode.WebviewViewProvider {
         this.sendToWebview({ type: 'statusChange', status: this.status })
         break
 
-      case 'sendMessage':
-        this.handleSendMessage(message.text)
+      case 'submit':
+        this.handleSendMessage((message as any).text)
         break
 
       case 'stopGeneration':
@@ -144,7 +147,14 @@ export class CliViewProvider implements vscode.WebviewViewProvider {
     this.currentMessageId = this.generateId()
 
     /** 通知 Webview 显示用户消息 */
-    this.sendToWebview({ type: 'userMessage', text, messageId: this.generateId() })
+    this.sendToWebview({
+      type: 'from-extension',
+      message: {
+        type: 'system',
+        subtype: 'info' as const,
+        message: text,
+      },
+    })
 
     this.setStatus('running')
 
@@ -157,47 +167,20 @@ export class CliViewProvider implements vscode.WebviewViewProvider {
     })
   }
 
-  /** 处理 stream-json 行 */
+  /** 处理 stream-json 行 — 转发为 from-extension 消息 */
   private handleStreamMsg(msg: StreamJsonMsg): void {
+    // Forward all CLI messages to webview using the from-extension wrapper
+    this.sendToWebview({ type: 'from-extension', message: msg as any })
+
+    // Also handle state changes locally
     switch (msg.type) {
-      case 'assistant': {
-        /** stream-json 格式里 assistant 消息带 content 数组 */
-        const content = (msg as unknown as { message?: { content?: Array<{ type: string; text?: string; name?: string; input?: unknown }> } }).message?.content ?? []
-        for (const block of content) {
-          if (block.type === 'text' && block.text) {
-            if (!this.currentMessageId) this.currentMessageId = this.generateId()
-            this.sendToWebview({ type: 'assistantChunk', text: block.text, messageId: this.currentMessageId })
-          } else if (block.type === 'tool_use') {
-            this.sendToWebview({ type: 'toolUse', name: block.name ?? 'tool', input: block.input, messageId: this.currentMessageId || this.generateId() })
-          }
-        }
-        break
-      }
-
-      case 'content_block_delta':
-        if (msg.delta?.type === 'text_delta' && msg.delta.text) {
-          if (!this.currentMessageId) this.currentMessageId = this.generateId()
-          this.sendToWebview({ type: 'assistantChunk', text: msg.delta.text, messageId: this.currentMessageId })
-        }
-        break
-
-      case 'tool_use':
-        this.sendToWebview({ type: 'toolUse', name: msg.name ?? 'tool', input: msg.input, messageId: this.currentMessageId || this.generateId() })
-        break
-
       case 'result':
-        if (this.currentMessageId) {
-          this.sendToWebview({ type: 'assistantDone', messageId: this.currentMessageId })
-          this.currentMessageId = ''
-        }
+        this.currentMessageId = ''
         this.setStatus('idle')
         break
 
       case 'system':
-        /** 系统消息（如 init），忽略 */
-        break
-
-      default:
+        // System messages handled by webview via from-extension
         break
     }
   }
@@ -207,7 +190,10 @@ export class CliViewProvider implements vscode.WebviewViewProvider {
     if (this.status === 'running') {
       this.cclocalProcess.kill()
       if (this.currentMessageId) {
-        this.sendToWebview({ type: 'assistantDone', messageId: this.currentMessageId })
+        this.sendToWebview({
+          type: 'from-extension',
+          message: { type: 'result', subtype: 'cancelled' as const, session_id: '' },
+        })
         this.currentMessageId = ''
       }
       this.setStatus('idle')

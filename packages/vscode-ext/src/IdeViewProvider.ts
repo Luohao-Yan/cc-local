@@ -30,9 +30,11 @@ import type {
   CliInitMessage,
   CliToolUseMessage,
   CliToolResultMessage,
+  CliFileUpdatedMessage,
   ExtensionToWebviewMessage,
   WebviewToExtensionMessage,
   CclocalStatus,
+  CliFontConfigurationChangedMessage,
 } from './types.js'
 
 /** 当前会话 ID（CLI init 消息中获取） */
@@ -58,6 +60,24 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
   private blockTextBuffer = ''
   private blockBufferTimer: ReturnType<typeof setTimeout> | null = null
   private readonly BUFFER_FLUSH_MS = 30 // 30ms 批量刷新，减少 webview 刷新频率
+
+  /** 当前 tracking block type (for content_block_stop) */
+  private currentBlockType: 'text' | 'tool_use' | 'thinking' | null = null
+
+  /** Disposables for event listeners registered in registerListeners */
+  private readonly listenerDisposables: vscode.Disposable[] = []
+
+  /** Diagnostic baseline captured before a tool_use, keyed by file URI string */
+  private diagnosticBaseline: Map<string, vscode.Diagnostic[]> = new Map()
+  /** File path of the current tool_use target (for diagnostic comparison) */
+  private currentToolUseFilePath: string | null = null
+
+  /** P1 manager references (set via setManagers) */
+  private commentManager: import('./comments/CommentManager.js').CommentManager | null = null
+  private reviewManager: import('./review/ReviewManager.js').ReviewManager | null = null
+  private planManager: import('./plan/PlanManager.js').PlanManager | null = null
+  private proactiveManager: import('./proactive/ProactiveSuggestionsManager.js').ProactiveSuggestionsManager | null = null
+  private browserTabManager: import('./browser/BrowserTabManager.js').BrowserTabManager | null = null
 
   constructor(
     private readonly extensionUri: vscode.Uri,
@@ -117,16 +137,134 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
 
   /** Register extension-level listeners (call from extension.ts) */
   registerListeners(context: vscode.ExtensionContext): void {
-    // Track when diff editor tabs close to clean up context
+    // ─── Auto-save: save dirty documents before CLI reads/writes files ───
+    // When a file_updated or proposed_diff message arrives from CLI, we save
+    // dirty docs first to avoid conflicts with unsaved editor content.
+    this.listenerDisposables.push(
+      vscode.workspace.onWillSaveTextDocument((e) => {
+        // Let VS Code handle the actual save; we just need to coordinate timing
+        this.outputChannel.debug(`[AutoSave] Will save: ${e.document.uri.fsPath}`)
+      }),
+    )
+
+    // ─── Selection Change → CLI ───
+    // Forward current text selection to CLI for @-mention context
+    this.listenerDisposables.push(
+      vscode.window.onDidChangeTextEditorSelection((e) => {
+        const selection = e.selections[0]
+        if (!selection || selection.isEmpty) return
+
+        const text = e.textEditor.document.getText(selection)
+        if (!text) return
+
+        const filePath = e.textEditor.document.uri.fsPath
+        this.ideServer.send({
+          type: 'selection_changed',
+          file_path: filePath,
+          selection: {
+            start_line: selection.start.line,
+            end_line: selection.end.line,
+            text,
+          },
+          session_id: currentSessionId,
+        } as any)
+      }),
+    )
+
+    // ─── Visibility Change → CLI ───
+    // Notify CLI whether the panel is visible (controls proactive suggestions etc.)
+    this.listenerDisposables.push(
+      this.view!.onDidChangeVisibility(() => {
+        const visible = this.view?.visible ?? false
+        this.ideServer.send({
+          type: 'visibility_changed',
+          visible,
+          session_id: currentSessionId,
+        } as any)
+        void vscode.commands.executeCommand('setContext', 'cclocal.sideBarActive', visible)
+      }),
+    )
+
+    // ─── Diagnostics Change → CLI ───
+    // Push diagnostic changes (errors/warnings) so CLI can react
+    let diagnosticsDebounce: ReturnType<typeof setTimeout> | null = null
+    this.listenerDisposables.push(
+      vscode.languages.onDidChangeDiagnostics((e) => {
+        // Debounce: don't spam CLI on every keystroke
+        if (diagnosticsDebounce) clearTimeout(diagnosticsDebounce)
+        diagnosticsDebounce = setTimeout(() => {
+          const uris = e.uris
+          for (const uri of uris) {
+            const diags = vscode.languages.getDiagnostics(uri)
+            if (diags.length === 0) continue
+
+            this.ideServer.send({
+              type: 'diagnostics_changed',
+              file_path: uri.fsPath,
+              diagnostics: diags.map(d => ({
+                severity: vscode.DiagnosticSeverity[d.severity].toLowerCase(),
+                message: d.message,
+                start_line: d.range.start.line,
+                end_line: d.range.end.line,
+                source: d.source,
+              })),
+              session_id: currentSessionId,
+            } as any)
+          }
+        }, 500)
+      }),
+    )
+
+    // ─── Font Configuration Sync → CLI ───
+    // Read VS Code font settings and forward to CLI/webview
+    this.syncFontConfiguration()
+    this.listenerDisposables.push(
+      vscode.workspace.onDidChangeConfiguration((e) => {
+        if (
+          e.affectsConfiguration('editor.fontFamily') ||
+          e.affectsConfiguration('editor.fontSize') ||
+          e.affectsConfiguration('editor.lineHeight')
+        ) {
+          this.syncFontConfiguration()
+        }
+      }),
+    )
+
+    // ─── File Change → CLI ───
+    // Push file content changes to CLI for real-time editing awareness
+    let fileChangeDebounce: ReturnType<typeof setTimeout> | null = null
+    const pendingFileChanges = new Map<string, string>()
+    this.listenerDisposables.push(
+      vscode.workspace.onDidChangeTextDocument((e) => {
+        const filePath = e.document.uri.fsPath
+        // Skip virtual FS and untitled files
+        if (e.document.uri.scheme !== 'file') return
+
+        pendingFileChanges.set(filePath, e.document.getText())
+
+        if (fileChangeDebounce) clearTimeout(fileChangeDebounce)
+        fileChangeDebounce = setTimeout(() => {
+          for (const [fp, content] of pendingFileChanges) {
+            this.ideServer.send({
+              type: 'file_updated',
+              file_path: fp,
+              content,
+              session_id: currentSessionId,
+            } as any)
+          }
+          pendingFileChanges.clear()
+        }, 1000) // 1s debounce to avoid flooding
+      }),
+    )
+
+    // ─── Track when diff editor tabs close to clean up context ───
     context.subscriptions.push(
       vscode.window.tabGroups.onDidChangeTabs((e) => {
         for (const closed of e.closed) {
           if (closed && 'input' in closed) {
             const input = closed.input as any
-            // Check if it was a diff editor for our virtual FS
             if (input?.original?.scheme === '_claude_fs_left' ||
                 input?.modified?.scheme === '_claude_fs_right') {
-              // Check if any pending diffs remain
               const remaining = this.diffManager.getPendingDiffs()
               if (remaining.length === 0) {
                 void vscode.commands.executeCommand('setContext', 'cclocal.viewingProposedDiff', false)
@@ -137,7 +275,7 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
       }),
     )
 
-    // Track active diff editor for Accept/Reject context
+    // ─── Track active diff editor for Accept/Reject context ───
     context.subscriptions.push(
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         if (!editor) return
@@ -147,6 +285,49 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
         }
       }),
     )
+  }
+
+  /** Dispose all listener disposables */
+  disposeListeners(): void {
+    for (const d of this.listenerDisposables) d.dispose()
+    this.listenerDisposables.length = 0
+  }
+
+  /** Save all dirty documents (called before CLI file operations) */
+  async saveAllDirtyDocuments(): Promise<void> {
+    const autoSave = vscode.workspace.getConfiguration('files').get<string>('autoSave')
+    if (autoSave === 'off') {
+      // Only save explicitly if autoSave is off — check cclocal.autosave setting
+      const cclocalAutosave = vscode.workspace.getConfiguration('cclocal').get<boolean>('autosave')
+      if (!cclocalAutosave) return
+    }
+
+    const dirtyDocs = vscode.workspace.textDocuments.filter(d => d.isDirty && d.uri.scheme === 'file')
+    if (dirtyDocs.length === 0) return
+
+    this.outputChannel.debug(`[AutoSave] Saving ${dirtyDocs.length} dirty document(s)`)
+    await Promise.all(dirtyDocs.map(d => d.save()))
+  }
+
+  /** Sync VS Code font configuration to CLI */
+  private syncFontConfiguration(): void {
+    const editorConfig = vscode.workspace.getConfiguration('editor')
+    const fontConfig: CliFontConfigurationChangedMessage = {
+      type: 'font_configuration_changed',
+      font_family: editorConfig.get<string>('fontFamily'),
+      font_size: editorConfig.get<number>('fontSize'),
+      session_id: currentSessionId,
+    }
+    this.ideServer.send(fontConfig as any)
+
+    // Also push to webview
+    this.sendToWebview({
+      type: 'configSync',
+      config: {
+        fontFamily: fontConfig.font_family,
+        fontSize: fontConfig.font_size,
+      },
+    } as any)
   }
 
   /** 停止服务（在扩展停用时调用） */
@@ -216,7 +397,7 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
 
   // ─── Webview 消息处理 ────────────────────────────────────────────────────
 
-  private handleWebviewMessage(message: WebviewToExtensionMessage): void {
+  handleWebviewMessage(message: WebviewToExtensionMessage): void {
     switch (message.type) {
       case 'ready':
         // Webview 初始化完成，发送当前状态
@@ -275,6 +456,10 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
         this.rejectDiff(message.filePath, message.toolUseId)
         break
 
+      case 'openUrl':
+        vscode.env.openExternal(vscode.Uri.parse((message as any).url))
+        break
+
       case 'copyToClipboard':
         vscode.env.clipboard.writeText(message.text)
         break
@@ -292,6 +477,94 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
 
       case 'dismissOnboarding':
         void vscode.workspace.getConfiguration('cclocal').update('hideOnboarding', true, vscode.ConfigurationTarget.Global)
+        break
+
+      // ─── P1: Comment messages ───
+      case 'addComment':
+        if (this.commentManager && (message as any).resourceId && (message as any).text) {
+          const comment = this.commentManager.addComment(
+            currentSessionId,
+            (message as any).resourceId,
+            (message as any).text,
+            (message as any).range,
+          )
+          this.sendToWebview({ type: 'from-extension', message: { type: 'comment_added', comment, session_id: currentSessionId } as any })
+        }
+        break
+
+      case 'removeComment':
+        if (this.commentManager && (message as any).resourceId && (message as any).commentId) {
+          this.commentManager.removeComment(currentSessionId, (message as any).resourceId, (message as any).commentId)
+          this.sendToWebview({ type: 'from-extension', message: { type: 'comment_removed', commentId: (message as any).commentId, session_id: currentSessionId } as any })
+        }
+        break
+
+      case 'getComments':
+        if (this.commentManager && (message as any).resourceId) {
+          const comments = this.commentManager.getComments(currentSessionId, (message as any).resourceId)
+          this.sendToWebview({ type: 'from-extension', message: { type: 'comments', comments, resourceId: (message as any).resourceId, session_id: currentSessionId } as any })
+        }
+        break
+
+      // ─── P1: Plan messages ───
+      case 'closePlanPreview':
+        if (this.planManager && (message as any).planId) {
+          this.planManager.closePreview((message as any).planId)
+        }
+        break
+
+      case 'planComment':
+        if (this.planManager && (message as any).planId && (message as any).text) {
+          const planComment = this.planManager.addPlanComment((message as any).planId, (message as any).text)
+          if (planComment) {
+            this.sendToWebview({ type: 'from-extension', message: { type: 'plan_comment_added', comment: { id: planComment.id, text: planComment.text, resourceId: (message as any).planId, createdAt: planComment.createdAt }, planId: (message as any).planId } as any })
+          }
+        }
+        break
+
+      case 'removePlanComment':
+        if (this.planManager && (message as any).planId && (message as any).commentId) {
+          this.planManager.removePlanComment((message as any).planId, (message as any).commentId)
+        }
+        break
+
+      case 'getPlanComments':
+        if (this.planManager && (message as any).planId) {
+          const planComments = this.planManager.getPlanComments((message as any).planId)
+          const mappedComments = planComments.map(c => ({ id: c.id, text: c.text, resourceId: (message as any).planId, createdAt: c.createdAt }))
+          this.sendToWebview({ type: 'from-extension', message: { type: 'plan_comments', comments: mappedComments, planId: (message as any).planId } as any })
+        }
+        break
+
+      // ─── P1: Review messages ───
+      case 'dismissReviewUpsellBanner':
+        this.reviewManager?.dismissReviewUpsell()
+        break
+
+      // ─── P1: Browser tab messages ───
+      case 'createNewBrowserTab':
+        if (this.browserTabManager) {
+          const tab = this.browserTabManager.createTab((message as any).url)
+          this.sendToWebview({ type: 'from-extension', message: { type: 'browser_tab_created', tab, session_id: currentSessionId } as any })
+        }
+        break
+
+      // ─── P1: Proactive suggestions ───
+      case 'setProactive':
+        if (this.proactiveManager) {
+          this.proactiveManager.setEnabled((message as any).enabled ?? true)
+        }
+        break
+
+      // ─── P1: Tab/Channel management ───
+      case 'newTab':
+        // Handled by ChannelManager in extension.ts
+        break
+
+      case 'switchTab':
+      case 'closeTab':
+      case 'renameTab':
+        // Forwarded to ChannelManager — handled by extension.ts
         break
     }
   }
@@ -353,6 +626,162 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
 
         case 'session_states_update':
           this.handleSessionUpdate(msg as CliSessionStatesUpdateMessage)
+          break
+
+        case 'file_updated':
+          this.handleFileUpdated(msg as CliFileUpdatedMessage)
+          break
+
+        case 'open_file_diffs':
+          // Multi-file diffs from CLI — open changes view
+          if ((msg as any).file_paths && Array.isArray((msg as any).file_paths)) {
+            void this.diffManager.openMultiFileChanges((msg as any).file_paths)
+          }
+          break
+
+        case 'mcp_status':
+        case 'mcp_authenticate':
+        case 'mcp_oauth_callback_url':
+          // MCP messages from CLI — forward to webview
+          this.sendToWebview({ type: 'from-extension', message: msg })
+          break
+
+        // ─── P1: Plan preview from CLI ───
+        case 'plan_preview':
+          if (this.planManager && (msg as any).content) {
+            const plan = this.planManager.createPlan(
+              currentSessionId,
+              (msg as any).content,
+              (msg as any).title ?? 'Plan',
+            )
+            this.planManager.showPreview(plan.id)
+            this.sendToWebview({ type: 'from-extension', message: { type: 'plan_preview', plan, session_id: currentSessionId } as any })
+          }
+          break
+
+        // ─── P1: Review from CLI ───
+        case 'review':
+          if (this.reviewManager && (msg as any).request) {
+            const request = this.reviewManager.createReviewRequest(
+              currentSessionId,
+              (msg as any).request.filePaths ?? [],
+              (msg as any).request.type ?? 'full',
+            )
+            this.sendToWebview({ type: 'from-extension', message: { type: 'review', request, session_id: currentSessionId } as any })
+          }
+          break
+
+        case 'review_upsell_banner':
+          if (this.reviewManager) {
+            const shouldShow = this.reviewManager.shouldShowReviewUpsell()
+            this.sendToWebview({ type: 'from-extension', message: { type: 'review_upsell_banner', shouldShow, session_id: currentSessionId } as any })
+          }
+          break
+
+        // ─── P1: Proactive suggestions from CLI ───
+        case 'proactive_suggestions_update':
+          if (this.proactiveManager && (msg as any).suggestions) {
+            this.proactiveManager.updateSuggestions((msg as any).suggestions)
+            this.sendToWebview({ type: 'from-extension', message: { type: 'proactive_suggestions_update', suggestions: this.proactiveManager.getSuggestions(), session_id: currentSessionId } as any })
+          }
+          break
+
+        // ─── P1: Create browser tab from CLI ───
+        case 'create_new_browser_tab':
+          if (this.browserTabManager) {
+            const tab = this.browserTabManager.createTab((msg as any).url)
+            this.sendToWebview({ type: 'from-extension', message: { type: 'browser_tab_created', tab, session_id: currentSessionId } as any })
+          }
+          break
+
+        // ─── P1: Show notification from CLI ───
+        case 'show_notification':
+          if ((msg as any).message) {
+            const notifType = (msg as any).type_hint ?? 'info'
+            if (notifType === 'error') {
+              void vscode.window.showErrorMessage((msg as any).message)
+            } else if (notifType === 'warning') {
+              void vscode.window.showWarningMessage((msg as any).message)
+            } else {
+              void vscode.window.showInformationMessage((msg as any).message)
+            }
+          }
+          break
+
+        // ─── P1: Comment messages from CLI ───
+        case 'comment_response':
+        case 'comments_response':
+          // Forward comment data from CLI to webview
+          this.sendToWebview({ type: 'from-extension', message: msg })
+          break
+
+        // ─── Auth flow from CLI ───
+        case 'auth_url':
+          // CLI requests opening an auth URL in the browser
+          if ((msg as any).url) {
+            void vscode.env.openExternal(vscode.Uri.parse((msg as any).url))
+            this.sendToWebview({ type: 'from-extension', message: msg } as any)
+          }
+          break
+
+        case 'authorization_code':
+        case 'refresh_token':
+          // Auth tokens — forward to webview for storage
+          this.sendToWebview({ type: 'from-extension', message: msg } as any)
+          break
+
+        // ─── Text / thinking / image / summary (individual block types) ───
+        case 'thinking':
+        case 'text':
+        case 'image':
+        case 'summary':
+          // Forward individual message types to webview
+          this.sendToWebview({ type: 'from-extension', message: msg } as any)
+          break
+
+        // ─── Tool use / result as individual messages ───
+        case 'tool_use':
+        case 'tool_result':
+          this.sendToWebview({ type: 'from-extension', message: msg } as any)
+          break
+
+        // ─── IO message (interleaved stdin/stdout) ───
+        case 'io_message':
+          this.sendToWebview({ type: 'from-extension', message: msg } as any)
+          break
+
+        // ─── Rewind files ───
+        case 'rewind_files':
+          if ((msg as any).file_paths && Array.isArray((msg as any).file_paths)) {
+            for (const fp of (msg as any).file_paths) {
+              try {
+                const doc = await vscode.workspace.openTextDocument(fp)
+                // Revert document content from disk
+                await doc.save()
+              } catch {
+                // File may not exist
+              }
+            }
+            this.sendToWebview({ type: 'from-extension', message: msg } as any)
+          }
+          break
+
+        // ─── Git operations from CLI ───
+        case 'check_git_status':
+          // CLI asks for git status — forward and let webview handle
+          this.sendToWebview({ type: 'from-extension', message: msg } as any)
+          break
+
+        // ─── Hook callback ───
+        case 'hook_callback':
+          // CLI acknowledges hook execution — forward to webview
+          this.sendToWebview({ type: 'from-extension', message: msg } as any)
+          break
+
+        // ─── Debugger help from CLI ───
+        case 'debugger_help':
+        case 'debugger_mcp_add_to_channel':
+          this.sendToWebview({ type: 'from-extension', message: msg } as any)
           break
 
         default:
@@ -462,6 +891,9 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
 
     const block = msg.content_block
 
+    // Track current block type for content_block_stop
+    this.currentBlockType = block.type as 'text' | 'tool_use' | 'thinking'
+
     if (block.type === 'text') {
       // 开始文本块
       this.blockTextBuffer = ''
@@ -488,6 +920,9 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
           message_id: this.currentAssistantMessageId,
         },
       })
+
+      // Pre-tool hooks: autosave + diagnostic baseline capture
+      this.handlePreToolUse(block.name ?? 'unknown', block.input as Record<string, unknown>).catch(() => {})
     } else if (block.type === 'thinking') {
       // 思考块开始 — no thinkingStart equivalent, just start buffering
       this.blockTextBuffer = ''
@@ -529,10 +964,26 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
     // 刷新缓冲
     this.flushTextBuffer()
 
-    if (msg.index === this.currentContentBlockIndex) {
-      // 检查是否是 thinking 块结束
-      // （content_block_stop 不提供块类型，需要根据之前的 start 推断）
+    // Notify webview that a content block ended (for thinking block toggle, etc.)
+    if (this.currentBlockType) {
+      this.sendToWebview({
+        type: 'from-extension',
+        message: {
+          type: 'content_block_stop',
+          index: msg.index,
+          blockType: this.currentBlockType,
+          session_id: currentSessionId,
+          message_id: this.currentAssistantMessageId,
+        } as any,
+      })
+
+      // Post-tool hook: check for new diagnostics
+      if (this.currentBlockType === 'tool_use') {
+        this.handlePostToolUse()
+      }
     }
+
+    this.currentBlockType = null
   }
 
   /** result — 消息完成 */
@@ -564,6 +1015,112 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
         type: 'error',
         message: msg.error ?? msg.result ?? 'Unknown error',
       })
+    }
+  }
+
+  // ─── Pre/Post Tool-Use Hooks (diagnostic tracking + autosave) ────────────────
+
+  /**
+   * PreToolUse: autosave dirty documents and capture diagnostic baseline.
+   * Matches the official extension's hook pattern:
+   *   PreToolUse: [{matcher:"Edit|Write|MultiEdit", hooks:[captureBaseline]}, {matcher:"Edit|Write|Read", hooks:[saveFileIfNeeded]}]
+   */
+  private async handlePreToolUse(toolName: string, input: Record<string, unknown>): Promise<void> {
+    // Autosave: for Read/Edit/Write/MultiEdit tools, save the target file if dirty
+    const fileTools = ['Read', 'Edit', 'Write', 'MultiEdit', 'FileRead', 'FileEdit', 'FileWrite']
+    if (fileTools.includes(toolName)) {
+      await this.saveAllDirtyDocuments()
+    }
+
+    // Diagnostic baseline capture: for file-editing tools, snapshot current diagnostics
+    const editTools = ['Edit', 'Write', 'MultiEdit', 'FileEdit', 'FileWrite']
+    if (editTools.includes(toolName)) {
+      const filePath = (input.file_path ?? input.path ?? '') as string
+      if (filePath) {
+        this.currentToolUseFilePath = filePath
+        this.captureDiagnosticBaseline(filePath)
+      }
+    }
+  }
+
+  /**
+   * PostToolUse: compare current diagnostics against the baseline captured before the tool use.
+   * If new errors appeared, inject them as <ide_diagnostics> context back to the CLI.
+   * Matches the official extension's PostToolUse: [{matcher:"Edit|Write|MultiEdit", hooks:[findDiagnosticsProblems]}]
+   */
+  private handlePostToolUse(): void {
+    if (!this.currentToolUseFilePath) return
+
+    const filePath = this.currentToolUseFilePath
+    this.currentToolUseFilePath = null
+
+    this.findDiagnosticsProblems(filePath)
+  }
+
+  /** Capture current diagnostics for a file as the baseline */
+  private captureDiagnosticBaseline(filePath: string): void {
+    this.diagnosticBaseline.clear()
+    try {
+      const uri = vscode.Uri.file(filePath)
+      const diags = vscode.languages.getDiagnostics(uri)
+      // Store a serializable snapshot (message + range)
+      this.diagnosticBaseline.set(uri.toString(), diags)
+      this.outputChannel.debug(
+        `[Diagnostics] Captured baseline: ${diags.length} issues for ${path.basename(filePath)}`,
+      )
+    } catch {
+      // File may not exist yet — empty baseline
+    }
+  }
+
+  /**
+   * Compare current diagnostics against baseline and send new errors to CLI.
+   * Only sends errors/warnings that were NOT present in the baseline.
+   */
+  private findDiagnosticsProblems(filePath: string): void {
+    try {
+      const uri = vscode.Uri.file(filePath)
+      const currentDiags = vscode.languages.getDiagnostics(uri)
+      const baseline = this.diagnosticBaseline.get(uri.toString()) ?? []
+      this.diagnosticBaseline.delete(uri.toString())
+
+      // Find new diagnostics (present now but not in baseline)
+      const baselineKeys = new Set(
+        baseline.map(
+          d => `${d.message}|${d.range.start.line}|${d.severity}`,
+        ),
+      )
+      const newDiags = currentDiags.filter(
+        d => !baselineKeys.has(`${d.message}|${d.range.start.line}|${d.severity}`),
+      )
+
+      if (newDiags.length === 0) return
+
+      // Only report errors and warnings, not hints/info
+      const errors = newDiags.filter(
+        d => d.severity <= vscode.DiagnosticSeverity.Warning,
+      )
+      if (errors.length === 0) return
+
+      this.outputChannel.debug(
+        `[Diagnostics] Found ${errors.length} new issue(s) after tool use on ${path.basename(filePath)}`,
+      )
+
+      // Send to CLI as ide_diagnostics context
+      this.ideServer.send({
+        type: 'ide_diagnostics',
+        file_path: filePath,
+        diagnostics: errors.map(d => ({
+          severity: vscode.DiagnosticSeverity[d.severity].toLowerCase(),
+          message: d.message,
+          start_line: d.range.start.line + 1, // 1-indexed for display
+          end_line: d.range.end.line + 1,
+          source: d.source,
+        })),
+        session_id: currentSessionId,
+      } as any)
+    } catch {
+      // Ignore errors in diagnostic comparison
     }
   }
 
@@ -615,6 +1172,9 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
   /** proposed_diff — open diff editor with left/right VFS */
   private async handleDiff(msg: CliProposedDiffMessage): Promise<void> {
     try {
+      // Auto-save dirty documents before opening diff to avoid conflicts
+      await this.saveAllDirtyDocuments()
+
       // Use DiffManager to write content to virtual FS and open diff editor
       const diffId = await this.diffManager.proposeDiff(
         msg.file_path,
@@ -663,6 +1223,27 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
     if (activeSession?.model) {
       this.sendToWebview({ type: 'modelChange', model: activeSession.model } as any)
     }
+    // Also forward full session states to webview for tab/channel management
+    this.sendToWebview({
+      type: 'from-extension',
+      message: {
+        type: 'session_states_update',
+        sessions: msg.sessions,
+      },
+    })
+  }
+
+  /** file_updated — CLI 通知文件被修改 */
+  private handleFileUpdated(msg: CliFileUpdatedMessage): void {
+    this.sendToWebview({
+      type: 'from-extension',
+      message: {
+        type: 'file_updated',
+        file_path: msg.file_path,
+        change_type: msg.change_type,
+        session_id: msg.session_id,
+      },
+    })
   }
 
   // ─── 辅助方法 ──────────────────────────────────────────────────────────────
@@ -714,6 +1295,8 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
   /** 打开文件 */
   private async openFile(filePath: string, line?: number): Promise<void> {
     try {
+      // Auto-save dirty docs before opening files
+      await this.saveAllDirtyDocuments()
       const doc = await vscode.workspace.openTextDocument(filePath)
       const editor = await vscode.window.showTextDocument(doc, {
         preview: false,
@@ -798,6 +1381,21 @@ export class IdeViewProvider implements vscode.WebviewViewProvider {
   /** Add a broadcast target (e.g. editor panel webview) */
   addBroadcastTarget(target: { postMessage: (msg: any) => Thenable<boolean> }): void {
     this.broadcastTargets.push(target)
+  }
+
+  /** Set P1 manager references for message routing */
+  setManagers(opts: {
+    commentManager?: import('./comments/CommentManager.js').CommentManager
+    reviewManager?: import('./review/ReviewManager.js').ReviewManager
+    planManager?: import('./plan/PlanManager.js').PlanManager
+    proactiveManager?: import('./proactive/ProactiveSuggestionsManager.js').ProactiveSuggestionsManager
+    browserTabManager?: import('./browser/BrowserTabManager.js').BrowserTabManager
+  }): void {
+    if (opts.commentManager) this.commentManager = opts.commentManager
+    if (opts.reviewManager) this.reviewManager = opts.reviewManager
+    if (opts.planManager) this.planManager = opts.planManager
+    if (opts.proactiveManager) this.proactiveManager = opts.proactiveManager
+    if (opts.browserTabManager) this.browserTabManager = opts.browserTabManager
   }
 
   /** 生成随机 ID */

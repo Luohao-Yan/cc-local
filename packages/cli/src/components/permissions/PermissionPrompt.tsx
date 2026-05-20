@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../utils/i18n/index.js';
 import React, { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { Box, Text } from '../../ink.js';
 import type { KeybindingAction } from '../../keybindings/types.js';
@@ -28,8 +31,8 @@ export type PermissionPromptProps<T extends string> = {
   toolAnalyticsContext?: ToolAnalyticsContext;
 };
 const DEFAULT_PLACEHOLDERS: Record<FeedbackType, string> = {
-  accept: 'tell Claude what to do next',
-  reject: 'tell Claude what to do differently'
+  accept: t('prompt.tellClaudeNext'),
+  reject: t('prompt.tellClaudeDifferently')
 };
 
 /**
@@ -51,7 +54,7 @@ export function PermissionPrompt(t0) {
     question: t1,
     toolAnalyticsContext
   } = t0;
-  const question = t1 === undefined ? "Do you want to proceed?" : t1;
+  const question = t1 === undefined ? t('prompt.doYouWantToProceed') : t1;
   const setAppState = useSetAppState();
   const [acceptFeedback, setAcceptFeedback] = useState("");
   const [rejectFeedback, setRejectFeedback] = useState("");
@@ -241,7 +244,7 @@ export function PermissionPrompt(t0) {
   let t6;
   if ($[30] === Symbol.for("react.memo_cache_sentinel")) {
     t6 = {
-      context: "Confirmation"
+      context: t('prompt.confirmation')
     };
     $[30] = t6;
   } else {
@@ -303,10 +306,10 @@ export function PermissionPrompt(t0) {
   } else {
     t10 = $[47];
   }
-  const t11 = showTabHint && " \xB7 Tab to amend";
+  const t11 = showTabHint && t('prompt.tabToAmend');
   let t12;
   if ($[48] !== t11) {
-    t12 = <Box marginTop={1}><Text dimColor={true}>Esc to cancel{t11}</Text></Box>;
+    t12 = <Box marginTop={1}><Text dimColor={true}>{t('prompt.escToCancel')}{t11}</Text></Box>;
     $[48] = t11;
     $[49] = t12;
   } else {

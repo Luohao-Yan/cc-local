@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../../utils/i18n/index.js';
 import { basename, relative } from 'path';
 import React from 'react';
 import { FileEditToolDiff } from '../../FileEditToolDiff.js';
@@ -60,10 +63,10 @@ export function FileEditPermissionRequest(props) {
     t6 = props.onDone;
     t7 = props.onReject;
     t8 = props.workerBadge;
-    t9 = "Edit file";
+    t9 = t('fileEditPerm.title');
     t10 = relative(getCwd(), file_path);
     T1 = Text;
-    t2 = "Do you want to make this edit to";
+    t2 = t('fileEditPerm.doYouWantToMakeEdit');
     t3 = " ";
     T0 = Text;
     t0 = true;

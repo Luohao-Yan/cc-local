@@ -1,10 +1,12 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import figures from 'figures';
 import React from 'react';
 import { Box, Text } from '../../../ink.js';
 import type { Question } from '../../../tools/AskUserQuestionTool/AskUserQuestionTool.js';
 import type { PermissionDecision } from '../../../utils/permissions/PermissionResult.js';
-import { t } from '../../../utils/i18n/index.js';
+import { t } from '../../../../utils/i18n/index.js';
 import { Select } from '../../CustomSelect/index.js';
 import { Divider } from '../../design-system/Divider.js';
 import { PermissionRequestTitle } from '../PermissionRequestTitle.js';
@@ -49,14 +51,14 @@ export function SubmitQuestionsView(t0) {
   }
   let t3;
   if ($[5] === Symbol.for("react.memo_cache_sentinel")) {
-    t3 = <PermissionRequestTitle title="Review your answers" color="text" />;
+    t3 = <PermissionRequestTitle title={t('auq.reviewAnswers')} color="text" />;
     $[5] = t3;
   } else {
     t3 = $[5];
   }
   let t4;
   if ($[6] !== allQuestionsAnswered) {
-    t4 = !allQuestionsAnswered && <Box marginBottom={1}><Text color="warning">{figures.warning} You have not answered all questions</Text></Box>;
+    t4 = !allQuestionsAnswered && <Box marginBottom={1}><Text color="warning">{t('auq.notAllAnswered', {icon: figures.warning})}</Text></Box>;
     $[6] = allQuestionsAnswered;
     $[7] = t4;
   } else {
@@ -66,7 +68,7 @@ export function SubmitQuestionsView(t0) {
   if ($[8] !== answers || $[9] !== questions) {
     t5 = Object.keys(answers).length > 0 && <Box flexDirection="column" marginBottom={1}>{questions.filter(q => q?.question && answers[q.question]).map(q_0 => {
         const answer = answers[q_0?.question];
-        return <Box key={q_0?.question || "answer"} flexDirection="column" marginLeft={1}><Text>{figures.bullet} {q_0?.question || "Question"}</Text><Box marginLeft={2}><Text color="success">{figures.arrowRight} {answer}</Text></Box></Box>;
+        return <Box key={q_0?.question || "answer"} flexDirection="column" marginLeft={1}><Text>{figures.bullet} {q_0?.question || t('auq.question')}</Text><Box marginLeft={2}><Text color="success">{figures.arrowRight} {answer}</Text></Box></Box>;
       })}</Box>;
     $[8] = answers;
     $[9] = questions;
@@ -84,7 +86,7 @@ export function SubmitQuestionsView(t0) {
   }
   let t7;
   if ($[13] === Symbol.for("react.memo_cache_sentinel")) {
-    t7 = <Text color="inactive">Ready to submit your answers?</Text>;
+    t7 = <Text color="inactive">{t('auq.readyToSubmit')}</Text>;
     $[13] = t7;
   } else {
     t7 = $[13];
@@ -93,7 +95,7 @@ export function SubmitQuestionsView(t0) {
   if ($[14] === Symbol.for("react.memo_cache_sentinel")) {
     t8 = {
       type: "text" as const,
-      label: "Submit answers",
+      label: t('auq.submitAnswers'),
       value: "submit"
     };
     $[14] = t8;

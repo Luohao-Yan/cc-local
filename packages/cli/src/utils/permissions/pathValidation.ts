@@ -1,5 +1,4 @@
 import memoize from 'lodash-es/memoize.js'
-import { homedir } from 'os'
 import { dirname, isAbsolute, resolve } from 'path'
 import type { ToolPermissionContext } from '../../Tool.js'
 import { getPlatform } from '../../utils/platform.js'
@@ -8,7 +7,11 @@ import {
   getPathsForPermissionCheck,
   safeResolvePath,
 } from '../fsOperations.js'
-import { containsPathTraversal } from '../path.js'
+import {
+  containsPathTraversal,
+  expandTilde,
+  isDangerousRemovalPath,
+} from '@cclocal/shared'
 import { SandboxManager } from '../sandbox/sandbox-adapter.js'
 import { containsVulnerableUncPath } from '../shell/readOnlyCommandValidation.js'
 import {
@@ -73,20 +76,8 @@ export function getGlobBaseDirectory(path: string): string {
   return beforeGlob.substring(0, lastSepIndex) || '/'
 }
 
-/**
- * Expands tilde (~) at the start of a path to the user's home directory.
- * Note: ~username expansion is not supported for security reasons.
- */
-export function expandTilde(path: string): string {
-  if (
-    path === '~' ||
-    path.startsWith('~/') ||
-    (process.platform === 'win32' && path.startsWith('~\\'))
-  ) {
-    return homedir() + path.slice(1)
-  }
-  return path
-}
+// Re-export for backward compatibility — implementation now lives in @cclocal/shared
+export { expandTilde } from '@cclocal/shared'
 
 /**
  * Checks if a resolved path is writable according to the sandbox write allowlist.
@@ -118,7 +109,7 @@ export function isPathInSandboxWriteAllowlist(resolvedPath: string): boolean {
     for (const denyPath of resolvedDeny) {
       if (pathInWorkingPath(p, denyPath)) return false
     }
-    return resolvedAllow.some(allowPath => pathInWorkingPath(p, allowPath))
+    return resolvedAllow.some((allowPath: any) => pathInWorkingPath(p, allowPath))
   })
 }
 
@@ -315,56 +306,8 @@ export function validateGlobPattern(
   }
 }
 
-const WINDOWS_DRIVE_ROOT_REGEX = /^[A-Za-z]:\/?$/
-const WINDOWS_DRIVE_CHILD_REGEX = /^[A-Za-z]:\/[^/]+$/
-
-/**
- * Checks if a resolved path is dangerous for removal operations (rm/rmdir).
- * Dangerous paths are:
- * - Wildcard '*' (removes all files in directory)
- * - Any path ending with '/*' or '\*' (e.g., /path/to/dir/*, C:\foo\*)
- * - Root directory (/)
- * - Home directory (~)
- * - Direct children of root (/usr, /tmp, /etc, etc.)
- * - Windows drive root (C:\, D:\) and direct children (C:\Windows, C:\Users)
- */
-export function isDangerousRemovalPath(resolvedPath: string): boolean {
-  // Callers pass both slash forms; collapse runs so C:\\Windows (valid in
-  // PowerShell) doesn't bypass the drive-child check.
-  const forwardSlashed = resolvedPath.replace(/[\\/]+/g, '/')
-
-  if (forwardSlashed === '*' || forwardSlashed.endsWith('/*')) {
-    return true
-  }
-
-  const normalizedPath =
-    forwardSlashed === '/' ? forwardSlashed : forwardSlashed.replace(/\/$/, '')
-
-  if (normalizedPath === '/') {
-    return true
-  }
-
-  if (WINDOWS_DRIVE_ROOT_REGEX.test(normalizedPath)) {
-    return true
-  }
-
-  const normalizedHome = homedir().replace(/[\\/]+/g, '/')
-  if (normalizedPath === normalizedHome) {
-    return true
-  }
-
-  // Direct children of root: /usr, /tmp, /etc (but not /usr/local)
-  const parentDir = dirname(normalizedPath)
-  if (parentDir === '/') {
-    return true
-  }
-
-  if (WINDOWS_DRIVE_CHILD_REGEX.test(normalizedPath)) {
-    return true
-  }
-
-  return false
-}
+// Re-export for backward compatibility — implementation now lives in @cclocal/shared
+export { isDangerousRemovalPath } from '@cclocal/shared'
 
 /**
  * Validates a file system path, handling tilde expansion and glob patterns.

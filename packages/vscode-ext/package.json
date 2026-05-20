@@ -425,6 +425,47 @@
       {
         "command": "cclocal.installPlugin",
         "title": "CCLocal: Install Plugin"
+      },
+      {
+        "command": "cclocal.addComment",
+        "title": "CCLocal: Add Comment"
+      },
+      {
+        "command": "cclocal.removeComment",
+        "title": "CCLocal: Remove Comment"
+      },
+      {
+        "command": "cclocal.acceptPlan",
+        "title": "CCLocal: Accept Plan"
+      },
+      {
+        "command": "cclocal.rejectPlan",
+        "title": "CCLocal: Reject Plan"
+      },
+      {
+        "command": "cclocal.closePlanPreview",
+        "title": "CCLocal: Close Plan Preview"
+      },
+      {
+        "command": "cclocal.dismissTerminalBanner",
+        "title": "CCLocal: Dismiss Terminal Banner"
+      },
+      {
+        "command": "cclocal.dismissReviewUpsellBanner",
+        "title": "CCLocal: Dismiss Review Upsell"
+      },
+      {
+        "command": "cclocal.setProactive",
+        "title": "CCLocal: Toggle Proactive Suggestions"
+      },
+      {
+        "command": "cclocal.createNewBrowserTab",
+        "title": "CCLocal: Create Browser Tab"
+      },
+      {
+        "command": "cclocal.showLogs",
+        "title": "CCLocal: Show Logs",
+        "icon": "$(output)"
       }
     ],
     "menus": {
@@ -938,6 +979,217 @@
           "type": "boolean",
           "default": true,
           "description": "启用使用归因"
+        },
+        "cclocal.spinnerVerbs": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["append", "replace"],
+              "default": "append",
+              "description": "添加或替换默认动词"
+            },
+            "verbs": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "自定义加载动画动词列表"
+            }
+          },
+          "default": {},
+          "description": "自定义加载动画动词"
+        },
+        "cclocal.advisorModel": {
+          "type": "string",
+          "default": "",
+          "description": "Advisor 模型（服务端工具使用）"
+        },
+        "cclocal.effortLevel": {
+          "type": "string",
+          "default": "",
+          "enum": ["", "low", "medium", "high"],
+          "description": "持久化的努力级别"
+        },
+        "cclocal.autoCompactWindow": {
+          "type": "integer",
+          "default": 0,
+          "description": "自动压缩窗口大小（0=禁用）"
+        },
+        "cclocal.showClearContextOnPlanAccept": {
+          "type": "boolean",
+          "default": false,
+          "description": "计划批准时显示清除上下文选项"
+        },
+        "cclocal.channelsEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "启用频道通知"
+        },
+        "cclocal.allowedChannelPlugins": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "允许的频道插件白名单"
+        },
+        "cclocal.autoMemoryEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "启用自动记忆功能"
+        },
+        "cclocal.autoMemoryDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "自定义自动记忆目录"
+        },
+        "cclocal.autoDreamEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "启用后台记忆整合"
+        },
+        "cclocal.showThinkingSummaries": {
+          "type": "boolean",
+          "default": false,
+          "description": "显示思考摘要（ctrl+o）"
+        },
+        "cclocal.skipDangerousModePermissionPrompt": {
+          "type": "boolean",
+          "default": false,
+          "description": "跳过危险模式权限提示"
+        },
+        "cclocal.disableAutoMode": {
+          "type": "string",
+          "default": "",
+          "description": "禁用自动模式"
+        },
+        "cclocal.sshConfigs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "host": { "type": "string" },
+              "port": { "type": "number" },
+              "user": { "type": "string" },
+              "identityFile": { "type": "string" },
+              "startDirectory": { "type": "string" }
+            },
+            "required": ["id", "name", "host", "port", "user"]
+          },
+          "default": [],
+          "description": "SSH 远程连接配置"
+        },
+        "cclocal.plansDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "自定义计划文件目录"
+        },
+        "cclocal.autoUpdatesChannel": {
+          "type": "string",
+          "default": "latest",
+          "enum": ["latest", "stable"],
+          "description": "自动更新频道"
+        },
+        "cclocal.statusLine": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": false },
+            "template": { "type": "string", "default": "" }
+          },
+          "default": {},
+          "description": "自定义状态栏显示"
+        },
+        "cclocal.prefersReducedMotion": {
+          "type": "boolean",
+          "default": false,
+          "description": "减少动画（辅助功能）"
+        },
+        "cclocal.sandbox": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": false },
+            "profile": { "type": "string", "default": "" }
+          },
+          "default": {},
+          "description": "沙箱配置"
+        },
+        "cclocal.allowUnsandboxedCommands": {
+          "type": "boolean",
+          "default": false,
+          "description": "允许在沙箱外执行命令"
+        },
+        "cclocal.failIfUnavailable": {
+          "type": "boolean",
+          "default": false,
+          "description": "沙箱不可用时硬性阻止"
+        },
+        "cclocal.allowAllUnixSockets": {
+          "type": "boolean",
+          "default": false,
+          "description": "允许所有 Unix 套接字（仅 macOS）"
+        },
+        "cclocal.allowLocalBinding": {
+          "type": "boolean",
+          "default": false,
+          "description": "允许本地网络绑定"
+        },
+        "cclocal.allowManagedDomainsOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "仅允许托管域名列表"
+        },
+        "cclocal.allowManagedHooksOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "仅允许托管 hooks 运行"
+        },
+        "cclocal.allowManagedPermissionRulesOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "仅允许托管权限规则"
+        },
+        "cclocal.allowManagedMcpServersOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "仅允许托管 MCP 服务器"
+        },
+        "cclocal.strictPluginOnlyCustomization": {
+          "type": ["boolean", "object", "array"],
+          "default": false,
+          "description": "阻止非插件自定义"
+        },
+        "cclocal.allowManagedReadPathsOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "仅允许托管读取路径"
+        },
+        "cclocal.worktree": {
+          "type": "object",
+          "properties": {
+            "symlinkDirectories": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "在 worktree 中创建符号链接的目录"
+            },
+            "sparsePaths": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "稀疏检出的路径（大 monorepo 优化）"
+            }
+          },
+          "default": {},
+          "description": "Git worktree 配置"
+        },
+        "cclocal.remote": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": false },
+            "defaultEnvironmentId": { "type": "string", "default": "" }
+          },
+          "default": {},
+          "description": "远程会话配置"
         }
       },
       "definitions": {
@@ -970,7 +1222,7 @@
           "properties": {
             "type": {
               "type": "string",
-              "enum": ["command", "http", "function"],
+              "enum": ["command", "http", "function", "agent", "prompt"],
               "description": "Handler 类型"
             },
             "command": {
@@ -1005,6 +1257,34 @@
               "type": "object",
               "additionalProperties": { "type": "string" },
               "description": "环境变量（type=command 时）"
+            },
+            "prompt": {
+              "type": "string",
+              "description": "LLM 提示内容（type=agent/prompt 时）"
+            },
+            "model": {
+              "type": "string",
+              "description": "使用的模型（type=agent 时）"
+            },
+            "async": {
+              "type": "boolean",
+              "default": false,
+              "description": "异步执行（不阻塞工具调用）"
+            },
+            "once": {
+              "type": "boolean",
+              "default": false,
+              "description": "仅执行一次"
+            },
+            "statusMessage": {
+              "type": "string",
+              "description": "执行时显示的状态消息"
+            },
+            "allowedEnvVars": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "HTTP hook 允许的环境变量"
             }
           },
           "required": ["type"]
@@ -1041,30 +1321,24 @@
           {
             "id": "open",
             "title": "Open CCLocal",
-            "description": "Click the CCLocal icon in the sidebar, or press **Ctrl+Escape**.\n\n[Open Sidebar](command:cclocal.focus)",
             "media": {
-              "image": "resources/walkthrough/click.png",
-              "altText": "Open CCLocal"
+              "markdown": "resources/walkthrough/step2.md"
             },
             "completionEvents": ["onCommand:cclocal.focus"]
           },
           {
             "id": "chat",
             "title": "Start a conversation",
-            "description": "Type a message and press **Enter** to start chatting.\n\nUse **@** to mention files, **Shift+Enter** for a new line.\n\n[Start Chatting](command:cclocal.focus)",
             "media": {
-              "image": "resources/walkthrough/chat.png",
-              "altText": "Chat with CCLocal"
+              "markdown": "resources/walkthrough/step3.md"
             },
             "completionEvents": ["onCommand:cclocal.focus"]
           },
           {
             "id": "sessions",
             "title": "Resume past conversations",
-            "description": "Click the **Sessions** view or type **/resume** to browse past sessions.\n\n[View Sessions](command:cclocal.session.list)",
             "media": {
-              "image": "resources/walkthrough/past.png",
-              "altText": "Past conversations"
+              "markdown": "resources/walkthrough/step4.md"
             },
             "completionEvents": ["onCommand:cclocal.session.list"]
           }

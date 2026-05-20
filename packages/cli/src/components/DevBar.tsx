@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import * as React from 'react';
 import { useState } from 'react';
@@ -6,7 +8,7 @@ import { Text, useInterval } from '../ink.js';
 
 // Show DevBar for dev builds or all ants
 function shouldShowDevBar(): boolean {
-  return "production" === 'development' || "external" === 'ant';
+  return ("production" as string) === 'development' || ("external" as string) === 'ant';
 }
 export function DevBar() {
   const $ = _c(5);

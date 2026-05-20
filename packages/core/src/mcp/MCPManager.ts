@@ -3,9 +3,9 @@ import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { WebSocketClientTransport } from '@modelcontextprotocol/sdk/client/websocket.js'
-import { CallToolResultSchema } from '@modelcontextprotocol/sdk/types.js'
+import { CallToolResultSchema, ResourceUpdatedNotificationSchema } from '@modelcontextprotocol/sdk/types.js'
 import type { Tool, ToolContext, ToolResult } from '@cclocal/shared'
-import { toolRegistry, type ToolRegistry } from '../tools/registry.js'
+import { toolRegistry, type ToolRegistry, type DeferredTool } from '../tools/registry.js'
 import type {
   MCPServerConfig,
   MCPServerRegistration,
@@ -20,12 +20,14 @@ interface MCPConnectionHandle {
   callTool(name: string, args: unknown): Promise<ToolResult>
   listResources?(): Promise<MCPResourceDefinition[]>
   readResource?(uri: string): Promise<ToolResult>
+  subscribeResource?(uri: string): Promise<void>
+  unsubscribeResource?(uri: string): Promise<void>
   close(): Promise<void>
 }
 
 export interface MCPManagerOptions {
   now?: () => number
-  toolRegistry?: Pick<ToolRegistry, 'register' | 'unregister' | 'has'>
+  toolRegistry?: Pick<ToolRegistry, 'register' | 'unregister' | 'has' | 'registerMcpTools'>
   syncToolsToRegistry?: boolean
   connectionFactory?: (record: MCPServerRecord) => Promise<MCPConnectionHandle>
 }
@@ -33,13 +35,15 @@ export interface MCPManagerOptions {
 export class MCPManager {
   private readonly servers = new Map<string, MCPServerRecord>()
   private readonly now: () => number
-  private readonly toolRegistry?: Pick<ToolRegistry, 'register' | 'unregister' | 'has'>
+  private readonly toolRegistry?: Pick<ToolRegistry, 'register' | 'unregister' | 'has' | 'registerMcpTools'>
   private readonly syncToolsToRegistry: boolean
   private readonly connectionFactory: (record: MCPServerRecord) => Promise<MCPConnectionHandle>
   private readonly connections = new Map<string, {
     handle: MCPConnectionHandle
     registeredToolNames: string[]
   }>()
+  /** Deduplicates concurrent connectServer calls for the same server name. */
+  private readonly pendingConnections = new Map<string, Promise<MCPServerRecord>>()
 
   constructor(options: MCPManagerOptions = {}) {
     this.now = options.now ?? (() => Date.now())
@@ -51,6 +55,11 @@ export class MCPManager {
   registerServer(registration: MCPServerRegistration): MCPServerRecord {
     if (this.servers.has(registration.name)) {
       throw new Error(`MCP server "${registration.name}" already exists`)
+    }
+
+    // Enterprise control enforcement
+    if (!this.isServerNameAllowed(registration.name)) {
+      throw new Error(`MCP server "${registration.name}" is blocked by enterprise policy`)
     }
 
     this.validateServerConfig(registration.config)
@@ -167,9 +176,24 @@ export class MCPManager {
       return record
     }
 
+    // Deduplicate: if another call already connecting this server, reuse its promise
+    const pending = this.pendingConnections.get(name)
+    if (pending) {
+      return pending
+    }
+
+    const promise = this._doConnectServer(name).finally(() => {
+      this.pendingConnections.delete(name)
+    })
+    this.pendingConnections.set(name, promise)
+    return promise
+  }
+
+  private async _doConnectServer(name: string): Promise<MCPServerRecord> {
     this.setServerStatus(name, 'connecting')
 
     try {
+      const record = this.servers.get(name)!
       const handle = await this.connectionFactory(record)
       const tools = (await handle.listTools())
         .filter((tool) => this.isToolAllowed(record.config, tool.name))
@@ -225,14 +249,20 @@ export class MCPManager {
 
     const MCP_TOOL_TIMEOUT_MS = 120_000 // 2 minutes
 
-    const result = await Promise.race([
-      connection.handle.callTool(toolName, args),
-      new Promise<ToolResult>((_resolve, reject) =>
-        setTimeout(() => reject(new Error(`MCP tool "${toolName}" on server "${serverName}" timed out after ${MCP_TOOL_TIMEOUT_MS / 1000}s`)), MCP_TOOL_TIMEOUT_MS)
-      ),
-    ])
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(`MCP tool "${toolName}" on server "${serverName}" timed out after ${MCP_TOOL_TIMEOUT_MS / 1000}s`)), MCP_TOOL_TIMEOUT_MS)
+    })
 
-    return result
+    try {
+      const result = await Promise.race([
+        connection.handle.callTool(toolName, args),
+        timeoutPromise,
+      ])
+      return result
+    } finally {
+      if (timeoutId !== undefined) clearTimeout(timeoutId)
+    }
   }
 
   async listResources(serverName: string): Promise<MCPResourceDefinition[]> {
@@ -255,6 +285,103 @@ export class MCPManager {
       throw new Error(`MCP server "${serverName}" does not support resources`)
     }
     return await connection.handle.readResource(uri)
+  }
+
+  // ---- Resource Subscription ----
+
+  /** Track subscribed URIs per server */
+  private readonly subscribedUris = new Map<string, Set<string>>()
+
+  /** Callback when a resource is updated */
+  onResourceUpdate?: (serverName: string, uri: string) => void
+
+  /**
+   * Subscribe to resource change notifications from an MCP server.
+   * Requires the server to support the `resources/subscribe` capability.
+   */
+  async subscribeResource(serverName: string, uri: string): Promise<void> {
+    const connection = this.connections.get(serverName)
+    if (!connection) {
+      throw new Error(`MCP server "${serverName}" is not connected`)
+    }
+    if (!connection.handle.subscribeResource) {
+      throw new Error(`MCP server "${serverName}" does not support resource subscriptions`)
+    }
+
+    // Deduplicate: skip if already subscribed
+    const existing = this.subscribedUris.get(serverName)
+    if (existing?.has(uri)) return
+
+    await connection.handle.subscribeResource(uri)
+
+    if (!this.subscribedUris.has(serverName)) {
+      this.subscribedUris.set(serverName, new Set())
+    }
+    this.subscribedUris.get(serverName)!.add(uri)
+  }
+
+  /**
+   * Unsubscribe from resource change notifications.
+   */
+  async unsubscribeResource(serverName: string, uri: string): Promise<void> {
+    const connection = this.connections.get(serverName)
+    if (!connection) return
+
+    if (connection.handle.unsubscribeResource) {
+      await connection.handle.unsubscribeResource(uri)
+    }
+
+    this.subscribedUris.get(serverName)?.delete(uri)
+  }
+
+  /**
+   * Get all currently subscribed URIs for a server.
+   */
+  getSubscribedUris(serverName: string): string[] {
+    return Array.from(this.subscribedUris.get(serverName) ?? [])
+  }
+
+  // ---- Enterprise Controls ----
+
+  /** Allowed MCP servers (whitelist). If set, only these servers can be registered. */
+  allowedMcpServers?: Set<string>
+
+  /** Denied MCP servers (blacklist). These servers cannot be registered or connected. */
+  deniedMcpServers?: Set<string>
+
+  /** If true, only servers from managed settings are allowed. User-configured servers are blocked. */
+  strictMcpServersOnly = false
+
+  /**
+   * Configure enterprise controls for MCP server access.
+   */
+  setEnterpriseControls(options: {
+    allowedMcpServers?: string[]
+    deniedMcpServers?: string[]
+    strictMcpServersOnly?: boolean
+  }): void {
+    if (options.allowedMcpServers) {
+      this.allowedMcpServers = new Set(options.allowedMcpServers)
+    }
+    if (options.deniedMcpServers) {
+      this.deniedMcpServers = new Set(options.deniedMcpServers)
+    }
+    if (options.strictMcpServersOnly !== undefined) {
+      this.strictMcpServersOnly = options.strictMcpServersOnly
+    }
+  }
+
+  /**
+   * Check if a server name is allowed under current enterprise controls.
+   */
+  isServerNameAllowed(name: string): boolean {
+    // Deny list takes precedence
+    if (this.deniedMcpServers?.has(name)) return false
+
+    // Allow list: if set, only allow listed servers
+    if (this.allowedMcpServers && !this.allowedMcpServers.has(name)) return false
+
+    return true
   }
 
   private async createConnection(record: MCPServerRecord): Promise<MCPConnectionHandle> {
@@ -289,17 +416,36 @@ export class MCPManager {
                 throw new Error(`Unsupported MCP transport type: ${record.config.type}`)
               })()
 
+    // @ts-ignore
     const client = new Client(
       {
         name: 'cclocal',
         version: '1.0.0',
       },
       {
-        capabilities: {},
+        capabilities: {
+          // Declare capability to receive resource update notifications
+          resources: {
+            subscribe: true,
+            listChanged: true,
+          },
+        },
       }
     )
 
     await client.connect(transport)
+
+    // Register handler for resource update notifications
+    try {
+      client.setNotificationHandler(ResourceUpdatedNotificationSchema, (notification) => {
+        const uri = notification.params?.uri
+        if (uri) {
+          this.onResourceUpdate?.(record.name, uri)
+        }
+      })
+    } catch {
+      // Server may not support resource notifications — ignore
+    }
 
     return {
       listTools: async () => {
@@ -357,6 +503,22 @@ export class MCPManager {
           content: this.formatToolResultContent(result.contents || []),
         }
       },
+      subscribeResource: async (uri) => {
+        const subscribeResource = (client as unknown as {
+          subscribeResource?: (params: { uri: string }) => Promise<unknown>
+        }).subscribeResource
+        if (subscribeResource) {
+          await subscribeResource.call(client, { uri })
+        }
+      },
+      unsubscribeResource: async (uri) => {
+        const unsubscribeResource = (client as unknown as {
+          unsubscribeResource?: (params: { uri: string }) => Promise<unknown>
+        }).unsubscribeResource
+        if (unsubscribeResource) {
+          await unsubscribeResource.call(client, { uri })
+        }
+      },
       close: async () => {
         await transport.close()
       },
@@ -379,9 +541,9 @@ export class MCPManager {
 
     const nextRegisteredToolNames: string[] = []
 
-    for (const toolDefinition of tools) {
+    const wrappedTools: Tool[] = tools.map((toolDefinition) => {
       const registeredName = toolDefinition.registeredName || this.buildRegisteredToolName(serverName, toolDefinition.name)
-      const wrappedTool: Tool = {
+      return {
         name: registeredName,
         description: `[MCP:${serverName}] ${toolDefinition.description || toolDefinition.name}`,
         input_schema: {
@@ -392,8 +554,21 @@ export class MCPManager {
           return await this.callTool(serverName, toolDefinition.name, input)
         },
       }
+    })
 
-      this.toolRegistry.register(wrappedTool)
+    // Register MCP tools with defer=true so only schema is sent to API.
+    // Full execute is loaded when ToolSearch promotes the tool.
+    if ('registerMcpTools' in this.toolRegistry) {
+      ;(this.toolRegistry as ToolRegistry).registerMcpTools(serverName, wrappedTools, true)
+    } else {
+      // Fallback for injected registries without registerMcpTools
+      for (const tool of wrappedTools) {
+        this.toolRegistry.register(tool)
+      }
+    }
+
+    for (const toolDefinition of tools) {
+      const registeredName = toolDefinition.registeredName || this.buildRegisteredToolName(serverName, toolDefinition.name)
       nextRegisteredToolNames.push(registeredName)
     }
 

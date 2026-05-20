@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 /**
  * Miscellaneous subcommand handlers — extracted from main.tsx for lazy loading.

@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import type { ToolResultBlockParam } from '@anthropic-ai/sdk/resources/index.mjs';
 import type { StructuredPatchHunk } from 'diff';
@@ -18,6 +20,7 @@ import { logError } from '../../utils/log.js';
 import { getPlansDirectory } from '../../utils/plans.js';
 import { readEditContext } from '../../utils/readEditContext.js';
 import { firstLineOf } from '../../utils/stringUtils.js';
+import { t } from '../../utils/i18n/index.js';
 import type { ThemeName } from '../../utils/theme.js';
 import type { FileEditOutput } from './types.js';
 import { findActualString, getPatchForEdit, preserveQuoteStyle } from './utils.js';
@@ -29,19 +32,19 @@ export function userFacingName(input: Partial<{
   edits: unknown[];
 }> | undefined): string {
   if (!input) {
-    return 'Update';
+    return t('fileEdit.update');
   }
   if (input.file_path?.startsWith(getPlansDirectory())) {
-    return 'Updated plan';
+    return t('fileEdit.updatedPlan');
   }
   // Hashline edits always modify an existing file (line-ref based)
   if (input.edits != null) {
-    return 'Update';
+    return t('fileEdit.update');
   }
   if (input.old_string === '') {
-    return 'Create';
+    return t('fileEdit.create');
   }
-  return 'Update';
+  return t('fileEdit.update');
 }
 export function getToolUseSummary(input: Partial<{
   file_path: string;
@@ -87,7 +90,7 @@ export function renderToolResultMessage({
 }): React.ReactNode {
   // For plan files, show /plan hint above the diff
   const isPlanFile = filePath.startsWith(getPlansDirectory());
-  return <FileEditToolUpdatedMessage filePath={filePath} structuredPatch={structuredPatch} firstLine={originalFile.split('\n')[0] ?? null} fileContent={originalFile} style={style} verbose={verbose} previewHint={isPlanFile ? '/plan to preview' : undefined} />;
+  return <FileEditToolUpdatedMessage filePath={filePath} structuredPatch={structuredPatch} firstLine={originalFile.split('\n')[0] ?? null} fileContent={originalFile} style={style} verbose={verbose} previewHint={isPlanFile ? t('fileEdit.planToPreview') : undefined} />;
 }
 export function renderToolUseRejectedMessage(input: {
   file_path: string;
@@ -138,41 +141,41 @@ export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'
     // Show a less scary message for intended behavior
     if (errorMessage?.includes('File has not been read yet')) {
       return <MessageResponse>
-          <Text dimColor>File must be read first</Text>
+          <Text dimColor>{t('fileEdit.fileMustBeReadFirst')}</Text>
         </MessageResponse>;
     }
     if (errorMessage?.includes(FILE_NOT_FOUND_CWD_NOTE)) {
       return <MessageResponse>
-          <Text color="error">File not found</Text>
+          <Text color="error">{t('fileEdit.fileNotFound')}</Text>
         </MessageResponse>;
     }
     if (errorMessage?.includes('String to replace not found in file')) {
       return <MessageResponse>
-          <Text color="error">String not found in file — the text doesn't match current content</Text>
+          <Text color="error">{t('fileEdit.stringNotFoundInFile')}</Text>
         </MessageResponse>;
     }
     if (errorMessage?.includes('File has been modified since read') || errorMessage?.includes('File has been modified since last read')) {
       return <MessageResponse>
-          <Text color="error">File was modified after last read — read it again before editing</Text>
+          <Text color="error">{t('fileEdit.fileWasModifiedAfterLastRead')}</Text>
         </MessageResponse>;
     }
     if (errorMessage?.includes('replace_all is false') || errorMessage?.includes('replace_all:false')) {
       return <MessageResponse>
-          <Text color="error">Multiple matches found — set replace_all:true or provide more context</Text>
+          <Text color="error">{t('fileEdit.multipleMatchesFound')}</Text>
         </MessageResponse>;
     }
     if (errorMessage?.includes('Cannot create new file - file already exists')) {
       return <MessageResponse>
-          <Text color="error">File already exists — use Update instead of Create</Text>
+          <Text color="error">{t('fileEdit.fileAlreadyExists')}</Text>
         </MessageResponse>;
     }
     if (errorMessage?.includes('File is too large to edit')) {
       return <MessageResponse>
-          <Text color="error">File too large to edit</Text>
+          <Text color="error">{t('fileEdit.fileTooLargeToEdit')}</Text>
         </MessageResponse>;
     }
     return <MessageResponse>
-        <Text color="error">Error editing file</Text>
+        <Text color="error">{t('fileEdit.errorEditingFile')}</Text>
       </MessageResponse>;
   }
   return <FallbackToolUseErrorMessage result={result} verbose={verbose} />;

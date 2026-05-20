@@ -107,10 +107,124 @@ import type {
   SyncHookJSONOutput,
   AsyncHookJSONOutput,
 } from '../entrypoints/agentSdkTypes.js'
+
+// ---------------------------------------------------------------------------
+// Local type extensions — the generated SDK types are incomplete (upstream),
+// so we define fuller versions here with all fields the code actually uses.
+// ---------------------------------------------------------------------------
+
+/** PermissionRequest.decision sub-object (mirrors Zod schema in types/hooks.ts). */
+interface PermissionRequestDecision {
+  behavior: 'allow' | 'deny'
+  updatedInput?: Record<string, unknown>
+  updatedPermissions?: PermissionUpdate[]
+  message?: string
+  interrupt?: boolean
+}
+
+/** hookSpecificOutput shape — mirrors the Zod union in types/hooks.ts. */
+interface HookSpecificOutput {
+  hookEventName?: string
+  permissionDecision?: 'allow' | 'deny' | 'ask'
+  permissionDecisionReason?: string
+  updatedInput?: Record<string, unknown>
+  additionalContext?: string
+  initialUserMessage?: string
+  watchPaths?: string[]
+  updatedMCPToolOutput?: unknown
+  retry?: boolean
+  decision?: PermissionRequestDecision
+  action?: 'accept' | 'decline' | 'cancel'
+  content?: Record<string, unknown> | unknown
+  worktreePath?: string
+}
+
+/** Full sync hook JSON output including fields the generated SDK type omits. */
+interface SyncHookJSONOutputFull extends SyncHookJSONOutput {
+  hookSpecificOutput?: HookSpecificOutput
+  systemMessage?: string
+  stopReason?: string
+  reason?: string
+  decision?: 'approve' | 'block' | 'ignore'
+  suppressOutput?: boolean
+}
+
+/** Full async hook JSON output including fields the generated SDK type omits. */
+interface AsyncHookJSONOutputFull extends AsyncHookJSONOutput {
+  hookSpecificOutput?: HookSpecificOutput
+  systemMessage?: string
+  stopReason?: string
+  reason?: string
+  decision?: 'approve' | 'block' | 'ignore'
+  suppressOutput?: boolean
+}
+
+/**
+ * Extended hook input types that include fields used in the codebase but
+ * missing from the generated SDK types (e.g. `source`, `trigger`, `reason`,
+ * `mcp_server_name`, `notification_type`, `task_id`, `teammate_name`, etc.).
+ */
+interface ExtendedBaseHookInput {
+  session_id: string
+  transcript_path: string
+  cwd: string
+  permission_mode?: string
+  agent_id?: string
+  agent_type?: string
+  hook_event_name: HookEvent
+  // Extra fields the code accesses on specific hook input subtypes
+  tool_name?: string
+  tool_input?: unknown
+  tool_use_id?: string
+  tool_response?: unknown
+  source?: string
+  trigger?: string
+  reason?: ExitReason | string
+  notification_type?: string
+  title?: string
+  message?: string
+  mcp_server_name?: string
+  error?: string
+  error_details?: string
+  task_id?: string
+  task_subject?: string
+  task_description?: string
+  teammate_name?: string
+  team_name?: string
+  file_path?: string
+  load_reason?: string
+  is_interrupt?: boolean
+  last_assistant_message?: string
+  stop_hook_active?: boolean
+  agent_transcript_path?: string
+  model?: string
+  custom_instructions?: string | null
+  compact_summary?: string
+  permission_suggestions?: PermissionUpdate[]
+  old_cwd?: string
+  new_cwd?: string
+  event?: 'change' | 'add' | 'unlink'
+  memory_type?: string
+  globs?: string[]
+  trigger_file_path?: string
+  parent_file_path?: string
+  requested_schema?: Record<string, unknown>
+  mode?: 'form' | 'url'
+  url?: string
+  elicitation_id?: string
+  action?: 'accept' | 'decline' | 'cancel'
+  content?: Record<string, unknown>
+  prompt?: string
+  config_path?: string
+  exit_reason?: ExitReason
+}
+
+/** Union of all hook input types, extended with fields the code actually uses. */
+type HookInputFull = HookInput & ExtendedBaseHookInput
 import type { StatusLineCommandInput } from '../types/statusLine.js'
 import type { ElicitResult } from '@modelcontextprotocol/sdk/types.js'
 import type { FileSuggestionCommandInput } from '../types/fileSuggestion.js'
-import type { HookResultMessage } from '../types/message.js'
+import type { HookResultMessage, ProgressMessage } from '../types/message.js'
 import chalk from 'chalk'
 import type {
   HookMatcher,
@@ -357,7 +471,7 @@ export interface HookResult {
 }
 
 export type AggregatedHookResult = {
-  message?: HookResultMessage
+  message?: HookResultMessage | ProgressMessage
   blockingError?: HookBlockingError
   preventContinuation?: boolean
   stopReason?: string
@@ -498,7 +612,7 @@ function processHookJSONOutput({
   exitCode,
   durationMs,
 }: {
-  json: SyncHookJSONOutput
+  json: SyncHookJSONOutputFull
   command: string
   hookName: string
   toolUseID: string
@@ -1388,7 +1502,7 @@ type IfConditionMatcher = (ifCondition: string) => boolean
  * returned closure is called per hook. Returns undefined for non-tool events.
  */
 async function prepareIfConditionMatcher(
-  hookInput: HookInput,
+  hookInput: HookInputFull,
   tools: Tools | undefined,
 ): Promise<IfConditionMatcher | undefined> {
   if (
@@ -1400,8 +1514,8 @@ async function prepareIfConditionMatcher(
     return undefined
   }
 
-  const toolName = normalizeLegacyToolName(hookInput.tool_name)
-  const tool = tools && findToolByName(tools, hookInput.tool_name)
+  const toolName = normalizeLegacyToolName(hookInput.tool_name!)
+  const tool = tools && findToolByName(tools, hookInput.tool_name!)
   const input = tool?.inputSchema.safeParse(hookInput.tool_input)
   const patternMatcher =
     input?.success && tool?.preparePermissionMatcher
@@ -1604,7 +1718,7 @@ export async function getMatchingHooks(
   appState: AppState | undefined,
   sessionId: string,
   hookEvent: HookEvent,
-  hookInput: HookInput,
+  hookInput: HookInputFull,
   tools?: Tools,
 ): Promise<MatchedHook[]> {
   try {
@@ -1663,7 +1777,7 @@ export async function getMatchingHooks(
         matchQuery = hookInput.load_reason
         break
       case 'FileChanged':
-        matchQuery = basename(hookInput.file_path)
+        matchQuery = basename(hookInput.file_path!)
         break
       default:
         break
@@ -1961,7 +2075,7 @@ async function* executeHooks({
   requestPrompt,
   toolInputSummary,
 }: {
-  hookInput: HookInput
+  hookInput: HookInputFull
   toolUseID: string
   matchQuery?: string
   signal?: AbortSignal
@@ -2109,7 +2223,7 @@ async function* executeHooks({
         },
         parentToolUseID: toolUseID,
         toolUseID,
-        timestamp: new Date().toISOString(),
+        timestamp: Date.now(),
         uuid: randomUUID(),
       },
     }
@@ -2412,7 +2526,7 @@ async function* executeHooks({
 
         if (httpJson) {
           const processed = processHookJSONOutput({
-            json: httpJson,
+            json: httpJson as SyncHookJSONOutputFull,
             command: hook.url,
             hookName,
             toolUseID,
@@ -2542,7 +2656,7 @@ async function* executeHooks({
 
         // Process JSON output
         const processed = processHookJSONOutput({
-          json,
+          json: json as SyncHookJSONOutputFull,
           command: hookCommand,
           hookName,
           toolUseID,
@@ -2557,7 +2671,7 @@ async function* executeHooks({
         // Handle suppressOutput (skip for async responses)
         if (
           isSyncHookJSONOutput(json) &&
-          !json.suppressOutput &&
+          !(json as SyncHookJSONOutputFull).suppressOutput &&
           plainText &&
           result.status === 0
         ) {
@@ -3008,7 +3122,7 @@ async function executeHooksOutsideREPL({
   timeoutMs = TOOL_HOOK_EXECUTION_TIMEOUT_MS,
 }: {
   getAppState?: () => AppState
-  hookInput: HookInput
+  hookInput: HookInputFull
   matchQuery?: string
   signal?: AbortSignal
   timeoutMs: number
@@ -3117,11 +3231,11 @@ async function executeHooksOutsideREPL({
           const output =
             hookEvent === 'WorktreeCreate' &&
             isSyncHookJSONOutput(json) &&
-            json.hookSpecificOutput?.hookEventName === 'WorktreeCreate'
-              ? json.hookSpecificOutput.worktreePath
-              : json.systemMessage || ''
+            (json as SyncHookJSONOutputFull).hookSpecificOutput?.hookEventName === 'WorktreeCreate'
+              ? (json as SyncHookJSONOutputFull).hookSpecificOutput!.worktreePath
+              : (json as SyncHookJSONOutputFull).systemMessage || ''
           const blocked =
-            isSyncHookJSONOutput(json) && json.decision === 'block'
+            isSyncHookJSONOutput(json) && (json as SyncHookJSONOutputFull).decision === 'block'
 
           logForDebugging(`${hookName} [callback] completed successfully`)
 
@@ -3238,19 +3352,21 @@ async function executeHooksOutsideREPL({
             httpJson &&
             !isAsyncHookJSONOutput(httpJson) &&
             isSyncHookJSONOutput(httpJson) &&
-            httpJson.decision === 'block'
+            (httpJson as SyncHookJSONOutputFull).decision === 'block'
 
           // WorktreeCreate's consumer reads `output` as the bare filesystem
           // path. Command hooks provide it via stdout; http hooks provide it
           // via hookSpecificOutput.worktreePath. Without worktreePath, emit ''
           // so the consumer's length filter skips it instead of treating the
           // raw '{}' body as a path.
+          const httpJsonFull = httpJson as SyncHookJSONOutputFull | null
           const output =
             hookEvent === 'WorktreeCreate'
-              ? httpJson &&
+              ? httpJsonFull &&
+                httpJson &&
                 isSyncHookJSONOutput(httpJson) &&
-                httpJson.hookSpecificOutput?.hookEventName === 'WorktreeCreate'
-                ? httpJson.hookSpecificOutput.worktreePath
+                httpJsonFull.hookSpecificOutput?.hookEventName === 'WorktreeCreate'
+                ? httpJsonFull.hookSpecificOutput!.worktreePath
                 : ''
               : httpResult.body
 
@@ -3326,11 +3442,12 @@ async function executeHooksOutsideREPL({
         }
 
         // Blocked if exit code 2 or JSON decision: 'block'
+        const jsonFull = json as SyncHookJSONOutputFull | undefined
         const jsonBlocked =
           json &&
           !isAsyncHookJSONOutput(json) &&
           isSyncHookJSONOutput(json) &&
-          json.decision === 'block'
+          jsonFull!.decision === 'block'
         const blocked = result.status === 2 || !!jsonBlocked
 
         // For successful hooks (exit code 0), use stdout; for failed hooks, use stderr
@@ -3340,13 +3457,13 @@ async function executeHooksOutsideREPL({
         const watchPaths =
           json &&
           isSyncHookJSONOutput(json) &&
-          json.hookSpecificOutput &&
-          'watchPaths' in json.hookSpecificOutput
-            ? json.hookSpecificOutput.watchPaths
+          jsonFull!.hookSpecificOutput &&
+          'watchPaths' in jsonFull!.hookSpecificOutput
+            ? jsonFull!.hookSpecificOutput!.watchPaths
             : undefined
 
         const systemMessage =
-          json && isSyncHookJSONOutput(json) ? json.systemMessage : undefined
+          json && isSyncHookJSONOutput(json) ? jsonFull!.systemMessage : undefined
 
         return {
           command: hook.command,
@@ -3355,7 +3472,7 @@ async function executeHooksOutsideREPL({
           blocked,
           watchPaths,
           systemMessage,
-        }
+        } satisfies HookOutsideReplResult
       } catch (error) {
         // Clean up on error
         cleanup?.()
@@ -3377,7 +3494,7 @@ async function executeHooksOutsideREPL({
   )
 
   // Wait for all hooks to complete and collect results
-  return await Promise.all(hookPromises)
+  return (await Promise.all(hookPromises)) as HookOutsideReplResult[]
 }
 
 /**
@@ -3415,7 +3532,7 @@ export async function* executePreToolHooks<ToolInput>(
     level: 'verbose',
   })
 
-  const hookInput: PreToolUseHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(permissionMode, undefined, toolUseContext),
     hook_event_name: 'PreToolUse',
     tool_name: toolName,
@@ -3457,7 +3574,7 @@ export async function* executePostToolHooks<ToolInput, ToolResponse>(
   signal?: AbortSignal,
   timeoutMs: number = TOOL_HOOK_EXECUTION_TIMEOUT_MS,
 ): AsyncGenerator<AggregatedHookResult> {
-  const hookInput: PostToolUseHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(permissionMode, undefined, toolUseContext),
     hook_event_name: 'PostToolUse',
     tool_name: toolName,
@@ -3506,7 +3623,7 @@ export async function* executePostToolUseFailureHooks<ToolInput>(
     return
   }
 
-  const hookInput: PostToolUseFailureHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(permissionMode, undefined, toolUseContext),
     hook_event_name: 'PostToolUseFailure',
     tool_name: toolName,
@@ -3542,7 +3659,7 @@ export async function* executePermissionDeniedHooks<ToolInput>(
     return
   }
 
-  const hookInput: PermissionDeniedHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(permissionMode, undefined, toolUseContext),
     hook_event_name: 'PermissionDenied',
     tool_name: toolName,
@@ -3576,7 +3693,7 @@ export async function executeNotificationHooks(
   timeoutMs: number = TOOL_HOOK_EXECUTION_TIMEOUT_MS,
 ): Promise<void> {
   const { message, title, notificationType } = notificationData
-  const hookInput: NotificationHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(undefined),
     hook_event_name: 'Notification',
     message,
@@ -3609,12 +3726,12 @@ export async function executeStopFailureHooks(
   // Some createAssistantAPIErrorMessage call sites omit `error` (e.g.
   // image-size at errors.ts:431). Default to 'unknown' so matcher filtering
   // at getMatchingHooks:1525 always applies.
-  const error = lastMessage.error ?? 'unknown'
-  const hookInput: StopFailureHookInput = {
+  const error = (lastMessage.error as string | undefined) ?? 'unknown'
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(undefined, undefined, toolUseContext),
     hook_event_name: 'StopFailure',
     error,
-    error_details: lastMessage.errorDetails,
+    error_details: lastMessage.errorDetails as string | undefined,
     last_assistant_message: lastAssistantText,
   }
 
@@ -3667,7 +3784,7 @@ export async function* executeStopHooks(
       undefined
     : undefined
 
-  const hookInput: StopHookInput | SubagentStopHookInput = subagentId
+  const hookInput: HookInputFull = subagentId
     ? {
         ...createBaseHookInput(permissionMode),
         hook_event_name: 'SubagentStop',
@@ -3713,7 +3830,7 @@ export async function* executeTeammateIdleHooks(
   signal?: AbortSignal,
   timeoutMs: number = TOOL_HOOK_EXECUTION_TIMEOUT_MS,
 ): AsyncGenerator<AggregatedHookResult> {
-  const hookInput: TeammateIdleHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(permissionMode),
     hook_event_name: 'TeammateIdle',
     teammate_name: teammateName,
@@ -3753,7 +3870,7 @@ export async function* executeTaskCreatedHooks(
   timeoutMs: number = TOOL_HOOK_EXECUTION_TIMEOUT_MS,
   toolUseContext?: ToolUseContext,
 ): AsyncGenerator<AggregatedHookResult> {
-  const hookInput: TaskCreatedHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(permissionMode),
     hook_event_name: 'TaskCreated',
     task_id: taskId,
@@ -3797,7 +3914,7 @@ export async function* executeTaskCompletedHooks(
   timeoutMs: number = TOOL_HOOK_EXECUTION_TIMEOUT_MS,
   toolUseContext?: ToolUseContext,
 ): AsyncGenerator<AggregatedHookResult> {
-  const hookInput: TaskCompletedHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(permissionMode),
     hook_event_name: 'TaskCompleted',
     task_id: taskId,
@@ -3838,7 +3955,7 @@ export async function* executeUserPromptSubmitHooks(
     return
   }
 
-  const hookInput: UserPromptSubmitHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(permissionMode),
     hook_event_name: 'UserPromptSubmit',
     prompt,
@@ -3873,7 +3990,7 @@ export async function* executeSessionStartHooks(
   timeoutMs: number = TOOL_HOOK_EXECUTION_TIMEOUT_MS,
   forceSyncExecution?: boolean,
 ): AsyncGenerator<AggregatedHookResult> {
-  const hookInput: SessionStartHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(undefined, sessionId),
     hook_event_name: 'SessionStart',
     source,
@@ -3905,7 +4022,7 @@ export async function* executeSetupHooks(
   timeoutMs: number = TOOL_HOOK_EXECUTION_TIMEOUT_MS,
   forceSyncExecution?: boolean,
 ): AsyncGenerator<AggregatedHookResult> {
-  const hookInput: SetupHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(undefined),
     hook_event_name: 'Setup',
     trigger,
@@ -3969,7 +4086,7 @@ export async function executePreCompactHooks(
   newCustomInstructions?: string
   userDisplayMessage?: string
 }> {
-  const hookInput: PreCompactHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(undefined),
     hook_event_name: 'PreCompact',
     trigger: compactData.trigger,
@@ -4041,7 +4158,7 @@ export async function executePostCompactHooks(
 ): Promise<{
   userDisplayMessage?: string
 }> {
-  const hookInput: PostCompactHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(undefined),
     hook_event_name: 'PostCompact',
     trigger: compactData.trigger,
@@ -4110,7 +4227,7 @@ export async function executeSessionEndHooks(
     timeoutMs = TOOL_HOOK_EXECUTION_TIMEOUT_MS,
   } = options || {}
 
-  const hookInput: SessionEndHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(undefined),
     hook_event_name: 'SessionEnd',
     reason,
@@ -4171,7 +4288,7 @@ export async function* executePermissionRequestHooks<ToolInput>(
 ): AsyncGenerator<AggregatedHookResult> {
   logForDebugging(`executePermissionRequestHooks called for tool: ${toolName}`)
 
-  const hookInput: PermissionRequestHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(permissionMode, undefined, toolUseContext),
     hook_event_name: 'PermissionRequest',
     tool_name: toolName,
@@ -4216,7 +4333,7 @@ export async function executeConfigChangeHooks(
   filePath?: string,
   timeoutMs: number = TOOL_HOOK_EXECUTION_TIMEOUT_MS,
 ): Promise<HookOutsideReplResult[]> {
-  const hookInput: ConfigChangeHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(undefined),
     hook_event_name: 'ConfigChange',
     source,
@@ -4239,7 +4356,7 @@ export async function executeConfigChangeHooks(
 }
 
 async function executeEnvHooks(
-  hookInput: HookInput,
+  hookInput: HookInputFull,
   timeoutMs: number,
 ): Promise<{
   results: HookOutsideReplResult[]
@@ -4266,7 +4383,7 @@ export function executeCwdChangedHooks(
   watchPaths: string[]
   systemMessages: string[]
 }> {
-  const hookInput: CwdChangedHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(undefined),
     hook_event_name: 'CwdChanged',
     old_cwd: oldCwd,
@@ -4284,7 +4401,7 @@ export function executeFileChangedHooks(
   watchPaths: string[]
   systemMessages: string[]
 }> {
-  const hookInput: FileChangedHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(undefined),
     hook_event_name: 'FileChanged',
     file_path: filePath,
@@ -4350,7 +4467,7 @@ export async function executeInstructionsLoadedHooks(
     timeoutMs = TOOL_HOOK_EXECUTION_TIMEOUT_MS,
   } = options ?? {}
 
-  const hookInput: InstructionsLoadedHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(undefined),
     hook_event_name: 'InstructionsLoaded',
     file_path: filePath,
@@ -4421,17 +4538,19 @@ function parseElicitationHookOutput(
       return {}
     }
 
+    const syncParsed = parsed as SyncHookJSONOutputFull
+
     // Check for top-level decision: 'block' (exit code 0 + JSON block)
-    if (parsed.decision === 'block' || result.blocked) {
+    if (syncParsed.decision === 'block' || result.blocked) {
       return {
         blockingError: {
-          blockingError: parsed.reason || 'Elicitation blocked by hook',
+          blockingError: syncParsed.reason || 'Elicitation blocked by hook',
           command: result.command,
         },
       }
     }
 
-    const specific = parsed.hookSpecificOutput
+    const specific = syncParsed.hookSpecificOutput
     if (!specific || specific.hookEventName !== expectedEventName) {
       return {}
     }
@@ -4453,7 +4572,7 @@ function parseElicitationHookOutput(
     if (specific.action === 'decline') {
       out.blockingError = {
         blockingError:
-          parsed.reason ||
+          syncParsed.reason ||
           (expectedEventName === 'Elicitation'
             ? 'Elicitation denied by hook'
             : 'Elicitation result blocked by hook'),
@@ -4488,7 +4607,7 @@ export async function executeElicitationHooks({
   url?: string
   elicitationId?: string
 }): Promise<ElicitationHookResult> {
-  const hookInput: ElicitationHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(permissionMode),
     hook_event_name: 'Elicitation',
     mcp_server_name: serverName,
@@ -4541,7 +4660,7 @@ export async function executeElicitationResultHooks({
   mode?: 'form' | 'url'
   elicitationId?: string
 }): Promise<ElicitationResultHookResult> {
-  const hookInput: ElicitationResultHookInput = {
+  const hookInput: HookInputFull = {
     ...createBaseHookInput(permissionMode),
     hook_event_name: 'ElicitationResult',
     mcp_server_name: serverName,
@@ -4849,7 +4968,7 @@ async function executeHookCallback({
   toolUseID: string
   hook: HookCallback
   hookEvent: HookEvent
-  hookInput: HookInput
+  hookInput: HookInputFull
   signal: AbortSignal
   hookIndex?: number
   toolUseContext?: ToolUseContext
@@ -4876,7 +4995,7 @@ async function executeHookCallback({
   }
 
   const processed = processHookJSONOutput({
-    json,
+    json: json as SyncHookJSONOutputFull,
     command: 'callback',
     // TODO: If the hook came from a plugin, use the full path to the plugin for easier debugging
     hookName: `${hookEvent}:Callback`,

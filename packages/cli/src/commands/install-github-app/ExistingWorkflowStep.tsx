@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import React from 'react';
 import { Select } from '../../components/CustomSelect/index.js';

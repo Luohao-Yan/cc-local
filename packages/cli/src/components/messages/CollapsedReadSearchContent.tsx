@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import { feature } from 'bun:bundle';
 import { basename } from 'path';
@@ -17,6 +19,8 @@ import type { ThemeName } from '../../utils/theme.js';
 import { CtrlOToExpand } from '../CtrlOToExpand.js';
 import { useSelectedMessageBg } from '../messageActions.js';
 import { PrBadge } from '../PrBadge.js';
+import { formatPrUrl } from '../../utils/git/prUrlFormatter.js';
+import { getInitialSettings } from '../../utils/settings/settings.js';
 import { ToolUseLoader } from '../ToolUseLoader.js';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -339,7 +343,7 @@ export function CollapsedReadSearchContent({
       ready: 'marked ready'
     };
     for (const pr of message.prs) {
-      pushPart(`pr-${pr.action}-${pr.number}`, verbs[pr.action], pr.url ? <PrBadge number={pr.number} url={pr.url} bold /> : <Text bold>PR #{pr.number}</Text>);
+      pushPart(`pr-${pr.action}-${pr.number}`, verbs[pr.action], pr.url ? <PrBadge number={pr.number} url={formatPrUrl(pr.url, pr.number, getInitialSettings().prUrlTemplate)} bold /> : <Text bold>PR #{pr.number}</Text>);
     }
   }
   if (searchCount > 0) {

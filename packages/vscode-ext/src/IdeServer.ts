@@ -3,11 +3,10 @@
  *
  * 工作原理（与官方 Claude Code 扩展 1:1 一致）：
  *  1. 扩展启动时在随机端口起一个 HTTP+WebSocket 服务器。
- *  2. 将连接信息写入 ~/.claude/ide/<port>.lock 文件（JSON 格式）。
+ *  2. 将连接信息写入 ~/.claude/ide/<port>.lock 文件。
  *  3. cclocal CLI 在启动时轮询 ~/.claude/ide/ 目录，发现 lock 文件后
  *     通过 WebSocket 连接到扩展，clientType 变为 "claude-vscode"。
- *  4. CLI 连接后，扩展通过 WebSocket 发送用户消息，接收 stream-json 格式的响应。
- *  5. 扩展停止时删除 lock 文件，关闭 WebSocket 服务器。
+ *  4. 扩展通过 WebSocket 发送用户消息，接收 stream-json 格式的响应。
  */
 
 import * as crypto from 'crypto'
@@ -17,6 +16,11 @@ import * as net from 'net'
 import * as os from 'os'
 import * as path from 'path'
 import { WebSocketServer, type WebSocket } from 'ws'
+import type {
+  CliStreamMessage,
+  ExtensionToCliMessage,
+  ExtPingMessage,
+} from './types.js'
 
 /** Lock 文件写入的 JSON 内容结构（与 cclocal src/utils/ide.ts 中定义完全一致） */
 interface LockfileContent {
@@ -28,15 +32,19 @@ interface LockfileContent {
   authToken: string
 }
 
+/** 心跳配置 */
+const HEARTBEAT_INTERVAL_MS = 15_000
+const HEARTBEAT_TIMEOUT_MS = 30_000
+
 /** IDE 服务器事件回调 */
 export interface IdeServerCallbacks {
-  /** CLI 客户端连接成功 */
-  onClientConnected: () => void
-  /** CLI 客户端断开连接 */
+  /** CLI WebSocket 客户端连接成功 */
+  onClientConnected: (info?: { version?: string; model?: string }) => void
+  /** CLI WebSocket 客户端断开连接 */
   onClientDisconnected: () => void
-  /** 收到来自 CLI 的消息（stream-json 行） */
+  /** 收到来自 CLI 的 stream-json 消息 */
   onMessage: (line: string) => void
-  /** 服务器内部错误 */
+  /** 服务器发生错误 */
   onError: (err: Error) => void
 }
 
@@ -46,9 +54,18 @@ export class IdeServer {
   private client: WebSocket | null = null
   private port = 0
   private lockfilePath = ''
-  private authToken = ''
   private workspaceFolders: string[]
   private callbacks: IdeServerCallbacks
+  private authToken = ''
+
+  // 心跳
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null
+  private lastHeartbeat = 0
+  private heartbeatTimeoutTimer: ReturnType<typeof setTimeout> | null = null
+
+  // 重连缓冲：CLI 断连后短暂保留消息
+  private pendingMessages: ExtensionToCliMessage[] = []
+  private readonly MAX_PENDING = 100
 
   constructor(workspaceFolders: string[], callbacks: IdeServerCallbacks) {
     this.workspaceFolders = workspaceFolders
@@ -57,27 +74,19 @@ export class IdeServer {
 
   /** 启动服务器：绑定随机端口，写 lock 文件 */
   async start(): Promise<void> {
-    /** 生成安全随机 token，用于 CLI 鉴权 */
     this.authToken = crypto.randomBytes(32).toString('hex')
 
-    /** 创建 HTTP 服务器，仅用于 WebSocket 升级握手 */
     this.server = http.createServer((_req, res) => {
       res.writeHead(426, { 'Content-Type': 'text/plain' })
       res.end('Upgrade Required')
     })
 
-    /** 创建 WebSocket 服务器，挂载到 HTTP 服务器 */
     this.wss = new WebSocketServer({ server: this.server })
 
     this.wss.on('connection', (ws, req) => {
       this.handleConnection(ws, req)
     })
 
-    this.wss.on('error', (err: Error) => {
-      this.callbacks.onError(err)
-    })
-
-    /** 绑定随机端口（传 0 让 OS 分配） */
     await new Promise<void>((resolve, reject) => {
       this.server!.listen(0, '127.0.0.1', () => {
         const addr = this.server!.address() as net.AddressInfo
@@ -87,13 +96,13 @@ export class IdeServer {
       this.server!.once('error', reject)
     })
 
-    /** 写入 lock 文件，供 CLI 发现 */
     await this.writeLockfile()
+    this.startHeartbeat()
   }
 
   /** 停止服务器，删除 lock 文件 */
   async stop(): Promise<void> {
-    this.deleteLockfile()
+    this.stopHeartbeat()
 
     if (this.client) {
       this.client.close()
@@ -116,15 +125,21 @@ export class IdeServer {
       }
     })
 
-    this.wss = null
+    this.deleteLockfile()
     this.server = null
+    this.wss = null
   }
 
-  /** 向已连接的 CLI 客户端发送消息 */
-  send(message: object): boolean {
+  /** 向已连接的 CLI 发送消息 */
+  send(message: ExtensionToCliMessage): boolean {
     if (!this.client || this.client.readyState !== 1 /* OPEN */) {
+      // 缓冲消息，CLI 重连后重发
+      if (this.pendingMessages.length < this.MAX_PENDING) {
+        this.pendingMessages.push(message)
+      }
       return false
     }
+
     try {
       this.client.send(JSON.stringify(message) + '\n')
       return true
@@ -133,48 +148,74 @@ export class IdeServer {
     }
   }
 
-  /** 发送用户消息给 CLI（格式与 directConnectManager.ts 中一致） */
-  sendUserMessage(text: string): boolean {
+  /** 发送用户消息给 CLI */
+  sendUserMessage(text: string, sessionId: string): boolean {
     return this.send({
       type: 'user',
       message: {
         role: 'user',
-        content: [{ type: 'text', text }],
+        content: text,
       },
       parent_tool_use_id: null,
-      session_id: '',
+      session_id: sessionId,
     })
   }
 
-  /** 发送中断信号，取消当前请求 */
+  /** 发送中断请求 */
   sendInterrupt(): void {
     this.send({
-      type: 'control_request',
+      type: 'control_response',
       request_id: crypto.randomUUID(),
-      request: { subtype: 'interrupt' },
+      response: {
+        subtype: 'tool_permission',
+        approved: false,
+      },
     })
   }
 
-  /** 判断是否有已连接的 CLI */
+  /** 发送权限响应 */
+  sendPermissionResponse(requestId: string, approved: boolean, always = false): void {
+    this.send({
+      type: 'control_response',
+      request_id: requestId,
+      response: {
+        subtype: 'tool_permission',
+        approved,
+        always,
+      },
+    })
+  }
+
+  /** 发送配置变更 */
+  sendConfigUpdate(config: { model?: string; permissionMode?: import('./types.js').PermissionMode; thinkingBudget?: 'low' | 'medium' | 'high'; effortLevel?: 'low' | 'medium' | 'high'; maxTokens?: number; temperature?: number }): void {
+    this.send({ type: 'config_update', config })
+  }
+
+  /** 判断 CLI 是否已连接 */
   isClientConnected(): boolean {
     return this.client !== null && this.client.readyState === 1
   }
 
-  /** 返回当前监听的端口 */
+  /** 返回当前监听端口 */
   getPort(): number {
     return this.port
   }
 
-  /** 返回 authToken（供日志/调试使用） */
+  /** 返回 authToken（供测试和调试使用） */
   getAuthToken(): string {
     return this.authToken
   }
 
-  // ─── 私有方法 ────────────────────────────────────────────────────────────────
+  /** 返回 lock 文件路径（调试用） */
+  getLockfilePath(): string {
+    return this.lockfilePath
+  }
 
-  /** 处理新的 WebSocket 连接（每次 CLI 启动都会连接一次） */
+  // ─── 私有方法 ────────────────────────────────────────────────────────────
+
+  /** 处理新 WebSocket 连接 */
   private handleConnection(ws: WebSocket, req: http.IncomingMessage): void {
-    /** 验证 Bearer token */
+    // 验证 Bearer token
     const authHeader = req.headers['authorization'] ?? ''
     const token = authHeader.startsWith('Bearer ')
       ? authHeader.slice(7)
@@ -185,20 +226,39 @@ export class IdeServer {
       return
     }
 
-    /** 同时只允许一个 CLI 客户端 */
-    if (this.client) {
+    // 同一时间只允许一个 CLI 连接
+    if (this.client && this.client.readyState === 1) {
       this.client.close(1001, 'Replaced by new connection')
     }
 
     this.client = ws
-    this.callbacks.onClientConnected()
+    this.lastHeartbeat = Date.now()
 
+    // 重发缓冲的消息
+    while (this.pendingMessages.length > 0) {
+      const msg = this.pendingMessages.shift()!
+      this.send(msg)
+    }
+
+    // 接收消息
     ws.on('message', (data: Buffer) => {
       const raw = data.toString()
-      /** CLI 每行一个 JSON，可能批量发送，按行拆分处理 */
       const lines = raw.split('\n').filter(l => l.trim())
+
       for (const line of lines) {
-        this.callbacks.onMessage(line)
+        try {
+          const msg = JSON.parse(line) as CliStreamMessage
+
+          // 处理 pong 响应
+          if (msg.type === 'system' && 'subtype' in msg && (msg as any).subtype === 'pong') {
+            this.lastHeartbeat = Date.now()
+            continue
+          }
+
+          this.callbacks.onMessage(line)
+        } catch {
+          // 忽略解析失败的行
+        }
       }
     })
 
@@ -211,14 +271,53 @@ export class IdeServer {
 
     ws.on('error', (err: Error) => {
       this.callbacks.onError(err)
+      if (this.client === ws) {
+        this.client = null
+        this.callbacks.onClientDisconnected()
+      }
     })
+
+    // 通知连接成功
+    // init 消息会通过 onMessage 传递，在那里提取版本和模型信息
+    this.callbacks.onClientConnected()
   }
 
-  /** 将连接信息写入 ~/.claude/ide/<port>.lock */
+  /** 心跳 ping */
+  private startHeartbeat(): void {
+    this.heartbeatTimer = setInterval(() => {
+      if (!this.client || this.client.readyState !== 1) return
+
+      const ping: ExtPingMessage = { type: 'ping', timestamp: Date.now() }
+      try {
+        this.client.send(JSON.stringify(ping) + '\n')
+      } catch {
+        // 发送失败，连接可能已断
+      }
+
+      // 检查上次 pong 是否超时
+      if (Date.now() - this.lastHeartbeat > HEARTBEAT_TIMEOUT_MS) {
+        this.callbacks.onError(new Error('Heartbeat timeout'))
+        this.client.close(1001, 'Heartbeat timeout')
+        this.client = null
+        this.callbacks.onClientDisconnected()
+      }
+    }, HEARTBEAT_INTERVAL_MS)
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer)
+      this.heartbeatTimer = null
+    }
+    if (this.heartbeatTimeoutTimer) {
+      clearTimeout(this.heartbeatTimeoutTimer)
+      this.heartbeatTimeoutTimer = null
+    }
+  }
+
+  /** 写入 lock 文件 */
   private async writeLockfile(): Promise<void> {
     const ideDir = path.join(os.homedir(), '.claude', 'ide')
-
-    /** 确保目录存在 */
     await fs.promises.mkdir(ideDir, { recursive: true })
 
     this.lockfilePath = path.join(ideDir, `${this.port}.lock`)
@@ -228,7 +327,7 @@ export class IdeServer {
       pid: process.pid,
       ideName: 'VS Code',
       transport: 'ws',
-      runningInWindows: false,
+      runningInWindows: process.platform === 'win32',
       authToken: this.authToken,
     }
 
@@ -239,16 +338,15 @@ export class IdeServer {
     )
   }
 
-  /** 删除 lock 文件（扩展停止或重启时清理） */
+  /** 删除 lock 文件 */
   private deleteLockfile(): void {
-    if (!this.lockfilePath) {
-      return
+    if (this.lockfilePath) {
+      try {
+        fs.unlinkSync(this.lockfilePath)
+      } catch {
+        // 忽略删除失败
+      }
+      this.lockfilePath = ''
     }
-    try {
-      fs.unlinkSync(this.lockfilePath)
-    } catch {
-      // 文件可能已被手动删除，忽略
-    }
-    this.lockfilePath = ''
   }
 }

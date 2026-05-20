@@ -20,7 +20,7 @@ import {
   modelSupportsEffort,
 } from '../../utils/effort.js'
 import { env } from '../../utils/env.js'
-import { cacheKeys } from '../../utils/fileStateCache.js'
+import { cacheKeys, type FileStateCache } from '../../utils/fileStateCache.js'
 import { getWorktreeCount } from '../../utils/git.js'
 import {
   detectRunningIDEsCached,
@@ -84,7 +84,7 @@ async function isMarketplacePluginRelevant(
     }
   }
   if (signals.filePath && context?.readFileState) {
-    const readFiles = cacheKeys(context.readFileState)
+    const readFiles = cacheKeys(context.readFileState as unknown as FileStateCache)
     if (readFiles.some(fp => signals.filePath!.test(fp))) {
       return true
     }
@@ -244,6 +244,15 @@ const externalTips: Tip[] = [
     isRelevant: async () =>
       getPlatform() === 'windows' &&
       process.env.CLAUDE_CODE_USE_POWERSHELL_TOOL === undefined,
+  },
+  {
+    id: 'powershell-execution-policy-env',
+    content: async () =>
+      'Set CLAUDE_CODE_POWERSHELL_RESPECT_EXECUTION_POLICY=1 to honor your system PowerShell execution policy instead of bypassing it',
+    cooldownSessions: 15,
+    isRelevant: async () =>
+      getPlatform() === 'windows' &&
+      process.env.CLAUDE_CODE_POWERSHELL_RESPECT_EXECUTION_POLICY === undefined,
   },
   {
     id: 'status-line',
@@ -444,7 +453,7 @@ const externalTips: Tip[] = [
   {
     id: 'desktop-shortcut',
     content: async ctx => {
-      const blue = color('suggestion', ctx.theme)
+      const blue = color('suggestion', ctx?.theme ?? 'dark')
       return `Continue your session in Claude Code Desktop with ${blue('/desktop')}`
     },
     cooldownSessions: 15,
@@ -490,7 +499,7 @@ const externalTips: Tip[] = [
   {
     id: 'frontend-design-plugin',
     content: async ctx => {
-      const blue = color('suggestion', ctx.theme)
+      const blue = color('suggestion', ctx?.theme ?? 'dark')
       return `Working with HTML/CSS? Install the frontend-design plugin:\n${blue(`/plugin install frontend-design@${OFFICIAL_MARKETPLACE_NAME}`)}`
     },
     cooldownSessions: 3,
@@ -502,7 +511,7 @@ const externalTips: Tip[] = [
   {
     id: 'vercel-plugin',
     content: async ctx => {
-      const blue = color('suggestion', ctx.theme)
+      const blue = color('suggestion', ctx?.theme ?? 'dark')
       return `Working with Vercel? Install the vercel plugin:\n${blue(`/plugin install vercel@${OFFICIAL_MARKETPLACE_NAME}`)}`
     },
     cooldownSessions: 3,
@@ -515,7 +524,7 @@ const externalTips: Tip[] = [
   {
     id: 'effort-high-nudge',
     content: async ctx => {
-      const blue = color('suggestion', ctx.theme)
+      const blue = color('suggestion', ctx?.theme ?? 'dark')
       const cmd = blue('/effort high')
       const variant = getFeatureValue_CACHED_MAY_BE_STALE<
         'off' | 'copy_a' | 'copy_b'
@@ -545,7 +554,7 @@ const externalTips: Tip[] = [
   {
     id: 'subagent-fanout-nudge',
     content: async ctx => {
-      const blue = color('suggestion', ctx.theme)
+      const blue = color('suggestion', ctx?.theme ?? 'dark')
       const variant = getFeatureValue_CACHED_MAY_BE_STALE<
         'off' | 'copy_a' | 'copy_b'
       >('tengu_tern_alloy', 'off')
@@ -567,7 +576,7 @@ const externalTips: Tip[] = [
   {
     id: 'loop-command-nudge',
     content: async ctx => {
-      const blue = color('suggestion', ctx.theme)
+      const blue = color('suggestion', ctx?.theme ?? 'dark')
       const variant = getFeatureValue_CACHED_MAY_BE_STALE<
         'off' | 'copy_a' | 'copy_b'
       >('tengu_timber_lark', 'off')
@@ -590,7 +599,7 @@ const externalTips: Tip[] = [
   {
     id: 'guest-passes',
     content: async ctx => {
-      const claude = color('claude', ctx.theme)
+      const claude = color('claude', ctx?.theme ?? 'dark')
       const reward = getCachedReferrerReward()
       return reward
         ? `Share Claude Code and earn ${claude(formatCreditAmount(reward))} of extra usage · ${claude('/passes')}`
@@ -609,7 +618,7 @@ const externalTips: Tip[] = [
   {
     id: 'overage-credit',
     content: async ctx => {
-      const claude = color('claude', ctx.theme)
+      const claude = color('claude', ctx?.theme ?? 'dark')
       const info = getCachedOverageCreditGrant()
       const amount = info ? formatGrantAmount(info) : null
       if (!amount) return ''

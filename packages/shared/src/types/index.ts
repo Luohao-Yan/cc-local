@@ -37,6 +37,7 @@ export interface SessionMetadata {
   title?: string
   description?: string
   tags?: string[]
+  forkSourceId?: string
 }
 
 // 工具类型
@@ -77,6 +78,14 @@ export interface ToolContext {
   tools?: Tool[]
   /** Callback for interactive user questions (AskUserQuestion tool) */
   onUserQuestion?: (question: string) => Promise<string>
+  /** Callback for sending messages to other agents (SendMessage tool) */
+  onSendMessage?: (recipient: string, content: string) => Promise<void>
+  /** Callback for pushing a notification to the user (SendUserMessage tool) */
+  onUserMessage?: (message: string) => void
+  /** Callback to request plan mode toggle (EnterPlanMode/ExitPlanMode tools) */
+  onPlanModeChange?: (entering: boolean, plan: string) => void
+  /** Callback to cancel a running sub-agent task (TaskStop tool) */
+  onTaskStop?: (taskId: string) => boolean
 }
 
 export interface ToolProgress {
@@ -138,6 +147,7 @@ export interface WSMessagePayload {
 }
 
 export interface MessageOptions {
+  onStream?: any
   model?: string
   systemPrompt?: string
   temperature?: number
@@ -274,3 +284,10 @@ export interface SessionState {
 
 // 权限模式
 export type PermissionMode = 'default' | 'dontAsk' | 'acceptEdits' | 'bypassPermissions'
+
+// 权限策略
+export interface PermissionPolicy {
+  mode?: PermissionMode
+  allowedTools?: string[]
+  blockedTools?: string[]
+}

@@ -29,6 +29,7 @@ export interface HTTPServerInfo {
   client: unknown
   scope: unknown
   transport: 'http'
+  isAuthenticated: boolean | undefined
   config: Record<string, unknown>
 }
 
@@ -37,5 +38,15 @@ export interface ClaudeAIServerInfo {
   client: unknown
   scope: unknown
   transport: 'claudeai-proxy'
+  isAuthenticated: boolean | undefined
   config: Record<string, unknown>
 }
+
+export type MCPViewState =
+  | { mode: 'list' }
+  | { mode: 'server-detail'; serverName: string }
+  | { mode: 'add-server' }
+
+export type ServerInfo = StdioServerInfo | SSEServerInfo | HTTPServerInfo | ClaudeAIServerInfo
+
+export type RGBColor = [number, number, number]

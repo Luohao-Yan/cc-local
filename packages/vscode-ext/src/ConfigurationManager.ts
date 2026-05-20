@@ -187,7 +187,6 @@ export interface CCLocalConfig {
   // Managed Settings
   allowManagedPermissionRulesOnly?: boolean
   allowManagedMcpServersOnly?: boolean
-  allowManagedHooksOnly?: boolean
   strictPluginOnlyCustomization?: boolean
 
   // Provider-specific
@@ -677,6 +676,12 @@ export class ConfigurationManager implements vscode.Disposable {
       }
     })
     this.disposables.push(disposable)
+  }
+
+  // ─── Generic Accessor ──────────────────────────────────────────────────────────────
+
+  get<T>(section: string, defaultValue?: T): T | undefined {
+    return this.config.get<T>(section) ?? defaultValue
   }
 
   // ─── Dispose ────────────────────────────────────────────────────────────────────

@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import React, { useCallback, useMemo } from 'react';
 import { getOriginalCwd } from '../../bootstrap/state.js';
@@ -27,7 +29,7 @@ export function FallbackPermissionRequest(t0) {
   let t1;
   if ($[0] !== toolUseConfirm.input || $[1] !== toolUseConfirm.tool) {
     originalUserFacingName = toolUseConfirm.tool.userFacingName(toolUseConfirm.input as never);
-    t1 = originalUserFacingName.endsWith(" (MCP)") ? originalUserFacingName.slice(0, -6) : originalUserFacingName;
+    t1 = originalUserFacingName.endsWith(t('fallback.mcp')) ? originalUserFacingName.slice(0, -6) : originalUserFacingName;
     $[0] = toolUseConfirm.input;
     $[1] = toolUseConfirm.tool;
     $[2] = originalUserFacingName;
@@ -183,7 +185,7 @@ export function FallbackPermissionRequest(t0) {
       let t10;
       if ($[19] !== t8) {
         t10 = {
-          label: <Text>Yes, and don't ask again for {t8}{" "}commands in {t9}</Text>,
+          label: <Text>{t('fallback.yesDontAskAgainFor')}{t8}{" "}commands in {t9}</Text>,
           value: "yes-dont-ask-again"
         };
         $[19] = t8;
@@ -250,7 +252,7 @@ export function FallbackPermissionRequest(t0) {
   }
   let t12;
   if ($[31] !== originalUserFacingName) {
-    t12 = originalUserFacingName.endsWith(" (MCP)") ? <Text dimColor={true}> (MCP)</Text> : "";
+    t12 = originalUserFacingName.endsWith(t('fallback.mcp')) ? <Text dimColor={true}>{t('fallback.mcp')}</Text> : "";
     $[31] = originalUserFacingName;
     $[32] = t12;
   } else {

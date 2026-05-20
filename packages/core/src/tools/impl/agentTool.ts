@@ -69,17 +69,10 @@ Working directory: ${input.cwd ?? context.cwd ?? process.cwd()}`,
     ]
 
     try {
-      // Forward abort signal from parent to sub-agent
-      const abortHandler = () => {
-        agentEngine.cancel()
-      }
-      context.abortSignal?.addEventListener('abort', abortHandler)
-
       const result = await agentEngine.query(messages, {
         onStream: context.onStream,
+        abortSignal: context.abortSignal,
       })
-
-      context.abortSignal?.removeEventListener('abort', abortHandler)
 
       const textContent = result.message.content
         .filter((c: any) => c.type === 'text')

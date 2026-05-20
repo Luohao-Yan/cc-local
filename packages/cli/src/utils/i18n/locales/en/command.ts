@@ -106,5 +106,6 @@ export const command = {
   "description.schedule": "Create, update, list, or run scheduled remote agents (triggers) that execute on a cron schedule.",
   "whenToUse.schedule": "When the user wants to schedule a recurring remote agent, set up automated tasks, create a cron job for Claude Code, or manage their scheduled agents/triggers.",
   "description.security-review": "Complete a security review of the pending changes on the current branch",
-  "description.statusline": "Set up Claude Code's status line UI"
+  "description.statusline": "Set up Claude Code's status line UI",
+  "description.workflows": "List available workflow templates and active workflows"
 }

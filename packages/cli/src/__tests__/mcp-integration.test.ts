@@ -21,7 +21,7 @@ function createMockConnectionHandle(tools: { name: string; description: string }
     ),
     callTool: vi.fn(async (name: string, args: unknown) => ({
       content: `Mock result from ${name}: ${JSON.stringify(args)}`,
-    }) as Promise<ToolResult>),
+    }) as unknown as Promise<ToolResult>),
     close: vi.fn(async () => {}),
   }
 }

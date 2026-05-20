@@ -1,0 +1,89 @@
+.thinking-block {
+  margin: var(--app-spacing-small) 0;
+  border-radius: var(--corner-radius-medium);
+  background: var(--vscode-editor-inactiveSelectionBackground);
+  border: 1px solid var(--app-border);
+  overflow: hidden;
+}
+
+.thinking-block-header {
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-small);
+  padding: var(--app-spacing-small) var(--app-spacing-medium);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.thinking-block-header:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.thinking-block-icon {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  transition: transform 0.2s ease;
+}
+
+.thinking-block-header.expanded .thinking-block-icon {
+  transform: rotate(90deg);
+}
+
+.thinking-block-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vscode-descriptionForeground);
+}
+
+.thinking-block-summary {
+  flex: 1;
+  font-size: 11px;
+  color: var(--vscode-disabledForeground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-left: var(--app-spacing-small);
+}
+
+.thinking-block-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.thinking-block-content.expanded {
+  max-height: 1000px;
+}
+
+.thinking-block-content-inner {
+  padding: var(--app-spacing-medium);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--vscode-descriptionForeground);
+  white-space: pre-wrap;
+  border-top: 1px solid var(--app-border);
+}
+
+.thinking-block-signature {
+  padding: var(--app-spacing-small) var(--app-spacing-medium);
+  font-size: 10px;
+  font-family: var(--app-monospace-font-family);
+  color: var(--vscode-disabledForeground);
+  background: var(--vscode-editorGutter-background);
+  border-top: 1px solid var(--app-border);
+}
+
+/* 思考中的动画 */
+.thinking-block.processing .thinking-block-header {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}

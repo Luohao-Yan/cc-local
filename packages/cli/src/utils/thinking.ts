@@ -7,6 +7,7 @@ import { get3PModelCapabilityOverride } from './model/modelSupportOverrides.js'
 import { getAPIProvider } from './model/providers.js'
 import { getActiveAPIFormat } from './model/activeModelContext.js'
 import { getSettingsWithErrors } from './settings/settings.js'
+import { resolveAntModel } from './model/antModels.js'
 
 export type ThinkingConfig =
   | { type: 'adaptive' }

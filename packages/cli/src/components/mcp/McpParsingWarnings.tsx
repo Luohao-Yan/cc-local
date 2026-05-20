@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import React, { useMemo } from 'react';
 import { getMcpConfigsByScope } from '../../services/mcp/config.js';

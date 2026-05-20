@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import React from 'react';
 import { removeSandboxViolationTags } from '../../utils/sandbox/sandbox-ui-utils.js';

@@ -371,7 +371,7 @@ export class StructuredIO {
         if (uuid) {
           notifyCommandLifecycle(uuid, 'completed')
         }
-        const request = this.pendingRequests.get(message.response.request_id)
+        const request = this.pendingRequests.get((message.response as any).request_id)
         if (!request) {
           // Check if this tool_use was already resolved through the normal
           // permission flow. Duplicate control_response deliveries (e.g. from
@@ -379,8 +379,8 @@ export class StructuredIO {
           // re-processing them would push duplicate assistant messages into
           // the conversation, causing API 400 errors.
           const responsePayload =
-            message.response.subtype === 'success'
-              ? message.response.response
+            (message.response as any).subtype === 'success'
+              ? (message.response as any).response
               : undefined
           const toolUseID = responsePayload?.toolUseID
           if (
@@ -388,7 +388,7 @@ export class StructuredIO {
             this.resolvedToolUseIds.has(toolUseID)
           ) {
             logForDebugging(
-              `Ignoring duplicate control_response for already-resolved toolUseID=${toolUseID} request_id=${message.response.request_id}`,
+              `Ignoring duplicate control_response for already-resolved toolUseID=${toolUseID} request_id=${(message.response as any).request_id}`,
             )
             return undefined
           }
@@ -398,21 +398,21 @@ export class StructuredIO {
           return undefined // Ignore responses for requests we don't know about
         }
         this.trackResolvedToolUseId(request.request)
-        this.pendingRequests.delete(message.response.request_id)
+        this.pendingRequests.delete((message.response as any).request_id)
         // Notify the bridge when the SDK consumer resolves a can_use_tool
         // request, so it can cancel the stale permission prompt on claude.ai.
         if (
           request.request.request.subtype === 'can_use_tool' &&
           this.onControlRequestResolved
         ) {
-          this.onControlRequestResolved(message.response.request_id)
+          this.onControlRequestResolved((message.response as any).request_id)
         }
 
-        if (message.response.subtype === 'error') {
-          request.reject(new Error(message.response.error))
+        if ((message.response as any).subtype === 'error') {
+          request.reject(new Error((message.response as any).error))
           return undefined
         }
-        const result = message.response.response
+        const result = (message.response as any).response
         if (request.schema) {
           try {
             request.resolve(request.schema.parse(result))

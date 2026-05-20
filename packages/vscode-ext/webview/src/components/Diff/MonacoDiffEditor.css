@@ -1,0 +1,169 @@
+.monaco-diff-editor {
+  background: var(--vscode-editor-background);
+  border-radius: var(--corner-radius-medium);
+  border: 1px solid var(--app-border);
+  overflow: hidden;
+  margin: var(--app-spacing-medium) 0;
+}
+
+.monaco-diff-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--app-spacing-small) var(--app-spacing-medium);
+  background: var(--vscode-editorGutter-background);
+  border-bottom: 1px solid var(--app-border);
+}
+
+.monaco-diff-paths {
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-small);
+  font-size: 12px;
+  font-family: var(--app-monospace-font-family);
+}
+
+.monaco-diff-path {
+  color: var(--app-foreground);
+}
+
+.monaco-diff-path-original {
+  color: var(--vscode-gitDecoration-deletedResourceForeground);
+}
+
+.monaco-diff-path-modified {
+  color: var(--vscode-gitDecoration-addedResourceForeground);
+}
+
+.monaco-diff-arrow {
+  color: var(--vscode-descriptionForeground);
+}
+
+.monaco-diff-stats {
+  display: flex;
+  gap: var(--app-spacing-medium);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.monaco-diff-stat {
+  padding: 2px 6px;
+  border-radius: var(--corner-radius-small);
+}
+
+.monaco-diff-stat-add {
+  background: var(--vscode-diffEditor-insertedTextBackground);
+  color: var(--vscode-gitDecoration-addedResourceForeground);
+}
+
+.monaco-diff-stat-delete {
+  background: var(--vscode-diffEditor-removedTextBackground);
+  color: var(--vscode-gitDecoration-deletedResourceForeground);
+}
+
+.monaco-diff-container {
+  overflow: hidden;
+}
+
+.monaco-diff-editor.full-height .monaco-diff-container {
+  height: auto !important;
+  max-height: none !important;
+}
+
+.monaco-diff-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--app-spacing-small);
+  padding: var(--app-spacing-small) var(--app-spacing-medium);
+  background: var(--vscode-editorGutter-background);
+  border-top: 1px solid var(--app-border);
+}
+
+.monaco-diff-action {
+  padding: var(--app-spacing-small) var(--app-spacing-medium);
+  border: none;
+  border-radius: var(--corner-radius-small);
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.15s ease;
+}
+
+.monaco-diff-action-expand {
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+}
+
+.monaco-diff-action-expand:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.monaco-diff-action-accept {
+  background: var(--vscode-gitDecoration-addedResourceForeground);
+  color: white;
+}
+
+.monaco-diff-action-accept:hover {
+  opacity: 0.9;
+}
+
+.monaco-diff-action-reject {
+  background: var(--vscode-gitDecoration-deletedResourceForeground);
+  color: white;
+}
+
+.monaco-diff-action-reject:hover {
+  opacity: 0.9;
+}
+
+/* Inline diff */
+.inline-diff {
+  font-family: var(--app-monospace-font-family);
+  font-size: 12px;
+  line-height: 18px;
+  background: var(--vscode-editor-background);
+  border-radius: var(--corner-radius-medium);
+  overflow: hidden;
+}
+
+.inline-diff-line {
+  display: flex;
+}
+
+.inline-diff-add {
+  background: var(--vscode-diffEditor-insertedTextBackground);
+}
+
+.inline-diff-remove {
+  background: var(--vscode-diffEditor-removedTextBackground);
+}
+
+.inline-diff-number {
+  width: 40px;
+  min-width: 40px;
+  padding: 0 var(--app-spacing-small);
+  text-align: right;
+  color: var(--vscode-editorLineNumber-foreground);
+  background: var(--vscode-editorGutter-background);
+  user-select: none;
+}
+
+.inline-diff-prefix {
+  width: 14px;
+  min-width: 14px;
+  text-align: center;
+  user-select: none;
+}
+
+.inline-diff-add .inline-diff-prefix {
+  color: var(--vscode-gitDecoration-addedResourceForeground);
+}
+
+.inline-diff-remove .inline-diff-prefix {
+  color: var(--vscode-gitDecoration-deletedResourceForeground);
+}
+
+.inline-diff-content {
+  flex: 1;
+  padding: 0 var(--app-spacing-small);
+  white-space: pre;
+}

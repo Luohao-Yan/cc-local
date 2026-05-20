@@ -25,7 +25,7 @@ export async function call(onDone: LocalJSXCommandOnDone, context: LocalJSXComma
     }
     const url = 'https://claude.ai/upgrade/max';
     await openBrowser(url);
-    return <Login startingMessage={'Starting new login following /upgrade. Exit with Ctrl-C to use existing account.'} onDone={success => {
+    return <Login startingMessage={'Starting new login following /upgrade. Exit with Ctrl-C to use existing account.'} onDone={(success: any) => {
       context.onChangeAPIKey();
       onDone(success ? 'Login successful' : 'Login interrupted');
     }} />;

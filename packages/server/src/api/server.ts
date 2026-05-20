@@ -919,7 +919,7 @@ export class Server {
     const summary = authManager.getAuthSummary()
     return this.jsonResponse({
       ...summary,
-      serverToken: authManager.getServerToken(),
+      hasServerToken: authManager.getServerToken() !== undefined,
     })
   }
 }

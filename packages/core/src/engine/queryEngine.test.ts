@@ -461,4 +461,106 @@ describe('QueryEngine', () => {
     const toolUseBlocks = result.message.content.filter((c: any) => c.type === 'tool_use')
     expect(toolUseBlocks).toHaveLength(1)
   })
+
+  it('per-query abort signal cancels only the targeted query', async () => {
+    let query1Aborted = false
+    let query2Completed = false
+
+    const createClient = (onAbort: () => void) => ({
+      async *streamQuery() {
+        yield {
+          type: 'text' as const,
+          text: 'result',
+        }
+        yield {
+          type: 'usage' as const,
+          inputTokens: 1,
+          outputTokens: 1,
+        }
+      },
+    })
+
+    const engine = new QueryEngine({
+      model: 'test-model',
+      client: createClient(() => { query1Aborted = true }),
+    })
+
+    const controller1 = new AbortController()
+    const controller2 = new AbortController()
+
+    const query1Promise = engine.query([{
+      id: 'user-1',
+      role: 'user',
+      content: [{ type: 'text', text: 'query 1' }],
+      timestamp: 1,
+    }], { abortSignal: controller1.signal })
+
+    const query2Promise = engine.query([{
+      id: 'user-2',
+      role: 'user',
+      content: [{ type: 'text', text: 'query 2' }],
+      timestamp: 2,
+    }], { abortSignal: controller2.signal })
+
+    // Cancel only query 1
+    controller1.abort()
+
+    try {
+      await query1Promise
+    } catch (e) {
+      expect((e as Error).message).toBe('Query aborted')
+    }
+
+    // Query 2 should still complete
+    const result2 = await query2Promise
+    const textBlocks = result2.message.content.filter((c: any) => c.type === 'text')
+    expect(textBlocks.some((c: any) => c.text === 'result')).toBe(true)
+  })
+
+  it('cancel() aborts the active query', async () => {
+    let callCount = 0
+    const engine = new QueryEngine({
+      model: 'test-model',
+      client: {
+        async *streamQuery() {
+          if (callCount === 0) {
+            callCount += 1
+            yield {
+              type: 'tool_use' as const,
+              name: 'slow_tool',
+              input: {},
+              id: 'tool-1',
+            }
+            return
+          }
+          yield {
+            type: 'text' as const,
+            text: 'should not reach',
+          }
+        },
+      },
+      tools: [{
+        name: 'slow_tool',
+        description: 'A slow tool',
+        input_schema: { type: 'object', properties: {} },
+        async execute() {
+          // Simulate slow execution; cancel should abort
+          await new Promise((resolve) => setTimeout(resolve, 5000))
+          return { content: 'slow result' }
+        },
+      }],
+    })
+
+    const queryPromise = engine.query([{
+      id: 'user-1',
+      role: 'user',
+      content: [{ type: 'text', text: 'run slow tool' }],
+      timestamp: 1,
+    }])
+
+    // Cancel after a short delay
+    setTimeout(() => engine.cancel(), 50)
+
+    await expect(queryPromise).rejects.toThrow('Query aborted')
+  })
 })

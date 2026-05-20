@@ -174,8 +174,8 @@ function getSimpleSandboxSection(): string {
     return ''
   }
 
-  const fsReadConfig = SandboxManager.getFsReadConfig()
-  const fsWriteConfig = SandboxManager.getFsWriteConfig()
+  const fsReadConfig = SandboxManager.getFsReadConfig()!
+  const fsWriteConfig = SandboxManager.getFsWriteConfig()!
   const networkRestrictionConfig = SandboxManager.getNetworkRestrictionConfig()
   const allowUnixSockets = SandboxManager.getAllowUnixSockets()
   const ignoreViolations = SandboxManager.getIgnoreViolations()

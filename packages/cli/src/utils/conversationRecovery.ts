@@ -93,7 +93,7 @@ function migrateLegacyAttachmentTypes(message: Message): Message {
         type: 'file',
         displayPath: relative(getCwd(), attachment.filename as string),
       },
-    } as SerializedMessage // Cast entire message since we know the structure is correct
+    } as unknown as SerializedMessage // Cast entire message since we know the structure is correct
   }
 
   if (attachment.type === 'new_directory') {
@@ -104,7 +104,7 @@ function migrateLegacyAttachmentTypes(message: Message): Message {
         type: 'directory',
         displayPath: relative(getCwd(), attachment.path as string),
       },
-    } as SerializedMessage // Cast entire message since we know the structure is correct
+    } as unknown as SerializedMessage // Cast entire message since we know the structure is correct
   }
 
   // Backfill displayPath for attachments from old sessions
@@ -385,7 +385,7 @@ export function restoreSkillStateFromMessages(messages: Message[]): void {
       continue
     }
     if (message.attachment.type === 'invoked_skills') {
-      for (const skill of message.attachment.skills) {
+      for (const skill of (message.attachment as any).skills) {
         if (skill.name && skill.path && skill.content) {
           // Resume only happens for the main session, so agentId is null
           addInvokedSkill(skill.name, skill.path, skill.content, null)

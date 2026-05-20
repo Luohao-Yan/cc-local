@@ -49,6 +49,14 @@ import { ChromeMCPProvider } from './mcp/builtin/ChromeMCPProvider.js'
 import { JupyterMCPProvider } from './mcp/builtin/JupyterMCPProvider.js'
 import { checkForUpdates } from './commands/UpdateCommand.js'
 import { installPlugin } from './commands/InstallPluginCommand.js'
+import { EditorPanelSerializer } from './EditorPanelProvider.js'
+import { GlobalStateManager, GlobalStateKeys } from './GlobalStateManager.js'
+import { CommentManager } from './comments/index.js'
+import { ReviewManager } from './review/index.js'
+import { PlanManager } from './plan/index.js'
+import { ProactiveSuggestionsManager } from './proactive/index.js'
+import { TerminalBannerManager } from './banner/TerminalBannerManager.js'
+import { BrowserTabManager } from './browser/index.js'
 
 // Global instances
 let hookManager: HookManager | undefined
@@ -60,6 +68,12 @@ let sessionManager: SessionManager | undefined
 let remoteManager: RemoteSessionManager | undefined
 let ideViewProvider: IdeViewProvider | undefined
 let editorPanelProvider: EditorPanelProvider | undefined
+let commentManager: CommentManager | undefined
+let reviewManager: ReviewManager | undefined
+let planManager: PlanManager | undefined
+let proactiveManager: ProactiveSuggestionsManager | undefined
+let bannerManager: TerminalBannerManager | undefined
+let browserTabManager: BrowserTabManager | undefined
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   console.log('CCLocal extension activating...')
@@ -86,6 +100,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   configManager = new ConfigurationManager(context)
   context.subscriptions.push(configManager)
 
+  // Initialize global state manager (1:1 with official extension)
+  const globalStateManager = new GlobalStateManager(context)
+  context.subscriptions.push(globalStateManager)
+
   // Initialize hook manager
   hookManager = getHookManager(outputChannel, {
     allowedHttpUrls: configManager.get('allowedHttpHookUrls'),
@@ -100,9 +118,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     hookManager.loadFromConfig(hooksConfig)
   }
 
-  // Listen for configuration changes
+  // Listen for configuration changes (18 items, 1:1 with official extension)
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(e => {
+      // ─── Hook-related ───
       if (e.affectsConfiguration('cclocal.hooks')) {
         const newHooksConfig = configManager?.get('hooks')
         if (newHooksConfig && hookManager) {
@@ -114,6 +133,92 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         if (hookManager) {
           hookManager.setEnabled(!disabled)
         }
+      }
+
+      // ─── Permission / Mode ───
+      if (e.affectsConfiguration('cclocal.initialPermissionMode')) {
+        const mode = vscode.workspace.getConfiguration('cclocal').get<string>('initialPermissionMode')
+        if (mode && ideViewProvider) {
+          ideViewProvider.sendToWebview({
+            type: 'configSync',
+            config: { permissionMode: mode },
+          } as any)
+        }
+      }
+      if (e.affectsConfiguration('cclocal.allowDangerouslySkipPermissions')) {
+        void vscode.window.showWarningMessage(
+          'CCLocal: allowDangerouslySkipPermissions changed — restart the extension for this to take effect',
+        )
+      }
+
+      // ─── Gitignore ───
+      if (e.affectsConfiguration('cclocal.respectGitIgnore')) {
+        if (ideViewProvider) {
+          ideViewProvider.sendToWebview({ type: 'configSync', config: { respectGitignore: vscode.workspace.getConfiguration('cclocal').get<boolean>('respectGitIgnore') } } as any)
+        }
+      }
+
+      // ─── Auto-save ───
+      if (e.affectsConfiguration('cclocal.autosave') || e.affectsConfiguration('files.autoSave')) {
+        if (ideViewProvider) {
+          ideViewProvider.sendToWebview({ type: 'configSync', config: { autosave: vscode.workspace.getConfiguration('cclocal').get<boolean>('autosave') } } as any)
+        }
+      }
+
+      // ─── Terminal mode ───
+      if (e.affectsConfiguration('cclocal.useTerminal')) {
+        void vscode.window.showWarningMessage(
+          'CCLocal: useTerminal changed — please reload the window for this to take effect',
+        )
+      }
+
+      // ─── UI preferences ───
+      if (e.affectsConfiguration('cclocal.preferredLocation')) {
+        const loc = vscode.workspace.getConfiguration('cclocal').get<string>('preferredLocation')
+        if (loc === 'sidebar' || loc === 'panel') {
+          void globalStateManager.setLastClaudeLocation(loc)
+        }
+      }
+      if (e.affectsConfiguration('cclocal.useCtrlEnterToSend')) {
+        if (ideViewProvider) {
+          ideViewProvider.sendToWebview({ type: 'configSync', config: { useCtrlEnterToSend: vscode.workspace.getConfiguration('cclocal').get<boolean>('useCtrlEnterToSend') } } as any)
+        }
+      }
+      if (e.affectsConfiguration('cclocal.enableNewConversationShortcut')) {
+        void vscode.commands.executeCommand('setContext', 'cclocal.enableNewConversationShortcut',
+          vscode.workspace.getConfiguration('cclocal').get<boolean>('enableNewConversationShortcut') ?? false)
+      }
+      if (e.affectsConfiguration('cclocal.hideOnboarding')) {
+        if (ideViewProvider) {
+          ideViewProvider.sendToWebview({ type: 'configSync', config: { hideOnboarding: vscode.workspace.getConfiguration('cclocal').get<boolean>('hideOnboarding') } } as any)
+        }
+      }
+
+      // ─── Environment / CLI path ───
+      if (e.affectsConfiguration('cclocal.environmentVariables')) {
+        // CLI will pick up on next restart
+      }
+      if (e.affectsConfiguration('cclocal.cclocalPath')) {
+        void vscode.window.showWarningMessage(
+          'CCLocal: cclocalPath changed — please reload the window for this to take effect',
+        )
+      }
+
+      // ─── MCP / Plugin ───
+      if (e.affectsConfiguration('cclocal.enableAllProjectMcpServers') ||
+          e.affectsConfiguration('cclocal.allowedMcpServers') ||
+          e.affectsConfiguration('cclocal.deniedMcpServers')) {
+        mcpManager?.discoverServers()
+      }
+
+      // ─── Spinner / Display ───
+      if (e.affectsConfiguration('cclocal.spinnerTipsEnabled') || e.affectsConfiguration('cclocal.spinnerVerbs')) {
+        // CLI-side rendering — forwarded via messages
+      }
+
+      // ─── Python env ───
+      if (e.affectsConfiguration('cclocal.usePythonEnvironment')) {
+        // CLI-side setting
       }
     })
   )
@@ -195,6 +300,25 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // Register remote-related commands
   registerRemoteCommands(context, remoteManager)
 
+  // ─── P1: Comment, Review, Plan, Proactive, Banner, Browser managers ───
+  commentManager = new CommentManager(outputChannel!)
+  context.subscriptions.push(commentManager)
+
+  reviewManager = new ReviewManager(outputChannel!, globalStateManager)
+  context.subscriptions.push(reviewManager)
+
+  planManager = new PlanManager(outputChannel!)
+  context.subscriptions.push(planManager)
+
+  proactiveManager = new ProactiveSuggestionsManager(outputChannel!)
+  context.subscriptions.push(proactiveManager)
+
+  bannerManager = new TerminalBannerManager(outputChannel!, globalStateManager)
+  context.subscriptions.push(bannerManager)
+
+  browserTabManager = new BrowserTabManager(outputChannel!)
+  context.subscriptions.push(browserTabManager)
+
   const config = vscode.workspace.getConfiguration('cclocal')
   const mode: string = config.get('mode') || 'ide'
 
@@ -221,6 +345,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // 启动 IdeServer + CliProcess
     await ideViewProvider.start()
     ideViewProvider.registerListeners(context)
+
+    // Wire P1 managers into the sidebar provider
+    ideViewProvider.setManagers({
+      commentManager: commentManager!,
+      reviewManager: reviewManager!,
+      planManager: planManager!,
+      proactiveManager: proactiveManager!,
+      browserTabManager: browserTabManager!,
+    })
 
     // ─── Secondary sidebar (P1-1) ────────────────────────────────────────────
     // Re-use the same IdeViewProvider class but with a different view ID
@@ -304,7 +437,7 @@ vscode.postMessage({ type: 'listSessions' });
 </script></body></html>`
             webviewView.webview.onDidReceiveMessage(msg => {
               if (msg.type === 'listSessions') {
-                sessionManager?.listSessions().then(sessions => {
+                sessionManager?.listSessions().then((sessions: any) => {
                   webviewView.webview.postMessage({ type: 'sessionsList', sessions })
                 })
               } else if (msg.type === 'resumeSession') {
@@ -344,6 +477,20 @@ vscode.postMessage({ type: 'listSessions' });
     editorPanelProvider.setOnDidCreatePanel((webview) => {
       ideViewProvider!.addBroadcastTarget(webview)
     })
+
+    // Register serializer to restore panel across VS Code restarts
+    context.subscriptions.push(
+      vscode.window.registerWebviewPanelSerializer(
+        EditorPanelProvider.viewType,
+        new EditorPanelSerializer(
+          context.extensionUri,
+          outputChannel!,
+          (webview) => {
+            ideViewProvider?.addBroadcastTarget(webview)
+          },
+        ),
+      ),
+    )
 
     context.subscriptions.push(
       vscode.commands.registerCommand('cclocal.editor.open', () => {
@@ -482,7 +629,8 @@ vscode.postMessage({ type: 'listSessions' });
     }),
   )
 
-  // ─── Context Keys (P1-8) ────────────────────────────────────────────────────
+  // ─── Context Keys (1:1 with official extension) ───────────────────────────
+  // These control when clause visibility for commands, menus, and keybindings
   void vscode.commands.executeCommand('setContext', 'cclocal.viewingProposedDiff', false)
   void vscode.commands.executeCommand('setContext', 'cclocal.createWorktreeEnabled', true)
   void vscode.commands.executeCommand('setContext', 'cclocal.primaryEditorEnabled', mode !== 'ide')
@@ -491,7 +639,7 @@ vscode.postMessage({ type: 'listSessions' });
   void vscode.commands.executeCommand('setContext', 'cclocal.sessionsListEnabled', true)
   void vscode.commands.executeCommand('setContext', 'cclocal.enableNewConversationShortcut',
     config.get<boolean>('enableNewConversationShortcut') ?? false)
-  // Detect secondary sidebar support
+  // Detect secondary sidebar support (VS Code >= 1.86)
   const supportsSecondarySidebar = !!vscode.window.registerWebviewViewProvider
   void vscode.commands.executeCommand('setContext', 'cclocal.doesNotSupportSecondarySidebar', !supportsSecondarySidebar)
 
@@ -608,6 +756,92 @@ vscode.postMessage({ type: 'listSessions' });
     }),
   )
 
+  // ─── P1: Comment/Plan/Review/Browser/Proactive/Banner commands ──────────
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.addComment', async () => {
+      const text = await vscode.window.showInputBox({ prompt: 'Comment text', placeHolder: 'Type your comment...' })
+      if (text && ideViewProvider) {
+        ideViewProvider.sendToWebview({ type: 'from-extension', message: { type: 'prompt_add_comment', text } })
+      }
+    }),
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.removeComment', async () => {
+      const commentId = await vscode.window.showInputBox({ prompt: 'Comment ID to remove', placeHolder: 'uuid' })
+      if (commentId && ideViewProvider) {
+        ideViewProvider.sendToWebview({ type: 'from-extension', message: { type: 'prompt_remove_comment', commentId } })
+      }
+    }),
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.acceptPlan', () => {
+      if (ideViewProvider) {
+        ideViewProvider.sendToWebview({ type: 'from-extension', message: { type: 'plan_action', action: 'accept' } })
+      }
+    }),
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.rejectPlan', () => {
+      if (ideViewProvider) {
+        ideViewProvider.sendToWebview({ type: 'from-extension', message: { type: 'plan_action', action: 'reject' } })
+      }
+    }),
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.closePlanPreview', () => {
+      if (planManager) {
+        const planId = planManager.getCurrentPreviewPlanId()
+        if (planId) planManager.closePreview(planId)
+      }
+    }),
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.dismissTerminalBanner', () => {
+      void bannerManager?.dismiss()
+    }),
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.dismissReviewUpsellBanner', () => {
+      void reviewManager?.dismissReviewUpsell()
+    }),
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.setProactive', async () => {
+      const enabled = await vscode.window.showQuickPick(['Enabled', 'Disabled'], { placeHolder: 'Proactive suggestions' })
+      if (enabled && proactiveManager) {
+        proactiveManager.setEnabled(enabled === 'Enabled')
+      }
+    }),
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.createNewBrowserTab', async () => {
+      const url = await vscode.window.showInputBox({ prompt: 'URL', placeHolder: 'https://example.com' })
+      if (url && browserTabManager) {
+        browserTabManager.createTab(url)
+      }
+    }),
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.showLogs', () => {
+      outputChannel?.show()
+    }),
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cclocal.openWalkthrough', () => {
+      void vscode.commands.executeCommand('workbench.action.openWalkthrough', 'cclocal.cclocal-walkthrough')
+    }),
+  )
+
   console.log('CCLocal extension activated')
 }
 
@@ -624,6 +858,15 @@ export function deactivate(): void {
   disposeSessionManager()
   disposeRemoteSessionManager()
   disposeChannelManager()
+
+  // Dispose P1 managers
+  commentManager?.dispose()
+  reviewManager?.dispose()
+  planManager?.dispose()
+  proactiveManager?.dispose()
+  bannerManager?.dispose()
+  browserTabManager?.dispose()
+
   outputChannel?.dispose()
 }
 

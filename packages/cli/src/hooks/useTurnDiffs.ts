@@ -147,7 +147,7 @@ export function useTurnDiffs(messages: Message[]): TurnDiff[] {
         const result = message.toolUseResult
         if (isFileEditResult(result)) {
           const { filePath, structuredPatch } = result
-          const isNewFile = 'type' in result && result.type === 'create'
+          const isNewFile = 'type' in result && (result.type as string) === 'create'
 
           // Get or create file entry
           let fileEntry = c.currentTurn.files.get(filePath)
@@ -175,7 +175,7 @@ export function useTurnDiffs(messages: Message[]): TurnDiff[] {
               oldLines: 0,
               newStart: 1,
               newLines: lines.length,
-              lines: lines.map(l => '+' + l),
+              lines: lines.map((l: any) => '+' + l),
             }
             fileEntry.hunks.push(syntheticHunk)
             fileEntry.linesAdded += lines.length

@@ -7,6 +7,12 @@ import type { Message, Session, SessionMetadata } from '@cclocal/shared'
 import { randomUUID } from 'crypto'
 import { DatabaseConnection } from './connection.js'
 
+function safeJsonParse<T>(json: string | null | undefined, fallback: T): T {
+  if (!json) return fallback
+  try { return JSON.parse(json) as T }
+  catch { return fallback }
+}
+
 export class SessionStore {
   private db: ReturnType<DatabaseConnection['getDB']>
 
@@ -55,7 +61,7 @@ export class SessionStore {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       messages: this.getMessages(id),
-      metadata: JSON.parse(row.metadata || '{}') as SessionMetadata,
+      metadata: safeJsonParse(row.metadata, {} as SessionMetadata),
     }
   }
 
@@ -98,6 +104,17 @@ export class SessionStore {
 
     if (sets.length === 0) return
 
+    // Always bump updated_at so callers can rely on it for recency sorting,
+    // unless the caller explicitly provided updatedAt (in which case we
+    // already added it above). Use MAX(updated_at, now) + 1 to guarantee
+    // the new timestamp is strictly greater than the current value, which
+    // ensures deterministic ORDER BY even when calls happen within the
+    // same millisecond.
+    if (updates.updatedAt === undefined) {
+      sets.push(`updated_at = MAX(updated_at, $p${paramIdx}) + 1`)
+      params[`$p${paramIdx}`] = Date.now()
+    }
+
     const stmt = this.db.prepare(`
       UPDATE sessions SET ${sets.join(', ')} WHERE id = $id
     `)
@@ -136,7 +153,7 @@ export class SessionStore {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       messages: [], // 列表查询不加载消息
-      metadata: JSON.parse(row.metadata || '{}') as SessionMetadata,
+      metadata: safeJsonParse(row.metadata, {} as SessionMetadata),
     }))
   }
 
@@ -199,7 +216,7 @@ export class SessionStore {
     return rows.map(row => ({
       id: row.id,
       role: row.role,
-      content: JSON.parse(row.content),
+      content: safeJsonParse(row.content, []),
       timestamp: row.timestamp,
     }))
   }
@@ -264,7 +281,7 @@ export class SessionStore {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       messages: [],
-      metadata: JSON.parse(row.metadata || '{}') as SessionMetadata,
+      metadata: safeJsonParse(row.metadata, {} as SessionMetadata),
     }))
   }
 
@@ -296,7 +313,7 @@ export class SessionStore {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       messages: [],
-      metadata: JSON.parse(row.metadata || '{}') as SessionMetadata,
+      metadata: safeJsonParse(row.metadata, {} as SessionMetadata),
     }
   }
 

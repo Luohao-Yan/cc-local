@@ -27,7 +27,6 @@ export const taskOutputTool: Tool = {
   },
 
   async execute(input: TaskOutputInput, context: ToolContext): Promise<ToolResult> {
-    // In the native architecture, task output is retrieved from the session store
     try {
       const store = getSessionStore()
       const session = await store.getSession(input.taskId)
@@ -72,7 +71,7 @@ export interface TaskStopInput {
 export const taskStopTool: Tool = {
   name: 'TaskStop',
   description:
-    'Stop a running sub-agent task. Use when a delegated task is no longer needed or taking too long.',
+    'Stop a running sub-agent task. Use when a delegated task is no longer needed or taking too long. This cancels the AbortController associated with the task.',
   input_schema: {
     type: 'object' as const,
     properties: {
@@ -85,10 +84,72 @@ export const taskStopTool: Tool = {
   },
 
   async execute(input: TaskStopInput, context: ToolContext): Promise<ToolResult> {
-    // In the native architecture, task cancellation is handled via AbortController
-    // The session store tracks active tasks and their abort signals
-    return {
-      content: [{ type: 'text', text: `[Task ${input.taskId} stop requested]` }],
+    // Try engine-level cancellation first
+    if (context.onTaskStop) {
+      const cancelled = context.onTaskStop(input.taskId)
+      if (cancelled) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `[Task ${input.taskId} stopped successfully]`,
+            },
+          ],
+        }
+      }
+    }
+
+    // Fallback: try to mark the session as cancelled in the store
+    try {
+      const store = getSessionStore()
+      const session = await store.getSession(input.taskId)
+      if (!session) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `[Task ${input.taskId} not found — it may have already completed]`,
+            },
+          ],
+          is_error: true,
+        }
+      }
+
+      // If the session exists but we can't cancel its AbortController,
+      // at least update metadata to indicate cancellation was requested
+      if (session.metadata) {
+        try {
+          const meta = typeof session.metadata === 'string'
+            ? JSON.parse(session.metadata)
+            : session.metadata
+          meta.cancelled = true
+          meta.cancelledAt = Date.now()
+          await store.updateSession(input.taskId, {
+            metadata: JSON.stringify(meta),
+          })
+        } catch {
+          // Metadata update is best-effort
+        }
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `[Task ${input.taskId} stop requested — the task will terminate on its next tool call]`,
+          },
+        ],
+      }
+    } catch {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `[Failed to stop task ${input.taskId} — the task may have already completed]`,
+          },
+        ],
+        is_error: true,
+      }
     }
   },
 }

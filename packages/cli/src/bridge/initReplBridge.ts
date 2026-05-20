@@ -254,8 +254,10 @@ export async function initReplBridge(
   // from the 3rd so mobile/web show a title that reflects more context.
   // The slug fallback (e.g. "remote-control-graceful-unicorn") makes
   // auto-started sessions distinguishable in the claude.ai list before the
-  // first prompt.
-  let title = `remote-control-${generateShortWordSlug()}`
+  // first prompt. The --remote-control-session-name-prefix flag overrides
+  // the default "remote-control" prefix with a user-specified one (e.g. hostname).
+  const namePrefix = process.env.CLAUDE_CODE_RC_SESSION_NAME_PREFIX || 'remote-control'
+  let title = `${namePrefix}-${generateShortWordSlug()}`
   let hasTitle = false
   let hasExplicitTitle = false
   if (initialName) {

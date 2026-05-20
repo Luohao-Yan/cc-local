@@ -49,10 +49,12 @@ export function useTerminalNotification(): TerminalNotification {
     )
   }
 
+  const write = writeRaw as WriteRaw
+
   const notifyITerm2 = useCallback(
     ({ message, title }: { message: string; title?: string }) => {
       const displayString = title ? `${title}:\n${message}` : message
-      writeRaw(wrapForMultiplexer(osc(OSC.ITERM2, `\n\n${displayString}`)))
+      write(wrapForMultiplexer(osc(OSC.ITERM2, `\n\n${displayString}`)))
     },
     [writeRaw],
   )
@@ -67,16 +69,16 @@ export function useTerminalNotification(): TerminalNotification {
       title: string
       id: number
     }) => {
-      writeRaw(wrapForMultiplexer(osc(OSC.KITTY, `i=${id}:d=0:p=title`, title)))
-      writeRaw(wrapForMultiplexer(osc(OSC.KITTY, `i=${id}:p=body`, message)))
-      writeRaw(wrapForMultiplexer(osc(OSC.KITTY, `i=${id}:d=1:a=focus`, '')))
+      write(wrapForMultiplexer(osc(OSC.KITTY, `i=${id}:d=0:p=title`, title)))
+      write(wrapForMultiplexer(osc(OSC.KITTY, `i=${id}:p=body`, message)))
+      write(wrapForMultiplexer(osc(OSC.KITTY, `i=${id}:d=1:a=focus`, '')))
     },
     [writeRaw],
   )
 
   const notifyGhostty = useCallback(
     ({ message, title }: { message: string; title: string }) => {
-      writeRaw(wrapForMultiplexer(osc(OSC.GHOSTTY, 'notify', title, message)))
+      write(wrapForMultiplexer(osc(OSC.GHOSTTY, 'notify', title, message)))
     },
     [writeRaw],
   )
@@ -84,7 +86,7 @@ export function useTerminalNotification(): TerminalNotification {
   const notifyBell = useCallback(() => {
     // Raw BEL — inside tmux this triggers tmux's bell-action (window flag).
     // Wrapping would make it opaque DCS payload and lose that fallback.
-    writeRaw(BEL)
+    write(BEL)
   }, [writeRaw])
 
   const progress = useCallback(
@@ -93,7 +95,7 @@ export function useTerminalNotification(): TerminalNotification {
         return
       }
       if (!state) {
-        writeRaw(
+        write(
           wrapForMultiplexer(
             osc(OSC.ITERM2, ITERM2.PROGRESS, PROGRESS.CLEAR, ''),
           ),
@@ -103,28 +105,28 @@ export function useTerminalNotification(): TerminalNotification {
       const pct = Math.max(0, Math.min(100, Math.round(percentage ?? 0)))
       switch (state) {
         case 'completed':
-          writeRaw(
+          write(
             wrapForMultiplexer(
               osc(OSC.ITERM2, ITERM2.PROGRESS, PROGRESS.CLEAR, ''),
             ),
           )
           break
         case 'error':
-          writeRaw(
+          write(
             wrapForMultiplexer(
               osc(OSC.ITERM2, ITERM2.PROGRESS, PROGRESS.ERROR, pct),
             ),
           )
           break
         case 'indeterminate':
-          writeRaw(
+          write(
             wrapForMultiplexer(
               osc(OSC.ITERM2, ITERM2.PROGRESS, PROGRESS.INDETERMINATE, ''),
             ),
           )
           break
         case 'running':
-          writeRaw(
+          write(
             wrapForMultiplexer(
               osc(OSC.ITERM2, ITERM2.PROGRESS, PROGRESS.SET, pct),
             ),

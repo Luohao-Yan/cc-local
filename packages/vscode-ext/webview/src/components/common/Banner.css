@@ -1,0 +1,40 @@
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--app-spacing-small) var(--app-spacing-medium);
+  font-size: 12px;
+}
+
+.banner-info {
+  background: var(--vscode-editorInfo-foreground);
+  color: var(--app-claude-ivory);
+}
+
+.banner-warning {
+  background: var(--vscode-editorWarning-foreground);
+  color: var(--app-claude-slate);
+}
+
+.banner-error {
+  background: var(--vscode-errorForeground);
+  color: var(--app-claude-ivory);
+}
+
+.banner-message {
+  flex: 1;
+}
+
+.banner-close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+.banner-close:hover {
+  opacity: 1;
+}

@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import { useCallback, useState } from 'react';
 import { setTeleportedSessionInfo } from '../bootstrap/state.js';

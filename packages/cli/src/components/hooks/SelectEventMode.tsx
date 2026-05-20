@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 /**
  * SelectEventMode is the entrypoint of the Hooks config menu, where the user

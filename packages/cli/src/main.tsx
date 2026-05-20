@@ -263,8 +263,13 @@ function isBeingDebugged() {
   }
 }
 
+// Build-time substitution: "external" is replaced with the actual user type
+// (e.g., 'ant' for internal builds). Cast to string to prevent TypeScript
+// from narrowing and flagging the comparison as always-false in external builds.
+const IS_INTERNAL_BUILD = ("external" as string) === 'ant'
+
 // Exit if we detect node debugging or inspection
-if ("external" !== 'ant' && isBeingDebugged()) {
+if (!IS_INTERNAL_BUILD && isBeingDebugged()) {
   // Use process.exit directly here since we're in the top-level code before imports
   // and gracefulShutdown is not yet available
   // eslint-disable-next-line custom-rules/no-top-level-side-effects
@@ -338,7 +343,7 @@ function runMigrations(): void {
     if (feature('TRANSCRIPT_CLASSIFIER')) {
       resetAutoModeOptInForDefaultOffer();
     }
-    if ("external" === 'ant') {
+    if (IS_INTERNAL_BUILD) {
       migrateFennecToOpus();
     }
     saveGlobalConfig(prev => prev.migrationVersion === CURRENT_MIGRATION_VERSION ? prev : {
@@ -426,7 +431,7 @@ export function startDeferredPrefetches(): void {
   }
 
   // Event loop stall detector — logs when the main thread is blocked >500ms
-  if ("external" === 'ant') {
+  if (IS_INTERNAL_BUILD) {
     void import('./utils/eventLoopStallDetector.js').then(m => m.startEventLoopStallDetector());
   }
 }
@@ -954,6 +959,47 @@ async function run(): Promise<CommanderCommand> {
       setInlinePlugins(pluginDir);
       clearPluginCache('preAction: --plugin-dir inline plugins');
     }
+
+    // Download plugins from URLs (--plugin-url) into a temp directory,
+    // then register them like --plugin-dir.
+    const pluginUrl = thisCommand.getOptionValue('pluginUrl');
+    if (Array.isArray(pluginUrl) && pluginUrl.length > 0 && pluginUrl.every(p => typeof p === 'string')) {
+      const { mkdirSync, rmSync, existsSync, writeFileSync } = await import('node:fs');
+      const { join } = await import('node:path');
+      const { tmpdir } = await import('node:os');
+      const pluginUrlDirs: string[] = [];
+      for (const url of pluginUrl as string[]) {
+        try {
+          const resp = await fetch(url);
+          if (!resp.ok) {
+            // biome-ignore lint/suspicious/noConsole:: intentional console output
+            console.error(`Failed to fetch plugin from ${url}: ${resp.status} ${resp.statusText}`);
+            continue;
+          }
+          const buffer = Buffer.from(await resp.arrayBuffer());
+          const urlHash = Buffer.from(url).toString('base64url').slice(0, 16);
+          const tmpDir = join(tmpdir(), `cclocal-plugin-url-${urlHash}`);
+          // Clean up any previous extraction
+          if (existsSync(tmpDir)) rmSync(tmpDir, { recursive: true, force: true });
+          mkdirSync(tmpDir, { recursive: true });
+          const zipPath = join(tmpDir, 'plugin.zip');
+          writeFileSync(zipPath, buffer);
+          // Use unzip via child_process (available on all platforms)
+          const { execSync } = await import('node:child_process');
+          execSync(`unzip -o "${zipPath}" -d "${tmpDir}"`, { stdio: 'pipe' });
+          pluginUrlDirs.push(tmpDir);
+        } catch (err: any) {
+          // biome-ignore lint/suspicious/noConsole:: intentional console output
+          console.error(`Failed to load plugin from ${url}: ${err.message}`);
+        }
+      }
+      if (pluginUrlDirs.length > 0) {
+        const existing = thisCommand.getOptionValue('pluginDir') as string[] | undefined;
+        const allDirs = [...(existing ?? []), ...pluginUrlDirs];
+        setInlinePlugins(allDirs);
+        clearPluginCache('preAction: --plugin-url downloaded plugins');
+      }
+    }
     runMigrations();
     profileCheckpoint('preAction_after_migrations');
 
@@ -997,20 +1043,20 @@ async function run(): Promise<CommanderCommand> {
     return Number.isFinite(n) ? n : undefined;
   }).hideHelp()).option('--from-pr [value]', 'Resume a session linked to a PR by PR number/URL, or open interactive picker with optional search term', value => value || true).option('--no-session-persistence', 'Disable session persistence - sessions will not be saved to disk and cannot be resumed (only works with --print)').addOption(new Option('--resume-session-at <message id>', 'When resuming, only messages up to and including the assistant message with <message.id> (use with --resume in print mode)').argParser(String).hideHelp()).addOption(new Option('--rewind-files <user-message-id>', 'Restore files to state at the specified user message and exit (requires --resume)').hideHelp())
   // @[MODEL LAUNCH]: Update the example model ID in the --model help text.
-  .option('--model <model>', `Model for the current session. Provide an alias for the latest model (e.g. 'sonnet' or 'opus') or a model's full name (e.g. 'claude-sonnet-4-6').`).addOption(new Option('--effort <level>', `Effort level for the current session (low, medium, high, max)`).argParser((rawValue: string) => {
+  .option('--model <model>', `Model for the current session. Provide an alias for the latest model (e.g. 'sonnet' or 'opus') or a model's full name (e.g. 'claude-sonnet-4-6').`).addOption(new Option('--effort <level>', `Effort level for the current session (low, medium, high, xhigh, max)`).argParser((rawValue: string) => {
     const value = rawValue.toLowerCase();
-    const allowed = ['low', 'medium', 'high', 'max'];
+    const allowed = ['low', 'medium', 'high', 'xhigh', 'max'];
     if (!allowed.includes(value)) {
       throw new InvalidArgumentError(`It must be one of: ${allowed.join(', ')}`);
     }
     return value;
-  })).option('--agent <agent>', `Agent for the current session. Overrides the 'agent' setting.`).option('--betas <betas...>', 'Beta headers to include in API requests (API key users only)').option('--fallback-model <model>', 'Enable automatic fallback to specified model when default model is overloaded (only works with --print)').addOption(new Option('--workload <tag>', 'Workload tag for billing-header attribution (cc_workload). Process-scoped; set by SDK daemon callers that spawn subprocesses for cron work. (only works with --print)').hideHelp()).option('--settings <file-or-json>', 'Path to a settings JSON file or a JSON string to load additional settings from').option('--add-dir <directories...>', 'Additional directories to allow tool access to').option('--ide', 'Automatically connect to IDE on startup if exactly one valid IDE is available', () => true).option('--strict-mcp-config', 'Only use MCP servers from --mcp-config, ignoring all other MCP configurations', () => true).option('--session-id <uuid>', 'Use a specific session ID for the conversation (must be a valid UUID)').option('-n, --name <name>', 'Set a display name for this session (shown in /resume and terminal title)').option('--agents <json>', 'JSON object defining custom agents (e.g. \'{"reviewer": {"description": "Reviews code", "prompt": "You are a code reviewer"}}\')').option('--setting-sources <sources>', 'Comma-separated list of setting sources to load (user, project, local).')
+  })).option('--agent <agent>', `Agent for the current session. Overrides the 'agent' setting.`).option('--betas <betas...>', 'Beta headers to include in API requests (API key users only)').option('--fallback-model <model>', 'Enable automatic fallback to specified model when default model is overloaded (only works with --print)').option('--exclude-dynamic-system-prompt-sections', 'Move per-machine sections (cwd, env info, memory paths, git status) from the system prompt into the first user message. Improves cross-user prompt-cache reuse. Only applies with the default system prompt (ignored with --system-prompt).', () => true).addOption(new Option('--workload <tag>', 'Workload tag for billing-header attribution (cc_workload). Process-scoped; set by SDK daemon callers that spawn subprocesses for cron work. (only works with --print)').hideHelp()).option('--settings <file-or-json>', 'Path to a settings JSON file or a JSON string to load additional settings from').option('--add-dir <directories...>', 'Additional directories to allow tool access to').option('--ide', 'Automatically connect to IDE on startup if exactly one valid IDE is available', () => true).option('--strict-mcp-config', 'Only use MCP servers from --mcp-config, ignoring all other MCP configurations', () => true).option('--session-id <uuid>', 'Use a specific session ID for the conversation (must be a valid UUID)').option('-n, --name <name>', 'Set a display name for this session (shown in /resume and terminal title)').option('--agents <json>', 'JSON object defining custom agents (e.g. \'{"reviewer": {"description": "Reviews code", "prompt": "You are a code reviewer"}}\')').option('--setting-sources <sources>', 'Comma-separated list of setting sources to load (user, project, local).')
   // gh-33508: <paths...> (variadic) consumed everything until the next
   // --flag. `claude --plugin-dir /path mcp add --transport http` swallowed
   // `mcp` and `add` as paths, then choked on --transport as an unknown
   // top-level option. Single-value + collect accumulator means each
   // --plugin-dir takes exactly one arg; repeat the flag for multiple dirs.
-  .option('--plugin-dir <path>', 'Load plugins from a directory for this session only (repeatable: --plugin-dir A --plugin-dir B)', (val: string, prev: string[]) => [...prev, val], [] as string[]).option('--disable-slash-commands', 'Disable all skills', () => true).option('--chrome', 'Enable Claude in Chrome integration').option('--no-chrome', 'Disable Claude in Chrome integration').option('--file <specs...>', 'File resources to download at startup. Format: file_id:relative_path (e.g., --file file_abc:doc.txt file_def:img.png)').action(async (prompt, options) => {
+  .option('--plugin-dir <path>', 'Load plugins from a directory for this session only (repeatable: --plugin-dir A --plugin-dir B)', (val: string, prev: string[]) => [...prev, val], [] as string[]).option('--plugin-url <url>', 'Fetch a plugin .zip from a URL for this session only (repeatable: --plugin-url A --plugin-url B)', (val: string, prev: string[]) => [...prev, val], [] as string[]).option('--disable-slash-commands', 'Disable all skills', () => true).option('--chrome', 'Enable Claude in Chrome integration').option('--no-chrome', 'Disable Claude in Chrome integration').option('--file <specs...>', 'File resources to download at startup. Format: file_id:relative_path (e.g., --file file_abc:doc.txt file_def:img.png)').action(async (prompt, options) => {
     profileCheckpoint('action_handler_start');
 
     // --bare = one-switch minimal mode. Sets SIMPLE so all the existing
@@ -1020,6 +1066,22 @@ async function run(): Promise<CommanderCommand> {
       bare?: boolean;
     }).bare) {
       process.env.CLAUDE_CODE_SIMPLE = '1';
+    }
+
+    // --exclude-dynamic-system-prompt-sections: move per-machine sections
+    // to the first user message for cross-user prompt-cache reuse.
+    if ((options as {
+      excludeDynamicSystemPromptSections?: boolean;
+    }).excludeDynamicSystemPromptSections) {
+      process.env.CLAUDE_CODE_EXCLUDE_DYNAMIC_SECTIONS = '1';
+    }
+
+    // --remote-control-session-name-prefix: custom prefix for RC session names
+    const rcNamePrefix = (options as {
+      remoteControlSessionNamePrefix?: string;
+    }).remoteControlSessionNamePrefix;
+    if (rcNamePrefix) {
+      process.env.CLAUDE_CODE_RC_SESSION_NAME_PREFIX = rcNamePrefix;
     }
 
     // Ignore "code" as a prompt - treat it the same as no prompt
@@ -1141,11 +1203,11 @@ async function run(): Promise<CommanderCommand> {
     const disableSlashCommands = options.disableSlashCommands || false;
 
     // Extract tasks mode options (ant-only)
-    const tasksOption = "external" === 'ant' && (options as {
+    const tasksOption = IS_INTERNAL_BUILD && (options as {
       tasks?: boolean | string;
     }).tasks;
     const taskListId = tasksOption ? typeof tasksOption === 'string' ? tasksOption : DEFAULT_TASKS_MODE_TASK_LIST_ID : undefined;
-    if ("external" === 'ant' && taskListId) {
+    if (IS_INTERNAL_BUILD && taskListId) {
       process.env.CLAUDE_CODE_TASK_LIST_ID = taskListId;
     }
 
@@ -1535,7 +1597,7 @@ async function run(): Promise<CommanderCommand> {
     };
     // Store the explicit CLI flag so teammates can inherit it
     setChromeFlagOverride(chromeOpts.chrome);
-    const enableClaudeInChrome = shouldEnableClaudeInChrome(chromeOpts.chrome) && ("external" === 'ant' || isClaudeAISubscriber());
+    const enableClaudeInChrome = shouldEnableClaudeInChrome(chromeOpts.chrome) && (IS_INTERNAL_BUILD || isClaudeAISubscriber());
     const autoEnableClaudeInChrome = !enableClaudeInChrome && shouldAutoEnableClaudeInChrome();
     if (enableClaudeInChrome) {
       const platform = getPlatform();
@@ -1767,7 +1829,7 @@ async function run(): Promise<CommanderCommand> {
     } = initResult;
 
     // Handle overly broad shell allow rules for ant users (Bash(*), PowerShell(*))
-    if ("external" === 'ant' && overlyBroadBashPermissions.length > 0) {
+    if (IS_INTERNAL_BUILD && overlyBroadBashPermissions.length > 0) {
       for (const permission of overlyBroadBashPermissions) {
         logForDebugging(`Ignoring overly broad shell permission ${permission.ruleDisplay} from ${permission.sourceDisplay}`);
       }
@@ -2018,7 +2080,7 @@ async function run(): Promise<CommanderCommand> {
     //  - no env override (which short-circuits _CACHED_MAY_BE_STALE before disk)
     //  - flag absent from disk (== null also catches pre-#22279 poisoned null)
     const explicitModel = options.model || process.env.ANTHROPIC_MODEL;
-    if ("external" === 'ant' && explicitModel && explicitModel !== 'default' && !hasGrowthBookEnvOverride('tengu_ant_model_override') && getGlobalConfig().cachedGrowthBookFeatures?.['tengu_ant_model_override'] == null) {
+    if (IS_INTERNAL_BUILD && explicitModel && explicitModel !== 'default' && !hasGrowthBookEnvOverride('tengu_ant_model_override') && getGlobalConfig().cachedGrowthBookFeatures?.['tengu_ant_model_override'] == null) {
       await initializeGrowthBook();
     }
 
@@ -2167,7 +2229,7 @@ async function run(): Promise<CommanderCommand> {
         // Log agent memory loaded event for tmux teammates
         if (customAgent.memory) {
           logEvent('tengu_agent_memory_loaded', {
-            ...("external" === 'ant' && {
+            ...(IS_INTERNAL_BUILD && {
               agent_type: customAgent.agentType as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
             }),
             scope: customAgent.memory as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
@@ -2231,7 +2293,7 @@ async function run(): Promise<CommanderCommand> {
       getFpsMetrics = ctx.getFpsMetrics;
       stats = ctx.stats;
       // Install asciicast recorder before Ink mounts (ant-only, opt-in via CLAUDE_CODE_TERMINAL_RECORDING=1)
-      if ("external" === 'ant') {
+      if (IS_INTERNAL_BUILD) {
         installAsciicastRecorder();
       }
       const {
@@ -2827,7 +2889,7 @@ async function run(): Promise<CommanderCommand> {
       if (!isBareMode()) {
         startDeferredPrefetches();
         void import('./utils/backgroundHousekeeping.js').then(m => m.startBackgroundHousekeeping());
-        if ("external" === 'ant') {
+        if (IS_INTERNAL_BUILD) {
           void import('./utils/sdkHeapDumpMonitor.js').then(m => m.startSdkMemoryMonitor());
         }
       }
@@ -3048,7 +3110,7 @@ async function run(): Promise<CommanderCommand> {
       // KAIROS block so Agent(name: "foo") can spawn in-process teammates
       // without TeamCreate. computeInitialTeamContext() is for tmux-spawned
       // teammates reading their own identity, not the assistant-mode leader.
-      teamContext: feature('KAIROS') ? assistantTeamContext ?? computeInitialTeamContext?.() : computeInitialTeamContext?.()
+      teamContext: (feature('KAIROS') ? assistantTeamContext ?? computeInitialTeamContext?.() : computeInitialTeamContext?.()) as AppState['teamContext']
     };
 
     // Add CLI initial prompt to history
@@ -3077,7 +3139,7 @@ async function run(): Promise<CommanderCommand> {
     //   - Runtime: uploader checks github.com/anthropics/* remote + gcloud auth.
     //   - Safety: CLAUDE_CODE_DISABLE_SESSION_DATA_UPLOAD=1 bypasses (tests set this).
     // Import is dynamic + async to avoid adding startup latency.
-    const sessionUploaderPromise = "external" === 'ant' ? import('./utils/sessionDataUploader.js') : null;
+    const sessionUploaderPromise = IS_INTERNAL_BUILD ? import('./utils/sessionDataUploader.js') : null;
 
     // Defer session uploader resolution to the onTurnComplete callback to avoid
     // adding a new top-level await in main.tsx (performance-critical path).
@@ -3222,8 +3284,8 @@ async function run(): Promise<CommanderCommand> {
         if (_pendingSSH.local) {
           process.stderr.write('Starting local ssh-proxy test session...\n');
           sshSession = createLocalSSHSession({
-            cwd: _pendingSSH.cwd,
-            permissionMode: _pendingSSH.permissionMode,
+            cwd: _pendingSSH.cwd!,
+            permissionMode: _pendingSSH.permissionMode!,
             dangerouslySkipPermissions: _pendingSSH.dangerouslySkipPermissions
           });
         } else {
@@ -3234,8 +3296,8 @@ async function run(): Promise<CommanderCommand> {
           const isTTY = process.stderr.isTTY;
           let hadProgress = false;
           sshSession = await createSSHSession({
-            host: _pendingSSH.host,
-            cwd: _pendingSSH.cwd,
+            host: _pendingSSH.host!,
+            cwd: _pendingSSH.cwd!,
             localVersion: MACRO.VERSION,
             permissionMode: _pendingSSH.permissionMode,
             dangerouslySkipPermissions: _pendingSSH.dangerouslySkipPermissions,
@@ -3594,7 +3656,7 @@ async function run(): Promise<CommanderCommand> {
           }
         }
       }
-      if ("external" === 'ant') {
+      if (IS_INTERNAL_BUILD) {
         if (options.resume && typeof options.resume === 'string' && !maybeSessionId) {
           // Check for ccshare URL (e.g. https://go/ccshare/boris-20260311-211036)
           const {
@@ -3829,7 +3891,7 @@ async function run(): Promise<CommanderCommand> {
   if (canUserConfigureAdvisor()) {
     program.addOption(new Option('--advisor <model>', 'Enable the server-side advisor tool with the specified model (alias or full ID).').hideHelp());
   }
-  if ("external" === 'ant') {
+  if (IS_INTERNAL_BUILD) {
     program.addOption(new Option('--delegate-permissions', '[ANT-ONLY] Alias for --permission-mode auto.').implies({
       permissionMode: 'auto'
     }));
@@ -3853,6 +3915,9 @@ async function run(): Promise<CommanderCommand> {
   }
   if (feature('KAIROS') || feature('KAIROS_BRIEF')) {
     program.addOption(new Option('--brief', 'Enable SendUserMessage tool for agent-to-user communication'));
+  } else {
+    // Always expose --brief to match official CLI behavior
+    program.addOption(new Option('--brief', 'Enable SendUserMessage tool for agent-to-user communication'));
   }
   if (feature('KAIROS')) {
     program.addOption(new Option('--assistant', 'Force assistant mode (Agent SDK daemon use)').hideHelp());
@@ -3872,6 +3937,7 @@ async function run(): Promise<CommanderCommand> {
   program.addOption(new Option('--parent-session-id <id>', 'Parent session ID for analytics correlation').hideHelp());
   program.addOption(new Option('--teammate-mode <mode>', 'How to spawn teammates: "tmux", "in-process", or "auto"').choices(['auto', 'tmux', 'in-process']).hideHelp());
   program.addOption(new Option('--agent-type <type>', 'Custom agent type for this teammate').hideHelp());
+  program.addOption(new Option('--remote-control-session-name-prefix <prefix>', 'Prefix for auto-generated Remote Control session names (default: hostname)').hideHelp());
 
   // Enable SDK URL for all builds but hide from help
   program.addOption(new Option('--sdk-url <url>', 'Use remote WebSocket endpoint for SDK I/O streaming (only with -p and stream-json format)').hideHelp());
@@ -4079,10 +4145,9 @@ async function run(): Promise<CommanderCommand> {
       const {
         parseConnectUrl
       } = await import('./server/parseConnectUrl.js');
-      const {
-        serverUrl,
-        authToken
-      } = parseConnectUrl(ccUrl);
+      const parsed = parseConnectUrl(ccUrl);
+      const serverUrl = parsed.serverUrl!;
+      const authToken = parsed.authToken!;
       let connectConfig;
       try {
         const session = await createDirectConnectSession({
@@ -4162,6 +4227,229 @@ async function run(): Promise<CommanderCommand> {
 
   // Plugin validate command
   const pluginCmd = program.command('plugin').alias('plugins').description('Manage Claude Code plugins').configureHelp(createSortedHelpConfig());
+
+  // plugin details <name> — show component inventory and projected token cost
+  pluginCmd.command('details <name>').description("Show a plugin's component inventory and projected token cost").addOption(coworkOption()).action(async (pluginName: string, options: { cowork?: boolean }) => {
+    const { readFileSync, existsSync, readdirSync, statSync } = await import('node:fs');
+    const { join, resolve } = await import('node:path');
+    const { homedir } = await import('node:os');
+    const pluginDir = join(homedir(), '.claude', 'plugins', 'data', pluginName);
+    if (!existsSync(pluginDir)) {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.error(`Plugin not found: ${pluginName}`);
+      process.exit(1);
+    }
+    // Read manifest
+    const manifestPath = join(pluginDir, 'plugin.json');
+    const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf-8')) : {};
+    // biome-ignore lint/suspicious/noConsole:: intentional console output
+    console.log(`Plugin: ${manifest.name ?? pluginName}`);
+    // biome-ignore lint/suspicious/noConsole:: intentional console output
+    console.log(`Version: ${manifest.version ?? 'unknown'}`);
+    // biome-ignore lint/suspicious/noConsole:: intentional console output
+    console.log(`Description: ${manifest.description ?? ''}`);
+    // List components
+    const components: Record<string, string[]> = {};
+    let totalTokens = 0;
+    // Skills
+    if (manifest.skills?.length) {
+      components['Skills'] = manifest.skills.map((s: any) => s.name ?? s);
+      for (const s of manifest.skills) {
+        const p = s.path ?? s;
+        if (typeof p === 'string' && existsSync(join(pluginDir, p))) {
+          totalTokens += Math.ceil(readFileSync(join(pluginDir, p), 'utf-8').length / 4);
+        }
+      }
+    }
+    // Hooks
+    if (manifest.hooks?.length) {
+      components['Hooks'] = manifest.hooks.map((h: any) => h.name ?? h.type ?? h);
+    }
+    // MCP servers
+    if (manifest.mcpServers) {
+      const names = Object.keys(manifest.mcpServers);
+      components['MCP Servers'] = names;
+    }
+    // Print
+    for (const [category, items] of Object.entries(components)) {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.log(`\n${category}:`);
+      for (const item of items) {
+        // biome-ignore lint/suspicious/noConsole:: intentional console output
+        console.log(`  - ${item}`);
+      }
+    }
+    // biome-ignore lint/suspicious/noConsole:: intentional console output
+    console.log(`\nProjected token cost: ~${totalTokens.toLocaleString()} tokens (skill prompts only)`);
+  });
+
+  // plugin tag [path] — create a release git tag
+  pluginCmd.command('tag [path]').description('Create a {name}--v{version} git tag for a plugin release, validating that plugin.json and any enclosing marketplace entry agree')
+    .option('--dry-run', 'Print what would be tagged without creating it')
+    .option('-f, --force', 'Skip the dirty-working-tree and tag-already-exists checks')
+    .option('-m, --message <msg>', 'Tag annotation message (use %s for the version)')
+    .option('--push', 'Push the tag to --remote after creating it')
+    .option('--remote <name>', 'Remote to push to with --push', 'origin')
+    .action(async (pluginPath?: string, opts?: { dryRun?: boolean; force?: boolean; message?: string; push?: boolean; remote?: string }) => {
+    const { execSync } = await import('node:child_process');
+    const { resolve: resolvePath, join } = await import('node:path');
+    const { readFileSync, existsSync } = await import('node:fs');
+    const targetDir = pluginPath ? resolvePath(pluginPath) : process.cwd();
+    const manifestPath = join(targetDir, 'plugin.json');
+    if (!existsSync(manifestPath)) {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.error(`No plugin.json found at: ${manifestPath}`);
+      process.exit(1);
+    }
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+    const { name, version } = manifest;
+    if (!name || !version) {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.error('plugin.json must have both "name" and "version" fields');
+      process.exit(1);
+    }
+    const tagName = `${name}--v${version}`;
+
+    // Safety checks (skip with --force)
+    if (!opts?.force) {
+      try {
+        const status = execSync('git status --porcelain', { cwd: targetDir, encoding: 'utf-8' }).trim();
+        if (status) {
+          // biome-ignore lint/suspicious/noConsole:: intentional console output
+          console.error('Working tree has uncommitted changes. Use -f/--force to skip this check.');
+          process.exit(1);
+        }
+      } catch { /* not a git repo, let it fall through */ }
+      try {
+        execSync(`git rev-parse "${tagName}"`, { cwd: targetDir, stdio: 'pipe' });
+        // biome-ignore lint/suspicious/noConsole:: intentional console output
+        console.error(`Tag "${tagName}" already exists. Use -f/--force to skip this check.`);
+        process.exit(1);
+      } catch { /* tag doesn't exist, good */ }
+    }
+
+    // Dry-run: just print the tag name
+    if (opts?.dryRun) {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.log(`Would create tag: ${tagName}`);
+      return;
+    }
+
+    try {
+      const msg = opts?.message?.replace('%s', version);
+      const tagCmd = msg
+        ? `git tag -a "${tagName}" -m "${msg.replace(/"/g, '\\"')}"`
+        : `git tag "${tagName}"`;
+      execSync(tagCmd, { cwd: targetDir, stdio: 'inherit' });
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.log(`Created tag: ${tagName}`);
+
+      if (opts?.push) {
+        const remote = opts?.remote ?? 'origin';
+        execSync(`git push "${remote}" "${tagName}"`, { cwd: targetDir, stdio: 'inherit' });
+        // biome-ignore lint/suspicious/noConsole:: intentional console output
+        console.log(`Pushed tag to ${remote}`);
+      }
+    } catch (err: any) {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.error(`Failed to create tag: ${err.message}`);
+      process.exit(1);
+    }
+  });
+
+  // plugin prune | autoremove — clean up orphaned plugin dependencies
+  pluginCmd.command('prune').alias('autoremove').description('Remove auto-installed dependencies that are no longer needed')
+    .option('--dry-run', 'List what would be removed without removing')
+    .option('-s, --scope <scope>', 'Prune at scope: user, project, or local', 'user')
+    .option('-y, --yes', 'Skip the confirmation prompt')
+    .action(async (opts?: { dryRun?: boolean; scope?: string; yes?: boolean }) => {
+    const { readdirSync, statSync, rmSync, existsSync } = await import('node:fs');
+    const { join, resolve } = await import('node:path');
+    const { homedir } = await import('node:os');
+
+    // Resolve the plugin data directory based on scope
+    const scope = opts?.scope ?? 'user';
+    let pluginDataDir: string;
+    if (scope === 'project') {
+      pluginDataDir = join(process.cwd(), '.claude', 'plugins', 'data');
+    } else if (scope === 'local') {
+      pluginDataDir = join(process.cwd(), '.claude', 'local', 'plugins', 'data');
+    } else {
+      pluginDataDir = join(homedir(), '.claude', 'plugins', 'data');
+    }
+
+    if (!existsSync(pluginDataDir)) {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.log('No plugin data directory found.');
+      return;
+    }
+    // Find directories with node_modules that don't have a corresponding installed plugin
+    const { listInstalledPlugins } = await import('./cli/handlers/plugins.js');
+    const installed = await listInstalledPlugins();
+    const installedIds = new Set(installed.map((p: any) => p.id ?? p.name));
+    const entries = readdirSync(pluginDataDir).filter(d => statSync(join(pluginDataDir, d)).isDirectory());
+
+    const toRemove: string[] = [];
+    for (const entry of entries) {
+      if (!installedIds.has(entry)) {
+        const nmPath = join(pluginDataDir, entry, 'node_modules');
+        if (existsSync(nmPath)) {
+          toRemove.push(nmPath);
+        }
+      }
+    }
+
+    if (toRemove.length === 0) {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.log('No orphaned plugin dependencies found.');
+      return;
+    }
+
+    // Dry-run: just list what would be removed
+    if (opts?.dryRun) {
+      for (const p of toRemove) {
+        // biome-ignore lint/suspicious/noConsole:: intentional console output
+        console.log(`Would remove: ${p}`);
+      }
+      return;
+    }
+
+    // Confirmation prompt (skip if -y or not a TTY)
+    if (!opts?.yes) {
+      const isTTY = process.stdin.isTTY && process.stdout.isTTY;
+      if (!isTTY) {
+        // biome-ignore lint/suspicious/noConsole:: intentional console output
+        console.error('Error: not a TTY. Use -y/--yes to skip confirmation prompt.');
+        process.exit(1);
+      }
+      const { createInterface } = await import('node:readline');
+      const rl = createInterface({ input: process.stdin, output: process.stdout });
+      const answer = await new Promise<string>(res => {
+        rl.question(`Remove ${toRemove.length} orphaned plugin dependency tree(s)? [y/N] `, res);
+      });
+      rl.close();
+      if (answer.toLowerCase() !== 'y') {
+        // biome-ignore lint/suspicious/noConsole:: intentional console output
+        console.log('Cancelled.');
+        return;
+      }
+    }
+
+    let removed = 0;
+    for (const nmPath of toRemove) {
+      rmSync(nmPath, { recursive: true, force: true });
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.log(`Removed: ${nmPath}`);
+      removed++;
+    }
+    if (removed === 0) {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.log('No orphaned plugin dependencies found.');
+    } else {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.log(`Pruned ${removed} orphaned plugin dependency tree(s).`);
+    }
+  });
   pluginCmd.command('validate <path>').description('Validate a plugin or marketplace manifest').addOption(coworkOption()).action(async (manifestPath: string, options: {
     cowork?: boolean;
   }) => {
@@ -4290,8 +4578,21 @@ async function run(): Promise<CommanderCommand> {
     await setupTokenHandler(root);
   });
 
-  // Agents command - list configured agents
-  program.command('agents').description('List configured agents').option('--setting-sources <sources>', 'Comma-separated list of setting sources to load (user, project, local).').action(async () => {
+  // Agents command - manage background agents
+  program.command('agents').description('Manage background agents')
+    .option('--add-dir <directory>', 'Additional directory to allow tool access to in dispatched sessions (repeatable)', (val: string, prev: string[]) => [...prev, val], [] as string[])
+    .option('--allow-dangerously-skip-permissions', 'Make bypass-permissions mode available to dispatched sessions without defaulting to it', false)
+    .option('--cwd <path>', 'Show only background sessions started under <path>')
+    .option('--dangerously-skip-permissions', 'Alias for --permission-mode bypassPermissions', false)
+    .option('--effort <level>', 'Default effort level for sessions dispatched from agent view')
+    .option('--mcp-config <config>', 'MCP server configuration to apply to dispatched sessions (repeatable)', (val: string, prev: string[]) => [...prev, val], [] as string[])
+    .option('--model <model>', 'Default model for sessions dispatched from agent view')
+    .option('--permission-mode <mode>', 'Default permission mode for sessions dispatched from agent view')
+    .option('--plugin-dir <path>', 'Load plugins from specified directory for the agent view and dispatched sessions (repeatable)', (val: string, prev: string[]) => [...prev, val], [] as string[])
+    .option('--setting-sources <sources>', 'Comma-separated list of setting sources to load (user, project, local)')
+    .option('--settings <file-or-json>', 'Settings file or JSON string to apply to the agent view and dispatched sessions')
+    .option('--strict-mcp-config', 'Only use MCP servers from --mcp-config in dispatched sessions', false)
+    .action(async () => {
     const {
       agentsHandler
     } = await import('./cli/handlers/agents.js');
@@ -4382,8 +4683,148 @@ async function run(): Promise<CommanderCommand> {
     await update();
   });
 
+  // claude ultrareview — CLI entry point for cloud-hosted multi-agent code review
+  program.command('ultrareview [target]').description('Run a cloud-hosted multi-agent code review of the current branch (or a PR number / base branch) and print the findings').option('--json', 'Print the raw bugs.json payload instead of formatted findings').option('--timeout <minutes>', 'Maximum minutes to wait for the review to finish', '30').action(async (target?: string, opts?: { json?: boolean; timeout?: string }) => {
+    const timeoutMin = Number(opts?.timeout ?? '30');
+    if (!Number.isFinite(timeoutMin) || timeoutMin <= 0) {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.error('--timeout must be a positive number of minutes');
+      process.exit(1);
+    }
+
+    // Delegate to the /ultrareview slash command implementation
+    const { isUltrareviewEnabled } = await import('./commands/review/ultrareviewEnabled.js');
+    if (!isUltrareviewEnabled()) {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.error('Ultrareview is not currently available for your account. See https://docs.anthropic.com/en/docs/claude-code for availability.');
+      process.exit(1);
+    }
+
+    const { launchRemoteReview } = await import('./commands/review/reviewRemote.js');
+    const billingNote = ''; // CLI mode has no overage dialog
+    const result = await launchRemoteReview(target ?? '', { isCli: true, json: opts?.json, timeoutMs: timeoutMin * 60_000 }, billingNote);
+    if (result) {
+      // In JSON mode, dump raw; otherwise print formatted
+      if (opts?.json) {
+        // biome-ignore lint/suspicious/noConsole:: intentional console output
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        const blocks = Array.isArray(result) ? result : [result];
+        for (const block of blocks) {
+          if (block.type === 'text') {
+            // biome-ignore lint/suspicious/noConsole:: intentional console output
+            console.log(block.text);
+          }
+        }
+      }
+    } else {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.error('Ultrareview failed to launch. Check that this is a GitHub repo and try again.');
+      process.exit(1);
+    }
+  });
+
+  // claude project — manage Claude Code project state
+  const projectCmd = program.command('project').description('Manage Claude Code project state');
+  projectCmd.command('purge [path]').description('Delete all Claude Code state for a project (transcripts, tasks, file history, config entry)').option('--all', 'Purge state for every project (mutually exclusive with [path])').option('--dry-run', 'List what would be deleted without deleting anything').option('-i, --interactive', 'Prompt for each item before deleting').option('-y, --yes', 'Skip confirmation prompt').option('--confirm', '(Deprecated: use -y/--yes) Skip confirmation prompt').hideHelp() // backward compat
+  .action(async (projectPath?: string, opts?: { all?: boolean; dryRun?: boolean; interactive?: boolean; yes?: boolean; confirm?: boolean }) => {
+    const { rmSync, existsSync, readdirSync, statSync } = await import('node:fs');
+    const { resolve, join } = await import('node:path');
+    const { homedir } = await import('node:os');
+    const skipConfirm = opts?.yes || opts?.confirm;
+
+    const projectsDir = resolve(homedir(), '.claude', 'projects');
+
+    // Determine which project directories to purge
+    let dirsToPurge: string[] = [];
+
+    if (opts?.all) {
+      if (projectPath) {
+        // biome-ignore lint/suspicious/noConsole:: intentional console output
+        console.error('Error: [path] and --all are mutually exclusive');
+        process.exit(1);
+      }
+      if (!existsSync(projectsDir)) {
+        // biome-ignore lint/suspicious/noConsole:: intentional console output
+        console.log('No projects directory found.');
+        return;
+      }
+      dirsToPurge = readdirSync(projectsDir)
+        .filter(name => statSync(join(projectsDir, name)).isDirectory())
+        .map(name => join(projectsDir, name));
+    } else {
+      const targetPath = projectPath ? resolve(projectPath) : process.cwd();
+      const projectHash = Buffer.from(targetPath).toString('base64url').replace(/=/g, '');
+      const projectDir = resolve(projectsDir, projectHash);
+
+      if (!existsSync(projectDir)) {
+        // biome-ignore lint/suspicious/noConsole:: intentional console output
+        console.log(`No Claude Code state found for: ${targetPath}`);
+        return;
+      }
+      dirsToPurge = [projectDir];
+    }
+
+    if (dirsToPurge.length === 0) {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.log('No project state to purge.');
+      return;
+    }
+
+    // Dry-run: just list what would be deleted
+    if (opts?.dryRun) {
+      for (const dir of dirsToPurge) {
+        // biome-ignore lint/suspicious/noConsole:: intentional console output
+        console.log(`Would delete: ${dir}`);
+      }
+      return;
+    }
+
+    // Interactive: prompt for each directory
+    if (opts?.interactive) {
+      const { createInterface } = await import('node:readline');
+      const kept: string[] = [];
+      for (const dir of dirsToPurge) {
+        const rl = createInterface({ input: process.stdin, output: process.stdout });
+        const answer = await new Promise<string>(res => {
+          rl.question(`Delete ${dir}? [y/N] `, res);
+        });
+        rl.close();
+        if (answer.toLowerCase() !== 'y') {
+          kept.push(dir);
+        }
+      }
+      dirsToPurge = dirsToPurge.filter(d => !kept.includes(d));
+    } else if (!skipConfirm) {
+      const { createInterface } = await import('node:readline');
+      const rl = createInterface({ input: process.stdin, output: process.stdout });
+      const label = opts?.all ? 'ALL projects' : dirsToPurge[0]!;
+      const answer = await new Promise<string>(res => {
+        rl.question(`Delete all Claude Code state for ${label}?\nThis includes transcripts, tasks, file history, and config. [y/N] `, res);
+      });
+      rl.close();
+      if (answer.toLowerCase() !== 'y') {
+        // biome-ignore lint/suspicious/noConsole:: intentional console output
+        console.log('Cancelled.');
+        return;
+      }
+    }
+
+    try {
+      for (const dir of dirsToPurge) {
+        rmSync(dir, { recursive: true, force: true });
+        // biome-ignore lint/suspicious/noConsole:: intentional console output
+        console.log(`Purged: ${dir}`);
+      }
+    } catch (err: any) {
+      // biome-ignore lint/suspicious/noConsole:: intentional console output
+      console.error(`Failed to purge: ${err.message}`);
+      process.exit(1);
+    }
+  });
+
   // claude up — run the project's CLAUDE.md "# claude up" setup instructions.
-  if ("external" === 'ant') {
+  if (IS_INTERNAL_BUILD) {
     program.command('up').description('[ANT-ONLY] Initialize or upgrade the local dev environment using the "# claude up" section of the nearest CLAUDE.md').action(async () => {
       const {
         up
@@ -4394,7 +4835,7 @@ async function run(): Promise<CommanderCommand> {
 
   // claude rollback (ant-only)
   // Rolls back to previous releases
-  if ("external" === 'ant') {
+  if (IS_INTERNAL_BUILD) {
     program.command('rollback [target]').description('[ANT-ONLY] Roll back to a previous release\n\nExamples:\n  claude rollback                                    Go 1 version back from current\n  claude rollback 3                                  Go 3 versions back from current\n  claude rollback 2.0.73-dev.20251217.t190658        Roll back to a specific version').option('-l, --list', 'List recent published versions with ages').option('--dry-run', 'Show what would be installed without installing').option('--safe', 'Roll back to the server-pinned safe version (set by oncall during incidents)').action(async (target?: string, options?: {
       list?: boolean;
       dryRun?: boolean;
@@ -4418,7 +4859,7 @@ async function run(): Promise<CommanderCommand> {
   });
 
   // ant-only commands
-  if ("external" === 'ant') {
+  if (IS_INTERNAL_BUILD) {
     const validateLogId = (value: string) => {
       const maybeSessionId = validateUuid(value);
       if (maybeSessionId) return maybeSessionId;
@@ -4452,7 +4893,7 @@ Examples:
       } = await import('./cli/handlers/ant.js');
       await exportHandler(source, outputFile);
     });
-    if ("external" === 'ant') {
+    if (IS_INTERNAL_BUILD) {
       const taskCmd = program.command('task').description('[ANT-ONLY] Manage task list tasks');
       taskCmd.command('create <subject>').description('Create a new task').option('-d, --description <text>', 'Task description').option('-l, --list <id>', 'Task list ID (defaults to "tasklist")').action(async (subject: string, opts: {
         description?: string;
@@ -4611,7 +5052,7 @@ async function logTenguInit({
         assistantActivationPath: assistantActivationPath as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
       }),
       autoUpdatesChannel: (getInitialSettings().autoUpdatesChannel ?? 'latest') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-      ...("external" === 'ant' ? (() => {
+      ...(IS_INTERNAL_BUILD ? (() => {
         const cwd = getCwd();
         const gitRoot = findGitRoot(cwd);
         const rp = gitRoot ? relative(gitRoot, cwd) || '.' : undefined;
@@ -4636,7 +5077,7 @@ function maybeActivateProactive(options: unknown): void {
   }
 }
 function maybeActivateBrief(options: unknown): void {
-  if (!(feature('KAIROS') || feature('KAIROS_BRIEF'))) return;
+  // cc-local: always allow brief activation (matches official CLI behavior)
   const briefFlag = (options as {
     brief?: boolean;
   }).brief;

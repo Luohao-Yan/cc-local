@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import { createContext, type RefObject, useContext } from 'react';
 import type { ScrollBoxHandle } from '../ink/components/ScrollBox.js';

@@ -22,6 +22,7 @@ import {
   EDIT_TOOLS,
   type PermissionPolicy,
 } from '../permissions/permissionPolicy.js'
+import { filterToolsForPlanMode } from '../tools/impl/planModeTools.js'
 
 /**
  * 最大并行工具执行数
@@ -113,12 +114,27 @@ export interface QueryEngineOptions {
   fetchOptions?: Record<string, unknown>
   /** Custom fetch function (e.g., for usage tracking wrappers) */
   fetch?: typeof fetch
+  /** External abort signal for this specific query (allows per-query cancellation) */
+  abortSignal?: AbortSignal
+  /** Whether plan mode is currently active — restricts tool set to read-only + ExitPlanMode */
+  planModeActive?: boolean
+  /** Callback to request plan mode toggle (EnterPlanMode/ExitPlanMode tools) */
+  onPlanModeChange?: (entering: boolean, plan: string) => void
+  /** Callback for sending messages to other agents (SendMessage tool) */
+  onSendMessage?: (recipient: string, content: string) => Promise<void>
+  /** Callback for pushing a notification to the user (SendUserMessage tool) */
+  onUserMessage?: (message: string) => void
+  /** Callback for interactive user questions (AskUserQuestion tool) */
+  onUserQuestion?: (question: string) => Promise<string>
+  /** Callback to cancel a running sub-agent task (TaskStop tool) */
+  onTaskStop?: (taskId: string) => boolean
 }
 
 type QueryClient = Pick<AnthropicClient, 'streamQuery'>
 
 export interface QueryResult {
   message: AssistantMessage
+  finalText?: string
   usage: {
     inputTokens: number
     outputTokens: number
@@ -128,7 +144,8 @@ export interface QueryResult {
 
 export class QueryEngine {
   private options: QueryEngineOptions
-  private abortController?: AbortController
+  /** Tracks the most recently started query's controller so cancel() can abort it. */
+  private _activeAbortController?: AbortController
   private client: QueryClient
 
   constructor(options: QueryEngineOptions) {
@@ -156,16 +173,39 @@ export class QueryEngine {
     options?: Partial<QueryEngineOptions>
   ): Promise<QueryResult> {
     const opts = { ...this.options, ...options }
-    this.abortController = new AbortController()
 
+    // Per-query AbortController: forwards external abortSignal if provided
+    const perQueryController = new AbortController()
+    this._activeAbortController = perQueryController
+
+    if (opts.abortSignal) {
+      // Forward external signal: if already aborted, abort immediately;
+      // otherwise listen for future abort events
+      if (opts.abortSignal.aborted) {
+        perQueryController.abort()
+      } else {
+        const onExternalAbort = () => perQueryController.abort()
+        opts.abortSignal.addEventListener('abort', onExternalAbort)
+        // Clean up listener when this query's controller settles
+        perQueryController.signal.addEventListener('abort', () => {
+          opts.abortSignal!.removeEventListener('abort', onExternalAbort)
+        }, { once: true })
+      }
+    }
+
+    const abortSignal = perQueryController.signal
     const messageId = randomUUID()
 
     try {
       const allTools = filterToolsByName(opts.tools ?? toolRegistry.getAll(), opts.enabledTools)
-      const availableTools = filterToolsByPermission(
+      const permissionFiltered = filterToolsByPermission(
         allTools,
         opts.permissionPolicy
       )
+      // In plan mode, restrict to read-only tools + ExitPlanMode
+      const availableTools = opts.planModeActive
+        ? filterToolsForPlanMode(permissionFiltered)
+        : permissionFiltered
 
       // 发送流开始事件
       opts.onStream?.({
@@ -188,7 +228,8 @@ export class QueryEngine {
           ...opts,
           tools: allTools,
         },
-        messageId
+        messageId,
+        abortSignal
       )
 
       // 发送流结束事件
@@ -207,7 +248,9 @@ export class QueryEngine {
       })
       throw error
     } finally {
-      this.abortController = undefined
+      if (this._activeAbortController === perQueryController) {
+        this._activeAbortController = undefined
+      }
     }
   }
 
@@ -218,7 +261,8 @@ export class QueryEngine {
     messages: Message[],
     tools: Array<{ name: string; description: string; input_schema: unknown }> | undefined,
     opts: QueryEngineOptions,
-    messageId: string
+    messageId: string,
+    abortSignal: AbortSignal
   ): Promise<QueryResult> {
     let currentMessages = [...messages]
     // Accumulate across ALL turns for the final returned message
@@ -253,7 +297,7 @@ export class QueryEngine {
 
       for await (const event of stream) {
         // 检查是否被取消
-        if (this.abortController?.signal.aborted) {
+        if (abortSignal.aborted) {
           throw new Error('Query aborted')
         }
 
@@ -327,7 +371,7 @@ export class QueryEngine {
 
       for (const batch of batches) {
         // 检查是否被取消
-        if (this.abortController?.signal.aborted) {
+        if (abortSignal.aborted) {
           throw new Error('Query aborted')
         }
 
@@ -337,13 +381,13 @@ export class QueryEngine {
           const chunks = this.chunk(batch.tools, maxConcurrency)
 
           for (const chunk of chunks) {
-            if (this.abortController?.signal.aborted) {
+            if (abortSignal.aborted) {
               throw new Error('Query aborted')
             }
 
             const chunkResults = await Promise.all(
               chunk.map(async (toolCall) => {
-                return await this.executeToolCall(toolCall, opts, messageId)
+                return await this.executeToolCall(toolCall, opts, messageId, abortSignal)
               })
             )
             toolResultEntries.push(...chunkResults)
@@ -351,10 +395,10 @@ export class QueryEngine {
         } else {
           // 非并发安全批次：串行执行
           for (const toolCall of batch.tools) {
-            if (this.abortController?.signal.aborted) {
+            if (abortSignal.aborted) {
               throw new Error('Query aborted')
             }
-            const result = await this.executeToolCall(toolCall, opts, messageId)
+            const result = await this.executeToolCall(toolCall, opts, messageId, abortSignal)
             toolResultEntries.push(result)
           }
         }
@@ -475,7 +519,7 @@ export class QueryEngine {
   }
 
   cancel(): void {
-    this.abortController?.abort()
+    this._activeAbortController?.abort()
   }
 
   // 工具执行
@@ -500,7 +544,8 @@ export class QueryEngine {
   private async executeToolCall(
     toolCall: { name: string; input: unknown; id: string },
     opts: QueryEngineOptions,
-    messageId: string
+    messageId: string,
+    abortSignal: AbortSignal
   ): Promise<{ toolCall: { name: string; input: unknown; id: string }; result: ToolResult }> {
     const tool = opts.tools?.find((t: Tool) => t.name === toolCall.name)
     if (!tool) {
@@ -539,7 +584,7 @@ export class QueryEngine {
     const context: ToolContext = {
       sessionId: messageId,
       cwd: process.cwd(),
-      abortSignal: this.abortController?.signal,
+      abortSignal,
       onProgress: opts.onStream ? (progress) => {
         opts.onStream!({
           type: 'stream_delta',
@@ -561,6 +606,11 @@ export class QueryEngine {
       permissionPolicy: opts.permissionPolicy,
       onPermissionCheck: opts.onPermissionCheck,
       tools: opts.tools,
+      onPlanModeChange: opts.onPlanModeChange,
+      onSendMessage: opts.onSendMessage,
+      onUserMessage: opts.onUserMessage,
+      onUserQuestion: opts.onUserQuestion,
+      onTaskStop: opts.onTaskStop,
     }
 
     const result = await this.executeTool(tool, toolCall.input, context)

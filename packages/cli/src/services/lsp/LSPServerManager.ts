@@ -156,7 +156,7 @@ export function createLSPServerManager(): LSPServerManager {
    */
   async function shutdown(): Promise<void> {
     const toStop = Array.from(servers.entries()).filter(
-      ([, s]) => s.state === 'running' || s.state === 'error',
+      ([, s]) => s.state.status === 'running' || s.state.status === 'error',
     )
 
     const results = await Promise.allSettled(
@@ -218,7 +218,7 @@ export function createLSPServerManager(): LSPServerManager {
     const server = getServerForFile(filePath)
     if (!server) return undefined
 
-    if (server.state === 'stopped' || server.state === 'error') {
+    if (server.state.status === 'stopped' || server.state.status === 'error') {
       try {
         await server.start()
       } catch (error) {
@@ -283,7 +283,7 @@ export function createLSPServerManager(): LSPServerManager {
 
     // Get language ID from server's extensionToLanguage mapping
     const ext = path.extname(filePath).toLowerCase()
-    const languageId = server.config.extensionToLanguage[ext] || 'plaintext'
+    const languageId = (server.config as any).extensionToLanguage[ext] || 'plaintext'
 
     try {
       await server.sendNotification('textDocument/didOpen', {
@@ -311,7 +311,7 @@ export function createLSPServerManager(): LSPServerManager {
 
   async function changeFile(filePath: string, content: string): Promise<void> {
     const server = getServerForFile(filePath)
-    if (!server || server.state !== 'running') {
+    if (!server || server.state.status !== 'running') {
       return openFile(filePath, content)
     }
 
@@ -348,7 +348,7 @@ export function createLSPServerManager(): LSPServerManager {
    */
   async function saveFile(filePath: string): Promise<void> {
     const server = getServerForFile(filePath)
-    if (!server || server.state !== 'running') return
+    if (!server || server.state.status !== 'running') return
 
     try {
       await server.sendNotification('textDocument/didSave', {
@@ -376,7 +376,7 @@ export function createLSPServerManager(): LSPServerManager {
    */
   async function closeFile(filePath: string): Promise<void> {
     const server = getServerForFile(filePath)
-    if (!server || server.state !== 'running') return
+    if (!server || server.state.status !== 'running') return
 
     const fileUri = pathToFileURL(path.resolve(filePath)).href
 

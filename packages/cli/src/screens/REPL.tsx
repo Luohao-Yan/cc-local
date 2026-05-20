@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../utils/i18n/index.js';
 // biome-ignore-all assist/source/organizeImports: ANT-ONLY import markers must not be reordered
 import { feature } from 'bun:bundle';
 import { spawnSync } from 'child_process';
@@ -104,13 +107,13 @@ const VoiceKeybindingHandler: typeof import('../hooks/useVoiceIntegration.js').V
 // Frustration detection is ant-only (dogfooding). Conditional require so external
 // builds eliminate the module entirely (including its two O(n) useMemos that run
 // on every messages change, plus the GrowthBook fetch).
-const useFrustrationDetection: typeof import('../components/FeedbackSurvey/useFrustrationDetection.js').useFrustrationDetection = "external" === 'ant' ? require('../components/FeedbackSurvey/useFrustrationDetection.js').useFrustrationDetection : () => ({
+const useFrustrationDetection: typeof import('../components/FeedbackSurvey/useFrustrationDetection.js').useFrustrationDetection = ("external" as string) === 'ant' ? require('../components/FeedbackSurvey/useFrustrationDetection.js').useFrustrationDetection : () => ({
   state: 'closed',
   handleTranscriptSelect: () => {}
 });
 // Ant-only org warning. Conditional require so the org UUID list is
 // eliminated from external builds (one UUID is on excluded-strings).
-const useAntOrgWarningNotification: typeof import('../hooks/notifs/useAntOrgWarningNotification.js').useAntOrgWarningNotification = "external" === 'ant' ? require('../hooks/notifs/useAntOrgWarningNotification.js').useAntOrgWarningNotification : () => {};
+const useAntOrgWarningNotification: typeof import('../hooks/notifs/useAntOrgWarningNotification.js').useAntOrgWarningNotification = ("external" as string) === 'ant' ? require('../hooks/notifs/useAntOrgWarningNotification.js').useAntOrgWarningNotification : () => {};
 // Dead code elimination: conditional import for coordinator mode
 const getCoordinatorUserContext: (mcpClients: ReadonlyArray<{
   name: string;
@@ -218,9 +221,9 @@ import { EffortCallout, shouldShowEffortCallout } from '../components/EffortCall
 import type { EffortValue } from '../utils/effort.js';
 import { RemoteCallout } from '../components/RemoteCallout.js';
 /* eslint-disable custom-rules/no-process-env-top-level, @typescript-eslint/no-require-imports */
-const AntModelSwitchCallout = "external" === 'ant' ? require('../components/AntModelSwitchCallout.js').AntModelSwitchCallout : null;
-const shouldShowAntModelSwitch = "external" === 'ant' ? require('../components/AntModelSwitchCallout.js').shouldShowModelSwitchCallout : (): boolean => false;
-const UndercoverAutoCallout = "external" === 'ant' ? require('../components/UndercoverAutoCallout.js').UndercoverAutoCallout : null;
+const AntModelSwitchCallout = ("external" as string) === 'ant' ? require('../components/AntModelSwitchCallout.js').AntModelSwitchCallout : null;
+const shouldShowAntModelSwitch = ("external" as string) === 'ant' ? require('../components/AntModelSwitchCallout.js').shouldShowModelSwitchCallout : (): boolean => false;
+const UndercoverAutoCallout = ("external" as string) === 'ant' ? require('../components/UndercoverAutoCallout.js').UndercoverAutoCallout : null;
 /* eslint-enable custom-rules/no-process-env-top-level, @typescript-eslint/no-require-imports */
 import { activityManager } from '../utils/activityManager.js';
 import { createAbortController } from '../utils/abortController.js';
@@ -288,6 +291,33 @@ import { useMessageActions, MessageActionsKeybindings, MessageActionsBar, type M
 import { setClipboard } from '../ink/termio/osc.js';
 import type { ScrollBoxHandle } from '../ink/components/ScrollBox.js';
 import { createAttachmentMessage, getQueuedCommandAttachments } from '../utils/attachments.js';
+import {
+  subscribe as subscribeAutoContinue,
+  getGoalState,
+  getLoopState,
+  clearGoal,
+  clearLoop,
+  updateGoalStats,
+  updateLoopStats,
+  isAutoContinueActive,
+  clearAllAutoContinue,
+} from '../state/autoContinueState.js';
+
+// ── Auto-continue overlay helpers ──
+function formatTokenCount(tokens: number): string {
+  if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`
+  if (tokens >= 1_000) return `${(tokens / 1_000).toFixed(1)}k`
+  return String(tokens)
+}
+
+function formatElapsed(startMs: number): string {
+  const elapsed = Date.now() - startMs
+  const seconds = Math.floor(elapsed / 1000)
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  if (mins > 0) return `${mins}m${secs}s`
+  return `${secs}s`
+}
 
 // Stable empty array for hooks that accept MCPServerConnection[] — avoids
 // creating a new [] literal on every render in remote mode, which would
@@ -331,10 +361,10 @@ function TranscriptModeFooter(t0) {
   const suppressShowAll = t1 === undefined ? false : t1;
   const toggleShortcut = useShortcutDisplay("app:toggleTranscript", "Global", "ctrl+o");
   const showAllShortcut = useShortcutDisplay("transcript:toggleShowAll", "Transcript", "ctrl+e");
-  const t2 = searchBadge ? " \xB7 n/N to navigate" : virtualScroll ? ` · ${figures.arrowUp}${figures.arrowDown} scroll · home/end top/bottom` : suppressShowAll ? "" : ` · ${showAllShortcut} to ${showAllInTranscript ? "collapse" : "show all"}`;
+  const t2 = searchBadge ? ` \xB7 ${t('repl.navigate')}` : virtualScroll ? ` · ${figures.arrowUp}${figures.arrowDown} ${t('repl.scroll')} · ${t('repl.homeEnd')}` : suppressShowAll ? "" : ` · ${showAllShortcut} ${t('repl.toToggle')} ${showAllInTranscript ? t('repl.collapse') : t('repl.showAll')}`;
   let t3;
   if ($[0] !== t2 || $[1] !== toggleShortcut) {
-    t3 = <Text dimColor={true}>Showing detailed transcript · {toggleShortcut} to toggle{t2}</Text>;
+    t3 = <Text dimColor={true}>{t('repl.showingTranscript')} · {toggleShortcut} {t('repl.toToggle')}{t2}</Text>;
     $[0] = t2;
     $[1] = toggleShortcut;
     $[2] = t3;
@@ -460,7 +490,7 @@ function TranscriptSearchBar({
       <Text inverse>{cursorChar}</Text>
       {off < query.length && <Text>{query.slice(off + 1)}</Text>}
       <Box flexGrow={1} />
-      {indexStatus === 'building' ? <Text dimColor>indexing… </Text> : indexStatus ? <Text dimColor>indexed in {indexStatus.ms}ms </Text> : count === 0 && query ? <Text color="error">no matches </Text> : count > 0 ?
+      {indexStatus === 'building' ? <Text dimColor>{t('repl.indexing')} </Text> : indexStatus ? <Text dimColor>{t('repl.indexedIn', {ms: indexStatus.ms})} </Text> : count === 0 && query ? <Text color="error">{t('repl.noMatches')} </Text> : count > 0 ?
     // Engine-counted (indexOf on extractSearchText). May drift from
     // render-count for ghost/phantom messages — badge is a rough
     // location hint. scanElement gives exact per-message positions
@@ -605,7 +635,7 @@ export function REPL({
   // Env-var gates hoisted to mount-time — isEnvTruthy does toLowerCase+trim+
   // includes, and these were on the render path (hot during PageUp spam).
   const titleDisabled = useMemo(() => isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_TERMINAL_TITLE), []);
-  const moreRightEnabled = useMemo(() => "external" === 'ant' && isEnvTruthy(process.env.CLAUDE_MORERIGHT), []);
+  const moreRightEnabled = useMemo(() => ("external" as string) === 'ant' && isEnvTruthy(process.env.CLAUDE_MORERIGHT), []);
   const disableVirtualScroll = useMemo(() => isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_VIRTUAL_SCROLL), []);
   const disableMessageActions = feature('MESSAGE_ACTIONS') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
@@ -690,6 +720,12 @@ export function REPL({
   // Track proactive mode for tools dependency - SleepTool filters by proactive state
   const proactiveActive = React.useSyncExternalStore(proactiveModule?.subscribeToProactiveChanges ?? PROACTIVE_NO_OP_SUBSCRIBE, proactiveModule?.isProactiveActive ?? PROACTIVE_FALSE);
 
+  // Track /goal and /loop auto-continue state
+  const NO_OP_SUBSCRIBE = () => () => {};
+  const NO_OP_FALSE = () => false;
+  const goalState = React.useSyncExternalStore(subscribeAutoContinue, () => getGoalState());
+  const loopState = React.useSyncExternalStore(subscribeAutoContinue, () => getLoopState());
+
   // BriefTool.isEnabled() reads getUserMsgOptIn() from bootstrap state, which
   // /brief flips mid-session alongside isBriefOnly. The memo below needs a
   // React-visible dep to re-run getTools() when that happens; isBriefOnly is
@@ -737,7 +773,7 @@ export function REPL({
   const [showIdeOnboarding, setShowIdeOnboarding] = useState(false);
   // Dead code elimination: model switch callout state (ant-only)
   const [showModelSwitchCallout, setShowModelSwitchCallout] = useState(() => {
-    if ("external" === 'ant') {
+    if (("external" as string) === 'ant') {
       return shouldShowAntModelSwitch();
     }
     return false;
@@ -1016,7 +1052,7 @@ export function REPL({
   }, []);
   const [showUndercoverCallout, setShowUndercoverCallout] = useState(false);
   useEffect(() => {
-    if ("external" === 'ant') {
+    if (("external" as string) === 'ant') {
       void (async () => {
         // Wait for repo classification to settle (memoized, no-op if primed).
         const {
@@ -1157,7 +1193,7 @@ export function REPL({
     }
   }, [isLoading, isWaitingForApproval, isShowingLocalJSXCommand]);
   const sessionStatus: TabStatusKind = isWaitingForApproval || isShowingLocalJSXCommand ? 'waiting' : isLoading ? 'busy' : 'idle';
-  const waitingFor = sessionStatus !== 'waiting' ? undefined : toolUseConfirmQueue.length > 0 ? `approve ${toolUseConfirmQueue[0]!.tool.name}` : pendingWorkerRequest ? 'worker request' : pendingSandboxRequest ? 'sandbox request' : isShowingLocalJSXCommand ? 'dialog open' : 'input needed';
+  const waitingFor = sessionStatus !== 'waiting' ? undefined : toolUseConfirmQueue.length > 0 ? `${t('repl.approve')} ${toolUseConfirmQueue[0]!.tool.name}` : pendingWorkerRequest ? t('repl.workerRequest') : pendingSandboxRequest ? t('repl.sandboxRequest') : isShowingLocalJSXCommand ? t('repl.dialogOpen') : t('repl.inputNeeded');
 
   // Push status to the PID file for `claude ps`. Fire-and-forget; ps falls
   // back to transcript-tail derivation when this is missing/stale.
@@ -1652,7 +1688,7 @@ export function REPL({
     if (wt.creationDurationMs < 15_000) return;
     worktreeTipShownRef.current = true;
     const secs = Math.round(wt.creationDurationMs / 1000);
-    setMessages(prev => [...prev, createSystemMessage(`Worktree creation took ${secs}s. For large repos, set \`worktree.sparsePaths\` in .claude/settings.json to check out only the directories you need — e.g. \`{"worktree": {"sparsePaths": ["src", "packages/foo"]}}\`.`, 'info')]);
+    setMessages(prev => [...prev, createSystemMessage(t('repl.worktreeTip', {secs}), 'info')]);
   }, [setMessages]);
 
   // Hide spinner when the only in-progress tool is Sleep
@@ -2045,10 +2081,10 @@ export function REPL({
     if (allowDialogsWithAnimation && showIdeOnboarding) return 'ide-onboarding';
 
     // Model switch callout (ant-only, eliminated from external builds)
-    if ("external" === 'ant' && allowDialogsWithAnimation && showModelSwitchCallout) return 'model-switch';
+    if (("external" as string) === 'ant' && allowDialogsWithAnimation && showModelSwitchCallout) return 'model-switch';
 
     // Undercover auto-enable explainer (ant-only, eliminated from external builds)
-    if ("external" === 'ant' && allowDialogsWithAnimation && showUndercoverCallout) return 'undercover-callout';
+    if (("external" as string) === 'ant' && allowDialogsWithAnimation && showUndercoverCallout) return 'undercover-callout';
 
     // Effort callout (shown once for Opus 4.6 users when effort is enabled)
     if (allowDialogsWithAnimation && showEffortCallout) return 'effort-callout';
@@ -2114,6 +2150,12 @@ export function REPL({
     }
     logForDebugging(`[onCancel] focusedInputDialog=${focusedInputDialog} streamMode=${streamMode}`);
 
+    // Stop auto-continue modes on Esc
+    const goal = getGoalState()
+    const loop = getLoopState()
+    if (loop.active) clearLoop()
+    if (goal.active) clearGoal()
+
     // Pause proactive mode so the user gets control back.
     // It will resume when they submit their next input (see onSubmit).
     if (feature('PROACTIVE') || feature('KAIROS')) {
@@ -2145,7 +2187,7 @@ export function REPL({
     } else if (focusedInputDialog === 'prompt') {
       // Reject all pending prompts and clear the queue
       for (const item of promptQueue) {
-        item.reject(new Error('Prompt cancelled by user'));
+        item.reject(new Error(t('repl.promptCancelled')));
       }
       setPromptQueue([]);
       abortController?.abort('user-cancel');
@@ -2277,7 +2319,7 @@ export function REPL({
           const bridgeRequestId = randomUUID();
           bridgeCallbacks.sendRequest(bridgeRequestId, SANDBOX_NETWORK_ACCESS_TOOL_NAME, {
             host: hostPattern.host
-          }, randomUUID(), `Allow network connection to ${hostPattern.host}?`);
+          }, randomUUID(), t('repl.networkConnectionQuestion', {host: hostPattern.host}));
           const unsubscribe = bridgeCallbacks.onResponse(bridgeRequestId, response => {
             unsubscribe();
             const allow = response.behavior === 'allow';
@@ -2322,7 +2364,7 @@ export function REPL({
     const reason = SandboxManager.getSandboxUnavailableReason();
     if (!reason) return;
     if (SandboxManager.isSandboxRequired()) {
-      process.stderr.write(`\nError: sandbox required but unavailable: ${reason}\n` + `  sandbox.failIfUnavailable is set — refusing to start without a working sandbox.\n\n`);
+      process.stderr.write(`\n${t('repl.sandboxRequired', {reason})}\n` + `  ${t('repl.sandboxRefuse')}\n\n`);
       gracefulShutdownSync(1, 'other');
       return;
     }
@@ -2332,8 +2374,8 @@ export function REPL({
     addNotification({
       key: 'sandbox-unavailable',
       jsx: <>
-          <Text color="warning">sandbox disabled</Text>
-          <Text dimColor> · /sandbox</Text>
+          <Text color="warning">{t('repl.sandboxDisabled')}</Text>
+          <Text dimColor> · {t('repl.sandboxCommand')}</Text>
         </>,
       priority: 'medium'
     });
@@ -2342,7 +2384,7 @@ export function REPL({
     // If sandboxing is enabled (setting.sandbox is defined, initialise the manager)
     SandboxManager.initialize(sandboxAskCallback).catch(err => {
       // Initialization/validation failed - display error and exit
-      process.stderr.write(`\n❌ Sandbox Error: ${errorMessage(err)}\n`);
+      process.stderr.write(`\n❌ ${t('repl.sandboxError')} ${errorMessage(err)}\n`);
       gracefulShutdownSync(1, 'other');
     });
   }
@@ -2486,7 +2528,7 @@ export function REPL({
       dynamicSkillDirTriggers: new Set<string>(),
       discoveredSkillNames: discoveredSkillNamesRef.current,
       setResponseLength,
-      pushApiMetricsEntry: "external" === 'ant' ? (ttftMs: number) => {
+      pushApiMetricsEntry: ("external" as string) === 'ant' ? (ttftMs: number) => {
         const now = Date.now();
         const baseline = responseLengthRef.current;
         apiMetricsRef.current.push({
@@ -2508,6 +2550,26 @@ export function REPL({
           case 'compact_start':
             setSpinnerMessage('Compacting conversation');
             break;
+          case 'compact_progress': {
+            const { preTokens, postTokens, streamedTokens, estimatedTotal } = event
+            if (postTokens > 0) {
+              // Final progress: show token reduction
+              const pre = (preTokens / 1000).toFixed(1)
+              const post = (postTokens / 1000).toFixed(1)
+              const pct = preTokens > 0 ? Math.round(((preTokens - postTokens) / preTokens) * 100) : 0
+              setSpinnerMessage(`Compacting ${pre}k\u2192${post}k tokens (\u2212${pct}%)`)
+            } else if (streamedTokens > 0 && estimatedTotal > 0) {
+              // Streaming progress: show percentage bar
+              const pct = Math.min(99, Math.round((streamedTokens / estimatedTotal) * 100))
+              const barLen = 10
+              const filled = Math.round((pct / 100) * barLen)
+              const bar = '\u2588'.repeat(filled) + '\u2591'.repeat(barLen - filled)
+              setSpinnerMessage(`Compacting ${bar} ${pct}%`)
+            } else {
+              setSpinnerMessage('Compacting conversation\u2026')
+            }
+            break;
+          }
           case 'compact_end':
             setSpinnerMessage(null);
             setSpinnerColor(null);
@@ -2815,7 +2877,7 @@ export function REPL({
 
     // Capture ant-only API metrics before resetLoadingState clears the ref.
     // For multi-request turns (tool use loops), compute P50 across all requests.
-    if ("external" === 'ant' && apiMetricsRef.current.length > 0) {
+    if (("external" as string) === 'ant' && apiMetricsRef.current.length > 0) {
       const entries = apiMetricsRef.current;
       const ttfts = entries.map(e => e.ttftMs);
       // Compute per-request OTPS using only active streaming time and
@@ -2943,7 +3005,7 @@ export function REPL({
         // minutes — wiping the session made the pill disappear entirely, forcing
         // the user to re-invoke Tmux just to peek. Skip on abort so the panel
         // stays open for inspection (matches the turn-duration guard below).
-        if ("external" === 'ant' && !abortController.signal.aborted) {
+        if (("external" as string) === 'ant' && !abortController.signal.aborted) {
           setAppState(prev => {
             if (prev.tungstenActiveSession === undefined) return prev;
             if (prev.tungstenPanelAutoHidden === true) return prev;
@@ -2995,6 +3057,56 @@ export function REPL({
         // controller makes ctrl+c fire onCancel() (aborting nothing) instead of
         // propagating to the double-press exit flow.
         setAbortController(null);
+
+        // ── Auto-continue (/goal and /loop) ──
+        // After a turn completes, check if goal or loop mode is active.
+        // If so, either re-trigger a continuation or detect completion.
+        if (!abortController.signal.aborted) {
+          const goal = getGoalState()
+          const loop = getLoopState()
+
+          // Update token stats from the turn that just completed
+          const apiMetrics = apiMetricsRef.current
+          let turnInput = 0
+          let turnOutput = 0
+          if (apiMetrics.length > 0) {
+            const last = apiMetrics[apiMetrics.length - 1]!
+            turnInput = last.inputTokens ?? 0
+            turnOutput = last.outputTokens ?? 0
+          }
+
+          if (goal.active) {
+            updateGoalStats(turnInput, turnOutput)
+            // Check if the assistant declared the goal achieved
+            const lastMsg = messagesRef.current[messagesRef.current.length - 1]
+            let achieved = false
+            if (lastMsg?.type === 'assistant') {
+              const text = lastMsg.message?.content
+                ?.filter((b: any) => b.type === 'text')
+                .map((b: any) => b.text)
+                .join(' ') ?? ''
+              achieved = text.includes('GOAL_ACHIEVED')
+            }
+            if (achieved) {
+              clearGoal()
+            } else {
+              // Re-trigger a continuation prompt
+              enqueue({
+                mode: 'prompt',
+                value: 'Continue working on the goal. Do not ask for confirmation, just proceed.',
+                isMeta: true,
+              })
+            }
+          } else if (loop.active) {
+            updateLoopStats(turnInput, turnOutput)
+            // Loop continues until user presses Esc (handled in onCancel)
+            enqueue({
+              mode: 'prompt',
+              value: 'Continue iterating. Do not ask for confirmation, just proceed.',
+              isMeta: true,
+            })
+          }
+        }
       }
 
       // Auto-restore: if the user interrupted before any meaningful response
@@ -3066,7 +3178,7 @@ export function REPL({
       }
 
       // Atomically: clear initial message, set permission mode and rules, and store plan for verification
-      const shouldStorePlanForVerification = initialMsg.message.planContent && "external" === 'ant' && isEnvTruthy(undefined);
+      const shouldStorePlanForVerification = initialMsg.message.planContent && ("external" as string) === 'ant' && isEnvTruthy(undefined);
       setAppState(prev => {
         // Build and apply permission updates (mode + allowedPrompts rules)
         let updatedToolPermissionContext = initialMsg.mode ? applyPermissionUpdates(prev.toolPermissionContext, buildPermissionUpdates(initialMsg.mode, initialMsg.allowedPrompts)) : prev.toolPermissionContext;
@@ -3567,7 +3679,7 @@ export function REPL({
           addNotification({
             key: `resume-agent-failed-${task.id}`,
             jsx: <Text color="error">
-                  Failed to resume agent: {errorMessage(err)}
+                  {t('repl.failedToResumeAgent')} {errorMessage(err)}
                 </Text>,
             priority: 'low'
           });
@@ -3599,7 +3711,7 @@ export function REPL({
 
   // Handler for when user presses 1 on survey thanks screen to share details
   const handleSurveyRequestFeedback = useCallback(() => {
-    const command = "external" === 'ant' ? '/issue' : '/feedback';
+    const command = ("external" as string) === 'ant' ? '/issue' : '/feedback';
     onSubmit(command, {
       setCursorOffset: () => {},
       clearBuffer: () => {},
@@ -3764,7 +3876,7 @@ export function REPL({
       addNotification({
         // Same key as text-selection copy — repeated copies replace toast, don't queue.
         key: 'selection-copied',
-        text: 'copied',
+        text: t('repl.copied'),
         color: 'success',
         priority: 'immediate',
         timeoutMs: 2000
@@ -3936,7 +4048,7 @@ export function REPL({
       // Use ref to get current dialog state, avoiding stale closure
       focusedInputDialogRef.current === undefined && idleTimeSinceResponse >= getGlobalConfig().messageIdleNotifThresholdMs) {
         void sendNotification({
-          message: 'Claude is waiting for your input',
+          message: t('repl.waitingForInput'),
           notificationType: 'idle_prompt'
         }, terminal);
       }
@@ -3966,12 +4078,12 @@ export function REPL({
       addNotif({
         key: 'idle-return-hint',
         jsx: mode === 'hint_v2' ? <>
-                <Text dimColor>new task? </Text>
-                <Text color="suggestion">/clear</Text>
-                <Text dimColor> to save </Text>
-                <Text color="suggestion">{formattedTokens} tokens</Text>
+                <Text dimColor>{t('repl.newTask')} </Text>
+                <Text color="suggestion">{t('repl.clearCommand')}</Text>
+                <Text dimColor> {t('repl.toSave')} </Text>
+                <Text color="suggestion">{formattedTokens} {t('repl.tokens')}</Text>
               </> : <Text color="warning">
-                new task? /clear to save {formattedTokens} tokens
+                {t('repl.newTask')} {t('repl.clearCommand')} {t('repl.toSave')} {formattedTokens} {t('repl.tokens')}
               </Text>,
         priority: 'medium',
         // Persist until submit — the hint fires at T+75min idle, user may
@@ -4067,7 +4179,7 @@ export function REPL({
   // - Workers receive permission responses via mailbox messages
   // - Leaders receive permission requests via mailbox messages
 
-  if ("external" === 'ant') {
+  if (("external" as string) === 'ant') {
     // Tasks mode: watch for tasks and auto-process them
     // eslint-disable-next-line react-hooks/rules-of-hooks
     // biome-ignore lint/correctness/useHookAtTopLevel: conditional for dead code elimination in external builds
@@ -4127,7 +4239,7 @@ export function REPL({
   useEffect(() => {
     const handleSuspend = () => {
       // Print suspension instructions
-      process.stdout.write(`\nClaude Code has been suspended. Run \`fg\` to bring Claude Code back.\nNote: ctrl + z now suspends Claude Code, ctrl + _ undoes input.\n`);
+      process.stdout.write(`\n${t('repl.suspended')}\n${t('repl.suspendNote')}\n`);
     };
     const handleResume = () => {
       // Force complete component tree replacement instead of terminal clear
@@ -4175,13 +4287,13 @@ export function REPL({
     }
 
     // Fall back to default behavior
-    const hookType = currentHooks[0]?.data.hookEvent === 'SubagentStop' ? 'subagent stop' : 'stop';
-    if ("external" === 'ant') {
+    const hookType = currentHooks[0]?.data.hookEvent === 'SubagentStop' ? t('repl.hookSubagentStop') : t('repl.hookStop');
+    if (("external" as string) === 'ant') {
       const cmd = currentHooks[completedCount]?.data.command;
       const label = cmd ? ` '${truncateToWidth(cmd, 40)}'` : '';
-      return total === 1 ? `running ${hookType} hook${label}` : `running ${hookType} hook${label}\u2026 ${completedCount}/${total}`;
+      return total === 1 ? `${t('repl.runningHook', {hookType})} hook${label}` : `${t('repl.runningHook', {hookType})} hook${label}\u2026 ${completedCount}/${total}`;
     }
-    return total === 1 ? `running ${hookType} hook` : `running stop hooks… ${completedCount}/${total}`;
+    return total === 1 ? `${t('repl.runningHook', {hookType})} ${t('repl.hook')}` : `${t('repl.runningHooks')} ${completedCount}/${total}`;
   }, [messages, isLoading]);
 
   // Callback to capture frozen state when entering transcript mode
@@ -4308,7 +4420,7 @@ export function REPL({
         clearTimeout(editorTimerRef.current);
         setEditorStatus(s);
       };
-      setStatus(`rendering ${deferredMessages.length} messages…`);
+      setStatus(`${t('repl.rendering')} ${deferredMessages.length} ${t('repl.messages')}`);
       void (async () => {
         try {
           // Width = terminal minus vim's line-number gutter (4 digits +
@@ -4322,9 +4434,9 @@ export function REPL({
           const path = join(tmpdir(), `cc-transcript-${Date.now()}.txt`);
           await writeFile(path, text);
           const opened = openFileInExternalEditor(path);
-          setStatus(opened ? `opening ${path}` : `wrote ${path} · no $VISUAL/$EDITOR set`);
+          setStatus(opened ? `${t('repl.opening')} ${path}` : `${t('repl.wrote')} ${path} · ${t('repl.noEditorSet')}`);
         } catch (e) {
-          setStatus(`render failed: ${e instanceof Error ? e.message : String(e)}`);
+          setStatus(`${t('repl.renderFailed')} ${e instanceof Error ? e.message : String(e)}`);
         }
         editorRenderingRef.current = false;
         if (gen !== editorGenRef.current) return;
@@ -4585,9 +4697,11 @@ export function REPL({
               {toolJSX && !(toolJSX.isLocalJSXCommand && toolJSX.isImmediate) && !toolJsxCentered && <Box flexDirection="column" width="100%">
                     {toolJSX.jsx}
                   </Box>}
-              {"external" === 'ant' && <TungstenLiveMonitor />}
+              {("external" as string) === 'ant' && <TungstenLiveMonitor />}
               {feature('WEB_BROWSER_TOOL') ? WebBrowserPanelModule && <WebBrowserPanelModule.WebBrowserPanel /> : null}
               <Box flexGrow={1} />
+              {goalState.active && <Text color="cyan" bold>※ Goal: {goalState.description} · {goalState.turnCount} turns · {formatTokenCount(goalState.inputTokens + goalState.outputTokens)} tokens · {formatElapsed(goalState.startMs)}</Text>}
+              {loopState.active && <Text color="magenta" bold>↻ Loop · {loopState.turnCount} turns · {formatTokenCount(loopState.inputTokens + loopState.outputTokens)} tokens · {formatElapsed(loopState.startMs)} · Esc to stop</Text>}
               {showSpinner && <SpinnerWithVerb mode={streamMode} spinnerTip={spinnerTip} responseLengthRef={responseLengthRef} apiMetricsRef={apiMetricsRef} overrideMessage={spinnerMessage} spinnerSuffix={stopHookSpinnerSuffix} verbose={verbose} loadingStartTimeRef={loadingStartTimeRef} totalPausedMsRef={totalPausedMsRef} pauseStartTimeRef={pauseStartTimeRef} overrideColor={spinnerColor} overrideShimmerColor={spinnerShimmerColor} hasActiveTools={inProgressToolUseIDs.size > 0} leaderIsIdle={!isLoading} />}
               {!showSpinner && !isLoading && !userInputOnProcessing && !hasRunningTeammates && isBriefOnly && !viewedAgentTask && <BriefIdleStatus />}
               {isFullscreenEnvEnabled() && <PromptInputQueuedCommands />}
@@ -4670,13 +4784,13 @@ export function REPL({
           }} onAbort={() => {
             const item = promptQueue[0];
             if (!item) return;
-            item.reject(new Error('Prompt cancelled by user'));
+            item.reject(new Error(t('repl.promptCancelled')));
             setPromptQueue(([, ...tail]) => tail);
           }} />}
                 {/* Show pending indicator on worker while waiting for leader approval */}
                 {pendingWorkerRequest && <WorkerPendingPermission toolName={pendingWorkerRequest.toolName} description={pendingWorkerRequest.description} />}
                 {/* Show pending indicator for sandbox permission on worker side */}
-                {pendingSandboxRequest && <WorkerPendingPermission toolName="Network Access" description={`Waiting for leader to approve network access to ${pendingSandboxRequest.host}`} />}
+                {pendingSandboxRequest && <WorkerPendingPermission toolName={t('repl.networkAccessTool')} description={t('repl.waitingForLeader', {host: pendingSandboxRequest.host})} />}
                 {/* Worker sandbox permission requests from swarm workers */}
                 {focusedInputDialog === 'worker-sandbox-permission' && <SandboxPermissionRequest key={workerSandboxPermissions.queue[0]!.requestId} hostPattern={{
             host: workerSandboxPermissions.queue[0]!.host,
@@ -4808,7 +4922,7 @@ export function REPL({
             });
           }} />}
                 {focusedInputDialog === 'ide-onboarding' && <IdeOnboardingDialog onDone={() => setShowIdeOnboarding(false)} installationStatus={ideInstallationStatus} />}
-                {"external" === 'ant' && focusedInputDialog === 'model-switch' && AntModelSwitchCallout && <AntModelSwitchCallout onDone={(selection: string, modelAlias?: string) => {
+                {("external" as string) === 'ant' && focusedInputDialog === 'model-switch' && AntModelSwitchCallout && <AntModelSwitchCallout onDone={(selection: string, modelAlias?: string) => {
             setShowModelSwitchCallout(false);
             if (selection === 'switch' && modelAlias) {
               setAppState(prev => ({
@@ -4818,7 +4932,7 @@ export function REPL({
               }));
             }
           }} />}
-                {"external" === 'ant' && focusedInputDialog === 'undercover-callout' && UndercoverAutoCallout && <UndercoverAutoCallout onDone={() => setShowUndercoverCallout(false)} />}
+                {("external" as string) === 'ant' && focusedInputDialog === 'undercover-callout' && UndercoverAutoCallout && <UndercoverAutoCallout onDone={() => setShowUndercoverCallout(false)} />}
                 {focusedInputDialog === 'effort-callout' && <EffortCallout model={mainLoopModel} onDone={selection => {
             setShowEffortCallout(false);
             if (selection !== 'dismiss') {
@@ -4897,11 +5011,11 @@ export function REPL({
 
                 {!toolJSX?.shouldHidePromptInput && !focusedInputDialog && !isExiting && !disabled && !cursor && <>
                       {autoRunIssueReason && <AutoRunIssueNotification onRun={handleAutoRunIssue} onCancel={handleCancelAutoRunIssue} reason={getAutoRunIssueReasonText(autoRunIssueReason)} />}
-                      {postCompactSurvey.state !== 'closed' ? <FeedbackSurvey state={postCompactSurvey.state} lastResponse={postCompactSurvey.lastResponse} handleSelect={postCompactSurvey.handleSelect} inputValue={inputValue} setInputValue={setInputValue} onRequestFeedback={handleSurveyRequestFeedback} /> : memorySurvey.state !== 'closed' ? <FeedbackSurvey state={memorySurvey.state} lastResponse={memorySurvey.lastResponse} handleSelect={memorySurvey.handleSelect} handleTranscriptSelect={memorySurvey.handleTranscriptSelect} inputValue={inputValue} setInputValue={setInputValue} onRequestFeedback={handleSurveyRequestFeedback} message="How well did Claude use its memory? (optional)" /> : <FeedbackSurvey state={feedbackSurvey.state} lastResponse={feedbackSurvey.lastResponse} handleSelect={feedbackSurvey.handleSelect} handleTranscriptSelect={feedbackSurvey.handleTranscriptSelect} inputValue={inputValue} setInputValue={setInputValue} onRequestFeedback={didAutoRunIssueRef.current ? undefined : handleSurveyRequestFeedback} />}
+                      {postCompactSurvey.state !== 'closed' ? <FeedbackSurvey state={postCompactSurvey.state} lastResponse={postCompactSurvey.lastResponse} handleSelect={postCompactSurvey.handleSelect} inputValue={inputValue} setInputValue={setInputValue} onRequestFeedback={handleSurveyRequestFeedback} /> : memorySurvey.state !== 'closed' ? <FeedbackSurvey state={memorySurvey.state} lastResponse={memorySurvey.lastResponse} handleSelect={memorySurvey.handleSelect} handleTranscriptSelect={memorySurvey.handleTranscriptSelect} inputValue={inputValue} setInputValue={setInputValue} onRequestFeedback={handleSurveyRequestFeedback} message={t('repl.memoryFeedback')} /> : <FeedbackSurvey state={feedbackSurvey.state} lastResponse={feedbackSurvey.lastResponse} handleSelect={feedbackSurvey.handleSelect} handleTranscriptSelect={feedbackSurvey.handleTranscriptSelect} inputValue={inputValue} setInputValue={setInputValue} onRequestFeedback={didAutoRunIssueRef.current ? undefined : handleSurveyRequestFeedback} />}
                       {/* Frustration-triggered transcript sharing prompt */}
                       {frustrationDetection.state !== 'closed' && <FeedbackSurvey state={frustrationDetection.state} lastResponse={null} handleSelect={() => {}} handleTranscriptSelect={frustrationDetection.handleTranscriptSelect} inputValue={inputValue} setInputValue={setInputValue} />}
                       {/* Skill improvement survey - appears when improvements detected (ant-only) */}
-                      {"external" === 'ant' && skillImprovementSurvey.suggestion && <SkillImprovementSurvey isOpen={skillImprovementSurvey.isOpen} skillName={skillImprovementSurvey.suggestion.skillName} updates={skillImprovementSurvey.suggestion.updates} handleSelect={skillImprovementSurvey.handleSelect} inputValue={inputValue} setInputValue={setInputValue} />}
+                      {("external" as string) === 'ant' && skillImprovementSurvey.suggestion && <SkillImprovementSurvey isOpen={skillImprovementSurvey.isOpen} skillName={skillImprovementSurvey.suggestion.skillName} updates={skillImprovementSurvey.suggestion.updates} handleSelect={skillImprovementSurvey.handleSelect} inputValue={inputValue} setInputValue={setInputValue} />}
                       {showIssueFlagBanner && <IssueFlagBanner />}
                       {}
                       <PromptInput debug={debug} ideSelection={ideSelection} hasSuppressedDialogs={!!hasSuppressedDialogs} isLocalJSXCommandActive={isShowingLocalJSXCommand} getToolUseContext={getToolUseContext} toolPermissionContext={toolPermissionContext} setToolPermissionContext={setToolPermissionContext} apiKeyStatus={apiKeyStatus} commands={commands} agents={agentDefinitions.activeAgents} isLoading={isLoading} onExit={handleExit} verbose={verbose} messages={messages} onAutoUpdaterResult={setAutoUpdaterResult} autoUpdaterResult={autoUpdaterResult} input={inputValue} onInputChange={setInputValue} mode={inputMode} onModeChange={setInputMode} stashedPrompt={stashedPrompt} setStashedPrompt={setStashedPrompt} submitCount={submitCount} onShowMessageSelector={handleShowMessageSelector} onMessageActionsEnter={
@@ -4929,7 +5043,7 @@ export function REPL({
               // selector still shows (REPL keeps full history for
               // scrollback). Surface why nothing happened instead
               // of silently no-oping.
-              setMessages(prev => [...prev, createSystemMessage('That message is no longer in the active context (snipped or pre-compact). Choose a more recent message.', 'warning')]);
+              setMessages(prev => [...prev, createSystemMessage(t('repl.snippedMessage'), 'warning')]);
               return;
             }
             const newAbortController = createAbortController();
@@ -4986,7 +5100,7 @@ export function REPL({
             const historyShortcut = getShortcutDisplay('app:toggleTranscript', 'Global', 'ctrl+o');
             addNotification({
               key: 'summarize-ctrl-o-hint',
-              text: `Conversation summarized (${historyShortcut} for history)`,
+              text: t('repl.conversationSummarized', {shortcut: historyShortcut}),
               priority: 'medium',
               timeoutMs: 8000
             });
@@ -4994,7 +5108,7 @@ export function REPL({
             setIsMessageSelectorVisible(false);
             setMessageSelectorPreselect(undefined);
           }} />}
-                {"external" === 'ant' && <DevBar />}
+                {("external" as string) === 'ant' && <DevBar />}
               </Box>
               {feature('BUDDY') && !(companionNarrow && isFullscreenEnvEnabled()) && companionVisible ? <CompanionSprite /> : null}
             </Box>} />

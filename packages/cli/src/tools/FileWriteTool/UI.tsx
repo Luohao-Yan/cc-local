@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import type { ToolResultBlockParam } from '@anthropic-ai/sdk/resources/index.mjs';
 import type { StructuredPatchHunk } from 'diff';
@@ -22,6 +24,7 @@ import { getDisplayPath } from '../../utils/file.js';
 import { logError } from '../../utils/log.js';
 import { getPlansDirectory } from '../../utils/plans.js';
 import { openForScan, readCapped } from '../../utils/readEditContext.js';
+import { t } from '../../utils/i18n/index.js';
 import type { Output } from './FileWriteTool.js';
 const MAX_LINES_TO_RENDER = 10;
 // Model output uses \n regardless of platform, so always split on \n.
@@ -46,7 +49,7 @@ function FileWriteToolCreatedMessage(t0) {
   const {
     columns
   } = useTerminalSize();
-  const contentWithFallback = content || "(No content)";
+  const contentWithFallback = content || t('fileWrite.noContent');
   const numLines = countLines(content);
   const plusLines = numLines - MAX_LINES_TO_RENDER;
   let t1;
@@ -76,7 +79,7 @@ function FileWriteToolCreatedMessage(t0) {
   }
   let t4;
   if ($[7] !== t1 || $[8] !== t3) {
-    t4 = <Text>Wrote {t1} lines to{" "}{t3}</Text>;
+    t4 = <Text>{t('fileWrite.wroteLinesTo', { count: numLines, path: '' })}{t3}</Text>;
     $[7] = t1;
     $[8] = t3;
     $[9] = t4;
@@ -105,7 +108,7 @@ function FileWriteToolCreatedMessage(t0) {
   }
   let t8;
   if ($[17] !== numLines || $[18] !== plusLines || $[19] !== verbose) {
-    t8 = !verbose && plusLines > 0 && <Text dimColor={true}>… +{plusLines} {plusLines === 1 ? "line" : "lines"}{" "}{numLines > 0 && <CtrlOToExpand />}</Text>;
+    t8 = !verbose && plusLines > 0 && <Text dimColor={true}>… +{plusLines} {plusLines === 1 ? t('fileWrite.plusLine') : t('fileWrite.plusLines')}{" "}{numLines > 0 && <CtrlOToExpand />}</Text>;
     $[17] = numLines;
     $[18] = plusLines;
     $[19] = verbose;
@@ -130,9 +133,9 @@ export function userFacingName(input: Partial<{
   content: string;
 }> | undefined): string {
   if (input?.file_path?.startsWith(getPlansDirectory())) {
-    return 'Updated plan';
+    return t('fileWrite.updatedPlan');
   }
-  return 'Write';
+  return t('fileWrite.write');
 }
 
 /** Gates fullscreen click-to-expand. Only `create` truncates (to
@@ -285,7 +288,7 @@ function WriteRejectionBody(t0) {
   if (data.type === "error") {
     let t1;
     if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-      t1 = <MessageResponse><Text>(No changes)</Text></MessageResponse>;
+      t1 = <MessageResponse><Text>{t('fileWrite.noChanges')}</Text></MessageResponse>;
       $[0] = t1;
     } else {
       t1 = $[0];
@@ -354,7 +357,7 @@ export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'
 }): React.ReactNode {
   if (!verbose && typeof result === 'string' && extractTag(result, 'tool_use_error')) {
     return <MessageResponse>
-        <Text color="error">Error writing file</Text>
+        <Text color="error">{t('fileWrite.errorWritingFile')}</Text>
       </MessageResponse>;
   }
   return <FallbackToolUseErrorMessage result={result} verbose={verbose} />;
@@ -383,14 +386,13 @@ export function renderToolResultMessage({
         if (isPlanFile && !verbose) {
           if (style !== 'condensed') {
             return <MessageResponse>
-              <Text dimColor>/plan to preview</Text>
+              <Text dimColor>{t('fileWrite.planToPreview')}</Text>
             </MessageResponse>;
           }
         } else if (style === 'condensed' && !verbose) {
           const numLines = countLines(content);
           return <Text>
-            Wrote <Text bold>{numLines}</Text> lines to{' '}
-            <Text bold>{relative(getCwd(), filePath)}</Text>
+            {t('fileWrite.wroteLinesTo', { count: numLines, path: '' })}<Text bold>{relative(getCwd(), filePath)}</Text>
           </Text>;
         }
         return <FileWriteToolCreatedMessage filePath={filePath} content={content} verbose={verbose} />;

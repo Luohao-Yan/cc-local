@@ -9,6 +9,7 @@ import type { Question } from '../../../tools/AskUserQuestionTool/AskUserQuestio
 import { getExternalEditor } from '../../../utils/editor.js';
 import { toIDEDisplayName } from '../../../utils/ide.js';
 import { editPromptInEditor } from '../../../utils/promptEditor.js';
+import { t } from '../../../../utils/i18n/index.js';
 import { Divider } from '../../design-system/Divider.js';
 import TextInput from '../../TextInput.js';
 import { PermissionRequestTitle } from '../PermissionRequestTitle.js';
@@ -282,15 +283,15 @@ export function PreviewQuestionView({
 
             {/* Right panel: preview + notes */}
             <Box flexDirection="column" flexGrow={1}>
-              <PreviewBox content={previewContent || 'No preview available'} maxLines={previewMaxLines} minWidth={minContentWidth} maxWidth={previewMaxWidth} />
+              <PreviewBox content={previewContent || t('auq.noPreviewAvailable')} maxLines={previewMaxLines} minWidth={minContentWidth} maxWidth={previewMaxWidth} />
               <Box marginTop={1} flexDirection="row" gap={1}>
-                <Text color="suggestion">Notes:</Text>
-                {isInNotesInput ? <TextInput value={notesValue} placeholder="Add notes on this design…" onChange={value => {
+                <Text color="suggestion">{t('auq.notes')}</Text>
+                {isInNotesInput ? <TextInput value={notesValue} placeholder={t('auq.addNotes')} onChange={value => {
                 onUpdateQuestionState(questionText, {
                   textInputValue: value
                 }, false);
               }} onSubmit={handleNotesExit} onExit={handleNotesExit} focus={true} showCursor={true} columns={60} cursorOffset={cursorOffset} onChangeCursorOffset={setCursorOffset} /> : <Text dimColor italic>
-                    {notesValue || 'press n to add notes'}
+                    {notesValue || t('auq.pressNToAddNotes')}
                   </Text>}
               </Box>
             </Box>
@@ -302,13 +303,13 @@ export function PreviewQuestionView({
             <Box flexDirection="row" gap={1}>
               {isFooterFocused && footerIndex === 0 ? <Text color="suggestion">{figures.pointer}</Text> : <Text> </Text>}
               <Text color={isFooterFocused && footerIndex === 0 ? 'suggestion' : undefined}>
-                Chat about this
+                {t('auq.chatAboutThis')}
               </Text>
             </Box>
             {isInPlanMode && <Box flexDirection="row" gap={1}>
                 {isFooterFocused && footerIndex === 1 ? <Text color="suggestion">{figures.pointer}</Text> : <Text> </Text>}
                 <Text color={isFooterFocused && footerIndex === 1 ? 'suggestion' : undefined}>
-                  Skip interview and plan immediately
+                  {t('auq.skipInterview')}
                 </Text>
               </Box>}
           </Box>

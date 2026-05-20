@@ -683,9 +683,10 @@ export class WebSocketTransport implements Transport {
   private getControlMessageDetailLabel(message: StdoutMessage): string {
     if (message.type === 'control_request') {
       const { request_id, request } = message
+      const req = request as any
       const toolName =
-        request.subtype === 'can_use_tool' ? request.tool_name : ''
-      return ` subtype=${request.subtype} request_id=${request_id}${toolName ? ` tool=${toolName}` : ''}`
+        req.subtype === 'can_use_tool' ? req.tool_name : ''
+      return ` subtype=${req.subtype} request_id=${request_id}${toolName ? ` tool=${toolName}` : ''}`
     }
     if (message.type === 'control_response') {
       const { subtype, request_id } = message.response

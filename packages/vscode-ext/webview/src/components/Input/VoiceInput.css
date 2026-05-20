@@ -1,0 +1,290 @@
+/* Voice Input Button Styles */
+.voice-input-button {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--app-radius-md);
+  background: transparent;
+  color: var(--app-foreground-dim);
+  cursor: pointer;
+  transition: all var(--app-transition-fast);
+}
+
+.voice-input-button:hover:not(:disabled) {
+  background: var(--vscode-toolbar-hoverBackground);
+  color: var(--app-foreground);
+}
+
+.voice-input-button.active {
+  background: var(--app-claude-orange);
+  color: white;
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 87, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(217, 119, 87, 0);
+  }
+}
+
+.voice-input-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voice-input-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Voice Panel */
+.voice-input-panel {
+  position: fixed;
+  bottom: var(--app-spacing-2xl);
+  right: var(--app-spacing-lg);
+  width: 320px;
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg);
+  box-shadow: var(--app-shadow-lg);
+  z-index: var(--app-z-modal);
+  overflow: hidden;
+  animation: slideUp var(--app-transition-medium);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Panel Header */
+.voice-input-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--app-spacing-sm) var(--app-spacing-md);
+  background: var(--vscode-editorGutter-background);
+  border-bottom: 1px solid var(--app-border);
+}
+
+.voice-input-title {
+  font-size: var(--app-font-size-xs);
+  font-weight: var(--app-font-weight-medium);
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-sm);
+}
+
+.voice-input-title-icon {
+  color: var(--app-claude-orange);
+}
+
+.voice-input-close {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--app-radius-sm);
+  background: transparent;
+  color: var(--app-foreground-dim);
+  cursor: pointer;
+  font-size: var(--app-font-size-md);
+  transition: all var(--app-transition-fast);
+}
+
+.voice-input-close:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+  color: var(--app-foreground);
+}
+
+/* Panel Content */
+.voice-input-content {
+  padding: var(--app-spacing-lg);
+  min-height: 120px;
+}
+
+/* Visualizer */
+.voice-input-visualizer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+  margin-bottom: var(--app-spacing-md);
+}
+
+.voice-input-waves {
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-xs);
+  height: 100%;
+}
+
+.voice-input-waves span {
+  width: 4px;
+  height: 20px;
+  background: var(--app-claude-orange);
+  border-radius: var(--app-radius-sm);
+  animation: wave 1s ease-in-out infinite;
+}
+
+.voice-input-waves span:nth-child(1) { animation-delay: 0s; }
+.voice-input-waves span:nth-child(2) { animation-delay: 0.1s; }
+.voice-input-waves span:nth-child(3) { animation-delay: 0.2s; }
+.voice-input-waves span:nth-child(4) { animation-delay: 0.3s; }
+.voice-input-waves span:nth-child(5) { animation-delay: 0.4s; }
+
+@keyframes wave {
+  0%, 100% {
+    height: 20px;
+  }
+  50% {
+    height: 40px;
+  }
+}
+
+/* Transcript */
+.voice-input-transcript {
+  min-height: 60px;
+  padding: var(--app-spacing-md);
+  background: var(--app-code-background);
+  border-radius: var(--app-radius-md);
+  border: 1px solid var(--app-border);
+  font-size: var(--app-font-size-md);
+  line-height: var(--app-line-height);
+}
+
+.voice-input-final {
+  color: var(--app-foreground);
+}
+
+.voice-input-interim {
+  color: var(--app-foreground-dim);
+  font-style: italic;
+}
+
+.voice-input-placeholder {
+  color: var(--app-foreground-dim);
+  font-style: italic;
+  text-align: center;
+}
+
+/* Error State */
+.voice-input-error {
+  color: var(--app-error-foreground);
+  text-align: center;
+  padding: var(--app-spacing-lg);
+}
+
+.voice-input-error-icon {
+  font-size: 24px;
+  margin-bottom: var(--app-spacing-sm);
+}
+
+/* Language Selector */
+.voice-input-language {
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-sm);
+  margin-bottom: var(--app-spacing-md);
+  font-size: var(--app-font-size-xs);
+  color: var(--app-foreground-dim);
+}
+
+.voice-input-language select {
+  padding: var(--app-spacing-xs) var(--app-spacing-sm);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  background: var(--app-input-background);
+  color: var(--app-foreground);
+  font-size: var(--app-font-size-xs);
+}
+
+/* Actions */
+.voice-input-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--app-spacing-sm);
+  padding: var(--app-spacing-sm) var(--app-spacing-md);
+  background: var(--vscode-editorGutter-background);
+  border-top: 1px solid var(--app-border);
+}
+
+.voice-input-action {
+  padding: var(--app-spacing-sm) var(--app-spacing-lg);
+  border: none;
+  border-radius: var(--app-radius-sm);
+  font-size: var(--app-font-size-xs);
+  font-weight: var(--app-font-weight-medium);
+  cursor: pointer;
+  transition: all var(--app-transition-fast);
+}
+
+.voice-input-action.cancel {
+  background: transparent;
+  color: var(--app-foreground-dim);
+}
+
+.voice-input-action.cancel:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+  color: var(--app-foreground);
+}
+
+.voice-input-action.confirm {
+  background: var(--app-button-background);
+  color: var(--app-button-foreground);
+}
+
+.voice-input-action.confirm:hover:not(:disabled) {
+  background: var(--app-button-hover-background);
+}
+
+.voice-input-action.confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Duration Timer */
+.voice-input-timer {
+  text-align: center;
+  font-size: var(--app-font-size-xs);
+  color: var(--app-foreground-dim);
+  margin-top: var(--app-spacing-sm);
+}
+
+/* Status indicator */
+.voice-input-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--app-spacing-sm);
+  font-size: var(--app-font-size-xs);
+  color: var(--app-foreground-dim);
+  margin-top: var(--app-spacing-sm);
+}
+
+.voice-input-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--app-radius-full);
+  background: var(--app-success-foreground);
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}

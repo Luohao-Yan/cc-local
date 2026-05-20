@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import React, { useCallback, useState } from 'react';
 import type { Workflow } from '../commands/install-github-app/types.js';

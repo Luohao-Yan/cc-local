@@ -110,4 +110,32 @@ describe('DatabaseConnection', () => {
 
     connection.close()
   })
+
+  it('healthCheck returns healthy=true with integrity check for valid database', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'cclocal-db-health-'))
+    tempDirs.push(tempDir)
+
+    const dbPath = join(tempDir, 'test.db')
+    const connection = new DatabaseConnection(dbPath)
+
+    const health = connection.healthCheck()
+    expect(health.healthy).toBe(true)
+    expect(health.integrityCheck).toBe('ok')
+    expect(health.pageCount).toBeGreaterThan(0)
+
+    connection.close()
+  })
+
+  it('healthCheck returns healthy=false for closed database', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'cclocal-db-closed-'))
+    tempDirs.push(tempDir)
+
+    const dbPath = join(tempDir, 'test.db')
+    const connection = new DatabaseConnection(dbPath)
+
+    connection.close()
+
+    const health = connection.healthCheck()
+    expect(health.healthy).toBe(false)
+  })
 })

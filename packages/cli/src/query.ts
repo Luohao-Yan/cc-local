@@ -210,6 +210,7 @@ type State = {
   maxOutputTokensOverride: number | undefined
   pendingToolUseSummary: Promise<ToolUseSummaryMessage | null> | undefined
   stopHookActive: boolean | undefined
+  stopHookBlockCount: number
   turnCount: number
   // Why the previous iteration continued. Undefined on first iteration.
   // Lets tests assert recovery paths fired without inspecting message contents.
@@ -271,6 +272,7 @@ async function* queryLoop(
     maxOutputTokensOverride: params.maxOutputTokensOverride,
     autoCompactTracking: undefined,
     stopHookActive: undefined,
+    stopHookBlockCount: 0,
     maxOutputTokensRecoveryCount: 0,
     hasAttemptedReactiveCompact: false,
     turnCount: 1,
@@ -317,6 +319,7 @@ async function* queryLoop(
       maxOutputTokensOverride,
       pendingToolUseSummary,
       stopHookActive,
+      stopHookBlockCount,
       turnCount,
     } = state
 
@@ -1105,6 +1108,7 @@ async function* queryLoop(
               maxOutputTokensOverride: undefined,
               pendingToolUseSummary: undefined,
               stopHookActive: undefined,
+              stopHookBlockCount: 0,
               turnCount,
               transition: {
                 reason: 'collapse_drain_retry',
@@ -1158,6 +1162,7 @@ async function* queryLoop(
             maxOutputTokensOverride: undefined,
             pendingToolUseSummary: undefined,
             stopHookActive: undefined,
+            stopHookBlockCount: 0,
             turnCount,
             transition: { reason: 'reactive_compact_retry' },
           }
@@ -1213,6 +1218,7 @@ async function* queryLoop(
             maxOutputTokensOverride: ESCALATED_MAX_TOKENS,
             pendingToolUseSummary: undefined,
             stopHookActive: undefined,
+            stopHookBlockCount: 0,
             turnCount,
             transition: { reason: 'max_output_tokens_escalate' },
           }
@@ -1241,6 +1247,7 @@ async function* queryLoop(
             maxOutputTokensOverride: undefined,
             pendingToolUseSummary: undefined,
             stopHookActive: undefined,
+            stopHookBlockCount: 0,
             turnCount,
             transition: {
               reason: 'max_output_tokens_recovery',
@@ -1280,6 +1287,14 @@ async function* queryLoop(
       }
 
       if (stopHookResult.blockingErrors.length > 0) {
+        const newBlockCount = stopHookBlockCount + 1
+        const blockCap = parseInt(process.env.CLAUDE_CODE_STOP_HOOK_BLOCK_CAP || '8', 10)
+        if (newBlockCount >= blockCap) {
+          logForDebugging(
+            `[stop-hook] Block cap (${blockCap}) reached after ${newBlockCount} consecutive blocks — ending turn`,
+          )
+          return { reason: 'completed' }
+        }
         const next: State = {
           messages: [
             ...messagesForQuery,
@@ -1298,6 +1313,7 @@ async function* queryLoop(
           maxOutputTokensOverride: undefined,
           pendingToolUseSummary: undefined,
           stopHookActive: true,
+          stopHookBlockCount: newBlockCount,
           turnCount,
           transition: { reason: 'stop_hook_blocking' },
         }
@@ -1334,6 +1350,7 @@ async function* queryLoop(
             maxOutputTokensOverride: undefined,
             pendingToolUseSummary: undefined,
             stopHookActive: undefined,
+            stopHookBlockCount: 0,
             turnCount,
             transition: { reason: 'token_budget_continuation' },
           }
@@ -1722,6 +1739,7 @@ async function* queryLoop(
       pendingToolUseSummary: nextPendingToolUseSummary,
       maxOutputTokensOverride: undefined,
       stopHookActive,
+      stopHookBlockCount: stopHookBlockCount > 0 && !stopHookActive ? 0 : stopHookBlockCount,
       transition: { reason: 'next_turn' },
     }
     state = next

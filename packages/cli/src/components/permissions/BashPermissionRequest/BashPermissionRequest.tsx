@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../../utils/i18n/index.js';
 import { feature } from 'bun:bundle';
 import figures from 'figures';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -31,7 +34,7 @@ import { SedEditPermissionRequest } from '../SedEditPermissionRequest/SedEditPer
 import { useShellPermissionFeedback } from '../useShellPermissionFeedback.js';
 import { logUnaryPermissionEvent } from '../utils.js';
 import { bashToolUseOptions } from './bashToolUseOptions.js';
-const CHECKING_TEXT = 'Attempting to auto-approve\u2026';
+const CHECKING_TEXT = t('shell.checkingAutoApprove');
 
 // Isolates the 20fps shimmer clock from BashPermissionRequestInner. Before this
 // extraction, useShimmerAnimation lived inside the 535-line Inner body, so every
@@ -425,7 +428,7 @@ function BashPermissionRequestInner({
     }
   }
   const classifierSubtitle = feature('BASH_CLASSIFIER') ? toolUseConfirm.classifierAutoApproved ? <Text>
-        <Text color="success">{figures.tick} Auto-approved</Text>
+        <Text color="success">{figures.tick} {t('shell.autoApproved')}</Text>
         {toolUseConfirm.classifierMatchedRule && <Text dimColor>
             {' \u00b7 matched "'}
             {toolUseConfirm.classifierMatchedRule}

@@ -1,6 +1,7 @@
 import { coerce } from 'semver'
 import type { Writable } from 'stream'
 import { env } from '../utils/env.js'
+import { isEnvTruthy } from '../utils/envUtils.js'
 import { gte } from '../utils/semver.js'
 import { getClearTerminalSequence } from './clearTerminal.js'
 import type { Diff } from './frame.js'
@@ -68,6 +69,10 @@ export function isProgressReportingAvailable(): boolean {
  * When supported, BSU/ESU sequences prevent visible flicker during redraws.
  */
 export function isSynchronizedOutputSupported(): boolean {
+  // Allow users to force synchronized output ON even when terminal detection
+  // returns false (e.g. Emacs eat, or terminals not in the known list).
+  if (isEnvTruthy(process.env.CLAUDE_CODE_FORCE_SYNC_OUTPUT)) return true
+
   // tmux parses and proxies every byte but doesn't implement DEC 2026.
   // BSU/ESU pass through to the outer terminal but tmux has already
   // broken atomicity by chunking. Skip to save 16 bytes/frame + parser work.

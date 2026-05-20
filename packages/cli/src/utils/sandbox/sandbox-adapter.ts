@@ -175,15 +175,15 @@ export function convertToSandboxRuntimeConfig(
   const permissions = settings.permissions || {}
 
   // Extract network domains from WebFetch rules
-  const allowedDomains: string[] = []
+  const allowDomains: string[] = []
   const deniedDomains: string[] = []
 
   // When allowManagedSandboxDomainsOnly is enabled, only use domains from policy settings
   if (shouldAllowManagedSandboxDomainsOnly()) {
     const policySettings = getSettingsForSource('policySettings')
-    for (const domain of policySettings?.sandbox?.network?.allowedDomains ||
+    for (const domain of policySettings?.sandbox?.network?.allowDomains ||
       []) {
-      allowedDomains.push(domain)
+      allowDomains.push(domain)
     }
     for (const ruleString of policySettings?.permissions?.allow || []) {
       const rule = permissionRuleValueFromString(ruleString)
@@ -191,12 +191,12 @@ export function convertToSandboxRuntimeConfig(
         rule.toolName === WEB_FETCH_TOOL_NAME &&
         rule.ruleContent?.startsWith('domain:')
       ) {
-        allowedDomains.push(rule.ruleContent.substring('domain:'.length))
+        allowDomains.push(rule.ruleContent.substring('domain:'.length))
       }
     }
   } else {
-    for (const domain of settings.sandbox?.network?.allowedDomains || []) {
-      allowedDomains.push(domain)
+    for (const domain of settings.sandbox?.network?.allowDomains || []) {
+      allowDomains.push(domain)
     }
     for (const ruleString of permissions.allow || []) {
       const rule = permissionRuleValueFromString(ruleString)
@@ -204,7 +204,7 @@ export function convertToSandboxRuntimeConfig(
         rule.toolName === WEB_FETCH_TOOL_NAME &&
         rule.ruleContent?.startsWith('domain:')
       ) {
-        allowedDomains.push(rule.ruleContent.substring('domain:'.length))
+        allowDomains.push(rule.ruleContent.substring('domain:'.length))
       }
     }
   }
@@ -358,8 +358,8 @@ export function convertToSandboxRuntimeConfig(
 
   return {
     network: {
-      allowedDomains,
-      deniedDomains,
+      allowDomains,
+      denyDomains: deniedDomains,
       allowUnixSockets: settings.sandbox?.network?.allowUnixSockets,
       allowAllUnixSockets: settings.sandbox?.network?.allowAllUnixSockets,
       allowLocalBinding: settings.sandbox?.network?.allowLocalBinding,
@@ -377,6 +377,8 @@ export function convertToSandboxRuntimeConfig(
     enableWeakerNetworkIsolation:
       settings.sandbox?.enableWeakerNetworkIsolation,
     ripgrep: ripgrepConfig,
+    bwrapPath: settings.sandbox?.bwrapPath,
+    socatPath: settings.sandbox?.socatPath,
   }
 }
 
@@ -450,9 +452,12 @@ async function detectWorktreeMainRepoPath(cwd: string): Promise<string | null> {
  */
 const checkDependencies = memoize((): SandboxDependencyCheck => {
   const { rgPath, rgArgs } = ripgrepCommand()
+  const settings = getSettings_DEPRECATED()
   return BaseSandboxManager.checkDependencies({
     command: rgPath,
     args: rgArgs,
+    bwrapPath: settings?.sandbox?.bwrapPath,
+    socatPath: settings?.sandbox?.socatPath,
   })
 })
 
@@ -554,7 +559,7 @@ function isSandboxingEnabled(): boolean {
  * Fix for #34044: previously isSandboxingEnabled() silently returned false
  * when dependencies were missing, giving users zero feedback that their
  * explicit security setting was being ignored. This is a security footgun —
- * users configure allowedDomains expecting enforcement, get none.
+ * users configure allowDomains expecting enforcement, get none.
  *
  * Call this once at startup (REPL/print) and surface the reason if present.
  * Does not cover the case where the user never enabled sandbox (no noise).
@@ -584,7 +589,7 @@ function getSandboxUnavailableReason(): string | undefined {
     const hint =
       platform === 'macos'
         ? 'run /sandbox or /doctor for details'
-        : 'install missing tools (e.g. apt install bubblewrap socat) or run /sandbox for details'
+        : 'install missing tools (e.g. apt install bubblewrap socat), configure sandbox.bwrapPath/socatPath in settings, or run /sandbox for details'
     return `sandbox.enabled is set but dependencies are missing: ${deps.errors.join(', ')} · ${hint}`
   }
 
@@ -894,9 +899,9 @@ export interface ISandboxManager {
     autoAllowBashIfSandboxed?: boolean
     allowUnsandboxedCommands?: boolean
   }): Promise<void>
-  getFsReadConfig(): FsReadRestrictionConfig
-  getFsWriteConfig(): FsWriteRestrictionConfig
-  getNetworkRestrictionConfig(): NetworkRestrictionConfig
+  getFsReadConfig(): FsReadRestrictionConfig | undefined
+  getFsWriteConfig(): FsWriteRestrictionConfig | undefined
+  getNetworkRestrictionConfig(): NetworkRestrictionConfig | undefined
   getAllowUnixSockets(): string[] | undefined
   getAllowLocalBinding(): boolean | undefined
   getIgnoreViolations(): IgnoreViolationsConfig | undefined

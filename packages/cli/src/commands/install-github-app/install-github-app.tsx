@@ -558,7 +558,7 @@ function InstallGitHubApp(props: {
           <ErrorStep error={state.error} errorReason={state.errorReason} errorInstructions={state.errorInstructions} />
         </Box>;
     case 'select-workflows':
-      return <WorkflowMultiselectDialog defaultSelections={state.selectedWorkflows} onSubmit={selectedWorkflows => {
+      return <WorkflowMultiselectDialog defaultSelections={state.selectedWorkflows} onSubmit={(selectedWorkflows: any) => {
         logEvent('tengu_install_github_app_step_completed', {
           step: 'select-workflows' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
         });

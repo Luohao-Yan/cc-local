@@ -104,7 +104,7 @@ export function isLspConnected(): boolean {
   const servers = manager.getAllServers()
   if (servers.size === 0) return false
   for (const server of servers.values()) {
-    if (server.state !== 'error') return true
+    if (server.state.status !== 'error') return true
   }
   return false
 }

@@ -11,9 +11,28 @@ export interface SSHSession {
   remoteCwd: string
   createManager: (opts: {
     onMessage?: (msg: unknown) => void
+    onPermissionRequest?: (request: unknown, requestId: string) => void
+    onConnected?: () => void
+    onReconnecting?: (attempt: number, max: number) => void
+    onDisconnected?: () => void
+    onError?: (error: Error) => void
     [key: string]: unknown
   }) => {
-    disconnect?: () => void
+    connect: () => void
+    disconnect: () => void
+    sendMessage: (content: unknown) => Promise<boolean>
+    sendInterrupt: () => void
+    respondToPermissionRequest: (requestId: string, response: unknown) => void
+    [key: string]: unknown
+  }
+  getStderrTail: () => string
+  proc: {
+    exitCode: number | null
+    signalCode: string | null
+    [key: string]: unknown
+  }
+  proxy: {
+    stop: () => void
     [key: string]: unknown
   }
 }

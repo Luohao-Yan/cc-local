@@ -4,6 +4,14 @@ import { type Key, useInput } from '../ink.js'
 import { useOptionalKeybindingContext } from './KeybindingContext.js'
 import type { KeybindingContextName } from './types.js'
 
+/** Subset of KeybindingContextValue used by useKeybinding/useKeybindings */
+type KeybindingContextMethods = {
+  resolve: (input: string, key: Key, activeContexts: KeybindingContextName[]) => { type: string; action?: string; pending?: unknown }
+  setPendingChord: (pending: unknown | null) => void
+  activeContexts: Set<KeybindingContextName>
+  registerHandler: (registration: { action: string; context: KeybindingContextName; handler: () => void }) => () => void
+}
+
 type Options = {
   /** Which context this binding belongs to (default: 'Global') */
   context?: KeybindingContextName
@@ -36,7 +44,7 @@ export function useKeybinding(
   options: Options = {},
 ): void {
   const { context = 'Global', isActive = true } = options
-  const keybindingContext = useOptionalKeybindingContext()
+  const keybindingContext = useOptionalKeybindingContext() as unknown as KeybindingContextMethods | null
 
   // Register handler with the context for ChordInterceptor to invoke
   useEffect(() => {
@@ -122,7 +130,7 @@ export function useKeybindings(
   options: Options = {},
 ): void {
   const { context = 'Global', isActive = true } = options
-  const keybindingContext = useOptionalKeybindingContext()
+  const keybindingContext = useOptionalKeybindingContext() as unknown as KeybindingContextMethods | null
 
   // Register all handlers with the context for ChordInterceptor to invoke
   useEffect(() => {
@@ -163,8 +171,8 @@ export function useKeybindings(
         case 'match':
           // Chord completed (if any) - clear pending state
           keybindingContext.setPendingChord(null)
-          if (result.action in handlers) {
-            const handler = handlers[result.action]
+          if (result.action && result.action in handlers) {
+            const handler = handlers[result.action!]
             if (handler && handler() !== false) {
               event.stopImmediatePropagation()
             }

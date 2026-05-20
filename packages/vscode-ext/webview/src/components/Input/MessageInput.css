@@ -1,0 +1,242 @@
+/* Message Input Styles */
+.message-input-container {
+  padding: var(--app-spacing-md) var(--app-spacing-lg);
+  border-top: 1px solid var(--app-border);
+  background: var(--app-background);
+  flex-shrink: 0;
+}
+
+/* Input Wrapper */
+.message-input-wrapper {
+  display: flex;
+  gap: var(--app-spacing-sm);
+  align-items: flex-end;
+  background: var(--app-input-background);
+  border: 1px solid var(--app-input-border, var(--app-border));
+  border-radius: var(--app-radius-xl);
+  padding: var(--app-spacing-xs) var(--app-spacing-xs) var(--app-spacing-xs) var(--app-spacing-lg);
+  transition: border-color var(--app-transition-fast);
+}
+
+.message-input-wrapper:focus-within {
+  border-color: var(--app-focus-border);
+}
+
+.message-input-wrapper.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Text Input */
+.message-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--app-input-foreground);
+  font-family: var(--app-font-family);
+  font-size: var(--app-font-size-md);
+  line-height: var(--app-line-height);
+  resize: none;
+  min-height: 22px;
+  max-height: 140px;
+  padding: var(--app-spacing-xs) 0;
+}
+
+.message-input:focus {
+  outline: none;
+}
+
+.message-input::placeholder {
+  color: var(--app-input-placeholder);
+}
+
+.message-input:disabled {
+  opacity: 0.5;
+}
+
+/* Auto-resize */
+.message-input.auto-resize {
+  overflow-y: hidden;
+}
+
+/* Input Actions */
+.message-input-actions {
+  display: flex;
+  gap: var(--app-spacing-xs);
+  flex-shrink: 0;
+}
+
+/* Input Buttons */
+.message-input-button {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: var(--app-radius-md);
+  background: var(--app-button-background);
+  color: var(--app-button-foreground);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--app-transition-fast);
+}
+
+.message-input-button:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.message-input-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.message-input-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Send Button */
+.message-input-button.send {
+  background: var(--app-button-background);
+}
+
+/* Stop/Interrupt Button */
+.message-input-button.interrupt {
+  background: var(--app-error-foreground);
+  display: none;
+}
+
+.message-input-wrapper.running .message-input-button.interrupt {
+  display: flex;
+}
+
+.message-input-wrapper.running .message-input-button.send {
+  display: none;
+}
+
+/* Voice Button */
+.message-input-button.voice {
+  background: transparent;
+  color: var(--app-foreground-dim);
+}
+
+.message-input-button.voice:hover:not(:disabled) {
+  background: var(--vscode-toolbar-hoverBackground);
+  color: var(--app-foreground);
+}
+
+.message-input-button.voice.active {
+  background: var(--app-claude-orange);
+  color: white;
+}
+
+/* Attachment Button */
+.message-input-button.attachment {
+  background: transparent;
+  color: var(--app-foreground-dim);
+}
+
+.message-input-button.attachment:hover:not(:disabled) {
+  background: var(--vscode-toolbar-hoverBackground);
+  color: var(--app-foreground);
+}
+
+/* Toolbar */
+.message-input-toolbar {
+  display: flex;
+  gap: var(--app-spacing-sm);
+  margin-top: var(--app-spacing-sm);
+  align-items: center;
+}
+
+.toolbar-button {
+  padding: var(--app-spacing-xs) var(--app-spacing-sm);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  background: transparent;
+  color: var(--app-foreground-dim);
+  font-size: var(--app-font-size-xs);
+  cursor: pointer;
+  transition: all var(--app-transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-xs);
+}
+
+.toolbar-button:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+  color: var(--app-foreground);
+  border-color: var(--app-foreground-dim);
+}
+
+.toolbar-button.active {
+  background: var(--app-button-background);
+  color: var(--app-button-foreground);
+  border-color: var(--app-button-background);
+}
+
+.toolbar-hint {
+  margin-left: auto;
+  font-size: var(--app-font-size-xs);
+  color: var(--app-foreground-dim);
+  opacity: 0.8;
+}
+
+/* Character Count */
+.message-input-count {
+  font-size: var(--app-font-size-xs);
+  color: var(--app-foreground-dim);
+  margin-right: var(--app-spacing-sm);
+}
+
+.message-input-count.warning {
+  color: var(--app-status-warning);
+}
+
+.message-input-count.error {
+  color: var(--app-error-foreground);
+}
+
+/* @-mention Suggestions */
+.message-input-suggestions {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
+  box-shadow: var(--app-shadow-lg);
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: var(--app-spacing-xs);
+  z-index: var(--app-z-dropdown);
+}
+
+.suggestion-item {
+  padding: var(--app-spacing-sm) var(--app-spacing-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--app-spacing-sm);
+}
+
+.suggestion-item:hover,
+.suggestion-item.selected {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.suggestion-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--app-foreground-dim);
+}
+
+.suggestion-text {
+  font-size: var(--app-font-size-sm);
+}
+
+.suggestion-detail {
+  margin-left: auto;
+  font-size: var(--app-font-size-xs);
+  color: var(--app-foreground-dim);
+}

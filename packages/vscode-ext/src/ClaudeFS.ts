@@ -385,6 +385,72 @@ export class DiffManager {
     return Array.from(this.pendingDiffs.values())
   }
 
+  /**
+   * Open multi-file changes view using vscode.changes command.
+   * 1:1 match with official extension's multi-file diff support.
+   */
+  async openMultiFileChanges(filePaths: string[]): Promise<void> {
+    if (filePaths.length === 0) return
+
+    // If only one file, use single diff
+    if (filePaths.length === 1) {
+      const diff = this.findDiffByFilePath(filePaths[0])
+      if (diff?.leftUri && diff?.rightUri) {
+        await vscode.commands.executeCommand(
+          'vscode.diff',
+          diff.leftUri,
+          diff.rightUri,
+          `${path.basename(filePaths[0])} (Proposed Changes)`,
+          { preview: true },
+        )
+      }
+      return
+    }
+
+    // Multiple files: build changes array for vscode.changes
+    const changes: Array<{ original: vscode.Uri; modified: vscode.Uri; label: string }> = []
+    for (const filePath of filePaths) {
+      const diff = this.findDiffByFilePath(filePath)
+      if (diff?.leftUri && diff?.rightUri) {
+        changes.push({
+          original: diff.leftUri,
+          modified: diff.rightUri,
+          label: `${path.basename(filePath)} (Proposed)`,
+        })
+      }
+    }
+
+    if (changes.length > 0) {
+      // vscode.changes is available in VS Code >= 1.86
+      try {
+        await vscode.commands.executeCommand(
+          'vscode.changes',
+          'CCLocal: Proposed Changes',
+          changes,
+        )
+      } catch {
+        // Fallback: open each diff individually if vscode.changes not supported
+        for (const change of changes) {
+          await vscode.commands.executeCommand(
+            'vscode.diff',
+            change.original,
+            change.modified,
+            change.label,
+            { preview: true },
+          )
+        }
+      }
+    }
+  }
+
+  /** Find a pending diff by file path */
+  private findDiffByFilePath(filePath: string): ProposedDiff | undefined {
+    for (const [, diff] of this.pendingDiffs) {
+      if (diff.filePath === filePath) return diff
+    }
+    return undefined
+  }
+
   /** 清理所有 diff */
   clearAll(): void {
     this.leftFS.clear()

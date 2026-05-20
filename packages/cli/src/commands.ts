@@ -19,6 +19,8 @@ import cost from './commands/cost/index.js'
 import diff from './commands/diff/index.js'
 import ctx_viz from './commands/ctx_viz/index.js'
 import doctor from './commands/doctor/index.js'
+import goal from './commands/goal/index.js'
+import loop from './commands/loop/index.js'
 import memory from './commands/memory/index.js'
 import help from './commands/help/index.js'
 import ide from './commands/ide/index.js'
@@ -52,6 +54,7 @@ const agentsPlatform =
 /* eslint-enable @typescript-eslint/no-require-imports */
 import securityReview from './commands/security-review.js'
 import bughunter from './commands/bughunter/index.js'
+import scrollSpeed from './commands/scroll-speed/index.js'
 import terminalSetup from './commands/terminalSetup/index.js'
 import usage from './commands/usage/index.js'
 import theme from './commands/theme/index.js'
@@ -63,10 +66,8 @@ const proactive =
   feature('PROACTIVE') || feature('KAIROS')
     ? require('./commands/proactive.js').default
     : null
-const briefCommand =
-  feature('KAIROS') || feature('KAIROS_BRIEF')
-    ? require('./commands/brief.js').default
-    : null
+// cc-local: always load /brief command (matches official CLI behavior)
+const briefCommand = require('./commands/brief.js').default
 const assistantCommand = feature('KAIROS')
   ? require('./commands/assistant/index.js').default
   : null
@@ -277,11 +278,13 @@ const COMMANDS = memoize((): Command[] => [
   exit,
   fast,
   files,
+  goal,
   heapDump,
   help,
   ide,
   init,
   keybindings,
+  loop,
   installGitHubApp,
   installSlackApp,
   mcp,
@@ -309,6 +312,7 @@ const COMMANDS = memoize((): Command[] => [
   ultrareview,
   rewind,
   securityReview,
+  scrollSpeed,
   terminalSetup,
   upgrade,
   extraUsage,

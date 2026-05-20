@@ -318,7 +318,7 @@ function App() {
         break
 
       case 'error':
-        dispatch(setError(msg.message as string))
+        dispatch(setError(msg.message as unknown as string))
         dispatch(setLoading(false))
         break
 

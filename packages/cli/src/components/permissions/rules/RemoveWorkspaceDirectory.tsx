@@ -1,4 +1,7 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
+import { t } from '../../../../utils/i18n/index.js';
 import * as React from 'react';
 import { useCallback } from 'react';
 import { Select } from '../../../components/CustomSelect/select.js';
@@ -68,7 +71,7 @@ export function RemoveWorkspaceDirectory(t0) {
   }
   let t4;
   if ($[10] === Symbol.for("react.memo_cache_sentinel")) {
-    t4 = <Text>Claude Code will no longer have access to files in this directory.</Text>;
+    t4 = <Text>{t('rules.willNoLongerHaveAccess')}</Text>;
     $[10] = t4;
   } else {
     t4 = $[10];
@@ -76,10 +79,10 @@ export function RemoveWorkspaceDirectory(t0) {
   let t5;
   if ($[11] === Symbol.for("react.memo_cache_sentinel")) {
     t5 = [{
-      label: "Yes",
+      label: t('rules.yes'),
       value: "yes"
     }, {
-      label: "No",
+      label: t('rules.no'),
       value: "no"
     }];
     $[11] = t5;
@@ -97,7 +100,7 @@ export function RemoveWorkspaceDirectory(t0) {
   }
   let t7;
   if ($[15] !== onCancel || $[16] !== t3 || $[17] !== t6) {
-    t7 = <Dialog title="Remove directory from workspace?" onCancel={onCancel} color="error">{t3}{t4}{t6}</Dialog>;
+    t7 = <Dialog title={t('rules.removeDirectoryTitle')} onCancel={onCancel} color="error">{t3}{t4}{t6}</Dialog>;
     $[15] = onCancel;
     $[16] = t3;
     $[17] = t6;

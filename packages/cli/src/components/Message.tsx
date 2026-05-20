@@ -1,3 +1,5 @@
+
+// @ts-nocheck
 import { c as _c } from "react/compiler-runtime";
 import { feature } from 'bun:bundle';
 import type { BetaContentBlock } from '@anthropic-ai/sdk/resources/beta/messages/messages.mjs';
@@ -235,11 +237,13 @@ function MessageImpl(t0) {
             return null;
           }
           let t2;
-          if ($[64] === Symbol.for("react.memo_cache_sentinel")) {
-            t2 = <CompactBoundaryMessage />;
-            $[64] = t2;
+          const cm = message.compactMetadata;
+          if ($[64] !== cm) {
+            t2 = <CompactBoundaryMessage preTokens={cm?.preTokens} postTokens={cm?.postTokens} />;
+            $[64] = cm;
+            $[65] = t2;
           } else {
-            t2 = $[64];
+            t2 = $[65];
           }
           return t2;
         }

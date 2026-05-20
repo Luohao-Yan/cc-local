@@ -162,7 +162,7 @@ describe('SSHManager', () => {
       // Verify spawn was called with cd command
       const lastCall = (spawn as Mock).mock.calls.at(-1)
       expect(lastCall).toBeDefined()
-      const args = lastCall[1] as string[]
+      const args = lastCall![1] as string[]
       expect(args.some(a => a.includes('cd /home/test'))).toBe(true)
     })
 
@@ -184,7 +184,7 @@ describe('SSHManager', () => {
       // Verify spawn was called with env
       const lastCall = (spawn as Mock).mock.calls.at(-1)
       expect(lastCall).toBeDefined()
-      const opts = lastCall[2] as { env?: Record<string, string> }
+      const opts = lastCall![2] as { env?: Record<string, string> }
       expect(opts?.env?.MY_VAR).toBe('test_value')
     })
 
@@ -339,7 +339,7 @@ describe('SSHManager', () => {
       await manager.execute(session.id, 'echo test')
 
       const lastCall = (spawn as Mock).mock.calls.at(-1)
-      const args = lastCall[1] as string[]
+      const args = lastCall![1] as string[]
       expect(args).toContain('-p')
       expect(args).toContain('2222')
     })
@@ -356,7 +356,7 @@ describe('SSHManager', () => {
       await manager.execute(session.id, 'echo test')
 
       const lastCall = (spawn as Mock).mock.calls.at(-1)
-      const args = lastCall[1] as string[]
+      const args = lastCall![1] as string[]
       expect(args).toContain('-i')
       expect(args).toContain('/path/to/key')
     })
@@ -372,7 +372,7 @@ describe('SSHManager', () => {
       await manager.execute(session.id, 'echo test')
 
       const lastCall = (spawn as Mock).mock.calls.at(-1)
-      const args = lastCall[1] as string[]
+      const args = lastCall![1] as string[]
       expect(args).toContain('StrictHostKeyChecking=no')
     })
   })
