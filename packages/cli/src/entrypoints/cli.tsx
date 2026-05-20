@@ -305,13 +305,10 @@ async function main(): Promise<void> {
     startCapturingEarlyInput
   } = await import('../utils/earlyInput.js');
   startCapturingEarlyInput();
-  profileCheckpoint('cli_before_main_import');
   const {
     main: cliMain
   } = await import('../main.js');
-  profileCheckpoint('cli_after_main_import');
   await cliMain();
-  profileCheckpoint('cli_after_main_complete');
 }
 
 // eslint-disable-next-line custom-rules/no-top-level-side-effects

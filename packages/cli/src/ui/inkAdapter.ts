@@ -223,20 +223,21 @@ export async function runInkUiInProcess(args: string[]): Promise<void> {
   // Set CCLOCAL_FORCE_INTERACTIVE for interactive mode detection
   process.env.CCLOCAL_FORCE_INTERACTIVE = '1'
 
-  // Set CCLOCAL_IMPORTED to prevent cli.tsx from auto-executing main() at import time
-  // We will call main() explicitly after import
-  process.env.CCLOCAL_IMPORTED = '1'
-
   // Update process.argv with the Ink args
   process.argv = [process.argv[0]!, entrypoint, ...inkArgs]
 
-  // Dynamic import the Ink entrypoint and run it
-  // This preserves TTY/stdin in the same process
-  const entrypointModule = await import(entrypoint)
+  try {
+    const entrypointModule = await import(entrypoint)
 
-  // The cli.tsx entrypoint exports a `main` function
-  if (typeof entrypointModule.main === 'function') {
-    await entrypointModule.main()
+    // cli.tsx fires void main() at import time which starts the REPL.
+    // The compiled bundle may not export main as a named export.
+    // If it does, call it; otherwise the void main() already started it.
+    if (typeof entrypointModule.main === 'function') {
+      await entrypointModule.main()
+    }
+  } catch (err) {
+    console.error(`Failed to start Ink UI: ${String(err)}`)
+    process.exit(1)
   }
 }
 

@@ -1516,7 +1516,9 @@ async function prepareIfConditionMatcher(
 
   const toolName = normalizeLegacyToolName(hookInput.tool_name!)
   const tool = tools && findToolByName(tools, hookInput.tool_name!)
-  const input = tool?.inputSchema.safeParse(hookInput.tool_input)
+  const input = tool?.inputSchema
+    ? tool.inputSchema.safeParse(hookInput.tool_input)
+    : undefined
   const patternMatcher =
     input?.success && tool?.preparePermissionMatcher
       ? await tool.preparePermissionMatcher(input.data)

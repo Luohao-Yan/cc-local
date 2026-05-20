@@ -857,9 +857,7 @@ export async function main() {
 
   // Parse and load settings flags early, before init()
   eagerLoadSettings();
-  profileCheckpoint('main_before_run');
   await run();
-  profileCheckpoint('main_after_run');
 }
 async function getInputPrompt(prompt: string, inputFormat: 'text' | 'stream-json'): Promise<string | AsyncIterable<string>> {
   // Skip stdin reading when running as a spawned child process (e.g., delegateToInkUi)
@@ -3965,9 +3963,7 @@ async function run(): Promise<CommanderCommand> {
   const isPrintMode = process.argv.includes('-p') || process.argv.includes('--print');
   const isCcUrl = process.argv.some(a => a.startsWith('cc://') || a.startsWith('cc+unix://'));
   if (isPrintMode && !isCcUrl) {
-    profileCheckpoint('run_before_parse');
     await program.parseAsync(process.argv);
-    profileCheckpoint('run_after_parse');
     return program;
   }
 
@@ -4957,9 +4953,7 @@ Examples:
       await completionHandler(shell, opts, program);
     });
   }
-  profileCheckpoint('run_before_parse');
   await program.parseAsync(process.argv);
-  profileCheckpoint('run_after_parse');
 
   // Record final checkpoint for total_time calculation
   profileCheckpoint('main_after_run');

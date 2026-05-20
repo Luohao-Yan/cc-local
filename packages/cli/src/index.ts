@@ -43,8 +43,9 @@ import type { Message, MessageOptions, Session, StreamEvent } from '@cclocal/sha
 async function launchInkUi(args: string[]): Promise<never> {
   if (process.platform === 'win32') {
     await runInkUiInProcess(args)
-    // runInkUiInProcess imports cli.tsx which fires void main() at import time,
-    // starting the Ink REPL. Ink's event loop handles keep the process alive.
+    // runInkUiInProcess fires void main() during import which starts the
+    // Ink REPL async. The import resolves but main() keeps running. Block
+    // here to keep the process alive — Ink's handles prevent natural exit.
     await new Promise<never>(() => {})
   }
   delegateToInkUi(args)
